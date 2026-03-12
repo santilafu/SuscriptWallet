@@ -3,7 +3,7 @@
 
 > **Instrucciones para el asistente**: Lee este documento entero antes de tocar código.
 > Responde siempre en castellano de España. Sin rodeos, sin ejemplos innecesarios.
-> Cuando termines una tarea, guarda contexto relevante antes de cerrar la sesión.
+> Cuando termines una tarea, actualiza CHANGELOG.md, PROMPT.md y README.md si corresponde, luego haz commit y push.
 
 ---
 
@@ -625,3 +625,56 @@ YEARLY = precio anual total (no mensual × 12).
 - `CatalogController.kt` + `/api/catalog` — funciona, base de la app móvil.
 - Schema SQL V1 — compatible con PostgreSQL tal cual, no tocar.
 - Seed data V2 — 10 categorías definitivas, no añadir más por migración.
+
+---
+
+## Versioning y gestión de documentación
+
+**El asistente IA es responsable de mantener estos tres archivos actualizados en cada sesión.**
+
+### Versión actual: `1.0.0`
+
+Esquema: `MAJOR.MINOR.PATCH`
+
+| Tipo de cambio                              | Qué incrementar |
+|---------------------------------------------|-----------------|
+| Corrección de bug, ajuste menor, docs       | PATCH (1.0.x)   |
+| Nueva funcionalidad (PostgreSQL, API, UI)   | MINOR (1.x.0)   |
+| Cambio que rompe compatibilidad, rediseño total | MAJOR (x.0.0) |
+
+### Protocolo al terminar cada sesión de desarrollo
+
+1. **`build.gradle.kts`** — actualizar `version = "X.Y.Z"` con la nueva versión.
+
+2. **`CHANGELOG.md`** — añadir una nueva entrada al principio con formato:
+   ```
+   ## [X.Y.Z] — YYYY-MM-DD
+   ### Añadido / Cambiado / Corregido / Eliminado
+   - Descripción concisa del cambio
+   ```
+   Marcar la versión anterior como completada si estaba en "pendiente".
+
+3. **`README.md`** — actualizar el badge de versión y la tabla de versiones al final.
+
+4. **`PROMPT.md`** — actualizar:
+   - La versión en el encabezado de esta sección.
+   - Mover funcionalidades completadas a la tabla de "implementadas".
+   - Marcar las tareas pendientes completadas.
+   - Añadir nuevos gotchas si se descubrieron problemas nuevos.
+
+5. **Git** — hacer commit con mensaje descriptivo y push:
+   ```bash
+   git add -A
+   git commit -m "vX.Y.Z — descripción del cambio"
+   git push origin main
+   ```
+
+### Historial de versiones
+
+| Versión | Fecha      | Descripción                          | Estado     |
+|---------|------------|--------------------------------------|------------|
+| 1.0.0   | 2026-03-13 | Primera versión funcional web        | Publicada  |
+| 1.1.0   | —          | Migración a PostgreSQL               | Pendiente  |
+| 1.2.0   | —          | API REST completa para móvil         | Pendiente  |
+| 1.3.0   | —          | Rediseño de interfaz                 | Pendiente  |
+| 2.0.0   | —          | JWT + app móvil KMM                  | Pendiente  |

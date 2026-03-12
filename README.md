@@ -1,5 +1,11 @@
 # SubIA — Gestor de suscripciones
 
+![Version](https://img.shields.io/badge/versión-1.0.0-6366f1?style=flat-square)
+![Stack](https://img.shields.io/badge/Spring%20Boot-3.3.5-6db33f?style=flat-square&logo=springboot)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.1.20-7f52ff?style=flat-square&logo=kotlin)
+![Java](https://img.shields.io/badge/Java-21-007396?style=flat-square&logo=openjdk)
+![License](https://img.shields.io/badge/uso-personal-lightgrey?style=flat-square)
+
 > Controla todos tus servicios de pago en un solo lugar. Visualiza el gasto mensual y anual, filtra por categoría, recibe alertas de renovación y añade nuevas suscripciones con precios actuales gracias al catálogo integrado.
 
 ---
@@ -120,9 +126,9 @@ Los precios están definidos en `CatalogService.kt` y son de **marzo 2026**. Par
 
 ## 🔒 Seguridad
 
-- **CSRF**: todos los formularios `POST` incluyen un token CSRF generado por Spring Security e inyectado automáticamente por Thymeleaf.
-- **Cabeceras HTTP**: `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`, `X-XSS-Protection`.
-- **Sin autenticación**: app de uso personal, sin exposición a internet. Si necesitas añadir login, extiende `SecurityConfig.kt`.
+- **Cabeceras HTTP**: `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`.
+- **Sin autenticación**: app de uso personal, sin exposición a internet.
+- **CSRF**: desactivado en local (uso personal). Para exposición pública, activar `CookieCsrfTokenRepository` en `SecurityConfig.kt`.
 
 ---
 
@@ -132,3 +138,17 @@ Los precios están definidos en `CatalogService.kt` y son de **marzo 2026**. Par
 2. La app hace una llamada AJAX a `/api/catalog?categoryId=X` y carga los servicios de esa categoría.
 3. Selecciona el servicio y pulsa **Aplicar** — el formulario se rellena automáticamente con el nombre, descripción, precio, moneda y ciclo de facturación.
 4. Completa los campos restantes (fecha de renovación, notas) y guarda.
+
+---
+
+## 📋 Versiones
+
+Consulta [CHANGELOG.md](CHANGELOG.md) para el historial completo de cambios.
+
+| Versión | Fecha      | Descripción                          |
+|---------|------------|--------------------------------------|
+| 1.0.0   | 2026-03-13 | Primera versión funcional completa   |
+| 1.1.0   | pendiente  | Migración a PostgreSQL               |
+| 1.2.0   | pendiente  | API REST para app móvil              |
+| 1.3.0   | pendiente  | Rediseño de interfaz                 |
+| 2.0.0   | pendiente  | Autenticación JWT + app móvil KMM    |
