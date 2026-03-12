@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<!--
+  Lista de suscripciones con búsqueda en tiempo real y filtro por categoría.
+  La búsqueda y el filtro son 100% JavaScript (sin peticiones al servidor),
+  por lo que la respuesta es instantánea.
+-->
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title>Suscripciones</title></head>
+<body>
+<div layout:fragment="content">
+
+    <!-- ── Cabecera ──────────────────────────────────────────────────── -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 style="font-size:1.6rem;font-weight:800;letter-spacing:-.03em;margin:0;">
+                <i class="bi bi-list-ul me-2" style="color:var(--primary)"></i>Suscripciones
+            </h1>
+            <!-- Contador dinámico que se actualiza con el filtro -->
+            <p class="mb-0" style="font-size:.85rem;color:var(--muted);">
+                <span id="resultCount" th:text="${subscriptions.size()}"></span> suscripciones
+            </p>
+        </div>
+        <a th:href="@{/subscriptions/new}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Nueva
+        </a>
+    </div>
+
+    <!-- ── Barra de búsqueda + filtros de categoría ───────────────────── -->
+    <div class="card mb-3" style="border-radius:var(--radius);">
+        <div class="card-body py-3">
+            <div class="row g-3 align-items-center">
+
+                <!-- Búsqueda por texto (nombre, descripción, notas) -->
+                <div class="col-md-5">
+                    <div class="search-wrapper">
+                        <i class="bi bi-search"></i>
+                        <input type="text" id="searchInput" class="form-control"
+                               placeholder="Buscar por nombre, descripción…" autocomplete="off"/>
+                    </div>
+                </div>
+
+                <!-- Pills de filtro por categoría -->
+                <div class="col-md-7">
+                    <div class="d-flex flex-wrap gap-2">
+                        <!-- "Todas" siempre visible y activo por defecto -->
+                        <button class="filter-pill active" data-category="">Todas</button>
+                        <!-- Un pill por cada categoría existente -->
+                        <button th:each="cat : ${categories}"
+                                class="filter-pill"
+                                th:data-category="${cat.name}"
+                                th:text="${cat.icon + ' ' + cat.name}">
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Tabla de suscripciones ─────────────────────────────────────── -->
+    <div class="card">
+        <div class="card-body p-0">
+            <table class="table mb-0" id="subsTable">
+                <thead>
+                <tr>
+                    <th>Servicio</th>
+                    <th>Categoría</th>
+                    <th>Precio / mes</th>
+                    <th>Ciclo</th>
+                    <th>Renovación</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="s : ${subscriptions}"
+                    th:data-name="${#strings.toLowerCase(s.name + ' ' + s.description + ' ' + s.notes)}"
+                    th:data-category="${s.category.name}">
+
+                    <!-- Nombre y descripción -->
+                    <td>
+                        <div style="font-weight:600;" th:text="${s.name}"></div>
+                        <div th:if="${!s.description.isEmpty()}"
+                             style="font-size:.78rem;color:var(--muted);"
+                             th:text="${s.description}"></div>
+                    </td>
+
+                    <!-- Categoría como etiqueta de color -->
+                    <td>
+                        <span class="badge rounded-pill"
+                              th:style="'background:' + ${s.category.color}"
+                              th:text="${s.category.icon + ' ' + s.category.name}"></span>
+                    </td>
+
+                    <!-- Precio formateado en EUR -->
+                    <td>
+                        <span style="font-weight:600;" th:text="'€' + ${#numbers.formatDecimal(s.price, 1, 2)}"></span>
+                        <span style="font-size:.75rem;color:var(--muted);"
+                              th:text="${s.billingCycle == 'MONTHLY' ? '/mes' : (s.billingCycle == 'YEARLY' ? '/año' : '/sem.')}"></span>
+                    </td>
+
+                    <!-- Ciclo de facturación -->
+                    <td>
+                        <span class="badge"
+                              style="background:var(--primary-light);color:var(--primary-dark);"
+                              th:text="${s.billingCycle == 'MONTHLY' ? 'Mensual' : (s.billingCycle == 'YEARLY' ? 'Anual' : 'Semanal')}">
+                        </span>
+                    </td>
+
+                    <!-- Fecha de renovación -->
+                    <td th:text="${#temporals.format(s.renewalDate, 'dd MMM yyyy')}"></td>
+
+                    <!-- Estado: activa / inactiva -->
+                    <td>
+                        <span th:if="${s.active}"
+                              class="badge"
+                              style="background:#dcfce7;color:#166534;">Activa</span>
+                        <span th:unless="${s.active}"
+                              class="badge"
+                              style="background:#f1f5f9;color:var(--muted);">Inactiva</span>
+                    </td>
+
+                    <!-- Acciones: editar y eliminar -->
+                    <td class="text-end" style="white-space:nowrap;">
+                        <a th:href="@{/subscriptions/{id}/edit(id=${s.id})}"
+                           class="btn btn-sm btn-outline-secondary me-1"
+                           title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a th:href="@{/subscriptions/{id}/delete(id=${s.id})}"
+                           class="btn btn-sm btn-outline-danger"
+                           title="Eliminar">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <!-- Estado vacío: sin resultados del filtro -->
+            <div id="noResults" class="empty-state" style="display:none;">
+                <i class="bi bi-search empty-icon"></i>
+                <p>No se encontraron suscripciones</p>
+                <button class="btn btn-outline-secondary btn-sm" onclick="clearFilters()">Limpiar filtros</button>
+            </div>
+
+            <!-- Estado vacío: sin suscripciones en absoluto -->
+            <div th:if="${subscriptions.isEmpty()}" class="empty-state">
+                <i class="bi bi-credit-card empty-icon"></i>
+                <p>Todavía no tienes ninguna suscripción</p>
+                <a th:href="@{/subscriptions/new}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-lg me-1"></i>Añadir la primera
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── JavaScript para búsqueda y filtro en tiempo real ──────────────── -->
+<th:block layout:fragment="scripts">
+<script th:inline="none">
+(function () {
+    'use strict';
+
+    const searchInput  = document.getElementById('searchInput');
+    const filterPills  = document.querySelectorAll('.filter-pill');
+    const rows         = document.querySelectorAll('#subsTable tbody tr[data-name]');
+    const noResults    = document.getElementById('noResults');
+    const resultCount  = document.getElementById('resultCount');
+
+    let activeCategory = '';  // '' = mostrar todas
+
+    /** Aplica el filtro de texto y categoría a todas las filas. */
+    function applyFilters() {
+        const text = searchInput.value.toLowerCase().trim();
+        let visible = 0;
+
+        rows.forEach(function (row) {
+            const nameData = row.getAttribute('data-name') || '';
+            const catData  = row.getAttribute('data-category') || '';
+
+            const matchesText = !text || nameData.includes(text);
+            const matchesCat  = !activeCategory || catData === activeCategory;
+
+            const show = matchesText && matchesCat;
+            row.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+
+        // Actualiza el contador y muestra el estado vacío si no hay resultados
+        if (resultCount) resultCount.textContent = visible;
+        if (noResults)   noResults.style.display = (visible === 0 && rows.length > 0) ? 'block' : 'none';
+    }
+
+    /** Limpia búsqueda y categoría activa, vuelve a mostrar todo. */
+    window.clearFilters = function () {
+        searchInput.value = '';
+        activeCategory = '';
+        filterPills.forEach(function (p) { p.classList.remove('active'); });
+        const allPill = document.querySelector('.filter-pill[data-category=""]');
+        if (allPill) allPill.classList.add('active');
+        applyFilters();
+    };
+
+    // Búsqueda: filtra mientras el usuario escribe
+    if (searchInput) {
+        searchInput.addEventListener('input', applyFilters);
+    }
+
+    // Pills de categoría: toggle activo y filtra
+    filterPills.forEach(function (pill) {
+        pill.addEventListener('click', function () {
+            filterPills.forEach(function (p) { p.classList.remove('active'); });
+            this.classList.add('active');
+            activeCategory = this.getAttribute('data-category');
+            applyFilters();
+        });
+    });
+}());
+</script>
+</th:block>
+
+</body>
+</html>

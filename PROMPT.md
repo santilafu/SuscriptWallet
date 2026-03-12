@@ -1,0 +1,627 @@
+
+# SubIA — Briefing completo para asistente IA
+
+> **Instrucciones para el asistente**: Lee este documento entero antes de tocar código.
+> Responde siempre en castellano de España. Sin rodeos, sin ejemplos innecesarios.
+> Cuando termines una tarea, guarda contexto relevante antes de cerrar la sesión.
+
+---
+
+## Visión del producto
+
+SubIA es un ecosistema multiplataforma de gestión de suscripciones de pago para uso personal.
+
+El usuario necesita controlar en un solo lugar todos sus servicios de suscripción:
+cuánto gasta, cuándo renuevan, qué tiene activo y qué no.
+
+**Plataformas objetivo**:
+- **Web** (implementada): Spring Boot + Thymeleaf, accesible en http://localhost:8081
+- **Móvil** (por implementar): app nativa iOS y Android que consume una API REST del backend
+
+**Principios no negociables**:
+- Todo en **EUR** — mercado europeo, nunca USD.
+- UI y mensajes en **castellano de España** (ni inglés, ni variantes latinoamericanas).
+- Datos del usuario son privados — nunca compartir, nunca loguear precios o notas.
+- La app web y la app móvil comparten el mismo backend Spring Boot.
+
+---
+
+## Entorno de desarrollo
+
+| Variable   | Valor                                              |
+|------------|----------------------------------------------------|
+| OS         | Windows 11                                         |
+| Shell      | Git Bash — usar sintaxis Unix, nunca CMD/PowerShell |
+| JDK        | OpenJDK 25 — `C:/Users/santi/.jdks/openjdk-25.0.1` |
+| Puerto     | **8081** (el 8080 está ocupado por prunsrv Windows) |
+| URL local  | http://localhost:8081                              |
+
+```bash
+# Arrancar
+JAVA_HOME="/c/Users/santi/.jdks/openjdk-25.0.1" ./gradlew bootRun
+
+# Matar proceso en 8081 si está ocupado
+netstat -ano | grep ":8081"
+taskkill //PID <pid> //F
+```
+
+---
+
+## Stack tecnológico actual (web)
+
+| Capa          | Tecnología                                          |
+|---------------|-----------------------------------------------------|
+| Lenguaje      | Kotlin 2.1.20                                       |
+| Framework     | Spring Boot 3.3.5                                   |
+| Seguridad     | Spring Security 6.3 (CSRF off en local, headers)   |
+| Persistencia  | Spring Data JPA + Hibernate 6.5                     |
+| Base de datos | H2 en memoria → **migrar a PostgreSQL 16**          |
+| Migraciones   | Flyway (V1 schema, V2 seed categorías)              |
+| Frontend      | Thymeleaf 3.1 + Layout Dialect                      |
+| UI web        | Bootstrap 5.3 + Bootstrap Icons + Chart.js 4.4     |
+| Tipografía    | Inter (Google Fonts)                                |
+| Build         | Gradle Kotlin DSL                                   |
+
+## Stack planificado (móvil)
+
+| Capa          | Tecnología recomendada                              |
+|---------------|-----------------------------------------------------|
+| iOS           | Swift + SwiftUI                                     |
+| Android       | Kotlin + Jetpack Compose                            |
+| Multiplataforma (alternativa) | Kotlin Multiplatform Mobile (KMM) + Compose Multiplatform |
+| API           | REST JSON expuesta por el mismo backend Spring Boot |
+| Autenticación móvil | JWT (Bearer token) — ver sección de seguridad  |
+| Almacenamiento local | SwiftData (iOS) / Room (Android) para caché offline |
+
+---
+
+## Estructura del proyecto (estado actual)
+
+```
+src/main/kotlin/com/subia/
+├── SubIaApplication.kt
+├── config/
+│   ├── SecurityConfig.kt          # CSRF off, headers HTTP seguridad
+│   └── WebConfig.kt               # Interceptor: currentPath → modelo Thymeleaf
+├── controller/
+│   ├── CatalogController.kt       # GET /api/catalog?categoryId=X → JSON
+│   ├── CategoryController.kt      # CRUD /categories (web)
+│   ├── DashboardController.kt     # GET /dashboard (web)
+│   └── SubscriptionController.kt  # CRUD /subscriptions (web)
+├── dto/
+│   └── DashboardDto.kt
+├── model/
+│   ├── CatalogItem.kt             # data class, no entidad JPA
+│   ├── Category.kt                # Entidad JPA → tabla categories
+│   └── Subscription.kt           # Entidad JPA → tabla subscriptions
+│                                  # enum BillingCycle {MONTHLY, YEARLY, WEEKLY}
+├── repository/
+│   ├── CategoryRepository.kt
+│   └── SubscriptionRepository.kt
+└── service/
+    ├── CatalogService.kt          # 80+ servicios en EUR, precios marzo 2026
+    ├── CategoryService.kt
+    ├── DashboardService.kt        # Normalización precios a mensual/anual
+    └── SubscriptionService.kt
+
+src/main/resources/
+├── application.properties
+├── db/migration/
+│   ├── V1__init_schema.sql        # Tablas categories y subscriptions
+│   └── V2__seed_categories.sql    # 10 categorías con emoji y color
+└── templates/                     # Thymeleaf
+    ├── layout.html
+    ├── dashboard.html
+    ├── categories/{form,list}.html
+    └── subscriptions/{form,list,confirm-delete}.html
+```
+
+### Schema SQL actual
+
+```sql
+CREATE TABLE categories (
+    id    BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    name  VARCHAR(100) NOT NULL,
+    color VARCHAR(20)  NOT NULL DEFAULT '#6c757d',
+    icon  VARCHAR(50)  NOT NULL DEFAULT ''
+);
+
+CREATE TABLE subscriptions (
+    id            BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    name          VARCHAR(100)   NOT NULL,
+    description   VARCHAR(500)   NOT NULL DEFAULT '',
+    price         DECIMAL(10,2)  NOT NULL,
+    currency      VARCHAR(10)    NOT NULL DEFAULT 'EUR',
+    billing_cycle VARCHAR(20)    NOT NULL,  -- MONTHLY | YEARLY | WEEKLY
+    renewal_date  DATE           NOT NULL,
+    category_id   BIGINT         NOT NULL REFERENCES categories(id),
+    active        BOOLEAN        NOT NULL DEFAULT TRUE,
+    notes         VARCHAR(1000)  NOT NULL DEFAULT ''
+);
+```
+
+---
+
+## Funcionalidades implementadas
+
+| Funcionalidad                        | Estado | Notas técnicas |
+|--------------------------------------|--------|----------------|
+| Dashboard con stat cards             | ✅     | Mensual, anual, activas, próximas renovaciones |
+| Gráfico de dona por categoría        | ✅     | Chart.js 4, datos inline Thymeleaf |
+| Alertas renovación (7 y 30 días)     | ✅     | Tabla en dashboard |
+| Lista de suscripciones               | ✅     | Tabla responsive |
+| Búsqueda en tiempo real              | ✅     | JS puro, filtra nombre/descripción/notas |
+| Filtros por categoría (pills)        | ✅     | JS puro, sin recarga |
+| Crear suscripción                    | ✅     | Formulario HTML5 |
+| Selector de catálogo AJAX            | ✅     | GET /api/catalog?categoryId=X → JSON |
+| Editar suscripción                   | ✅     | Mismo template, sin selector catálogo |
+| Eliminar con confirmación            | ✅     | Página confirm-delete |
+| CRUD categorías                      | ✅     | Grid de cards con color e icono |
+| 10 categorías predefinidas           | ✅     | Flyway V2, presentes desde arranque |
+| Catálogo 80+ servicios en EUR        | ✅     | CatalogService.kt estático |
+| Navbar activo                        | ✅     | currentPath via WebConfig interceptor |
+| API REST JSON /api/catalog           | ✅     | Base para la app móvil |
+
+---
+
+## Tareas pendientes (por orden de prioridad)
+
+### P0 — Base necesaria para todo lo demás
+
+#### Migrar H2 → PostgreSQL
+
+Los datos se pierden al reiniciar. Sin PostgreSQL no tiene sentido construir la app móvil.
+
+`build.gradle.kts`:
+```kotlin
+// Quitar:   runtimeOnly("com.h2database:h2")
+// Añadir:
+runtimeOnly("org.postgresql:postgresql")
+```
+
+`application.properties` — reemplazar bloque H2 por:
+```properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/subia
+spring.datasource.username=subia_user
+spring.datasource.password=subia_pass
+spring.datasource.driver-class-name=org.postgresql.Driver
+spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+# Quitar: spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
+# Quitar: spring.h2.console.enabled / path
+```
+
+PostgreSQL setup:
+```sql
+CREATE DATABASE subia;
+CREATE USER subia_user WITH PASSWORD 'subia_pass';
+GRANT ALL PRIVILEGES ON DATABASE subia TO subia_user;
+```
+
+`docker-compose.yml` (crear en la raíz):
+```yaml
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: subia
+      POSTGRES_USER: subia_user
+      POSTGRES_PASSWORD: subia_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - subia_data:/var/lib/postgresql/data
+volumes:
+  subia_data:
+```
+
+El schema V1 ya usa `BIGINT GENERATED BY DEFAULT AS IDENTITY` que es estándar SQL y compatible con PostgreSQL sin cambios.
+
+---
+
+### P1 — API REST completa para la app móvil
+
+Actualmente solo existe `/api/catalog`. Hay que exponer todos los recursos como JSON.
+
+**Endpoints a implementar**:
+
+```
+# Suscripciones
+GET    /api/subscriptions              → lista completa
+GET    /api/subscriptions/{id}         → detalle
+POST   /api/subscriptions              → crear  (body JSON)
+PUT    /api/subscriptions/{id}         → editar (body JSON)
+DELETE /api/subscriptions/{id}         → borrar
+
+# Categorías
+GET    /api/categories                 → lista completa
+GET    /api/categories/{id}            → detalle
+POST   /api/categories                 → crear
+PUT    /api/categories/{id}            → editar
+DELETE /api/categories/{id}            → borrar
+
+# Dashboard
+GET    /api/dashboard                  → stats (gasto mensual, anual, próximas renovaciones)
+
+# Catálogo (ya existe)
+GET    /api/catalog                    → todos los servicios
+GET    /api/catalog?categoryId=X       → filtrado por categoría
+```
+
+**Estructura recomendada**: crear controladores separados bajo `controller/api/` para no mezclar
+con los controladores Thymeleaf. Usar `@RestController` + `@RequestMapping("/api/...")`.
+
+**DTOs para la API**: crear `dto/api/SubscriptionDto.kt`, `CategoryDto.kt`, `DashboardStatsDto.kt`.
+No exponer directamente las entidades JPA en los endpoints REST (evitar acoplamiento y campos sensibles).
+
+**Formato de respuesta estándar**:
+```json
+{
+  "data": { ... },
+  "error": null
+}
+```
+O en error:
+```json
+{
+  "data": null,
+  "error": { "code": "NOT_FOUND", "message": "Suscripción no encontrada" }
+}
+```
+
+---
+
+### P2 — Seguridad de la API REST (para app móvil)
+
+La API REST debe estar protegida con JWT. La app web sigue sin autenticación (uso local).
+
+**Implementación**:
+
+1. Añadir dependencia:
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+```
+
+2. Flujo de autenticación móvil:
+   - `POST /api/auth/login` → recibe `{username, password}` → devuelve `{accessToken, refreshToken}`
+   - `POST /api/auth/refresh` → renueva access token con refresh token
+   - `POST /api/auth/logout` → invalida refresh token
+   - Todos los endpoints `/api/**` excepto `/api/auth/**` y `/api/catalog` requieren `Authorization: Bearer <token>`
+
+3. En `SecurityConfig.kt` separar las reglas:
+```kotlin
+// Rutas web (Thymeleaf) → sin autenticación
+// Rutas /api/auth/** → públicas
+// Rutas /api/catalog → públicas (catálogo de referencia)
+// Rutas /api/** → requieren JWT válido
+```
+
+4. El access token tiene vida corta (15 min). El refresh token dura 30 días y se almacena
+   en la base de datos para poder invalidarlo (tabla `refresh_tokens`).
+
+5. En la app móvil, guardar tokens en **Keychain** (iOS) o **EncryptedSharedPreferences** (Android).
+   Nunca en SharedPreferences sin cifrar ni en localStorage.
+
+**Headers de seguridad adicionales** a añadir en `SecurityConfig.kt`:
+```
+Strict-Transport-Security: max-age=31536000; includeSubDomains  (HTTPS obligatorio en prod)
+Content-Security-Policy: default-src 'self'; script-src 'self' cdn.jsdelivr.net fonts.googleapis.com
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: geolocation=(), microphone=(), camera=()
+```
+
+**CORS** — necesario para que la app móvil pueda llamar a la API:
+```kotlin
+// En WebConfig.kt añadir:
+override fun addCorsMappings(registry: CorsRegistry) {
+    registry.addMapping("/api/**")
+        .allowedOrigins("http://localhost:3000", "subia://app")  // añadir dominios móvil
+        .allowedMethods("GET", "POST", "PUT", "DELETE")
+        .allowedHeaders("Authorization", "Content-Type")
+        .maxAge(3600)
+}
+```
+
+**Rate limiting** — protección contra abuso de la API:
+- Añadir `bucket4j-spring-boot-starter` para limitar peticiones por IP/token.
+- Límite razonable: 100 peticiones/minuto por token autenticado.
+
+**Validación de entrada** — en todos los endpoints REST:
+- Añadir `spring-boot-starter-validation`.
+- Anotar los DTOs con `@NotBlank`, `@Positive`, `@DecimalMin("0.01")`, `@Size(max=...)`.
+- Devolver errores de validación con status 400 y mensaje claro en español.
+- Nunca confiar en datos del cliente: validar precio > 0, fecha no en el pasado (o sí, según el caso), categoría existe antes de asignarla.
+
+**Auditoría**:
+- Añadir columnas `created_at` y `updated_at` a la tabla `subscriptions` (Flyway V3).
+- Usar `@EntityListeners(AuditingEntityListener::class)` de Spring Data JPA Auditing.
+- No loguear datos sensibles (precios, notas personales) en logs de producción.
+
+---
+
+### P3 — Rediseño completo de la interfaz web
+
+La interfaz actual es funcional pero visualmente anticuada. Objetivo: nivel SaaS moderno.
+
+**Inspiración**: Linear, Vercel Dashboard, Raycast.
+
+#### Sistema de diseño
+
+Paleta (CSS variables en `:root`):
+```css
+--bg-base:      #0a0f1e;   /* fondo principal */
+--bg-surface:   #111827;   /* cards, sidebar */
+--bg-elevated:  #1a2235;   /* modales, dropdowns */
+--bg-hover:     #1e2d45;   /* hover state */
+--border:       rgba(255,255,255,0.07);
+--text-primary: #f1f5f9;
+--text-muted:   #64748b;
+--text-subtle:  #334155;
+--accent:       #6366f1;   /* índigo — acción principal */
+--accent-hover: #4f46e5;
+--danger:       #ef4444;
+--success:      #22c55e;
+--warning:      #f59e0b;
+```
+
+Reglas base:
+- Glassmorphism en cards destacadas: `background: rgba(255,255,255,0.03); backdrop-filter: blur(8px); border: 1px solid var(--border)`.
+- `transition: all 0.2s ease` en todos los elementos interactivos.
+- `border-radius: 12px` en cards, `8px` en botones, `6px` en inputs.
+- Sin sombras de caja oscuras — usar `box-shadow: 0 0 0 1px var(--border), 0 4px 24px rgba(0,0,0,0.4)`.
+
+#### Mejoras por página
+
+**Dashboard**:
+- Stat cards "hero metric": número muy grande, icono de color a la derecha, badge de tendencia.
+- Card extra: gasto diario estimado (mensual ÷ 30).
+- Dona + leyenda como lista de categorías con su importe y barra de progreso relativa.
+- Renovaciones como timeline vertical: borde izquierdo de color, badge de días restantes
+  (rojo < 7 días, naranja < 30 días, verde el resto).
+
+**Lista de suscripciones**:
+- Toggle tabla/grid (botones con `bi-list` y `bi-grid`, estado en localStorage).
+- Vista grid: card con borde izquierdo del color de la categoría, nombre grande,
+  precio destacado, badge ciclo, badge categoría, días hasta renovar, acciones en hover.
+- Filtros de categoría con contador: "Streaming (3)", "IA (2)".
+- Ordenación al hacer click en cabeceras de columna.
+- Animación de entrada escalonada (stagger) con CSS animation-delay.
+
+**Formulario nueva suscripción**:
+- Selector de catálogo como grid visual de cards clickables (no dropdown).
+- Wizard en 3 pasos numerados: "Servicio" → "Precio" → "Cuándo renueva".
+- Cálculo en tiempo real: al escribir precio y ciclo → muestra "= X€/mes · X€/año".
+- Toast de éxito al guardar (Flash Attribute + Bootstrap 5 Toast en layout.html).
+- Modal de confirmación al borrar (Bootstrap 5 Modal, eliminar la página confirm-delete).
+
+**Implementación**:
+- Crear `src/main/resources/static/css/app.css` con todo el CSS custom.
+- Añadir **Alpine.js** via CDN para reactividad ligera (toggle vista, wizard steps, contador):
+  `<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>`
+- Los toasts: `redirectAttributes.addFlashAttribute("toastMessage", "Suscripción guardada")`,
+  el layout los detecta y activa el Toast de Bootstrap.
+
+---
+
+### P4 — App móvil
+
+**Estrategia recomendada**: Kotlin Multiplatform Mobile (KMM) + Compose Multiplatform.
+Permite compartir lógica de negocio (llamadas API, modelos, validaciones) entre iOS y Android,
+manteniendo UI nativa por plataforma o compartida con Compose.
+
+**Funcionalidades de la app móvil** (mismas que web, adaptadas a móvil):
+- Dashboard con resumen de gasto y próximas renovaciones.
+- Lista de suscripciones con búsqueda y filtro por categoría.
+- Formulario de nueva suscripción con selector de catálogo.
+- Notificaciones push de renovación (7 días y 1 día antes) — Firebase Cloud Messaging.
+- Widget en pantalla de inicio (iOS WidgetKit, Android Glance) con gasto mensual.
+- Soporte offline: caché local con sincronización al reconectar.
+- Modo oscuro por defecto (coherente con la web).
+
+**Estructura de carpetas KMM sugerida**:
+```
+subia-mobile/
+├── shared/                    # Código compartido iOS + Android
+│   ├── commonMain/
+│   │   ├── api/               # Cliente HTTP (Ktor)
+│   │   ├── model/             # Modelos de datos
+│   │   ├── repository/        # Lógica de acceso a datos
+│   │   └── usecase/           # Casos de uso de negocio
+│   ├── iosMain/               # Código específico iOS
+│   └── androidMain/           # Código específico Android
+├── androidApp/                # App Android (Jetpack Compose)
+└── iosApp/                    # App iOS (SwiftUI)
+```
+
+**Librería HTTP en KMM**: Ktor Client con serialización kotlinx.serialization.
+
+---
+
+## Plan de testing
+
+### Tests backend (JUnit 5 + Spring Boot Test)
+
+#### Unit tests — `src/test/kotlin/com/subia/`
+
+| Clase a testear      | Qué testear                                                              |
+|----------------------|--------------------------------------------------------------------------|
+| `DashboardService`   | Normalización de precios: MONTHLY, YEARLY, WEEKLY → mensual y anual correctos. Casos límite: precio 0, ciclo WEEKLY con precio raro. |
+| `CatalogService`     | `getItemsForCategory` devuelve la categoría correcta para cada clave. Que no devuelve vacío. Que el fallback devuelve todo el catálogo. |
+| `SubscriptionService`| CRUD básico: save, findAll, findById lanza excepción si no existe, delete funciona. |
+| `CategoryService`    | No se puede borrar una categoría con suscripciones asociadas (lanza `IllegalStateException`). |
+
+Ejemplo de test unitario con Mockito:
+```kotlin
+@ExtendWith(MockitoExtension::class)
+class DashboardServiceTest {
+    @Mock lateinit var subscriptionRepo: SubscriptionRepository
+    @InjectMocks lateinit var service: DashboardService
+
+    @Test
+    fun `precio YEARLY se normaliza a mensual dividiendo entre 12`() {
+        // given
+        val sub = Subscription(price = BigDecimal("120.00"), billingCycle = BillingCycle.YEARLY, ...)
+        whenever(subscriptionRepo.findByActiveTrue()).thenReturn(listOf(sub))
+        // when
+        val dto = service.getDashboardData()
+        // then
+        assertThat(dto.monthlyTotal).isEqualByComparingTo(BigDecimal("10.00"))
+    }
+}
+```
+
+#### Integration tests — con `@SpringBootTest`
+
+| Test                          | Qué verifica                                                         |
+|-------------------------------|----------------------------------------------------------------------|
+| `CatalogControllerTest`       | GET /api/catalog devuelve 200 y JSON válido. Con categoryId devuelve solo esa categoría. |
+| `SubscriptionControllerTest`  | Flujo completo: crear → listar → editar → borrar. Que POST redirige (302). |
+| `CategoryControllerTest`      | No se puede borrar categoría con suscripciones (muestra error en la vista). |
+| `DashboardControllerTest`     | GET /dashboard devuelve 200 con los atributos correctos en el modelo. |
+
+Usar `@Sql` para limpiar y preparar datos antes de cada test de integración.
+Usar TestContainers para PostgreSQL en los tests de integración (no H2):
+```kotlin
+@Container
+val postgres = PostgreSQLContainer("postgres:16")
+```
+
+#### Tests de API REST (cuando se implemente)
+
+- Usar `MockMvc` + `@WebMvcTest` para tests de capa controlador sin levantar la app entera.
+- Verificar: status HTTP correcto, Content-Type `application/json`, estructura del JSON.
+- Verificar autenticación: endpoints protegidos devuelven 401 sin token, 403 con token sin permisos.
+- Verificar validación: datos inválidos devuelven 400 con mensaje de error.
+
+#### Tests de seguridad
+
+- Verificar que `/api/**` (excepto `/api/catalog` y `/api/auth`) devuelve 401 sin Authorization header.
+- Verificar que un token expirado devuelve 401.
+- Verificar que los headers de seguridad están presentes en todas las respuestas:
+  `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`.
+- Verificar que SQL injection básico en parámetros de búsqueda no rompe nada (JPA lo previene, pero testear).
+- Verificar que precios negativos son rechazados (validación de entrada).
+
+### Tests frontend (Playwright o Cypress)
+
+Para tests end-to-end de la interfaz web:
+
+```
+tests/
+├── dashboard.spec.ts      # Carga el dashboard, verifica stat cards, gráfico visible
+├── subscriptions.spec.ts  # Crear suscripción completa, aparece en lista, editar, borrar
+├── catalog.spec.ts        # Selector de catálogo: elegir categoría → aparecen servicios → aplicar rellena form
+├── categories.spec.ts     # CRUD categorías, error al borrar con suscripciones
+└── search.spec.ts         # Búsqueda en tiempo real filtra correctamente
+```
+
+### Tests app móvil
+
+- Unit tests de la lógica compartida KMM (repositorios, casos de uso).
+- Tests de snapshot para componentes UI clave.
+- Tests de integración contra un servidor de desarrollo real.
+- Tests de notificaciones push en simulador.
+
+### Cobertura mínima esperada
+
+| Capa                    | Cobertura mínima |
+|-------------------------|------------------|
+| Servicios backend       | 80%              |
+| Controladores REST      | 70%              |
+| Controladores web MVC   | 60%              |
+| Flujos E2E críticos     | 100% (crear, editar, borrar suscripción) |
+
+---
+
+## Seguridad — checklist completo
+
+### Implementado
+- [x] Headers: `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`
+- [x] HTTPS en producción (Tomcat lo maneja o reverse proxy nginx)
+- [x] Sin exposición de stack traces al cliente (Spring Boot default)
+- [x] Entidades JPA con queries parametrizadas (Hibernate previene SQL injection)
+
+### Pendiente (web)
+- [ ] CSRF reactivar cuando se exponga a internet (usar `CookieCsrfTokenRepository` con sesión
+      inicializada antes de renderizar — actualmente desactivado porque da problemas con Thymeleaf Layout Dialect)
+- [ ] `Content-Security-Policy` header restrictivo
+- [ ] `Strict-Transport-Security` en producción
+- [ ] `Referrer-Policy` y `Permissions-Policy`
+- [ ] Rate limiting en endpoints de escritura (evitar spam de suscripciones)
+- [ ] Validación de entrada en todos los `@RequestParam` del backend (precio > 0, longitudes máximas)
+- [ ] Logs de auditoría: quién creó/modificó qué y cuándo (columnas `created_at`, `updated_at`)
+
+### Pendiente (API REST para móvil)
+- [ ] Autenticación JWT con access token (15 min) + refresh token (30 días, en BD)
+- [ ] Endpoint `/api/auth/login`, `/api/auth/refresh`, `/api/auth/logout`
+- [ ] CORS configurado solo para los orígenes permitidos
+- [ ] Rate limiting: 100 req/min por token autenticado
+- [ ] Validación con Bean Validation (`@NotBlank`, `@Positive`, `@Size`) en todos los DTOs
+- [ ] Respuestas de error estructuradas (nunca exponer excepciones internas)
+- [ ] Sanitización de campos de texto libre (notas, descripción) — evitar XSS si se renderiza en web
+- [ ] Tests de penetración básicos antes de exponer a internet
+
+### Pendiente (app móvil)
+- [ ] Tokens JWT en Keychain (iOS) / EncryptedSharedPreferences (Android)
+- [ ] Certificate pinning para la conexión al backend
+- [ ] Biometría para desbloquear la app (Face ID / fingerprint)
+- [ ] Borrado seguro de datos locales al cerrar sesión
+- [ ] No loguear datos sensibles en producción (precios, notas)
+- [ ] Ofuscación del código con R8 (Android) / Bitcode (iOS)
+
+---
+
+## Catálogo de servicios (CatalogService.kt)
+
+Estático en memoria, 80+ servicios, precios de **marzo 2026** en EUR.
+
+| Clave           | Ejemplos                                                                          |
+|-----------------|-----------------------------------------------------------------------------------|
+| `ia`            | Claude Pro 16.99€, ChatGPT Plus 18.99€, Cursor Pro 18.99€, Copilot 9.99€        |
+| `streaming`     | Netflix Std 17.99€, Disney+ 13.99€, Amazon Prime 4.99€, Max 9.99€, DAZN 19.99€  |
+| `musica`        | Spotify 11.99€, Apple Music 10.99€, Tidal HiFi 9.99€                             |
+| `software`      | Microsoft 365 7.99€/mes, Adobe CC 60.49€/mes, Figma 12€, Notion 9.49€           |
+| `cloud`         | Google One 2TB 9.99€, iCloud+ 2TB 9.99€, Dropbox Plus 11.99€                    |
+| `gaming`        | Xbox Game Pass Ultimate 17.99€, PS Plus Extra 14.99€, EA Play 4.99€              |
+| `seguridad`     | NordVPN 4.29€, 1Password 2.99€, Bitwarden 0€, Mullvad 5€                        |
+| `noticias`      | Kindle Unlimited 9.99€, Readwise 7.99€, Audible 9.99€                           |
+| `salud`         | Strava 7.99€, Whoop 30€, Headspace 12.99€, Calm 14.99€                          |
+| `desarrollo`    | GitHub Pro 3.67€, JetBrains All Products 24.90€, Vercel Pro 17.43€               |
+
+`getItemsForCategory(name)` hace fuzzy match por palabras clave en el nombre.
+Los precios son estáticos. Para actualizarlos: editar `CatalogService.kt` directamente.
+YEARLY = precio anual total (no mensual × 12).
+
+---
+
+## Gotchas del stack — errores ya cometidos, no repetir
+
+| Error                                           | Causa                                             | Solución aplicada                                   |
+|-------------------------------------------------|---------------------------------------------------|-----------------------------------------------------|
+| `#httpServletRequest` / `#request` null         | Thymeleaf 3.1 los eliminó                         | `WebConfig.kt` inyecta `currentPath` via interceptor |
+| `Cannot create session after response committed` | CSRF HttpSession-based + Thymeleaf Layout Dialect | CSRF desactivado en local (`csrf.disable()`)        |
+| Circular dependency Flyway ↔ EntityManager      | `spring.jpa.defer-datasource-initialization=true` | Eliminar esa propiedad, Flyway gestiona todo        |
+| Kotlin 1.9.x no soporta Java 25                 | `IllegalArgumentException` en `JavaVersion.parse` | Kotlin ≥ 2.0 en `build.gradle.kts`                 |
+| Enum vs String en SpEL: siempre falso           | `cycle == 'MONTHLY'` compara objeto con string    | `cycle.name() == 'MONTHLY'`                         |
+| `sed -i` corrompe ficheros Kotlin en Windows    | Encoding UTF-8 + Git Bash                         | Nunca usar `sed` para editar código                 |
+
+---
+
+## Convenciones del proyecto
+
+- **Castellano** en UI, comentarios y mensajes de error al usuario.
+- **KDoc** en todas las clases y funciones públicas de Kotlin.
+- **PRG** (Post/Redirect/Get) en todos los formularios Thymeleaf. El POST nunca devuelve vista.
+- **`@RequestParam`** en controladores Thymeleaf. **`@RequestBody`** solo en REST controllers.
+- **EUR** siempre. No implementar lógica multi-divisa.
+- **No modificar V1/V2 de Flyway**. Cambios de schema → V3, V4...
+- **No usar `sed`** para editar archivos en este entorno.
+- **DTOs** para todo lo que sale de la API REST. Las entidades JPA no se serializan directamente.
+- Precio `YEARLY` en catálogo = total anual, no mensual. `DashboardService` divide entre 12 para normalizar.
+
+## Lo que NO hay que cambiar sin motivo explícito
+
+- `DashboardService.kt` — normalización de precios funciona correctamente.
+- `WebConfig.kt` + `CurrentPathInterceptor` — necesario para navbar activo con Thymeleaf 3.1.
+- `CatalogController.kt` + `/api/catalog` — funciona, base de la app móvil.
+- Schema SQL V1 — compatible con PostgreSQL tal cual, no tocar.
+- Seed data V2 — 10 categorías definitivas, no añadir más por migración.

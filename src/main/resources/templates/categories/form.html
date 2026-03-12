@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title>Categoría</title></head>
+<body>
+<div layout:fragment="content">
+
+    <div class="mb-4">
+        <h2 class="mb-0">
+            <i class="bi bi-tag me-2"></i>
+            <span th:if="${category.id > 0}">Editar categoría</span>
+            <span th:unless="${category.id > 0}">Nueva categoría</span>
+        </h2>
+    </div>
+
+    <form th:action="${category.id > 0 ? '/categories/' + category.id : '/categories'}" method="post">
+        <div class="card" style="max-width:500px;">
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
+                    <input type="text" name="name" class="form-control" required
+                           th:value="${category.name}"/>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Color (hex)</label>
+                    <div class="input-group">
+                        <input type="color" name="color" class="form-control form-control-color"
+                               th:value="${category.color}" style="max-width:60px;"/>
+                        <input type="text" id="colorText" class="form-control"
+                               th:value="${category.color}" pattern="#[0-9a-fA-F]{6}"
+                               placeholder="#6c757d" readonly/>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Icono (emoji)</label>
+                    <input type="text" name="icon" class="form-control" maxlength="10"
+                           th:value="${category.icon}" placeholder="🤖"/>
+                    <div class="form-text">Opcional. Puedes usar un emoji.</div>
+                </div>
+            </div>
+            <div class="card-footer d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-floppy me-1"></i>Guardar
+                </button>
+                <a th:href="@{/categories}" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </div>
+    </form>
+
+    <script>
+        const colorPicker = document.querySelector('input[type=color]');
+        const colorText   = document.getElementById('colorText');
+        colorPicker.addEventListener('input', () => {
+            colorText.value = colorPicker.value;
+        });
+    </script>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<!--
+  Lista de categorías como grid de tarjetas.
+  Cada tarjeta muestra el color, el icono y el nombre de la categoría.
+  Acciones de editar y eliminar integradas en cada tarjeta.
+-->
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title>Categorías</title></head>
+<body>
+<div layout:fragment="content">
+
+    <!-- Mensaje de error (p.ej. al intentar borrar una categoría con suscripciones) -->
+    <div th:if="${errorMessage}"
+         class="alert d-flex align-items-center gap-2 mb-4"
+         style="background:#fef2f2;border:1px solid #fecaca;border-radius:var(--radius);color:#991b1b;">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span th:text="${errorMessage}"></span>
+    </div>
+
+    <!-- ── Cabecera ──────────────────────────────────────────────────── -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 style="font-size:1.6rem;font-weight:800;letter-spacing:-.03em;margin:0;">
+                <i class="bi bi-tags me-2" style="color:var(--primary)"></i>Categorías
+            </h1>
+            <p class="mb-0" style="font-size:.85rem;color:var(--muted);"
+               th:text="${categories.size() + ' categorías configuradas'}"></p>
+        </div>
+        <a th:href="@{/categories/new}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Nueva
+        </a>
+    </div>
+
+    <!-- ── Grid de tarjetas ──────────────────────────────────────────── -->
+    <div class="row g-3" th:if="${!categories.isEmpty()}">
+        <div class="col-sm-6 col-md-4 col-lg-3" th:each="cat : ${categories}">
+            <div class="card h-100" style="border-top:4px solid transparent;"
+                 th:style="'border-top:4px solid ' + ${cat.color} + ';'">
+                <div class="card-body">
+                    <!-- Icono grande en el color de la categoría -->
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mb-3"
+                         style="width:48px;height:48px;font-size:1.4rem;"
+                         th:style="'width:48px;height:48px;font-size:1.4rem;border-radius:50%;display:flex;align-items:center;justify-content:center;background:' + ${cat.color} + '22;'">
+                        <span th:text="${cat.icon.isEmpty() ? '📁' : cat.icon}"></span>
+                    </div>
+
+                    <!-- Nombre y muestra del color -->
+                    <div style="font-weight:700;font-size:.95rem;" th:text="${cat.name}"></div>
+                    <div class="d-flex align-items-center gap-2 mt-1">
+                        <span class="rounded"
+                              style="width:14px;height:14px;display:inline-block;"
+                              th:style="'width:14px;height:14px;border-radius:4px;display:inline-block;background:' + ${cat.color}">
+                        </span>
+                        <code style="font-size:.75rem;color:var(--muted);" th:text="${cat.color}"></code>
+                    </div>
+                </div>
+
+                <!-- Acciones -->
+                <div class="card-footer d-flex gap-2" style="padding:.75rem 1rem;">
+                    <a th:href="@{/categories/{id}/edit(id=${cat.id})}"
+                       class="btn btn-sm btn-outline-secondary flex-fill">
+                        <i class="bi bi-pencil me-1"></i>Editar
+                    </a>
+                    <form th:action="@{/categories/{id}/delete(id=${cat.id})}" method="post"
+                          onsubmit="return confirm('¿Eliminar esta categoría?')">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estado vacío -->
+    <div th:if="${categories.isEmpty()}" class="card">
+        <div class="empty-state">
+            <i class="bi bi-tags empty-icon"></i>
+            <p>No hay ninguna categoría todavía</p>
+            <a th:href="@{/categories/new}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-lg me-1"></i>Crear la primera
+            </a>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<!--
+  Pantalla de confirmación antes de eliminar una suscripción.
+  Muestra el nombre del servicio y advierte de que la acción es irreversible.
+-->
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title>Eliminar suscripción</title></head>
+<body>
+<div layout:fragment="content">
+
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card text-center" style="border-top:4px solid var(--danger);">
+                <div class="card-body py-5">
+                    <!-- Icono grande de advertencia -->
+                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-4"
+                         style="width:72px;height:72px;background:#fef2f2;">
+                        <i class="bi bi-trash3 fs-2" style="color:var(--danger);"></i>
+                    </div>
+
+                    <h4 style="font-weight:700;">Eliminar suscripción</h4>
+                    <p style="color:var(--muted);font-size:.9rem;">
+                        ¿Estás seguro de que quieres eliminar
+                        <strong th:text="${sub.name}"></strong>?
+                    </p>
+                    <p class="badge mb-0" style="background:#fef2f2;color:#991b1b;font-size:.8rem;padding:.4rem .8rem;">
+                        Esta acción no se puede deshacer
+                    </p>
+                </div>
+                <div class="card-footer d-flex justify-content-center gap-3">
+                    <form th:action="@{/subscriptions/{id}/delete(id=${sub.id})}" method="post">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-1"></i>Sí, eliminar
+                        </button>
+                    </form>
+                    <a th:href="@{/subscriptions}" class="btn btn-outline-secondary">
+                        Cancelar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

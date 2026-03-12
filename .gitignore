@@ -1,0 +1,37 @@
+# Gradle
+.gradle/
+build/
+out/
+
+# IntelliJ / IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+
+# Kotlin compilado
+*.class
+*.jar
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Spring Boot
+spring-shell.log
+
+# Base de datos H2 si se persiste a fichero
+*.db
+*.mv.db
+*.trace.db
+
+# Variables de entorno / secretos
+.env
+.env.local
+application-local.properties
+application-prod.properties

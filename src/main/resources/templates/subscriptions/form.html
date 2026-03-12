@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<!--
+  Formulario de creación y edición de suscripciones.
+
+  Se usa el mismo template para crear (sub = mapa vacío, id = 0) y editar (sub = objeto Subscription).
+  El template distingue entre ambos casos con la expresión:
+      sub instanceof T(com.subia.model.Subscription) and sub.id > 0
+
+  Funcionalidad del selector de catálogo:
+  - Muestra las categorías disponibles en un desplegable.
+  - Al seleccionar una categoría, hace una llamada AJAX a /api/catalog?categoryId=X
+    para obtener los servicios conocidos de esa categoría.
+  - Al seleccionar un servicio, rellena automáticamente el formulario principal
+    (nombre, descripción, precio, moneda, ciclo de facturación y categoría).
+  - El usuario puede sobreescribir cualquier campo después del relleno automático.
+-->
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title>Suscripción</title></head>
+<body>
+<div layout:fragment="content">
+
+    <!-- ── Cabecera de la página ───────────────────────────────────────────── -->
+    <div class="mb-4">
+        <h2 class="mb-0">
+            <i class="bi bi-credit-card me-2"></i>
+            <!-- Muestra "Editar" si es un objeto Subscription con ID > 0, "Nueva" en caso contrario -->
+            <span th:if="${sub instanceof T(com.subia.model.Subscription) and sub.id > 0}">Editar suscripción</span>
+            <span th:unless="${sub instanceof T(com.subia.model.Subscription) and sub.id > 0}">Nueva suscripción</span>
+        </h2>
+    </div>
+
+    <!-- ── Selector de catálogo (solo visible al crear, no al editar) ─────── -->
+    <!--
+      Se oculta en el modo edición porque el usuario ya eligió el servicio anteriormente.
+      Si quiere cambiar el precio, lo puede hacer directamente en los campos del formulario.
+    -->
+    <div class="card mb-4" th:unless="${sub instanceof T(com.subia.model.Subscription) and sub.id > 0}">
+        <div class="card-header fw-semibold">
+            <i class="bi bi-grid-3x3-gap me-1"></i> Elegir del catálogo
+            <small class="text-muted fw-normal ms-2">opcional — rellena el formulario automáticamente con precios actuales</small>
+        </div>
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+
+                <!-- Paso 1: desplegable de categorías (datos vienen del servidor) -->
+                <div class="col-md-4">
+                    <label class="form-label">Categoría</label>
+                    <select id="catalogCategory" class="form-select">
+                        <option value="">— Elige una categoría —</option>
+                        <!-- Itera sobre las categorías de la base de datos -->
+                        <option th:each="cat : ${categories}"
+                                th:value="${cat.id}"
+                                th:text="${cat.icon + ' ' + cat.name}">
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Paso 2: desplegable de servicios (se rellena con AJAX según la categoría) -->
+                <div class="col-md-5">
+                    <label class="form-label">Servicio</label>
+                    <select id="catalogService" class="form-select" disabled>
+                        <option value="">— Primero elige una categoría —</option>
+                    </select>
+                </div>
+
+                <!-- Paso 3: botón para aplicar el relleno al formulario -->
+                <div class="col-md-3">
+                    <button type="button" id="btnApplyCatalog" class="btn btn-outline-primary w-100" disabled>
+                        <i class="bi bi-arrow-down-circle me-1"></i> Aplicar
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Formulario principal ───────────────────────────────────────────── -->
+    <!--
+      Action: POST /subscriptions para nuevas, POST /subscriptions/{id} para edición.
+      Thymeleaf evalúa la expresión en tiempo de renderizado y genera la URL correcta.
+    -->
+    <form th:action="${(sub instanceof T(com.subia.model.Subscription) and sub.id > 0)
+                        ? '/subscriptions/' + sub.id
+                        : '/subscriptions'}"
+          method="post">
+
+        <div class="card">
+            <div class="card-body">
+                <div class="row g-3">
+
+                    <!-- Nombre del servicio (obligatorio) -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
+                        <input type="text" name="name" id="fieldName" class="form-control" required
+                               th:value="${sub instanceof T(com.subia.model.Subscription) ? sub.name : ''}"/>
+                    </div>
+
+                    <!-- Descripción breve del plan contratado -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Descripción</label>
+                        <input type="text" name="description" id="fieldDescription" class="form-control"
+                               th:value="${sub instanceof T(com.subia.model.Subscription) ? sub.description : ''}"/>
+                    </div>
+
+                    <!-- Precio del ciclo de facturación -->
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Precio <span class="text-danger">*</span></label>
+                        <input type="number" name="price" id="fieldPrice" class="form-control"
+                               step="0.01" min="0" required
+                               th:value="${sub instanceof T(com.subia.model.Subscription) ? sub.price : ''}"/>
+                    </div>
+
+                    <!-- Moneda fija en EUR -->
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Moneda</label>
+                        <input type="hidden" name="currency" id="fieldCurrency" value="EUR"/>
+                        <input type="text" class="form-control" value="EUR €" disabled/>
+                    </div>
+
+                    <!-- Ciclo de facturación: MONTHLY, YEARLY o WEEKLY -->
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Ciclo de facturación <span class="text-danger">*</span></label>
+                        <select name="billingCycle" id="fieldBillingCycle" class="form-select" required>
+                            <option value="">— Seleccionar —</option>
+                            <!-- Los valores del enum BillingCycle se pasan desde el controlador -->
+                            <option th:each="cycle : ${billingCycles}"
+                                    th:value="${cycle}"
+                                    th:text="${cycle.name() == 'MONTHLY' ? 'Mensual' : (cycle.name() == 'YEARLY' ? 'Anual' : 'Semanal')}"
+                                    th:selected="${sub instanceof T(com.subia.model.Subscription) and sub.billingCycle == cycle}">
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Fecha de próxima renovación (en formato ISO YYYY-MM-DD para el campo date) -->
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Fecha de renovación <span class="text-danger">*</span></label>
+                        <input type="date" name="renewalDate" class="form-control" required
+                               th:value="${sub instanceof T(com.subia.model.Subscription)
+                                           ? sub.renewalDate
+                                           : #temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"/>
+                    </div>
+
+                    <!-- Categoría (obligatoria) — también se usa para filtrar el catálogo -->
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Categoría <span class="text-danger">*</span></label>
+                        <select name="categoryId" id="fieldCategoryId" class="form-select" required>
+                            <option value="">— Seleccionar —</option>
+                            <option th:each="cat : ${categories}"
+                                    th:value="${cat.id}"
+                                    th:text="${cat.icon + ' ' + cat.name}"
+                                    th:selected="${sub instanceof T(com.subia.model.Subscription) and sub.category != null and sub.category.id == cat.id}">
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Notas personales libres -->
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Notas</label>
+                        <input type="text" name="notes" class="form-control"
+                               th:value="${sub instanceof T(com.subia.model.Subscription) ? sub.notes : ''}"/>
+                    </div>
+
+                    <!-- Interruptor activa/inactiva -->
+                    <div class="col-md-4 d-flex align-items-end">
+                        <div class="form-check form-switch fs-5">
+                            <!--
+                              HTML envía el checkbox solo si está marcado.
+                              Para garantizar que el controlador reciba "false" cuando no está marcado,
+                              el campo active tiene defaultValue = "false" en el @RequestParam.
+                            -->
+                            <input class="form-check-input" type="checkbox" name="active" value="true"
+                                   th:checked="${!(sub instanceof T(com.subia.model.Subscription)) or sub.active}"
+                                   id="activeCheck"/>
+                            <label class="form-check-label" for="activeCheck">Activa</label>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="card-footer d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-floppy me-1"></i>Guardar
+                </button>
+                <a th:href="@{/subscriptions}" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </div>
+    </form>
+
+</div>
+
+<!-- ── JavaScript para el selector de catálogo ───────────────────────── -->
+<!--
+  Este script gestiona la interacción del selector de catálogo en tres pasos:
+  1. Cuando el usuario elige una categoría, hace un fetch a /api/catalog?categoryId=X
+     y rellena el segundo desplegable con los servicios devueltos.
+  2. Cuando el usuario elige un servicio, activa el botón "Aplicar".
+  3. Cuando el usuario hace clic en "Aplicar", rellena los campos del formulario.
+-->
+<th:block layout:fragment="scripts">
+<script th:inline="none">
+(function () {
+    'use strict';
+
+    const catSelect      = document.getElementById('catalogCategory');
+    const svcSelect      = document.getElementById('catalogService');
+    const applyBtn       = document.getElementById('btnApplyCatalog');
+
+    // Campos del formulario principal que se rellenarán automáticamente
+    const fieldName      = document.getElementById('fieldName');
+    const fieldDesc      = document.getElementById('fieldDescription');
+    const fieldPrice     = document.getElementById('fieldPrice');
+    const fieldCurrency  = document.getElementById('fieldCurrency');
+    const fieldCycle     = document.getElementById('fieldBillingCycle');
+    const fieldCategoryId= document.getElementById('fieldCategoryId');
+
+    // Si el selector de catálogo no está en el DOM (modo edición), no hace falta inicializar
+    if (!catSelect) return;
+
+    /** Traduce el valor del enum BillingCycle al texto que aparece en el desplegable de servicios */
+    function cycleName(cycle) {
+        return { MONTHLY: 'mensual', YEARLY: 'anual', WEEKLY: 'semanal' }[cycle] || cycle;
+    }
+
+    /**
+     * Paso 1: el usuario elige una categoría.
+     * Llama a la API REST y rellena el desplegable de servicios.
+     */
+    catSelect.addEventListener('change', async function () {
+        const categoryId = this.value;
+
+        // Reinicia el desplegable de servicios y deshabilita el botón
+        svcSelect.innerHTML = '<option value="">— Cargando… —</option>';
+        svcSelect.disabled = true;
+        applyBtn.disabled = true;
+
+        if (!categoryId) {
+            svcSelect.innerHTML = '<option value="">— Primero elige una categoría —</option>';
+            return;
+        }
+
+        try {
+            // Llama al endpoint REST que filtra el catálogo por categoría
+            const res  = await fetch('/api/catalog?categoryId=' + categoryId);
+            const items = await res.json();
+
+            svcSelect.innerHTML = '<option value="">— Elige un servicio —</option>';
+
+            // Añade una opción por cada servicio del catálogo
+            // El valor es el objeto JSON serializado para poder leerlo al aplicar
+            items.forEach(function (item) {
+                const opt = document.createElement('option');
+                opt.value = JSON.stringify(item);
+                opt.textContent = item.name
+                    + '  ·  ' + item.price.toFixed(2) + '\u00a0' + item.currency
+                    + ' / ' + cycleName(item.billingCycle);
+                svcSelect.appendChild(opt);
+            });
+
+            svcSelect.disabled = false;
+        } catch (err) {
+            svcSelect.innerHTML = '<option value="">— Error al cargar el catálogo —</option>';
+            console.error('Error al obtener el catálogo:', err);
+        }
+    });
+
+    /**
+     * Paso 2: el usuario elige un servicio.
+     * Activa el botón "Aplicar" si hay un servicio seleccionado.
+     */
+    svcSelect.addEventListener('change', function () {
+        applyBtn.disabled = !this.value;
+    });
+
+    /**
+     * Paso 3: el usuario hace clic en "Aplicar".
+     * Rellena los campos del formulario principal con los datos del servicio seleccionado.
+     * El usuario puede modificar cualquier campo después.
+     */
+    applyBtn.addEventListener('click', function () {
+        if (!svcSelect.value) return;
+
+        const item = JSON.parse(svcSelect.value);
+        const categoryId = catSelect.value;
+
+        // Rellena los campos del formulario
+        fieldName.value        = item.name;
+        fieldDesc.value        = item.description;
+        fieldPrice.value       = item.price.toFixed(2);
+        fieldCurrency.value    = item.currency;
+        fieldCycle.value       = item.billingCycle;
+        fieldCategoryId.value  = categoryId;
+
+        // Desplaza la vista al formulario para que el usuario pueda completar los campos restantes
+        document.querySelector('form').scrollIntoView({ behavior: 'smooth' });
+    });
+}());
+</script>
+</th:block>
+
+</body>
+</html>
