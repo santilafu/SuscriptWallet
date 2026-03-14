@@ -1,6 +1,6 @@
 # SubIA — Gestor de suscripciones
 
-![Version](https://img.shields.io/badge/versión-1.3.0-6366f1?style=flat-square)
+![Version](https://img.shields.io/badge/versión-1.4.0-6366f1?style=flat-square)
 ![Stack](https://img.shields.io/badge/Spring%20Boot-3.3.5-6db33f?style=flat-square&logo=springboot)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.1.20-7f52ff?style=flat-square&logo=kotlin)
 ![Java](https://img.shields.io/badge/Java-21-007396?style=flat-square&logo=openjdk)
@@ -91,7 +91,7 @@ Los errores de autenticación se devuelven en JSON estándar: `{ "data": null, "
 | Persistencia | Spring Data JPA + Hibernate |
 | Base de datos | PostgreSQL 16 (Docker) |
 | Migraciones | Flyway |
-| Frontend | Thymeleaf + Bootstrap 5 + Chart.js 4 |
+| Frontend | Thymeleaf + Tailwind CSS CDN + Alpine.js CDN + Chart.js 4 |
 | Tipografía | Inter (Google Fonts) |
 | Build | Gradle (Kotlin DSL) |
 
@@ -221,4 +221,5 @@ Consulta [CHANGELOG.md](CHANGELOG.md) para el historial completo de cambios.
 | 1.1.0   | 2026-03-13 | Migración a PostgreSQL               |
 | 1.2.0   | 2026-03-13 | API REST completa (P1)               |
 | 1.3.0   | 2026-03-14 | Autenticación JWT (P2)               |
-| 2.0.0   | pendiente  | Rediseño de interfaz + app móvil KMM |
+| 1.4.0   | 2026-03-14 | UI redesign — Tailwind dark mode     |
+| 2.0.0   | pendiente  | App móvil KMM + Compose Multiplatform |

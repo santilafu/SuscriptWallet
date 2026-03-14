@@ -61,7 +61,7 @@ taskkill //PID <pid> //F
 | Base de datos | PostgreSQL 16 (Docker, puerto 5433)                 |
 | Migraciones   | Flyway (V1 schema, V2 seed categorías, V3 refresh_tokens) |
 | Frontend      | Thymeleaf 3.1 + Layout Dialect                      |
-| UI web        | Bootstrap 5.3 + Bootstrap Icons + Chart.js 4.4     |
+| UI web        | Tailwind CSS CDN + Alpine.js CDN + Chart.js 4.4    |
 | Tipografía    | Inter (Google Fonts)                                |
 | Build         | Gradle Kotlin DSL                                   |
 
@@ -300,7 +300,9 @@ POST /api/auth/logout   → 204 No Content
 
 ---
 
-### P3 — Rediseño completo de la interfaz web
+### ~~P3 — Rediseño completo de la interfaz web~~ ✅ COMPLETADO (v1.4.0, 2026-03-14)
+
+Bootstrap 5.3 eliminado. Tailwind CSS CDN + Alpine.js CDN. Dark mode permanente (`html class="dark"`, fondo `#0a0f1e`). 7 templates reescritos: layout, dashboard, subscriptions/list, subscriptions/form, subscriptions/confirm-delete, categories/list, categories/form. Glassmorphism en stat cards. Grid de cards con color dinámico de categoría vía `th:style`. Wizard 3 pasos en formulario con Alpine.js. Modal inline de borrado. Chart.js adaptado a dark mode. Toda la lógica Thymeleaf preservada.
 
 La interfaz actual es funcional pero visualmente anticuada. Objetivo: nivel SaaS moderno.
 
@@ -364,9 +366,9 @@ Reglas base:
 
 ---
 
-### P4 — App móvil
+### P4 — App móvil KMM + Compose Multiplatform en Android Studio
 
-**Estrategia recomendada**: Kotlin Multiplatform Mobile (KMM) + Compose Multiplatform.
+**Estrategia**: Kotlin Multiplatform Mobile (KMM) + Compose Multiplatform. Desarrollar en Android Studio.
 Permite compartir lógica de negocio (llamadas API, modelos, validaciones) entre iOS y Android,
 manteniendo UI nativa por plataforma o compartida con Compose.
 
@@ -598,7 +600,7 @@ YEARLY = precio anual total (no mensual × 12).
 
 **El asistente IA es responsable de mantener estos tres archivos actualizados en cada sesión.**
 
-### Versión actual: `1.3.0`
+### Versión actual: `1.4.0`
 
 Esquema: `MAJOR.MINOR.PATCH`
 
@@ -643,4 +645,5 @@ Esquema: `MAJOR.MINOR.PATCH`
 | 1.1.0   | 2026-03-13 | Migración a PostgreSQL               | Publicada  |
 | 1.2.0   | 2026-03-13 | API REST completa (P1)               | Publicada  |
 | 1.3.0   | 2026-03-14 | Autenticación JWT (P2)               | Publicada  |
-| 2.0.0   | —          | Rediseño de interfaz + app móvil KMM | Pendiente  |
+| 1.4.0   | 2026-03-14 | UI redesign — Tailwind dark mode (P3) | Publicada  |
+| 2.0.0   | —          | App móvil KMM + Compose Multiplatform (P4) | Pendiente  |

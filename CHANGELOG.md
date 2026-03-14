@@ -7,6 +7,18 @@ Todas las versiones siguen [Semantic Versioning](https://semver.org/lang/es/):
 
 ---
 
+## [1.4.0] - 2026-03-14
+### Changed
+- UI redesign completo con Tailwind CSS + Alpine.js (dark mode permanente)
+- Bootstrap 5.3 eliminado
+- Dashboard: stat cards glassmorphism, Chart.js dark mode
+- Suscripciones: grid de cards con color dinámico de categoría
+- Formulario: wizard de 3 pasos con Alpine.js
+- Modal inline de confirmación de borrado
+- Categorías: grid de cards con preview de color
+
+---
+
 ## [1.2.0] — 2026-03-13
 
 API REST completa (P1) para consumo desde la app móvil.
