@@ -56,10 +56,10 @@ taskkill //PID <pid> //F
 |---------------|-----------------------------------------------------|
 | Lenguaje      | Kotlin 2.1.20                                       |
 | Framework     | Spring Boot 3.3.5                                   |
-| Seguridad     | Spring Security 6.3 (CSRF off en local, headers)   |
+| Seguridad     | Spring Security 6.3 + JWT HMAC-SHA256 (Nimbus) + Bucket4j |
 | Persistencia  | Spring Data JPA + Hibernate 6.5                     |
 | Base de datos | PostgreSQL 16 (Docker, puerto 5433)                 |
-| Migraciones   | Flyway (V1 schema, V2 seed categorías)              |
+| Migraciones   | Flyway (V1 schema, V2 seed categorías, V3 refresh_tokens) |
 | Frontend      | Thymeleaf 3.1 + Layout Dialect                      |
 | UI web        | Bootstrap 5.3 + Bootstrap Icons + Chart.js 4.4     |
 | Tipografía    | Inter (Google Fonts)                                |
@@ -180,6 +180,14 @@ CREATE TABLE subscriptions (
 | API REST /api/categories (CRUD)      | ✅     | v1.2.0 — controlador + DTOs |
 | API REST /api/dashboard (stats)      | ✅     | v1.2.0 — gasto mensual/anual, activas, alertas |
 | ApiExceptionHandler                  | ✅     | v1.2.0 — 404, 409, 400, 500 en castellano |
+| JWT auth — POST /api/auth/login      | ✅     | v1.3.0 — HMAC-SHA256, devuelve accessToken + refreshToken |
+| JWT auth — POST /api/auth/refresh    | ✅     | v1.3.0 — rotación de tokens, invalida el anterior |
+| JWT auth — POST /api/auth/logout     | ✅     | v1.3.0 — invalida refresh token, 204 |
+| Refresh tokens en PostgreSQL         | ✅     | v1.3.0 — tabla refresh_tokens, Flyway V3 |
+| Dual FilterChain (web + API)         | ✅     | v1.3.0 — /api/** stateless JWT, /** Thymeleaf permitAll |
+| Rate limiting Bucket4j               | ✅     | v1.3.0 — 100 req/min por IP |
+| CORS /api/**                         | ✅     | v1.3.0 — configurado para la app móvil |
+| 401/403 JSON estándar                | ✅     | v1.3.0 — CustomAuthEntryPoint + CustomAccessDeniedHandler |
 
 ---
 
@@ -255,71 +263,40 @@ O en error:
 
 ---
 
-### P2 — Seguridad de la API REST (para app móvil)
+### ~~P2 — Seguridad de la API REST (para app móvil)~~ ✅ COMPLETADO (v1.3.0, 2026-03-14)
 
-La API REST debe estar protegida con JWT. La app web sigue sin autenticación (uso local).
+JWT HMAC-SHA256 via `spring-boot-starter-oauth2-resource-server` + Nimbus. La app web sigue sin autenticación (uso local).
 
-**Implementación**:
+**Endpoints de autenticación implementados**:
 
-1. Añadir dependencia:
-```kotlin
-implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+```
+POST /api/auth/login    → { accessToken, refreshToken, expiresInSeconds, tokenType }
+POST /api/auth/refresh  → rotación de tokens (invalida el anterior)
+POST /api/auth/logout   → 204 No Content
 ```
 
-2. Flujo de autenticación móvil:
-   - `POST /api/auth/login` → recibe `{username, password}` → devuelve `{accessToken, refreshToken}`
-   - `POST /api/auth/refresh` → renueva access token con refresh token
-   - `POST /api/auth/logout` → invalida refresh token
-   - Todos los endpoints `/api/**` excepto `/api/auth/**` y `/api/catalog` requieren `Authorization: Bearer <token>`
+**Rutas públicas** (no requieren JWT):
+- `/api/auth/**`
+- `/api/catalog`
+- `/api/catalog/**`
+- `/**` (toda la interfaz Thymeleaf)
 
-3. En `SecurityConfig.kt` separar las reglas:
-```kotlin
-// Rutas web (Thymeleaf) → sin autenticación
-// Rutas /api/auth/** → públicas
-// Rutas /api/catalog → públicas (catálogo de referencia)
-// Rutas /api/** → requieren JWT válido
-```
+**Rutas protegidas** (requieren `Authorization: Bearer <token>`):
+- Todo `/api/**` excepto las públicas anteriores
 
-4. El access token tiene vida corta (15 min). El refresh token dura 30 días y se almacena
-   en la base de datos para poder invalidarlo (tabla `refresh_tokens`).
+**Variables de entorno**:
 
-5. En la app móvil, guardar tokens en **Keychain** (iOS) o **EncryptedSharedPreferences** (Android).
-   Nunca en SharedPreferences sin cifrar ni en localStorage.
+| Variable | Default (dev) | Producción |
+|----------|---------------|------------|
+| `JWT_SECRET` | `SubIA-dev-secret-key-32chars-min` | Clave HMAC aleatoria de mínimo 32 caracteres |
+| `APP_AUTH_PASSWORD` | `password` (texto plano, se hashea al arrancar) | Hash BCrypt — generar con `htpasswd -bnBC 10 "" <pass>` |
 
-**Headers de seguridad adicionales** a añadir en `SecurityConfig.kt`:
-```
-Strict-Transport-Security: max-age=31536000; includeSubDomains  (HTTPS obligatorio en prod)
-Content-Security-Policy: default-src 'self'; script-src 'self' cdn.jsdelivr.net fonts.googleapis.com
-Referrer-Policy: strict-origin-when-cross-origin
-Permissions-Policy: geolocation=(), microphone=(), camera=()
-```
+**Gotchas de implementación** (ver también tabla de gotchas más abajo):
+- `JwtConfig.kt` separado de `JwtService.kt` para evitar dependencia circular con Spring.
+- `TokenService` auto-detecta si `app.auth.password` es un hash BCrypt (`$2a$...`) o texto plano y lo hashea al arrancar.
+- Arranque de desarrollo: solo `./gradlew bootRun` sin env vars adicionales.
 
-**CORS** — necesario para que la app móvil pueda llamar a la API:
-```kotlin
-// En WebConfig.kt añadir:
-override fun addCorsMappings(registry: CorsRegistry) {
-    registry.addMapping("/api/**")
-        .allowedOrigins("http://localhost:3000", "subia://app")  // añadir dominios móvil
-        .allowedMethods("GET", "POST", "PUT", "DELETE")
-        .allowedHeaders("Authorization", "Content-Type")
-        .maxAge(3600)
-}
-```
-
-**Rate limiting** — protección contra abuso de la API:
-- Añadir `bucket4j-spring-boot-starter` para limitar peticiones por IP/token.
-- Límite razonable: 100 peticiones/minuto por token autenticado.
-
-**Validación de entrada** — en todos los endpoints REST:
-- Añadir `spring-boot-starter-validation`.
-- Anotar los DTOs con `@NotBlank`, `@Positive`, `@DecimalMin("0.01")`, `@Size(max=...)`.
-- Devolver errores de validación con status 400 y mensaje claro en español.
-- Nunca confiar en datos del cliente: validar precio > 0, fecha no en el pasado (o sí, según el caso), categoría existe antes de asignarla.
-
-**Auditoría**:
-- Añadir columnas `created_at` y `updated_at` a la tabla `subscriptions` (Flyway V3).
-- Usar `@EntityListeners(AuditingEntityListener::class)` de Spring Data JPA Auditing.
-- No loguear datos sensibles (precios, notas personales) en logs de producción.
+**Flyway V3** — tabla `refresh_tokens` creada por migración. No modificar V1/V2.
 
 ---
 
@@ -536,12 +513,12 @@ tests/
 - [ ] Logs de auditoría: quién creó/modificó qué y cuándo (columnas `created_at`, `updated_at`)
 
 ### Pendiente (API REST para móvil)
-- [ ] Autenticación JWT con access token (15 min) + refresh token (30 días, en BD)
-- [ ] Endpoint `/api/auth/login`, `/api/auth/refresh`, `/api/auth/logout`
-- [ ] CORS configurado solo para los orígenes permitidos
-- [ ] Rate limiting: 100 req/min por token autenticado
+- [x] Autenticación JWT con access token (15 min) + refresh token (30 días, en BD) — v1.3.0
+- [x] Endpoint `/api/auth/login`, `/api/auth/refresh`, `/api/auth/logout` — v1.3.0
+- [x] CORS configurado solo para los orígenes permitidos — v1.3.0
+- [x] Rate limiting: 100 req/min por IP (Bucket4j) — v1.3.0
+- [x] Respuestas de error 401/403 estructuradas en JSON — v1.3.0
 - [ ] Validación con Bean Validation (`@NotBlank`, `@Positive`, `@Size`) en todos los DTOs
-- [ ] Respuestas de error estructuradas (nunca exponer excepciones internas)
 - [ ] Sanitización de campos de texto libre (notas, descripción) — evitar XSS si se renderiza en web
 - [ ] Tests de penetración básicos antes de exponer a internet
 
@@ -589,6 +566,9 @@ YEARLY = precio anual total (no mensual × 12).
 | Enum vs String en SpEL: siempre falso           | `cycle == 'MONTHLY'` compara objeto con string    | `cycle.name() == 'MONTHLY'`                         |
 | `sed -i` corrompe ficheros Kotlin en Windows    | Encoding UTF-8 + Git Bash                         | Nunca usar `sed` para editar código                 |
 | Puerto 5432 en conflicto en Windows             | PostgreSQL local de Windows ocupa el 5432          | Docker expone en 5433 (`- "5433:5432"`)             |
+| Dependencia circular JwtConfig ↔ JwtService     | Spring intenta inyectar beans en loop              | `JwtConfig.kt` separado: solo propiedades, sin `@Service` |
+| `APP_AUTH_PASSWORD` texto plano en producción   | BCrypt hash esperado en runtime                    | `TokenService` auto-detecta `$2a$...` y hashea al arrancar |
+| JWT_SECRET demasiado corto                      | Nimbus rechaza claves < 32 bytes para HMAC-SHA256  | Default dev: `SubIA-dev-secret-key-32chars-min`     |
 
 ---
 
@@ -618,7 +598,7 @@ YEARLY = precio anual total (no mensual × 12).
 
 **El asistente IA es responsable de mantener estos tres archivos actualizados en cada sesión.**
 
-### Versión actual: `1.2.0`
+### Versión actual: `1.3.0`
 
 Esquema: `MAJOR.MINOR.PATCH`
 
@@ -662,5 +642,5 @@ Esquema: `MAJOR.MINOR.PATCH`
 | 1.0.0   | 2026-03-13 | Primera versión funcional web        | Publicada  |
 | 1.1.0   | 2026-03-13 | Migración a PostgreSQL               | Publicada  |
 | 1.2.0   | 2026-03-13 | API REST completa (P1)               | Publicada  |
-| 1.3.0   | —          | Rediseño de interfaz                 | Pendiente  |
-| 2.0.0   | —          | JWT + app móvil KMM                  | Pendiente  |
+| 1.3.0   | 2026-03-14 | Autenticación JWT (P2)               | Publicada  |
+| 2.0.0   | —          | Rediseño de interfaz + app móvil KMM | Pendiente  |

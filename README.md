@@ -1,6 +1,6 @@
 # SubIA — Gestor de suscripciones
 
-![Version](https://img.shields.io/badge/versión-1.2.0-6366f1?style=flat-square)
+![Version](https://img.shields.io/badge/versión-1.3.0-6366f1?style=flat-square)
 ![Stack](https://img.shields.io/badge/Spring%20Boot-3.3.5-6db33f?style=flat-square&logo=springboot)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.1.20-7f52ff?style=flat-square&logo=kotlin)
 ![Java](https://img.shields.io/badge/Java-21-007396?style=flat-square&logo=openjdk)
@@ -46,13 +46,48 @@ Disponible desde v1.2.0. Todos los endpoints devuelven `{ "data": ..., "error": 
 
 ---
 
+## 🔑 Autenticación API
+
+Desde v1.3.0 los endpoints `/api/**` (salvo `/api/auth/**`, `/api/catalog` y `/api/catalog/**`) requieren un JWT Bearer token.
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| POST | `/api/auth/login` | Recibe `{username, password}` → devuelve `{accessToken, refreshToken, expiresInSeconds, tokenType}` |
+| POST | `/api/auth/refresh` | Recibe `{refreshToken}` → devuelve tokens renovados (rotación automática) |
+| POST | `/api/auth/logout` | Invalida el refresh token → 204 No Content |
+
+**Ejemplo de uso con curl**:
+
+```bash
+# 1. Login
+TOKEN=$(curl -s -X POST http://localhost:8081/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"password"}' | jq -r '.accessToken')
+
+# 2. Llamada autenticada
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8081/api/subscriptions
+
+# 3. Renovar token
+curl -s -X POST http://localhost:8081/api/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d "{\"refreshToken\":\"<tu_refresh_token>\"}"
+
+# 4. Logout
+curl -X POST http://localhost:8081/api/auth/logout \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Los errores de autenticación se devuelven en JSON estándar: `{ "data": null, "error": { "code": "UNAUTHORIZED", "message": "..." } }`.
+
+---
+
 ## 🛠 Tecnologías
 
 | Capa | Tecnología |
 |------|------------|
 | Lenguaje | Kotlin 2.1 |
 | Framework | Spring Boot 3.3 |
-| Seguridad | Spring Security (CSRF + headers) |
+| Seguridad | Spring Security 6 + JWT (HMAC-SHA256, Nimbus) + Bucket4j |
 | Persistencia | Spring Data JPA + Hibernate |
 | Base de datos | PostgreSQL 16 (Docker) |
 | Migraciones | Flyway |
@@ -65,6 +100,8 @@ Disponible desde v1.2.0. Todos los endpoints devuelven `{ "data": ..., "error": 
 ## 🚀 Cómo ejecutar
 
 **Requisitos previos**: JDK 21 o superior y Docker.
+
+Para producción se necesitan las variables de entorno `JWT_SECRET` (clave HMAC de mínimo 32 caracteres) y `APP_AUTH_PASSWORD` (hash BCrypt de la contraseña). En desarrollo, los valores por defecto son suficientes para arrancar sin configuración adicional.
 
 ```bash
 # 1. Arrancar PostgreSQL con Docker
@@ -183,5 +220,5 @@ Consulta [CHANGELOG.md](CHANGELOG.md) para el historial completo de cambios.
 | 1.0.0   | 2026-03-13 | Primera versión funcional completa   |
 | 1.1.0   | 2026-03-13 | Migración a PostgreSQL               |
 | 1.2.0   | 2026-03-13 | API REST completa (P1)               |
-| 1.3.0   | pendiente  | Rediseño de interfaz                 |
-| 2.0.0   | pendiente  | Autenticación JWT + app móvil KMM    |
+| 1.3.0   | 2026-03-14 | Autenticación JWT (P2)               |
+| 2.0.0   | pendiente  | Rediseño de interfaz + app móvil KMM |

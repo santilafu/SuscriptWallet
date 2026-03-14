@@ -65,16 +65,19 @@ Primera versión funcional completa de la aplicación web.
 
 ---
 
-## [1.3.0] — pendiente
+## [1.3.0] — 2026-03-14
 
-### Planificado
-- Rediseño completo de la interfaz (tema oscuro avanzado, glassmorphism, micro-interacciones)
-- Vista grid / lista con toggle en la pantalla de suscripciones
-- Toast notifications al guardar/borrar
-- Modal de confirmación de borrado (eliminar página confirm-delete)
-- Cálculo en tiempo real de equivalencia mensual/anual en el formulario
-- Alpine.js para reactividad ligera
-- Selector de catálogo visual en cards (no dropdown)
+Autenticación JWT (P2) para securizar la API REST de cara a la app móvil.
+
+### Añadido
+- Autenticación JWT (P2): POST /api/auth/login, /refresh, /logout
+- Refresh tokens persistidos en PostgreSQL con rotación automática (Flyway V3)
+- Rate limiting 100 req/min por IP (Bucket4j)
+- CORS configurado para /api/**
+- Respuestas 401/403 en formato JSON estándar (`CustomAuthEntryPoint` + `CustomAccessDeniedHandler`)
+- Dual FilterChain: /api/** stateless JWT, /** permitAll Thymeleaf (sin romper la web)
+- `JwtConfig.kt` separado de `JwtService.kt` para evitar dependencia circular
+- `TokenService` con auto-detección de hash BCrypt en `app.auth.password`
 
 ---
 
