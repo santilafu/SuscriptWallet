@@ -1,4 +1,4 @@
-# SubIA — Gestor de suscripciones
+# Suscript Wallet — Gestor de suscripciones
 
 ![Version](https://img.shields.io/badge/versión-2.0.0-6366f1?style=flat-square)
 ![Stack](https://img.shields.io/badge/Spring%20Boot-3.3.5-6db33f?style=flat-square&logo=springboot)

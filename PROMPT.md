@@ -633,6 +633,7 @@ Esquema: `MAJOR.MINOR.PATCH`
 5. **Git** — hacer commit con mensaje descriptivo y push:
    ```bash
    git add -A
+   
    git commit -m "vX.Y.Z — descripción del cambio"
    git push origin main
    ```
