@@ -13,6 +13,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "SubIAMobile"
+rootProject.name = "SuscriptWallet"
 include(":shared")
 include(":androidApp")

@@ -54,9 +54,11 @@ class SuscripcionFormViewModel(
     /** Precarga nombre, precio y categoría desde un ítem del catálogo. */
     fun prerellenarDesdeCatalogo(item: CatalogItem) {
         nombre.value = item.nombre
-        item.precioMensual?.let { precio.value = it.toString(); periodoFacturacion.value = "MONTHLY" }
-            ?: item.precioAnual?.let { precio.value = it.toString(); periodoFacturacion.value = "YEARLY" }
-        item.categoriaId?.let { categoriaId.value = it }
+        item.precioMensual?.let {
+            precio.value = it.toString()
+            periodoFacturacion.value = item.periodoFacturacion.ifBlank { "MONTHLY" }
+        }
+        moneda.value = item.moneda
     }
 
     /** Envía el formulario. Si [esEdicion] es true realiza PUT, si no POST. */

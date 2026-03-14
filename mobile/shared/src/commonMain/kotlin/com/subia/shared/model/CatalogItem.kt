@@ -1,16 +1,16 @@
 package com.subia.shared.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /** Servicio del catálogo predefinido de SubIA (~80 servicios). */
 @Serializable
 data class CatalogItem(
-    val id: Long,
-    val nombre: String,
-    val categoria: String? = null,
-    val precioMensual: Double? = null,
-    val precioAnual: Double? = null,
-    val moneda: String = "EUR",
-    val logoUrl: String? = null,
-    val categoriaId: Long? = null
+    val id: Long = 0,
+    @SerialName("name") val nombre: String = "",
+    @SerialName("price") val precioMensual: Double? = null,
+    @SerialName("currency") val moneda: String = "EUR",
+    @SerialName("billingCycle") val periodoFacturacion: String = "",
+    @SerialName("description") val descripcion: String = "",
+    @SerialName("categoryKey") val categoriaKey: String = ""
 )

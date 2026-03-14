@@ -6,7 +6,7 @@
     <application
         android:name=".SubIAApp"
         android:allowBackup="true"
-        android:label="SubIA"
+        android:label="Suscript Wallet"
         android:supportsRtl="true"
         android:theme="@style/Theme.SubIA"
         android:usesCleartextTraffic="true">

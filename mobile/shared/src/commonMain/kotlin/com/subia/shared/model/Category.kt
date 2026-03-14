@@ -1,12 +1,13 @@
 package com.subia.shared.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /** Categoría para clasificar suscripciones. */
 @Serializable
 data class Category(
     val id: Long = 0,
-    val nombre: String,
+    @SerialName("name") val nombre: String,
     val color: String = "#6c757d",
     val icon: String = ""
 )
