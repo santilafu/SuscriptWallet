@@ -2,6 +2,7 @@ package com.subia.security
 
 import com.subia.model.RefreshToken
 import com.subia.repository.RefreshTokenRepository
+import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -19,8 +20,20 @@ class TokenService(
     @Value("\${jwt.access-token-ttl-minutes:15}") private val accessTtlMinutes: Long,
     @Value("\${jwt.refresh-token-ttl-days:30}") private val refreshTtlDays: Long,
     @Value("\${app.auth.username}") private val adminUsername: String,
-    @Value("\${app.auth.password}") private val adminPasswordHash: String
+    @Value("\${app.auth.password}") private val adminPasswordRaw: String
 ) {
+    private lateinit var adminPasswordHash: String
+
+    @PostConstruct
+    fun init() {
+        // Si ya es un hash BCrypt lo usamos directamente; si no, lo hasheamos al arrancar
+        adminPasswordHash = if (adminPasswordRaw.startsWith("\$2a\$") || adminPasswordRaw.startsWith("\$2b\$")) {
+            adminPasswordRaw
+        } else {
+            passwordEncoder.encode(adminPasswordRaw)
+        }
+    }
+
     @Transactional
     fun login(username: String, rawPassword: String): TokenPair {
         if (username != adminUsername || !passwordEncoder.matches(rawPassword, adminPasswordHash)) {
