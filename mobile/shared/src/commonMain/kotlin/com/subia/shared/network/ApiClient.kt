@@ -81,10 +81,12 @@ class ApiClient(
         }
     } else {
         runCatching {
-            client.post(path) {
+            val resp = client.post(path) {
                 contentType(ContentType.Application.Json)
                 setBody(body)
-            }.body<T>()
+            }
+            if (resp.status == HttpStatusCode.NoContent) @Suppress("UNCHECKED_CAST") Unit as T
+            else resp.body<ApiResponse<T>>().data ?: error("Respuesta vacía del servidor")
         }
     }
 
@@ -155,12 +157,13 @@ class ApiClient(
     }
 
     @PublishedApi
-    internal suspend inline fun <reified T> parseResponse(response: HttpResponse): Result<T> =
-        if (response.status.isSuccess()) {
-            runCatching { response.body<T>() }
-        } else {
-            Result.failure(ApiException(response.status.value, response.status.description))
-        }
+    internal suspend inline fun <reified T> parseResponse(response: HttpResponse): Result<T> {
+        if (!response.status.isSuccess())
+            return Result.failure(ApiException(response.status.value, response.status.description))
+        if (response.status == HttpStatusCode.NoContent)
+            @Suppress("UNCHECKED_CAST") return Result.success(Unit as T)
+        return runCatching { response.body<ApiResponse<T>>().data ?: error("Respuesta vacía del servidor") }
+    }
 }
 
 /** El refresh token no es válido o ha caducado — el usuario debe volver a iniciar sesión. */

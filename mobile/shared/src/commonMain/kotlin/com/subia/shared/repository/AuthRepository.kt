@@ -1,6 +1,5 @@
 package com.subia.shared.repository
 
-import com.subia.shared.model.ApiResponse
 import com.subia.shared.model.AuthTokens
 import com.subia.shared.model.LoginRequest
 import com.subia.shared.network.ApiClient
@@ -19,15 +18,12 @@ class AuthRepository(
      * En caso de éxito, guarda los tokens en almacenamiento seguro.
      */
     suspend fun login(username: String, password: String): Result<Unit> {
-        val result = apiClient.post<ApiResponse<AuthTokens>, LoginRequest>(
+        val result = apiClient.post<AuthTokens, LoginRequest>(
             path = ApiRoutes.LOGIN,
             body = LoginRequest(username, password),
             authenticated = false
         )
-        return result.mapCatching { response ->
-            val tokens = response.data ?: error("Respuesta vacía del servidor")
-            tokenStorage.saveTokens(tokens)
-        }
+        return result.map { tokens -> tokenStorage.saveTokens(tokens) }
     }
 
     /**
