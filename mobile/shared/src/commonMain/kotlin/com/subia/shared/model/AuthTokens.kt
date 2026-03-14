@@ -9,10 +9,16 @@ data class AuthTokens(
     val refreshToken: String
 )
 
+/** Wrapper genérico de la API: { "data": T, "error": null } */
+@Serializable
+data class ApiResponse<T>(
+    val data: T? = null
+)
+
 /** Petición de login con credenciales. */
 @Serializable
 data class LoginRequest(
-    val email: String,
+    val username: String,
     val password: String
 )
 

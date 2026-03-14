@@ -43,7 +43,7 @@ fun LoginScreen(
     viewModel: AuthViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var email by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("admin") }
     var password by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
     val isLoading = uiState is AuthUiState.Loading
@@ -75,11 +75,11 @@ fun LoginScreen(
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Correo electrónico") },
+            label = { Text("Usuario") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Email,
+                keyboardType = KeyboardType.Text,
                 imeAction = ImeAction.Next
             ),
             keyboardActions = KeyboardActions(

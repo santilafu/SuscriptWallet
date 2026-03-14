@@ -1,5 +1,6 @@
 package com.subia.shared.network
 
+import com.subia.shared.model.ApiResponse
 import com.subia.shared.model.AuthTokens
 import com.subia.shared.model.RefreshRequest
 import com.subia.shared.platform.createHttpEngine
@@ -140,10 +141,11 @@ class ApiClient(
     @PublishedApi
     internal suspend fun tryRefresh(refreshToken: String): Boolean {
         return try {
-            val tokens: AuthTokens = client.post(ApiRoutes.REFRESH) {
+            val response: ApiResponse<AuthTokens> = client.post(ApiRoutes.REFRESH) {
                 contentType(ContentType.Application.Json)
                 setBody(RefreshRequest(refreshToken))
             }.body()
+            val tokens = response.data ?: return false
             tokenStorage.saveTokens(tokens)
             true
         } catch (e: Exception) {
