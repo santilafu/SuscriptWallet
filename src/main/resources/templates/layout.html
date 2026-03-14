@@ -1,385 +1,140 @@
 <!DOCTYPE html>
 <!--
-  Plantilla base compartida por todas las páginas.
-  Extiende el diseño con fuente Inter, paleta de color índigo/pizarra,
-  animaciones de entrada y soporte para fragmentos de scripts por página.
+  Plantilla base — Tailwind CSS CDN + Alpine.js + dark mode permanente
 -->
 <html xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      class="dark">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title layout:title-pattern="$CONTENT_TITLE — SubIA">SubIA</title>
 
-    <!-- Google Fonts: Inter (tipografía moderna y muy legible) -->
+    <!-- Inter font -->
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 
-    <!-- Bootstrap 5 — sistema de rejilla y componentes base -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
 
+    <!-- Tailwind CDN con config dark mode -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+                    colors: {
+                        base:     '#0a0f1e',
+                        surface:  '#111827',
+                        elevated: '#1a2235',
+                        hover:    '#1e2d45',
+                        accent: {
+                            DEFAULT: '#6366f1',
+                            hover:   '#4f46e5'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+
     <style>
-        /* ── Variables de diseño ───────────────────────────────────────────── */
-        :root {
-            --primary:       #6366f1;   /* índigo-500 */
-            --primary-dark:  #4f46e5;   /* índigo-600 */
-            --primary-light: #e0e7ff;   /* índigo-100 */
-            --success:       #10b981;
-            --warning:       #f59e0b;
-            --danger:        #ef4444;
-            --surface:       #ffffff;
-            --bg:            #f1f5f9;   /* pizarra-100 */
-            --text:          #0f172a;   /* pizarra-900 */
-            --muted:         #64748b;   /* pizarra-500 */
-            --border:        #e2e8f0;   /* pizarra-200 */
-            --shadow-sm:     0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
-            --shadow:        0 4px 6px -1px rgba(0,0,0,.08), 0 2px 4px -2px rgba(0,0,0,.05);
-            --shadow-lg:     0 10px 15px -3px rgba(0,0,0,.08), 0 4px 6px -4px rgba(0,0,0,.05);
-            --radius:        12px;
-            --radius-sm:     8px;
-            --transition:    0.2s ease;
-        }
+        /* Scrollbar dark */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0a0f1e; }
+        ::-webkit-scrollbar-thumb { background: #1e2d45; border-radius: 3px; }
 
-        /* ── Base ──────────────────────────────────────────────────────────── */
-        *, *::before, *::after { box-sizing: border-box; }
-
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* ── Navbar ────────────────────────────────────────────────────────── */
-        .navbar {
-            background: linear-gradient(135deg, #0f172a 0%, #312e81 100%) !important;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,.25);
-            padding: 0.85rem 0;
-        }
-
-        .navbar-brand {
-            font-weight: 800;
-            font-size: 1.25rem;
-            letter-spacing: -0.02em;
-            color: #fff !important;
-        }
-
-        .navbar-brand span {
-            background: linear-gradient(135deg, #a5b4fc, #818cf8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .nav-link {
-            font-weight: 500;
-            font-size: 0.875rem;
-            color: rgba(255,255,255,.75) !important;
-            border-radius: var(--radius-sm);
-            padding: 0.4rem 0.75rem !important;
-            transition: color var(--transition), background var(--transition);
-        }
-
-        .nav-link:hover, .nav-link.active {
-            color: #fff !important;
-            background: rgba(255,255,255,.12);
-        }
-
-        /* ── Cards ─────────────────────────────────────────────────────────── */
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-sm);
-            transition: transform var(--transition), box-shadow var(--transition);
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow);
-        }
-
-        .card-header {
-            background: transparent;
-            border-bottom: 1px solid var(--border);
-            padding: 1rem 1.25rem;
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-
-        .card-footer {
-            background: var(--bg);
-            border-top: 1px solid var(--border);
-            padding: 1rem 1.25rem;
-        }
-
-        /* ── Stat cards del dashboard ──────────────────────────────────────── */
-        .stat-card {
-            border: none !important;
-            border-radius: var(--radius) !important;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .stat-card .card-body { padding: 1.5rem; }
-
-        .stat-card .stat-icon {
-            width: 48px; height: 48px;
-            border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.25rem;
-            opacity: 0.9;
-        }
-
-        .stat-card .stat-value {
-            font-size: 2rem;
-            font-weight: 800;
-            letter-spacing: -0.03em;
-            line-height: 1.2;
-        }
-
-        .stat-card .stat-label {
-            font-size: 0.8rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            opacity: 0.75;
-        }
-
-        .stat-indigo  { background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; }
-        .stat-emerald { background: linear-gradient(135deg, #10b981, #059669); color: #fff; }
-        .stat-amber   { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; }
-        .stat-rose    { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; }
-
-        /* ── Botones ────────────────────────────────────────────────────────── */
-        .btn {
-            font-weight: 500;
-            font-size: 0.875rem;
-            border-radius: var(--radius-sm);
-            transition: all var(--transition);
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            border-color: var(--primary);
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-dark);
-            border-color: var(--primary-dark);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(99,102,241,.35);
-        }
-
-        /* ── Tablas ─────────────────────────────────────────────────────────── */
-        .table {
-            font-size: 0.875rem;
-        }
-
-        .table thead th {
-            font-size: 0.72rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: var(--muted);
-            border-bottom: 1px solid var(--border);
-            padding: 0.85rem 1rem;
-            background: transparent;
-        }
-
-        .table tbody td {
-            padding: 0.9rem 1rem;
-            vertical-align: middle;
-            border-bottom: 1px solid var(--border);
-            color: var(--text);
-        }
-
-        .table tbody tr:last-child td { border-bottom: none; }
-
-        .table-hover tbody tr:hover td {
-            background: var(--bg);
-        }
-
-        /* Quita el thead oscuro de Bootstrap, usamos thead propio */
-        .table-dark { background: transparent !important; }
-        .table-dark th {
-            background: var(--bg) !important;
-            color: var(--muted) !important;
-        }
-
-        /* ── Formularios ────────────────────────────────────────────────────── */
-        .form-control, .form-select {
-            font-size: 0.875rem;
-            border-radius: var(--radius-sm);
-            border-color: var(--border);
-            padding: 0.55rem 0.875rem;
-            transition: border-color var(--transition), box-shadow var(--transition);
-        }
-
-        .form-control:focus, .form-select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99,102,241,.15);
-        }
-
-        .form-label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            margin-bottom: 0.4rem;
-        }
-
-        /* ── Badges ──────────────────────────────────────────────────────────── */
-        .badge {
-            font-size: 0.72rem;
-            font-weight: 600;
-            letter-spacing: 0.02em;
-            padding: 0.3em 0.65em;
-        }
-
-        /* ── Search bar ─────────────────────────────────────────────────────── */
-        .search-wrapper {
-            position: relative;
-        }
-
-        .search-wrapper .bi-search {
-            position: absolute;
-            left: 0.875rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--muted);
-            pointer-events: none;
-        }
-
-        .search-wrapper input {
-            padding-left: 2.5rem;
-        }
-
-        /* ── Pills de filtro ────────────────────────────────────────────────── */
-        .filter-pill {
-            font-size: 0.78rem;
-            font-weight: 500;
-            border-radius: 999px;
-            padding: 0.3rem 0.85rem;
-            cursor: pointer;
-            border: 1px solid var(--border);
-            background: var(--surface);
-            color: var(--muted);
-            transition: all var(--transition);
-            white-space: nowrap;
-        }
-
-        .filter-pill:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-
-        .filter-pill.active {
-            background: var(--primary);
-            border-color: var(--primary);
-            color: #fff;
-        }
-
-        /* ── Animación de entrada ────────────────────────────────────────────── */
+        /* Animación de entrada */
         @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(12px); }
+            from { opacity: 0; transform: translateY(10px); }
             to   { opacity: 1; transform: translateY(0); }
         }
+        .page-content { animation: fadeInUp 0.25s ease both; }
 
-        .page-content {
-            animation: fadeInUp 0.3s ease both;
+        /* Glassmorphism stat cards */
+        .glass-card {
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 4px 24px rgba(0,0,0,0.4);
         }
 
-        /* ── Empty state ─────────────────────────────────────────────────────── */
-        .empty-state {
-            padding: 3.5rem 1rem;
-            text-align: center;
-            color: var(--muted);
+        /* Input / select dark override para compatibilidad con Tailwind CDN */
+        input[type=date]::-webkit-calendar-picker-indicator {
+            filter: invert(1) opacity(0.5);
         }
-
-        .empty-state .empty-icon {
-            font-size: 3rem;
-            opacity: 0.3;
-            margin-bottom: 1rem;
-            display: block;
-        }
-
-        .empty-state p { font-size: 0.9rem; margin-bottom: 1rem; }
-
-        /* ── Footer ─────────────────────────────────────────────────────────── */
-        footer {
-            font-size: 0.78rem;
-            color: var(--muted);
-            border-top: 1px solid var(--border);
-            margin-top: 3rem;
-            padding: 1.5rem 0;
+        input[type=color] {
+            padding: 2px;
+            cursor: pointer;
         }
     </style>
 </head>
-<body>
+<body class="bg-base text-slate-100 font-sans antialiased min-h-screen flex flex-col">
 
-<!-- ── Barra de navegación ─────────────────────────────────────────────── -->
-<nav class="navbar navbar-expand-lg mb-4">
-    <div class="container">
-        <!-- Marca con icono y nombre estilizado -->
-        <a class="navbar-brand" th:href="@{/dashboard}">
-            <i class="bi bi-credit-card-2-front me-2"></i><span>Sub</span>IA
-        </a>
+<!-- ── Navbar ─────────────────────────────────────────────────────────── -->
+<nav class="sticky top-0 z-50 border-b border-white/[0.08]" style="background:#0a0f1e;">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-14">
 
-        <!-- Botón hamburguesa (móvil) -->
-        <button class="navbar-toggler border-0" type="button"
-                data-bs-toggle="collapse" data-bs-target="#navContent"
-                style="filter:invert(1)">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+            <!-- Logo -->
+            <a th:href="@{/dashboard}"
+               class="flex items-center gap-2 font-bold text-lg tracking-tight no-underline">
+                <i class="bi bi-credit-card-2-front text-accent text-xl"></i>
+                <span class="text-accent">Sub</span><span class="text-slate-100">IA</span>
+            </a>
 
-        <!-- Enlace de las tres secciones principales -->
-        <div class="collapse navbar-collapse" id="navContent">
-            <ul class="navbar-nav ms-auto gap-1">
-                <li class="nav-item">
-                    <a class="nav-link" th:href="@{/dashboard}"
-                       th:classappend="${currentPath == '/dashboard' ? ' active' : ''}">
-                        <i class="bi bi-speedometer2 me-1"></i>Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" th:href="@{/subscriptions}"
-                       th:classappend="${currentPath != null and currentPath.startsWith('/subscriptions') ? ' active' : ''}">
-                        <i class="bi bi-list-ul me-1"></i>Suscripciones
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" th:href="@{/categories}"
-                       th:classappend="${currentPath != null and currentPath.startsWith('/categories') ? ' active' : ''}">
-                        <i class="bi bi-tags me-1"></i>Categorías
-                    </a>
-                </li>
-            </ul>
+            <!-- Nav links -->
+            <div class="flex items-center gap-1">
+                <a th:href="@{/dashboard}"
+                   class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline"
+                   th:classappend="${currentPath == '/dashboard'}
+                       ? ' text-accent border-b-2 border-accent bg-accent/10'
+                       : ' text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]'">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a th:href="@{/subscriptions}"
+                   class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline"
+                   th:classappend="${currentPath != null and currentPath.startsWith('/subscriptions')}
+                       ? ' text-accent border-b-2 border-accent bg-accent/10'
+                       : ' text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]'">
+                    <i class="bi bi-list-ul"></i>
+                    <span>Suscripciones</span>
+                </a>
+                <a th:href="@{/categories}"
+                   class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline"
+                   th:classappend="${currentPath != null and currentPath.startsWith('/categories')}
+                       ? ' text-accent border-b-2 border-accent bg-accent/10'
+                       : ' text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]'">
+                    <i class="bi bi-tags"></i>
+                    <span>Categorías</span>
+                </a>
+            </div>
         </div>
     </div>
 </nav>
 
 <!-- ── Contenido principal ────────────────────────────────────────────── -->
-<main class="container page-content" layout:fragment="content">
+<main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 page-content"
+      layout:fragment="content">
     <!-- Cada página inyecta aquí su contenido -->
 </main>
 
-<!-- Pie de página -->
-<footer>
-    <div class="container text-center">
-        <i class="bi bi-credit-card-2-front me-1"></i>
+<!-- ── Footer ─────────────────────────────────────────────────────────── -->
+<footer class="border-t border-white/[0.06] mt-auto py-5">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500">
+        <i class="bi bi-credit-card-2-front mr-1"></i>
         SubIA &mdash; Gestión de suscripciones · Precios actualizados a marzo 2026
     </div>
 </footer>
-
-<!-- Bootstrap JS (necesario para el menú colapsable en móvil) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<!-- Chart.js (disponible en todas las páginas; se usa en el dashboard) -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
 <!-- Punto de extensión para scripts adicionales de cada página -->
 <th:block layout:fragment="scripts"></th:block>

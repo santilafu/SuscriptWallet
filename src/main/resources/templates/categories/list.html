@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <!--
-  Lista de categorías como grid de tarjetas.
-  Cada tarjeta muestra el color, el icono y el nombre de la categoría.
-  Acciones de editar y eliminar integradas en cada tarjeta.
+  Lista de categorías — Tailwind CSS dark mode
+  Grid de cards con borde izquierdo coloreado y color picker.
 -->
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
@@ -11,61 +10,68 @@
 <body>
 <div layout:fragment="content">
 
-    <!-- Mensaje de error (p.ej. al intentar borrar una categoría con suscripciones) -->
+    <!-- ── Mensaje de error ───────────────────────────────────────────── -->
     <div th:if="${errorMessage}"
-         class="alert d-flex align-items-center gap-2 mb-4"
-         style="background:#fef2f2;border:1px solid #fecaca;border-radius:var(--radius);color:#991b1b;">
-        <i class="bi bi-exclamation-triangle-fill"></i>
-        <span th:text="${errorMessage}"></span>
+         class="flex items-center gap-3 p-4 mb-6 rounded-xl border border-red-500/30 bg-red-500/10 text-red-300">
+        <i class="bi bi-exclamation-triangle-fill text-red-400 flex-shrink-0"></i>
+        <span class="text-sm" th:text="${errorMessage}"></span>
     </div>
 
     <!-- ── Cabecera ──────────────────────────────────────────────────── -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="flex items-center justify-between mb-8">
         <div>
-            <h1 style="font-size:1.6rem;font-weight:800;letter-spacing:-.03em;margin:0;">
-                <i class="bi bi-tags me-2" style="color:var(--primary)"></i>Categorías
+            <h1 class="text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
+                <i class="bi bi-tags text-accent"></i>
+                Categorías
             </h1>
-            <p class="mb-0" style="font-size:.85rem;color:var(--muted);"
+            <p class="text-sm text-slate-500 mt-0.5"
                th:text="${categories.size() + ' categorías configuradas'}"></p>
         </div>
-        <a th:href="@{/categories/new}" class="btn btn-primary">
-            <i class="bi bi-plus-lg me-1"></i>Nueva
+        <a th:href="@{/categories/new}"
+           class="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-all duration-200 no-underline shadow-lg shadow-accent/20">
+            <i class="bi bi-plus-lg"></i>Nueva
         </a>
     </div>
 
-    <!-- ── Grid de tarjetas ──────────────────────────────────────────── -->
-    <div class="row g-3" th:if="${!categories.isEmpty()}">
-        <div class="col-sm-6 col-md-4 col-lg-3" th:each="cat : ${categories}">
-            <div class="card h-100" style="border-top:4px solid transparent;"
-                 th:style="'border-top:4px solid ' + ${cat.color} + ';'">
-                <div class="card-body">
-                    <!-- Icono grande en el color de la categoría -->
-                    <div class="rounded-circle d-flex align-items-center justify-content-center mb-3"
-                         style="width:48px;height:48px;font-size:1.4rem;"
-                         th:style="'width:48px;height:48px;font-size:1.4rem;border-radius:50%;display:flex;align-items:center;justify-content:center;background:' + ${cat.color} + '22;'">
+    <!-- ── Grid de cards ──────────────────────────────────────────────── -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+         th:if="${!categories.isEmpty()}">
+
+        <div th:each="cat : ${categories}"
+             class="glass-card rounded-xl overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/30">
+
+            <!-- Borde izquierdo coloreado -->
+            <div class="flex flex-col flex-1"
+                 th:style="'border-left: 4px solid ' + ${cat.color}">
+
+                <div class="p-5 flex-1">
+                    <!-- Icono en círculo con color de la categoría -->
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4"
+                         th:style="'background:' + ${cat.color} + '22;'">
                         <span th:text="${cat.icon.isEmpty() ? '📁' : cat.icon}"></span>
                     </div>
 
-                    <!-- Nombre y muestra del color -->
-                    <div style="font-weight:700;font-size:.95rem;" th:text="${cat.name}"></div>
-                    <div class="d-flex align-items-center gap-2 mt-1">
-                        <span class="rounded"
-                              style="width:14px;height:14px;display:inline-block;"
-                              th:style="'width:14px;height:14px;border-radius:4px;display:inline-block;background:' + ${cat.color}">
-                        </span>
-                        <code style="font-size:.75rem;color:var(--muted);" th:text="${cat.color}"></code>
+                    <!-- Nombre -->
+                    <div class="font-bold text-slate-100 text-base mb-2" th:text="${cat.name}"></div>
+
+                    <!-- Color swatch + código hex -->
+                    <div class="flex items-center gap-2">
+                        <span class="w-4 h-4 rounded flex-shrink-0"
+                              th:style="'background:' + ${cat.color}"></span>
+                        <code class="text-xs text-slate-500 font-mono" th:text="${cat.color}"></code>
                     </div>
                 </div>
 
                 <!-- Acciones -->
-                <div class="card-footer d-flex gap-2" style="padding:.75rem 1rem;">
+                <div class="px-5 py-3 border-t border-white/[0.05] flex items-center gap-2">
                     <a th:href="@{/categories/{id}/edit(id=${cat.id})}"
-                       class="btn btn-sm btn-outline-secondary flex-fill">
-                        <i class="bi bi-pencil me-1"></i>Editar
+                       class="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/[0.15] transition-all duration-200 no-underline">
+                        <i class="bi bi-pencil"></i>Editar
                     </a>
                     <form th:action="@{/categories/{id}/delete(id=${cat.id})}" method="post"
                           onsubmit="return confirm('¿Eliminar esta categoría?')">
-                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                        <button type="submit"
+                                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-400/70 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 transition-all duration-200 cursor-pointer">
                             <i class="bi bi-trash"></i>
                         </button>
                     </form>
@@ -75,14 +81,14 @@
     </div>
 
     <!-- Estado vacío -->
-    <div th:if="${categories.isEmpty()}" class="card">
-        <div class="empty-state">
-            <i class="bi bi-tags empty-icon"></i>
-            <p>No hay ninguna categoría todavía</p>
-            <a th:href="@{/categories/new}" class="btn btn-primary btn-sm">
-                <i class="bi bi-plus-lg me-1"></i>Crear la primera
-            </a>
-        </div>
+    <div th:if="${categories.isEmpty()}"
+         class="glass-card rounded-xl p-16 text-center">
+        <i class="bi bi-tags text-5xl text-slate-600 block mb-4"></i>
+        <p class="text-slate-400 mb-4">No hay ninguna categoría todavía</p>
+        <a th:href="@{/categories/new}"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-all duration-200 no-underline">
+            <i class="bi bi-plus-lg"></i>Crear la primera
+        </a>
     </div>
 
 </div>

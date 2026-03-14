@@ -1,223 +1,291 @@
 <!DOCTYPE html>
 <!--
-  Lista de suscripciones con búsqueda en tiempo real y filtro por categoría.
-  La búsqueda y el filtro son 100% JavaScript (sin peticiones al servidor),
-  por lo que la respuesta es instantánea.
+  Lista de suscripciones — Tailwind CSS dark mode + Alpine.js
+  Grid de cards con búsqueda, filtros por categoría y modal de borrado inline.
 -->
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout}">
 <head><title>Suscripciones</title></head>
 <body>
-<div layout:fragment="content">
+<div layout:fragment="content"
+     x-data="{
+         search: '',
+         activeCategory: '',
+         deleteModal: false,
+         deleteId: null,
+         deleteName: '',
+         openDelete(id, name) {
+             this.deleteId = id;
+             this.deleteName = name;
+             this.deleteModal = true;
+         }
+     }">
 
     <!-- ── Cabecera ──────────────────────────────────────────────────── -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="flex items-center justify-between mb-8">
         <div>
-            <h1 style="font-size:1.6rem;font-weight:800;letter-spacing:-.03em;margin:0;">
-                <i class="bi bi-list-ul me-2" style="color:var(--primary)"></i>Suscripciones
+            <h1 class="text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
+                <i class="bi bi-list-ul text-accent"></i>
+                Suscripciones
             </h1>
-            <!-- Contador dinámico que se actualiza con el filtro -->
-            <p class="mb-0" style="font-size:.85rem;color:var(--muted);">
+            <p class="text-sm text-slate-500 mt-0.5">
                 <span id="resultCount" th:text="${subscriptions.size()}"></span> suscripciones
             </p>
         </div>
-        <a th:href="@{/subscriptions/new}" class="btn btn-primary">
-            <i class="bi bi-plus-lg me-1"></i>Nueva
+        <a th:href="@{/subscriptions/new}"
+           class="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-all duration-200 no-underline shadow-lg shadow-accent/20">
+            <i class="bi bi-plus-lg"></i>Nueva suscripción
         </a>
     </div>
 
-    <!-- ── Barra de búsqueda + filtros de categoría ───────────────────── -->
-    <div class="card mb-3" style="border-radius:var(--radius);">
-        <div class="card-body py-3">
-            <div class="row g-3 align-items-center">
+    <!-- ── Barra de búsqueda + filtros ────────────────────────────────── -->
+    <div class="glass-card rounded-xl p-4 mb-6">
+        <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
 
-                <!-- Búsqueda por texto (nombre, descripción, notas) -->
-                <div class="col-md-5">
-                    <div class="search-wrapper">
-                        <i class="bi bi-search"></i>
-                        <input type="text" id="searchInput" class="form-control"
-                               placeholder="Buscar por nombre, descripción…" autocomplete="off"/>
+            <!-- Búsqueda -->
+            <div class="relative flex-shrink-0 w-full sm:w-72">
+                <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none text-sm"></i>
+                <input type="text" id="searchInput"
+                       x-model="search"
+                       @input="applyFilters()"
+                       class="w-full pl-9 pr-4 py-2 bg-elevated border border-white/[0.08] rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-all duration-200"
+                       placeholder="Buscar por nombre, descripción…"
+                       autocomplete="off"/>
+            </div>
+
+            <!-- Pills de categoría -->
+            <div class="flex flex-wrap gap-2">
+                <button class="filter-pill px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer active"
+                        data-category=""
+                        onclick="setCategory(this, '')"
+                        style="border-color:rgba(99,102,241,0.6); background:rgba(99,102,241,0.15); color:#a5b4fc;">
+                    Todas
+                </button>
+                <button th:each="cat : ${categories}"
+                        class="filter-pill px-3 py-1 rounded-full text-xs font-medium border border-white/[0.1] text-slate-400 hover:border-accent/40 hover:text-accent/80 transition-all duration-200 cursor-pointer"
+                        th:data-category="${cat.name}"
+                        th:text="${cat.icon + ' ' + cat.name}"
+                        onclick="setCategory(this, this.getAttribute('data-category'))">
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Grid de cards de suscripciones ────────────────────────────── -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="subsGrid"
+         th:if="${!subscriptions.isEmpty()}">
+
+        <div th:each="s : ${subscriptions}"
+             th:data-name="${#strings.toLowerCase(s.name + ' ' + s.description + ' ' + s.notes)}"
+             th:data-category="${s.category.name}"
+             class="sub-card glass-card rounded-xl overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/30">
+
+            <!-- Borde izquierdo coloreado con color de categoría -->
+            <div class="flex flex-col flex-1"
+                 th:style="'border-left: 4px solid ' + ${s.category.color}">
+
+                <div class="p-5 flex-1">
+                    <!-- Header: nombre + badge estado -->
+                    <div class="flex items-start justify-between gap-3 mb-3">
+                        <div class="min-w-0">
+                            <h3 class="font-semibold text-slate-100 text-base truncate"
+                                th:text="${s.name}"></h3>
+                            <p th:if="${!s.description.isEmpty()}"
+                               class="text-xs text-slate-500 mt-0.5 truncate"
+                               th:text="${s.description}"></p>
+                        </div>
+                        <span th:if="${s.active}"
+                              class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/15 text-green-400 border border-green-500/20">
+                            Activa
+                        </span>
+                        <span th:unless="${s.active}"
+                              class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-700/50 text-slate-400 border border-slate-600/30">
+                            Inactiva
+                        </span>
+                    </div>
+
+                    <!-- Precio -->
+                    <div class="flex items-baseline gap-1 mb-3">
+                        <span class="text-2xl font-bold text-slate-100"
+                              th:text="'€' + ${#numbers.formatDecimal(s.price, 1, 2)}"></span>
+                        <span class="text-xs text-slate-500"
+                              th:text="${s.billingCycle == 'MONTHLY' ? '/mes' : (s.billingCycle == 'YEARLY' ? '/año' : '/sem.')}"></span>
+                    </div>
+
+                    <!-- Meta: categoría + fecha renovación -->
+                    <div class="flex flex-wrap items-center gap-2 text-xs">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full font-medium text-white"
+                              th:style="'background:' + ${s.category.color}"
+                              th:text="${s.category.icon + ' ' + s.category.name}"></span>
+                        <span class="text-slate-500">
+                            <i class="bi bi-calendar3 mr-1"></i>
+                            <span th:text="${#temporals.format(s.renewalDate, 'dd MMM yyyy')}"></span>
+                        </span>
                     </div>
                 </div>
 
-                <!-- Pills de filtro por categoría -->
-                <div class="col-md-7">
-                    <div class="d-flex flex-wrap gap-2">
-                        <!-- "Todas" siempre visible y activo por defecto -->
-                        <button class="filter-pill active" data-category="">Todas</button>
-                        <!-- Un pill por cada categoría existente -->
-                        <button th:each="cat : ${categories}"
-                                class="filter-pill"
-                                th:data-category="${cat.name}"
-                                th:text="${cat.icon + ' ' + cat.name}">
-                        </button>
-                    </div>
+                <!-- Footer: acciones -->
+                <div class="px-5 py-3 border-t border-white/[0.05] flex items-center justify-end gap-2">
+                    <a th:href="@{/subscriptions/{id}/edit(id=${s.id})}"
+                       class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/[0.15] transition-all duration-200 no-underline">
+                        <i class="bi bi-pencil"></i>Editar
+                    </a>
+                    <button type="button"
+                            th:attr="onclick=|openDeleteModal(${s.id}, '[[${s.name}]]')|"
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-400/70 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 transition-all duration-200 cursor-pointer">
+                        <i class="bi bi-trash"></i>Eliminar
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ── Tabla de suscripciones ─────────────────────────────────────── -->
-    <div class="card">
-        <div class="card-body p-0">
-            <table class="table mb-0" id="subsTable">
-                <thead>
-                <tr>
-                    <th>Servicio</th>
-                    <th>Categoría</th>
-                    <th>Precio / mes</th>
-                    <th>Ciclo</th>
-                    <th>Renovación</th>
-                    <th>Estado</th>
-                    <th></th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="s : ${subscriptions}"
-                    th:data-name="${#strings.toLowerCase(s.name + ' ' + s.description + ' ' + s.notes)}"
-                    th:data-category="${s.category.name}">
+    <!-- Estado vacío: sin resultados del filtro -->
+    <div id="noResults"
+         class="glass-card rounded-xl p-16 text-center hidden">
+        <i class="bi bi-search text-5xl text-slate-600 block mb-4"></i>
+        <p class="text-slate-400 mb-4">No se encontraron suscripciones</p>
+        <button onclick="clearFilters()"
+                class="px-4 py-2 border border-white/[0.1] text-slate-400 hover:text-slate-200 hover:border-white/20 rounded-lg text-sm transition-all duration-200 cursor-pointer">
+            Limpiar filtros
+        </button>
+    </div>
 
-                    <!-- Nombre y descripción -->
-                    <td>
-                        <div style="font-weight:600;" th:text="${s.name}"></div>
-                        <div th:if="${!s.description.isEmpty()}"
-                             style="font-size:.78rem;color:var(--muted);"
-                             th:text="${s.description}"></div>
-                    </td>
+    <!-- Estado vacío: sin suscripciones en absoluto -->
+    <div th:if="${subscriptions.isEmpty()}"
+         class="glass-card rounded-xl p-16 text-center">
+        <i class="bi bi-credit-card text-5xl text-slate-600 block mb-4"></i>
+        <p class="text-slate-400 mb-4">Todavía no tienes ninguna suscripción</p>
+        <a th:href="@{/subscriptions/new}"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-all duration-200 no-underline">
+            <i class="bi bi-plus-lg"></i>Añadir la primera
+        </a>
+    </div>
 
-                    <!-- Categoría como etiqueta de color -->
-                    <td>
-                        <span class="badge rounded-pill"
-                              th:style="'background:' + ${s.category.color}"
-                              th:text="${s.category.icon + ' ' + s.category.name}"></span>
-                    </td>
-
-                    <!-- Precio formateado en EUR -->
-                    <td>
-                        <span style="font-weight:600;" th:text="'€' + ${#numbers.formatDecimal(s.price, 1, 2)}"></span>
-                        <span style="font-size:.75rem;color:var(--muted);"
-                              th:text="${s.billingCycle == 'MONTHLY' ? '/mes' : (s.billingCycle == 'YEARLY' ? '/año' : '/sem.')}"></span>
-                    </td>
-
-                    <!-- Ciclo de facturación -->
-                    <td>
-                        <span class="badge"
-                              style="background:var(--primary-light);color:var(--primary-dark);"
-                              th:text="${s.billingCycle == 'MONTHLY' ? 'Mensual' : (s.billingCycle == 'YEARLY' ? 'Anual' : 'Semanal')}">
-                        </span>
-                    </td>
-
-                    <!-- Fecha de renovación -->
-                    <td th:text="${#temporals.format(s.renewalDate, 'dd MMM yyyy')}"></td>
-
-                    <!-- Estado: activa / inactiva -->
-                    <td>
-                        <span th:if="${s.active}"
-                              class="badge"
-                              style="background:#dcfce7;color:#166534;">Activa</span>
-                        <span th:unless="${s.active}"
-                              class="badge"
-                              style="background:#f1f5f9;color:var(--muted);">Inactiva</span>
-                    </td>
-
-                    <!-- Acciones: editar y eliminar -->
-                    <td class="text-end" style="white-space:nowrap;">
-                        <a th:href="@{/subscriptions/{id}/edit(id=${s.id})}"
-                           class="btn btn-sm btn-outline-secondary me-1"
-                           title="Editar">
-                            <i class="bi bi-pencil"></i>
-                        </a>
-                        <a th:href="@{/subscriptions/{id}/delete(id=${s.id})}"
-                           class="btn btn-sm btn-outline-danger"
-                           title="Eliminar">
-                            <i class="bi bi-trash"></i>
-                        </a>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-
-            <!-- Estado vacío: sin resultados del filtro -->
-            <div id="noResults" class="empty-state" style="display:none;">
-                <i class="bi bi-search empty-icon"></i>
-                <p>No se encontraron suscripciones</p>
-                <button class="btn btn-outline-secondary btn-sm" onclick="clearFilters()">Limpiar filtros</button>
+    <!-- ── Modal de confirmación de borrado ───────────────────────────── -->
+    <div id="deleteModal"
+         class="fixed inset-0 z-50 hidden items-center justify-center"
+         style="background:rgba(0,0,0,0.7); backdrop-filter:blur(4px);">
+        <div class="glass-card rounded-2xl p-8 w-full max-w-sm mx-4 text-center shadow-2xl"
+             style="border:1px solid rgba(239,68,68,0.3);">
+            <div class="w-16 h-16 rounded-full bg-red-500/15 border border-red-500/30 flex items-center justify-center mx-auto mb-5">
+                <i class="bi bi-trash3 text-2xl text-red-400"></i>
             </div>
-
-            <!-- Estado vacío: sin suscripciones en absoluto -->
-            <div th:if="${subscriptions.isEmpty()}" class="empty-state">
-                <i class="bi bi-credit-card empty-icon"></i>
-                <p>Todavía no tienes ninguna suscripción</p>
-                <a th:href="@{/subscriptions/new}" class="btn btn-primary btn-sm">
-                    <i class="bi bi-plus-lg me-1"></i>Añadir la primera
-                </a>
+            <h3 class="text-lg font-bold text-slate-100 mb-2">Eliminar suscripción</h3>
+            <p class="text-sm text-slate-400 mb-1">
+                ¿Estás seguro de que quieres eliminar
+                <strong class="text-slate-200" id="modalSubName"></strong>?
+            </p>
+            <p class="text-xs text-red-400/70 mb-6 font-medium">Esta acción no se puede deshacer</p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="closeDeleteModal()"
+                        class="flex-1 px-4 py-2 border border-white/[0.1] text-slate-300 hover:text-white hover:border-white/20 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer">
+                    Cancelar
+                </button>
+                <form id="deleteForm" method="post" class="flex-1">
+                    <button type="submit"
+                            class="w-full px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer">
+                        <i class="bi bi-trash mr-1"></i>Sí, eliminar
+                    </button>
+                </form>
             </div>
         </div>
     </div>
 
 </div>
 
-<!-- ── JavaScript para búsqueda y filtro en tiempo real ──────────────── -->
+<!-- ── JavaScript ─────────────────────────────────────────────────────── -->
 <th:block layout:fragment="scripts">
 <script th:inline="none">
 (function () {
     'use strict';
 
-    const searchInput  = document.getElementById('searchInput');
-    const filterPills  = document.querySelectorAll('.filter-pill');
-    const rows         = document.querySelectorAll('#subsTable tbody tr[data-name]');
-    const noResults    = document.getElementById('noResults');
-    const resultCount  = document.getElementById('resultCount');
+    const searchInput = document.getElementById('searchInput');
+    const subsGrid    = document.getElementById('subsGrid');
+    const noResults   = document.getElementById('noResults');
+    const resultCount = document.getElementById('resultCount');
 
-    let activeCategory = '';  // '' = mostrar todas
+    let activeCategory = '';
 
-    /** Aplica el filtro de texto y categoría a todas las filas. */
+    function getCards() {
+        return subsGrid ? subsGrid.querySelectorAll('.sub-card[data-name]') : [];
+    }
+
     function applyFilters() {
-        const text = searchInput.value.toLowerCase().trim();
+        const text = (searchInput ? searchInput.value : '').toLowerCase().trim();
+        const cards = getCards();
         let visible = 0;
 
-        rows.forEach(function (row) {
-            const nameData = row.getAttribute('data-name') || '';
-            const catData  = row.getAttribute('data-category') || '';
-
+        cards.forEach(function(card) {
+            const nameData = card.getAttribute('data-name') || '';
+            const catData  = card.getAttribute('data-category') || '';
             const matchesText = !text || nameData.includes(text);
             const matchesCat  = !activeCategory || catData === activeCategory;
-
             const show = matchesText && matchesCat;
-            row.style.display = show ? '' : 'none';
+            card.style.display = show ? '' : 'none';
             if (show) visible++;
         });
 
-        // Actualiza el contador y muestra el estado vacío si no hay resultados
         if (resultCount) resultCount.textContent = visible;
-        if (noResults)   noResults.style.display = (visible === 0 && rows.length > 0) ? 'block' : 'none';
+        if (noResults) {
+            noResults.style.display = (visible === 0 && cards.length > 0) ? 'flex' : 'none';
+        }
     }
 
-    /** Limpia búsqueda y categoría activa, vuelve a mostrar todo. */
-    window.clearFilters = function () {
-        searchInput.value = '';
-        activeCategory = '';
-        filterPills.forEach(function (p) { p.classList.remove('active'); });
-        const allPill = document.querySelector('.filter-pill[data-category=""]');
-        if (allPill) allPill.classList.add('active');
+    window.setCategory = function(btn, category) {
+        document.querySelectorAll('.filter-pill').forEach(function(p) {
+            p.classList.remove('active');
+            p.style.borderColor = 'rgba(255,255,255,0.1)';
+            p.style.background = 'transparent';
+            p.style.color = '#94a3b8';
+        });
+        btn.classList.add('active');
+        btn.style.borderColor = 'rgba(99,102,241,0.6)';
+        btn.style.background = 'rgba(99,102,241,0.15)';
+        btn.style.color = '#a5b4fc';
+        activeCategory = category;
         applyFilters();
     };
 
-    // Búsqueda: filtra mientras el usuario escribe
-    if (searchInput) {
-        searchInput.addEventListener('input', applyFilters);
-    }
+    window.clearFilters = function() {
+        if (searchInput) searchInput.value = '';
+        activeCategory = '';
+        const allPill = document.querySelector('.filter-pill[data-category=""]');
+        if (allPill) setCategory(allPill, '');
+        else applyFilters();
+    };
 
-    // Pills de categoría: toggle activo y filtra
-    filterPills.forEach(function (pill) {
-        pill.addEventListener('click', function () {
-            filterPills.forEach(function (p) { p.classList.remove('active'); });
-            this.classList.add('active');
-            activeCategory = this.getAttribute('data-category');
-            applyFilters();
+    if (searchInput) searchInput.addEventListener('input', applyFilters);
+
+    // Delete modal
+    window.openDeleteModal = function(id, name) {
+        const modal = document.getElementById('deleteModal');
+        const nameEl = document.getElementById('modalSubName');
+        const form = document.getElementById('deleteForm');
+        if (nameEl) nameEl.textContent = name;
+        if (form) form.action = '/subscriptions/' + id + '/delete';
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+    };
+
+    window.closeDeleteModal = function() {
+        const modal = document.getElementById('deleteModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    };
+
+    // Close modal on backdrop click
+    const modal = document.getElementById('deleteModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeDeleteModal();
         });
-    });
+    }
 }());
 </script>
 </th:block>

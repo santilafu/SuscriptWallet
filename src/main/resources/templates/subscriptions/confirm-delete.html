@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <!--
-  Pantalla de confirmación antes de eliminar una suscripción.
-  Muestra el nombre del servicio y advierte de que la acción es irreversible.
+  Pantalla de confirmación de borrado (fallback para acceso directo a la URL).
+  La UI principal usa un modal Alpine inline en list.html.
+  Este template se mantiene por compatibilidad con el controlador.
 -->
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
@@ -10,35 +11,37 @@
 <body>
 <div layout:fragment="content">
 
-    <div class="row justify-content-center">
-        <div class="col-md-5">
-            <div class="card text-center" style="border-top:4px solid var(--danger);">
-                <div class="card-body py-5">
-                    <!-- Icono grande de advertencia -->
-                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-4"
-                         style="width:72px;height:72px;background:#fef2f2;">
-                        <i class="bi bi-trash3 fs-2" style="color:var(--danger);"></i>
-                    </div>
+    <div class="flex justify-center">
+        <div class="glass-card rounded-2xl w-full max-w-sm text-center overflow-hidden"
+             style="border-top: 4px solid #ef4444;">
 
-                    <h4 style="font-weight:700;">Eliminar suscripción</h4>
-                    <p style="color:var(--muted);font-size:.9rem;">
-                        ¿Estás seguro de que quieres eliminar
-                        <strong th:text="${sub.name}"></strong>?
-                    </p>
-                    <p class="badge mb-0" style="background:#fef2f2;color:#991b1b;font-size:.8rem;padding:.4rem .8rem;">
-                        Esta acción no se puede deshacer
-                    </p>
+            <div class="p-10">
+                <!-- Icono -->
+                <div class="w-16 h-16 rounded-full bg-red-500/15 border border-red-500/30 flex items-center justify-center mx-auto mb-5">
+                    <i class="bi bi-trash3 text-2xl text-red-400"></i>
                 </div>
-                <div class="card-footer d-flex justify-content-center gap-3">
-                    <form th:action="@{/subscriptions/{id}/delete(id=${sub.id})}" method="post">
-                        <button type="submit" class="btn btn-danger">
-                            <i class="bi bi-trash me-1"></i>Sí, eliminar
-                        </button>
-                    </form>
-                    <a th:href="@{/subscriptions}" class="btn btn-outline-secondary">
-                        Cancelar
-                    </a>
-                </div>
+
+                <h2 class="text-xl font-bold text-slate-100 mb-3">Eliminar suscripción</h2>
+                <p class="text-sm text-slate-400 mb-2">
+                    ¿Estás seguro de que quieres eliminar
+                    <strong class="text-slate-200" th:text="${sub.name}"></strong>?
+                </p>
+                <span class="inline-block text-xs text-red-400/70 font-medium bg-red-500/10 border border-red-500/20 rounded-full px-3 py-1">
+                    Esta acción no se puede deshacer
+                </span>
+            </div>
+
+            <div class="px-8 py-5 border-t border-white/[0.06] flex gap-3 justify-center">
+                <form th:action="@{/subscriptions/{id}/delete(id=${sub.id})}" method="post">
+                    <button type="submit"
+                            class="flex items-center gap-2 px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer">
+                        <i class="bi bi-trash"></i>Sí, eliminar
+                    </button>
+                </form>
+                <a th:href="@{/subscriptions}"
+                   class="flex items-center px-5 py-2.5 border border-white/[0.1] text-slate-400 hover:text-slate-200 hover:border-white/20 text-sm font-medium rounded-lg transition-all duration-200 no-underline">
+                    Cancelar
+                </a>
             </div>
         </div>
     </div>
