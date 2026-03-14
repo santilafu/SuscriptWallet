@@ -1,8 +1,10 @@
 package com.subia.controller.api
 
+import com.subia.dto.DashboardMobileStatsDto
 import com.subia.dto.api.*
 import com.subia.service.DashboardService
 import com.subia.service.SubscriptionService
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -46,4 +48,12 @@ class ApiDashboardController(
             upcomingRenewals = upcomingRenewals
         ))
     }
+
+    /**
+     * Estadísticas del dashboard en formato para la app móvil KMM.
+     * Devuelve gastoMensual, gastoAnual, totalSuscripciones y renovacionesProximas.
+     */
+    @GetMapping("/stats")
+    fun getMobileStats(): ResponseEntity<DashboardMobileStatsDto> =
+        ResponseEntity.ok(dashboardService.getDashboardStats())
 }

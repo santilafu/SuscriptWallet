@@ -35,3 +35,4 @@ spring-shell.log
 .env.local
 application-local.properties
 application-prod.properties
+local.properties

@@ -1,6 +1,8 @@
 package com.subia.service
 
 import com.subia.dto.DashboardDto
+import com.subia.dto.DashboardMobileStatsDto
+import com.subia.dto.ProximaRenovacionMobileDto
 import com.subia.model.BillingCycle
 import com.subia.model.Category
 import com.subia.model.Subscription
@@ -10,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 /**
  * Servicio de negocio que calcula los datos agregados del dashboard.
@@ -64,6 +67,42 @@ class DashboardService(private val repo: SubscriptionRepository) {
             .sortedBy { it.renewalDate }
 
         return DashboardDto(totalMonthly, totalYearly, spendByCategory, upcomingRenewals, alertRenewals)
+    }
+
+    /**
+     * Devuelve las estadísticas del dashboard en el formato que consume la app móvil KMM.
+     *
+     * Reutiliza la lógica de normalización de precios de [getDashboard] y calcula
+     * los días restantes hasta cada renovación próxima (máximo 10).
+     */
+    fun getDashboardStats(): DashboardMobileStatsDto {
+        val active = repo.findByActiveTrue()
+        val today = LocalDate.now()
+
+        val gastoMensual = active.sumOf { toMonthly(it) }
+            .setScale(2, RoundingMode.HALF_UP).toDouble()
+        val gastoAnual = active.sumOf { toYearly(it) }
+            .setScale(2, RoundingMode.HALF_UP).toDouble()
+
+        val renovaciones = repo.findActiveRenewingBetween(today, today.plusDays(30))
+            .sortedBy { it.renewalDate }
+            .take(10)
+            .map { sub ->
+                ProximaRenovacionMobileDto(
+                    id = sub.id,
+                    nombre = sub.name,
+                    precio = sub.price.toDouble(),
+                    fechaRenovacion = sub.renewalDate.toString(),
+                    diasRestantes = ChronoUnit.DAYS.between(today, sub.renewalDate).toInt()
+                )
+            }
+
+        return DashboardMobileStatsDto(
+            gastoMensual = gastoMensual,
+            gastoAnual = gastoAnual,
+            totalSuscripciones = active.size,
+            renovacionesProximas = renovaciones
+        )
     }
 
     /**

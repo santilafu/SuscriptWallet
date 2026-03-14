@@ -93,11 +93,37 @@ Autenticación JWT (P2) para securizar la API REST de cara a la app móvil.
 
 ---
 
-## [2.0.0] — pendiente
+## [2.0.0] — 2026-03-14
 
-### Planificado
-- Autenticación JWT (access token 15 min + refresh token 30 días)
-- App móvil con Kotlin Multiplatform Mobile (KMM) + Compose Multiplatform
-- Notificaciones push de renovación (Firebase Cloud Messaging)
-- Widget en pantalla de inicio (iOS WidgetKit / Android Glance)
-- Soporte offline con sincronización
+App móvil nativa Android (P4) con Kotlin Multiplatform Mobile, preparada para iOS.
+
+### Añadido
+
+**Backend:**
+- `GET /api/dashboard/stats` — endpoint específico para la app móvil. Devuelve `gastoMensual`, `gastoAnual`, `totalSuscripciones` y `renovacionesProximas` con `diasRestantes`. JSON en camelCase.
+- `DashboardMobileStatsDto` + `ProximaRenovacionMobileDto` — DTOs propios para la respuesta mobile.
+- `DashboardService.getDashboardStats()` — reutiliza la lógica de normalización de precios existente.
+
+**App móvil (KMM — `mobile/`):**
+- Módulo `shared` con código 100% compartido entre Android e iOS:
+  - Modelos: `Subscription`, `Category`, `CatalogItem`, `DashboardSummary`, `AuthTokens`
+  - `ApiClient` con Ktor 3.1.0 y refresh de JWT atómico (Mutex) para evitar race conditions
+  - 5 repositorios: `AuthRepository`, `DashboardRepository`, `SubscriptionRepository`, `CategoryRepository`, `CatalogRepository`
+  - 6 ViewModels con `StateFlow` y sealed `UiState` (Loading/Success/Error/Offline/SesionExpirada)
+  - `expect/actual` para `TokenStorage` (EncryptedSharedPreferences / iOS Keychain), `PlatformContext` y `HttpEngine`
+  - DI con Koin 4.0.0 (`sharedModule` + `androidModule`)
+  - Caché en memoria por sesión para Dashboard, Suscripciones, Categorías y Catálogo
+- Módulo `androidApp`:
+  - Single Activity + Compose Navigation type-safe con `@Serializable` routes
+  - 7 pantallas: Login, Dashboard (pull-to-refresh), Suscripciones, Detalle, Formulario crear/editar, Categorías, Catálogo
+  - Detección offline automática — banner en todas las pantallas afectadas
+  - Selector de catálogo en el formulario de nueva suscripción (prerrellenado automático)
+  - Tema dark SubIA con paleta Indigo + Material 3
+- `libs.versions.toml` — Version Catalog de Gradle para gestión centralizada de dependencias
+- `mobile/local.properties` ignorado en git (SDK path + URL del backend, configuración local)
+
+### Pendiente (P4 siguientes fases)
+- Tests unitarios e instrumentados
+- iOS `iosApp` (Compose Multiplatform iOS target)
+- Notificaciones push de renovación
+- Widget de pantalla de inicio

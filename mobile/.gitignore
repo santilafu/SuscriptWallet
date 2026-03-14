@@ -1,0 +1,8 @@
+local.properties
+.gradle/
+.kotlin/
+androidApp/build/
+shared/build/
+iosApp/build/
+*.xcworkspace/
+.DS_Store

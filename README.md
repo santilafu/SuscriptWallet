@@ -1,6 +1,6 @@
 # SubIA — Gestor de suscripciones
 
-![Version](https://img.shields.io/badge/versión-1.4.0-6366f1?style=flat-square)
+![Version](https://img.shields.io/badge/versión-2.0.0-6366f1?style=flat-square)
 ![Stack](https://img.shields.io/badge/Spring%20Boot-3.3.5-6db33f?style=flat-square&logo=springboot)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.1.20-7f52ff?style=flat-square&logo=kotlin)
 ![Java](https://img.shields.io/badge/Java-21-007396?style=flat-square&logo=openjdk)
@@ -41,6 +41,7 @@ Disponible desde v1.2.0. Todos los endpoints devuelven `{ "data": ..., "error": 
 | PUT | `/api/categories/{id}` | Editar categoría (body JSON) |
 | DELETE | `/api/categories/{id}` | Eliminar categoría |
 | GET | `/api/dashboard` | Stats: gasto mensual/anual, activas, alertas de renovación |
+| GET | `/api/dashboard/stats` | Stats para la app móvil (camelCase, renovaciones próximas con diasRestantes) |
 | GET | `/api/catalog` | Todos los servicios del catálogo |
 | GET | `/api/catalog?categoryId=X` | Servicios filtrados por categoría |
 
@@ -83,6 +84,8 @@ Los errores de autenticación se devuelven en JSON estándar: `{ "data": null, "
 
 ## 🛠 Tecnologías
 
+### Backend
+
 | Capa | Tecnología |
 |------|------------|
 | Lenguaje | Kotlin 2.1 |
@@ -95,9 +98,26 @@ Los errores de autenticación se devuelven en JSON estándar: `{ "data": null, "
 | Tipografía | Inter (Google Fonts) |
 | Build | Gradle (Kotlin DSL) |
 
+### App móvil (KMM)
+
+| Capa | Tecnología |
+|------|------------|
+| Multiplatform | Kotlin Multiplatform Mobile (KMM) |
+| UI Android | Jetpack Compose + Material 3 |
+| UI iOS | Compose Multiplatform 1.7.3 *(próximamente)* |
+| Networking | Ktor Client 3.1.0 (CIO en Android, Darwin en iOS) |
+| Serialización | Kotlinx Serialization 1.8.0 |
+| DI | Koin 4.0.0 (KMP-compatible) |
+| Navegación | AndroidX Navigation Compose 2.8.5 (type-safe routes) |
+| Almacenamiento seguro | EncryptedSharedPreferences (Android) / Keychain Services (iOS) |
+| Arquitectura | MVVM + StateFlow + sealed UiState en `commonMain` |
+| Build | Gradle 8.9 + Version Catalog (`libs.versions.toml`) |
+
 ---
 
 ## 🚀 Cómo ejecutar
+
+### Backend
 
 **Requisitos previos**: JDK 21 o superior y Docker.
 
@@ -115,9 +135,26 @@ La aplicación arranca en **http://localhost:8081**.
 
 Los datos persisten en un volumen Docker (`subia_data`) entre reinicios.
 
+### App móvil (Android)
+
+**Requisitos previos**: Android Studio Hedgehog o superior, JDK 21, Android SDK 35.
+
+```bash
+# Crear mobile/local.properties (SDK path + URL del backend)
+echo "sdk.dir=/ruta/a/Android/Sdk" > mobile/local.properties
+echo "API_BASE_URL=http://10.0.2.2:8081" >> mobile/local.properties
+```
+
+1. Abrir **Android Studio** → `Open` → seleccionar la carpeta `mobile/`
+2. Esperar la sincronización de Gradle
+3. Seleccionar `androidApp` como módulo de ejecución
+4. Lanzar en emulador o dispositivo con Android 8.0+ (API 26)
+
 ---
 
 ## 📁 Estructura del proyecto
+
+### Backend
 
 ```
 src/main/kotlin/com/subia/
@@ -132,9 +169,10 @@ src/main/kotlin/com/subia/
 │   └── api/
 │       ├── ApiSubscriptionController.kt  # REST /api/subscriptions (CRUD JSON)
 │       ├── ApiCategoryController.kt      # REST /api/categories (CRUD JSON)
-│       └── ApiDashboardController.kt     # REST /api/dashboard (stats JSON)
+│       └── ApiDashboardController.kt     # REST /api/dashboard + /stats (JSON)
 ├── dto/
 │   ├── DashboardDto.kt              # Datos calculados del dashboard (web)
+│   ├── DashboardMobileDto.kt        # DTOs para /api/dashboard/stats (mobile)
 │   └── api/
 │       ├── ApiResponse.kt           # Wrapper genérico { data, error }
 │       ├── ApiError.kt              # Estructura de error { code, message }
@@ -153,7 +191,7 @@ src/main/kotlin/com/subia/
 └── service/
     ├── CatalogService.kt            # Catálogo estático con 80+ servicios en EUR
     ├── CategoryService.kt
-    ├── DashboardService.kt          # Normalización de precios (mensual/anual)
+    ├── DashboardService.kt          # Normalización de precios (mensual/anual) + mobile stats
     └── SubscriptionService.kt
 
 src/main/resources/
@@ -171,6 +209,38 @@ src/main/resources/
         ├── confirm-delete.html
         ├── form.html                # Formulario con selector de catálogo (AJAX)
         └── list.html                # Tabla con búsqueda y filtro en tiempo real
+```
+
+### App móvil (KMM)
+
+```
+mobile/
+├── settings.gradle.kts
+├── build.gradle.kts
+├── gradle/
+│   ├── libs.versions.toml           # Version catalog (Kotlin 2.1.20, Compose MP 1.7.3, Ktor 3.1.0)
+│   └── wrapper/gradle-wrapper.properties
+├── shared/                          # Módulo KMM — lógica compartida Android + iOS
+│   └── src/
+│       ├── commonMain/kotlin/com/subia/shared/
+│       │   ├── model/               # AuthTokens, Subscription, Category, CatalogItem, DashboardSummary
+│       │   ├── network/             # ApiClient (Ktor + JWT refresh con Mutex), ApiRoutes
+│       │   ├── repository/          # Auth, Dashboard, Subscription, Category, Catalog
+│       │   ├── viewmodel/           # 6 ViewModels con StateFlow + sealed UiState
+│       │   ├── storage/             # expect TokenStorage
+│       │   ├── platform/            # expect PlatformContext, expect createHttpEngine()
+│       │   └── di/SharedModule.kt
+│       ├── androidMain/             # actual implementations (EncryptedSharedPreferences, CIO)
+│       └── iosMain/                 # actual implementations (Keychain Services, Darwin)
+└── androidApp/                      # Módulo Android
+    └── src/main/kotlin/com/subia/android/
+        ├── SubIAApp.kt              # Application — Koin startKoin
+        ├── MainActivity.kt          # Single Activity + auth check
+        ├── navigation/AppNavGraph.kt # Type-safe routes (@Serializable)
+        └── ui/
+            ├── SubIAApp.kt          # Root composable + NavigationBar
+            ├── theme/               # SubIA palette, dark MaterialTheme
+            └── screens/             # Login, Dashboard, Suscripciones, Detalle, Form, Categorías, Catálogo
 ```
 
 ---
@@ -222,4 +292,4 @@ Consulta [CHANGELOG.md](CHANGELOG.md) para el historial completo de cambios.
 | 1.2.0   | 2026-03-13 | API REST completa (P1)               |
 | 1.3.0   | 2026-03-14 | Autenticación JWT (P2)               |
 | 1.4.0   | 2026-03-14 | UI redesign — Tailwind dark mode     |
-| 2.0.0   | pendiente  | App móvil KMM + Compose Multiplatform |
+| 2.0.0   | 2026-03-14 | App móvil KMM (Android) + Compose Multiplatform |
