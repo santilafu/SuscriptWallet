@@ -7,14 +7,16 @@ import com.subia.shared.platform.PlatformContext
  * Almacenamiento seguro de tokens JWT.
  * Android: EncryptedSharedPreferences (Android Keystore).
  * iOS: Keychain Services.
+ *
+ * Implementa [TokenStorageProvider] para permitir su sustitución por fakes en tests.
  */
-expect class TokenStorage(context: PlatformContext) {
+expect class TokenStorage(context: PlatformContext) : TokenStorageProvider {
     /** Persiste los tokens JWT en almacenamiento seguro. */
-    fun saveTokens(tokens: AuthTokens)
+    override fun saveTokens(tokens: AuthTokens)
     /** Devuelve los tokens almacenados, o null si no existen. */
-    fun getTokens(): AuthTokens?
+    override fun getTokens(): AuthTokens?
     /** Elimina todos los tokens del almacenamiento. */
-    fun clearTokens()
+    override fun clearTokens()
     /** Comprueba si hay tokens persistidos. */
-    fun hasTokens(): Boolean
+    override fun hasTokens(): Boolean
 }

@@ -15,7 +15,7 @@ class SubIAApp : Application() {
             androidContext(this@SubIAApp)
             modules(
                 androidModule,
-                sharedModule(apiBaseUrl = BuildConfig.API_BASE_URL)
+                sharedModule(apiBaseUrl = BuildConfig.API_BASE_URL, isDebug = BuildConfig.DEBUG)
             )
         }
     }

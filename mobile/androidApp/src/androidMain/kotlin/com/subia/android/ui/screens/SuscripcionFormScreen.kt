@@ -1,5 +1,6 @@
 package com.subia.android.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,8 +15,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -26,7 +30,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -37,9 +43,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import com.subia.shared.model.CatalogItem
 import com.subia.shared.viewmodel.FormUiState
 import com.subia.shared.viewmodel.SuscripcionFormViewModel
 import com.subia.shared.viewmodel.CategoriasViewModel
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Pantalla de formulario para crear o editar una suscripción. */
@@ -48,6 +59,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun SuscripcionFormScreen(
     suscripcionId: Long? = null,
     onSuccess: () -> Unit,
+    navController: NavController? = null,
     formViewModel: SuscripcionFormViewModel = koinViewModel(),
     categoriasViewModel: CategoriasViewModel = koinViewModel()
 ) {
@@ -65,6 +77,21 @@ fun SuscripcionFormScreen(
     LaunchedEffect(uiState) {
         if (uiState is FormUiState.Success) onSuccess()
     }
+
+    // Prerrellenado desde el catálogo via SavedStateHandle (T08)
+    LaunchedEffect(Unit) {
+        val item = navController?.previousBackStackEntry
+            ?.savedStateHandle
+            ?.get<CatalogItem>("catalog_item")
+        item?.let {
+            formViewModel.prerellenarDesdeCatalogo(it)
+            navController.previousBackStackEntry?.savedStateHandle?.remove<CatalogItem>("catalog_item")
+        }
+    }
+
+    // Estado del selector de fecha (T06)
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
 
     var expandedMoneda by remember { mutableStateOf(false) }
     var expandedPeriodo by remember { mutableStateOf(false) }
@@ -165,14 +192,46 @@ fun SuscripcionFormScreen(
             }
 
             OutlinedTextField(
-                value = fechaRenovacion,
-                onValueChange = { formViewModel.fechaRenovacion.value = it },
-                label = { Text("Fecha de renovación * (yyyy-MM-dd)") },
-                modifier = Modifier.fillMaxWidth(),
+                value = if (fechaRenovacion.isNotBlank()) {
+                    // Mostrar en formato dd/MM/yyyy al usuario; se almacena yyyy-MM-dd
+                    runCatching {
+                        val parts = fechaRenovacion.split("-")
+                        "${parts[2]}/${parts[1]}/${parts[0]}"
+                    }.getOrDefault(fechaRenovacion)
+                } else "",
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Fecha de renovación *") },
+                trailingIcon = {
+                    IconButton(onClick = { showDatePicker = true }) {
+                        Icon(Icons.Default.CalendarToday, contentDescription = "Seleccionar fecha")
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().clickable { showDatePicker = true },
                 enabled = !isLoading,
-                placeholder = { Text("2026-04-01") },
                 singleLine = true
             )
+
+            if (showDatePicker) {
+                DatePickerDialog(
+                    onDismissRequest = { showDatePicker = false },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            datePickerState.selectedDateMillis?.let { millis ->
+                                val localDate = Instant.fromEpochMilliseconds(millis)
+                                    .toLocalDateTime(TimeZone.UTC).date
+                                formViewModel.fechaRenovacion.value = localDate.toString()
+                            }
+                            showDatePicker = false
+                        }) { Text("Aceptar") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
+                    }
+                ) {
+                    DatePicker(state = datePickerState)
+                }
+            }
 
             OutlinedTextField(
                 value = notas,

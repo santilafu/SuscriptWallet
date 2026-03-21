@@ -5,6 +5,8 @@ import com.subia.shared.model.AuthTokens
 import com.subia.shared.model.RefreshRequest
 import com.subia.shared.platform.createHttpEngine
 import com.subia.shared.storage.TokenStorage
+import com.subia.shared.storage.TokenStorageProvider
+import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -33,10 +35,19 @@ import kotlinx.serialization.json.Json
  * Cliente HTTP centralizado con inyección de token Bearer y refresco automático ante 401.
  * Usa un [Mutex] para serializar el refresco y evitar condiciones de carrera cuando varias
  * corrutinas reciben 401 simultáneamente.
+ *
+ * @param baseUrl    URL base del servidor (sin trailing slash).
+ * @param tokenStorage Almacenamiento seguro de tokens JWT.
+ * @param isDebug    Si es `true`, habilita el log HTTP (sólo para builds de depuración).
+ *                   En `false` (producción) se desactiva para evitar exponer tokens JWT en logcat.
+ * @param httpEngine Motor HTTP a usar. Si es `null`, se usa el motor nativo de la plataforma.
+ *                   Pasar un [io.ktor.client.engine.mock.MockEngine] permite hacer pruebas unitarias sin red.
  */
 class ApiClient(
     private val baseUrl: String,
-    @PublishedApi internal val tokenStorage: TokenStorage
+    @PublishedApi internal val tokenStorage: TokenStorageProvider,
+    private val isDebug: Boolean = false,
+    httpEngine: HttpClientEngine? = null
 ) {
     @PublishedApi
     internal val refreshMutex = Mutex()
@@ -48,10 +59,10 @@ class ApiClient(
     }
 
     @PublishedApi
-    internal val client = HttpClient(createHttpEngine()) {
+    internal val client = HttpClient(httpEngine ?: createHttpEngine()) {
         install(ContentNegotiation) { json(jsonConfig) }
         install(Logging) {
-            level = LogLevel.INFO
+            level = if (isDebug) LogLevel.INFO else LogLevel.NONE
             logger = object : Logger { override fun log(message: String) = println(message) }
         }
         defaultRequest {

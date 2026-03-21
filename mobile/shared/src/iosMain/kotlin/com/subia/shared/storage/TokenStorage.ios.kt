@@ -31,25 +31,25 @@ import platform.Security.kSecValueData
 
 /** Almacenamiento de tokens usando iOS Keychain Services. */
 @OptIn(ExperimentalForeignApi::class)
-actual class TokenStorage actual constructor(context: PlatformContext) {
+actual class TokenStorage actual constructor(context: PlatformContext) : TokenStorageProvider {
 
-    actual fun saveTokens(tokens: AuthTokens) {
+    actual override fun saveTokens(tokens: AuthTokens) {
         saveToKeychain(KEY_ACCESS, tokens.accessToken)
         saveToKeychain(KEY_REFRESH, tokens.refreshToken)
     }
 
-    actual fun getTokens(): AuthTokens? {
+    actual override fun getTokens(): AuthTokens? {
         val access = readFromKeychain(KEY_ACCESS) ?: return null
         val refresh = readFromKeychain(KEY_REFRESH) ?: return null
         return AuthTokens(accessToken = access, refreshToken = refresh)
     }
 
-    actual fun clearTokens() {
+    actual override fun clearTokens() {
         deleteFromKeychain(KEY_ACCESS)
         deleteFromKeychain(KEY_REFRESH)
     }
 
-    actual fun hasTokens(): Boolean =
+    actual override fun hasTokens(): Boolean =
         readFromKeychain(KEY_ACCESS) != null && readFromKeychain(KEY_REFRESH) != null
 
     private fun saveToKeychain(key: String, value: String) {

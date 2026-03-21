@@ -1,5 +1,6 @@
 package com.subia.android.ui.screens
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -22,11 +24,13 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -40,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.subia.android.ui.ServiceLogo
+import com.subia.shared.model.Category
 import com.subia.shared.model.Subscription
 import com.subia.shared.viewmodel.SuscripcionesUiState
 import com.subia.shared.viewmodel.SuscripcionesViewModel
@@ -73,7 +78,7 @@ fun SuscripcionesScreen(
             when (val state = uiState) {
                 is SuscripcionesUiState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
                 is SuscripcionesUiState.Success -> {
-                    if (state.suscripciones.isEmpty()) {
+                    if (state.suscripciones.isEmpty() && state.categoriaSeleccionada == null) {
                         Box(Modifier.fillMaxSize(), Alignment.Center) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text("Sin suscripciones", style = MaterialTheme.typography.titleMedium)
@@ -82,12 +87,24 @@ fun SuscripcionesScreen(
                             }
                         }
                     } else {
-                        ListaSuscripciones(state.suscripciones, onNavigateToDetalle)
+                        ListaSuscripciones(
+                            suscripciones = state.suscripciones,
+                            categorias = state.categorias,
+                            categoriaSeleccionada = state.categoriaSeleccionada,
+                            onNavigateToDetalle = onNavigateToDetalle,
+                            onFiltrar = { viewModel.filtrarPorCategoria(it) }
+                        )
                     }
                 }
                 is SuscripcionesUiState.Offline -> Column {
                     BannerOffline("Mostrando datos guardados — sin conexión")
-                    ListaSuscripciones(state.suscripciones, onNavigateToDetalle)
+                    ListaSuscripciones(
+                        suscripciones = state.suscripciones,
+                        categorias = state.categorias,
+                        categoriaSeleccionada = null,
+                        onNavigateToDetalle = onNavigateToDetalle,
+                        onFiltrar = {}
+                    )
                 }
                 is SuscripcionesUiState.Error -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -102,28 +119,78 @@ fun SuscripcionesScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ListaSuscripciones(suscripciones: List<Subscription>, onNavigateToDetalle: (Long) -> Unit) {
+private fun ListaSuscripciones(
+    suscripciones: List<Subscription>,
+    categorias: List<Category>,
+    categoriaSeleccionada: Long?,
+    onNavigateToDetalle: (Long) -> Unit,
+    onFiltrar: (Long?) -> Unit
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item {
-            Text("Suscripciones", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Text("${suscripciones.size} activas", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(4.dp))
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Text("Suscripciones", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Text("${suscripciones.size} activas", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
-        items(suscripciones, key = { it.id }) { sub ->
-            SuscripcionCard(sub, onNavigateToDetalle)
+
+        stickyHeader {
+            Surface(tonalElevation = 2.dp) {
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    item {
+                        FilterChip(
+                            selected = categoriaSeleccionada == null,
+                            onClick = { onFiltrar(null) },
+                            label = { Text("Todas") }
+                        )
+                    }
+                    items(categorias, key = { it.id }) { cat ->
+                        FilterChip(
+                            selected = categoriaSeleccionada == cat.id,
+                            onClick = {
+                                if (categoriaSeleccionada == cat.id) onFiltrar(null)
+                                else onFiltrar(cat.id)
+                            },
+                            label = { Text(cat.nombre) }
+                        )
+                    }
+                }
+            }
+        }
+
+        if (suscripciones.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "No hay suscripciones en esta categoría",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        } else {
+            items(suscripciones, key = { it.id }) { sub ->
+                SuscripcionCard(sub, onNavigateToDetalle, modifier = Modifier.padding(horizontal = 16.dp))
+            }
         }
     }
 }
 
 @Composable
-private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Unit) {
+private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Unit, modifier: Modifier = Modifier) {
     Card(
-        modifier = Modifier.fillMaxWidth().clickable { onNavigateToDetalle(sub.id) },
+        modifier = modifier.fillMaxWidth().clickable { onNavigateToDetalle(sub.id) },
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {

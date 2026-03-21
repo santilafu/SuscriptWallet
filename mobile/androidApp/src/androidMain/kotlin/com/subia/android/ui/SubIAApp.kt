@@ -5,18 +5,26 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Shop
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -46,7 +54,8 @@ private val bottomNavItems = listOf(
     Triple(CatalogoRoute, Icons.Default.Shop, "Catálogo")
 )
 
-/** Composable raíz: gestiona NavHost y barra de navegación inferior. */
+/** Composable raíz: gestiona NavHost, barra superior con logout y barra de navegación inferior. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SubIAApp(
     navController: NavHostController,
@@ -70,7 +79,33 @@ fun SubIAApp(
         bottomNavItems.any { (route, _, _) -> dest.hasRoute(route::class) }
     } ?: false
 
+    var showMenu by remember { mutableStateOf(false) }
+
     Scaffold(
+        topBar = {
+            if (showBottomBar) {
+                TopAppBar(
+                    title = { Text("SubIA") },
+                    actions = {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "Más opciones")
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Cerrar sesión") },
+                                onClick = {
+                                    authViewModel.logout()
+                                    showMenu = false
+                                }
+                            )
+                        }
+                    }
+                )
+            }
+        },
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar {
@@ -127,15 +162,16 @@ fun SubIAApp(
                 val route: SuscripcionFormRoute = backStackEntry.toRoute()
                 SuscripcionFormScreen(
                     suscripcionId = route.id,
-                    onSuccess = { navController.popBackStack() }
+                    onSuccess = { navController.popBackStack() },
+                    navController = navController
                 )
             }
             composable<CategoriasRoute> { CategoriasScreen() }
             composable<CatalogoRoute> {
                 CatalogoScreen(
                     onSeleccionarItem = { item ->
+                        navController.currentBackStackEntry?.savedStateHandle?.set("catalog_item", item)
                         navController.navigate(SuscripcionFormRoute())
-                        // El item seleccionado se pasa via SavedStateHandle en una implementación completa
                     }
                 )
             }

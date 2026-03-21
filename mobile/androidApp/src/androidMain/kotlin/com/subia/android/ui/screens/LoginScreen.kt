@@ -43,7 +43,7 @@ fun LoginScreen(
     viewModel: AuthViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var email by remember { mutableStateOf("admin") }
+    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
     val isLoading = uiState is AuthUiState.Loading
