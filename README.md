@@ -1,6 +1,6 @@
 # Suscript Wallet — Gestor de suscripciones
 
-![Version](https://img.shields.io/badge/versión-2.8.0-6366f1?style=flat-square)
+![Version](https://img.shields.io/badge/versión-2.9.0-6366f1?style=flat-square)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-3ddc84?style=flat-square&logo=android)
 ![Stack](https://img.shields.io/badge/Spring%20Boot-3.3.5-6db33f?style=flat-square&logo=springboot)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.1.20-7f52ff?style=flat-square&logo=kotlin)
@@ -18,7 +18,7 @@
 | 📊 **Dashboard** — gasto por divisa, gráfico por categoría, alertas de renovación | ✅ | ✅ |
 | 🔍 **Búsqueda en tiempo real** de suscripciones | ✅ | ✅ |
 | 🏷️ **Filtro por categoría** — chips interactivos | ✅ | ✅ |
-| 📋 **Catálogo integrado** — 170+ servicios, prerellena el formulario automáticamente | ✅ | ✅ |
+| 📋 **Catálogo integrado** — 285+ servicios, prerellena el formulario automáticamente | ✅ | ✅ |
 | 🌐 **Catálogo browser** — busca y añade servicios con un clic desde /catalog-browser | ✅ | — |
 | 🖼️ **Logos de servicios** (Spotify, Netflix, ChatGPT…) | ✅ | ✅ |
 | 💾 **Modo offline** — caché persistente (DataStore), stale-while-revalidate | — | ✅ |
@@ -195,7 +195,7 @@ src/main/kotlin/com/subia/
 │   ├── CategoryRepository.kt
 │   └── SubscriptionRepository.kt    # Queries personalizadas (activas, rango de fechas)
 └── service/
-    ├── CatalogService.kt            # Catálogo estático con 170+ servicios en EUR
+    ├── CatalogService.kt            # Catálogo estático con 285+ servicios en EUR
     ├── CategoryService.kt
     ├── DashboardService.kt          # Normalización de precios (mensual/anual) + mobile stats
     └── SubscriptionService.kt
@@ -310,3 +310,4 @@ Consulta [CHANGELOG.md](CHANGELOG.md) para el historial completo de cambios.
 | 2.6.0   | 2026-03-22 | Logos de servicios en la web — icon.horse con inicial como fallback, dominios en los 86 servicios del catálogo |
 | 2.7.0   | 2026-03-22 | Enlace directo de cancelación en cada suscripción — botón "Cancelar" con URL oficial de baja para los 86 servicios |
 | 2.8.0   | 2026-03-22 | Catálogo browser — 170+ servicios, búsqueda y filtros, añadir con un clic desde /catalog-browser |
+| 2.9.0   | 2026-03-22 | Catálogo ampliado a 285+ servicios — 4 nuevas categorías: Finanzas, Educación, Creatividad y Citas |

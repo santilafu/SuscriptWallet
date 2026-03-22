@@ -14,7 +14,7 @@ import java.math.BigDecimal
  *
  * Claves de categoría disponibles:
  *   "ia", "streaming", "musica", "software", "cloud", "gaming", "seguridad",
- *   "noticias", "salud", "desarrollo"
+ *   "noticias", "salud", "desarrollo", "finanzas", "educacion", "creatividad", "citas"
  */
 @Service
 class CatalogService {
@@ -37,7 +37,16 @@ class CatalogService {
             CatalogItem("Midjourney Basic",        BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Generación de imágenes IA — 3,3 horas GPU/mes",                                 "ia", domain = "midjourney.com",     cancelUrl = "https://www.midjourney.com/account"),
             CatalogItem("Grok SuperGrok",          BigDecimal("33.87"),  "EUR", BillingCycle.MONTHLY, "xAI Grok SuperGrok — acceso a Grok 3 con límites ampliados",                    "ia", domain = "x.com",             cancelUrl = "https://x.com/i/premium_sign_up"),
             CatalogItem("Notion AI",               BigDecimal("11.48"),  "EUR", BillingCycle.MONTHLY, "Complemento de IA para Notion — resúmenes, redacción y búsqueda semántica",     "ia", domain = "notion.so",          cancelUrl = "https://www.notion.so/profile/plans"),
-            CatalogItem("Canva Pro",               BigDecimal("18.14"),  "EUR", BillingCycle.MONTHLY, "Diseño gráfico con IA — plantillas premium, Magic Studio y marca",              "ia", domain = "canva.com",          cancelUrl = "https://www.canva.com/settings/purchase-history")
+            CatalogItem("Canva Pro",               BigDecimal("18.14"),  "EUR", BillingCycle.MONTHLY, "Diseño gráfico con IA — plantillas premium, Magic Studio y marca",              "ia", domain = "canva.com",          cancelUrl = "https://www.canva.com/settings/purchase-history"),
+            CatalogItem("ElevenLabs Creator",      BigDecimal("26.62"),  "EUR", BillingCycle.MONTHLY, "Síntesis de voz IA realista",                                                   "ia", 7,  "elevenlabs.io",       "https://elevenlabs.io/subscription"),
+            CatalogItem("Runway Standard",         BigDecimal("18.15"),  "EUR", BillingCycle.MONTHLY, "Generación y edición de vídeo con IA",                                          "ia", domain = "runwayml.com",        cancelUrl = "https://app.runwayml.com/settings"),
+            CatalogItem("Character.AI Plus",       BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Chat con personajes IA",                                                         "ia", domain = "character.ai",        cancelUrl = "https://character.ai/subscription"),
+            CatalogItem("Suno Pro",                BigDecimal("12.10"),  "EUR", BillingCycle.MONTHLY, "Generación de música con IA",                                                   "ia", domain = "suno.com",             cancelUrl = "https://suno.com/account"),
+            CatalogItem("Leonardo AI Artisan",     BigDecimal("29.04"),  "EUR", BillingCycle.MONTHLY, "Generación de imágenes IA para creadores",                                      "ia", domain = "leonardo.ai",          cancelUrl = "https://app.leonardo.ai/settings"),
+            CatalogItem("Poe Basic",               BigDecimal("24.19"),  "EUR", BillingCycle.MONTHLY, "Acceso a múltiples modelos IA (Claude, GPT-4…)",                                "ia", domain = "poe.com",              cancelUrl = "https://poe.com/settings"),
+            CatalogItem("Jasper AI Creator",       BigDecimal("59.29"),  "EUR", BillingCycle.MONTHLY, "Redacción de contenido con IA para marketing",                                  "ia", 7,  "jasper.ai",           "https://app.jasper.ai/settings/billing"),
+            CatalogItem("Adobe Firefly Premium",   BigDecimal("6.04"),   "EUR", BillingCycle.MONTHLY, "Generación de imágenes IA integrada en Adobe",                                  "ia", 30, "firefly.adobe.com",   "https://account.adobe.com/plans"),
+            CatalogItem("Krea AI Pro",             BigDecimal("42.35"),  "EUR", BillingCycle.MONTHLY, "Generación y mejora de imágenes en tiempo real",                                "ia", domain = "krea.ai",              cancelUrl = "https://www.krea.ai/settings")
         ),
 
         // ── Streaming de vídeo ───────────────────────────────────────────────────
@@ -62,7 +71,16 @@ class CatalogService {
             CatalogItem("Mubi",                    BigDecimal("13.99"),  "EUR", BillingCycle.MONTHLY, "Mubi — cine de autor, premiado y de culto con 30 películas curadas",              "streaming", 7,  "mubi.com",           "https://mubi.com/es/account"),
             CatalogItem("Plex Pass",               BigDecimal("6.05"),   "EUR", BillingCycle.MONTHLY, "Plex Pass — streaming de tu biblioteca personal + canales premium",              "streaming", domain = "plex.tv",           cancelUrl = "https://www.plex.tv/plex-pass/"),
             CatalogItem("Discovery+",              BigDecimal("4.84"),   "EUR", BillingCycle.MONTHLY, "Discovery+ — documentales, reality shows y contenido de Discovery",              "streaming", 7,  "discoveryplus.com",  "https://www.discoveryplus.com/es/account"),
-            CatalogItem("Hulu",                    BigDecimal("8.46"),   "EUR", BillingCycle.MONTHLY, "Hulu — series y películas con anuncios, catálogo de EE.UU.",                    "streaming", 30, "hulu.com",           "https://secure.hulu.com/account")
+            CatalogItem("Hulu",                    BigDecimal("8.46"),   "EUR", BillingCycle.MONTHLY, "Hulu — series y películas con anuncios, catálogo de EE.UU.",                    "streaming", 30, "hulu.com",           "https://secure.hulu.com/account"),
+            CatalogItem("Peacock Premium",         BigDecimal("9.67"),   "EUR", BillingCycle.MONTHLY, "Streaming NBCUniversal, deportes y noticias",                                   "streaming", 7,  "peacocktv.com",      "https://www.peacocktv.com/account/cancel"),
+            CatalogItem("ESPN+",                   BigDecimal("13.30"),  "EUR", BillingCycle.MONTHLY, "Deportes en streaming — UFC, béisbol, fútbol americano",                        "streaming", domain = "espnplus.com",      cancelUrl = "https://plus.espn.com/settings"),
+            CatalogItem("BritBox",                 BigDecimal("8.77"),   "EUR", BillingCycle.MONTHLY, "Mejor contenido británico — BBC, ITV, Channel 4",                               "streaming", 7,  "britbox.com",        "https://www.britbox.com/account/cancel"),
+            CatalogItem("Shudder",                 BigDecimal("7.25"),   "EUR", BillingCycle.MONTHLY, "Streaming especializado en terror y suspense",                                  "streaming", 7,  "shudder.com",        "https://www.shudder.com/account/cancel"),
+            CatalogItem("Nebula",                  BigDecimal("6.05"),   "EUR", BillingCycle.MONTHLY, "Contenido original de creadores de YouTube",                                    "streaming", 30, "nebula.tv",          "https://nebula.tv/account/subscription"),
+            CatalogItem("CuriosityStream",         BigDecimal("6.04"),   "EUR", BillingCycle.MONTHLY, "Documentales científicos y de naturaleza",                                      "streaming", 7,  "curiositystream.com","https://curiositystream.com/account/subscription"),
+            CatalogItem("Canal+",                  BigDecimal("32.66"),  "EUR", BillingCycle.MONTHLY, "Cine, series y deportes en español",                                            "streaming", 30, "canalplus.com",      "https://www.canalplus.com/micuenta"),
+            CatalogItem("Viki Pass Standard",      BigDecimal("6.04"),   "EUR", BillingCycle.MONTHLY, "Dramas y películas asiáticas subtituladas",                                     "streaming", 7,  "viki.com",           "https://www.viki.com/settings/subscription"),
+            CatalogItem("FloSports",               BigDecimal("36.30"),  "EUR", BillingCycle.MONTHLY, "Deportes de nicho en streaming (lucha, atletismo…)",                            "streaming", 7,  "flosports.tv",       "https://www.flosports.tv/account")
         ),
 
         // ── Música ───────────────────────────────────────────────────────────────
@@ -75,7 +93,11 @@ class CatalogService {
             CatalogItem("Deezer Premium",          BigDecimal("13.30"),  "EUR", BillingCycle.MONTHLY, "Deezer — música sin anuncios, modo offline y Flow personalizado",               "musica", domain = "deezer.com",     cancelUrl = "https://www.deezer.com/es/account"),
             CatalogItem("SoundCloud Next Pro",     BigDecimal("11.48"),  "EUR", BillingCycle.MONTHLY, "SoundCloud — escucha sin anuncios y subidas ilimitadas para creadores",         "musica", domain = "soundcloud.com", cancelUrl = "https://soundcloud.com/settings/subscription"),
             CatalogItem("Qobuz Sublime",           BigDecimal("16.93"),  "EUR", BillingCycle.MONTHLY, "Qobuz Sublime — streaming lossless Hi-Res y descuentos en la tienda",           "musica", domain = "qobuz.com",      cancelUrl = "https://www.qobuz.com/es-es/account/subscriptions"),
-            CatalogItem("Napster Premium",         BigDecimal("10.88"),  "EUR", BillingCycle.MONTHLY, "Napster Premium — música ilimitada sin anuncios y modo offline",                 "musica", domain = "napster.com",    cancelUrl = "https://account.napster.com/settings")
+            CatalogItem("Napster Premium",         BigDecimal("10.88"),  "EUR", BillingCycle.MONTHLY, "Napster Premium — música ilimitada sin anuncios y modo offline",                 "musica", domain = "napster.com",    cancelUrl = "https://account.napster.com/settings"),
+            CatalogItem("Pandora Premium",         BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Radio y streaming de música personalizado",                                     "musica", 30, "pandora.com",     "https://www.pandora.com/account/subscription"),
+            CatalogItem("Beatport Link",           BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Streaming de música electrónica para DJs",                                      "musica", 30, "beatport.com",    "https://www.beatport.com/account/subscription"),
+            CatalogItem("LiveOne Premium",         BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Streaming de música y radio en vivo",                                           "musica", 7,  "livexlive.com",   "https://liveone.com/account"),
+            CatalogItem("Mixcloud Select",         BigDecimal("6.05"),   "EUR", BillingCycle.MONTHLY, "Acceso ilimitado a mixtapes y sets de DJ",                                      "musica", domain = "mixcloud.com",   cancelUrl = "https://www.mixcloud.com/settings/")
         ),
 
         // ── Software y productividad ─────────────────────────────────────────────
@@ -108,7 +130,19 @@ class CatalogService {
             CatalogItem("Miro Team",               BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Miro Team — pizarra colaborativa infinita con plantillas avanzadas",            "software", 30, "miro.com",            "https://miro.com/app/settings/billing/"),
             CatalogItem("Webflow Basic",           BigDecimal("18.14"),  "EUR", BillingCycle.MONTHLY, "Webflow Basic — diseño y publicación web sin código con CMS",                  "software", domain = "webflow.com",        cancelUrl = "https://webflow.com/dashboard/account/billing"),
             CatalogItem("Framer Mini",             BigDecimal("6.05"),   "EUR", BillingCycle.MONTHLY, "Framer Mini — diseño web interactivo y publicación incluida",                   "software", 14, "framer.com",          "https://framer.com/settings/billing"),
-            CatalogItem("Descript Creator",        BigDecimal("18.14"),  "EUR", BillingCycle.MONTHLY, "Descript Creator — edición de vídeo y podcast basada en transcripción",        "software", 7,  "descript.com",        "https://www.descript.com/settings/billing")
+            CatalogItem("Descript Creator",        BigDecimal("18.14"),  "EUR", BillingCycle.MONTHLY, "Descript Creator — edición de vídeo y podcast basada en transcripción",        "software", 7,  "descript.com",        "https://www.descript.com/settings/billing"),
+            CatalogItem("Bear Notes Pro",          BigDecimal("3.62"),   "EUR", BillingCycle.MONTHLY, "Editor de texto markdown para notas y escritura",                               "software", domain = "bear.app",           cancelUrl = "https://bear.app/faq/subscriptions"),
+            CatalogItem("Craft Docs Pro",          BigDecimal("6.04"),   "EUR", BillingCycle.MONTHLY, "Editor de documentos colaborativo con IA",                                      "software", domain = "craft.do",            cancelUrl = "https://www.craft.do/account"),
+            CatalogItem("Day One Premium",         BigDecimal("4.84"),   "EUR", BillingCycle.MONTHLY, "Diario personal con cifrado de extremo a extremo",                              "software", domain = "dayoneapp.com",       cancelUrl = "https://dayoneapp.com/account"),
+            CatalogItem("Ulysses",                 BigDecimal("7.25"),   "EUR", BillingCycle.MONTHLY, "Editor de escritura creativa y long-form",                                      "software", 14, "ulysses.app",         "https://ulysses.app/support"),
+            CatalogItem("PDF Expert Pro",          BigDecimal("8.47"),   "EUR", BillingCycle.MONTHLY, "Edición, anotación y firma de PDFs",                                            "software", 7,  "pdfexpert.com",       "https://pdfexpert.com/account"),
+            CatalogItem("Fantastical Premium",     BigDecimal("6.04"),   "EUR", BillingCycle.MONTHLY, "Calendario y tareas con IA y lenguaje natural",                                 "software", 14, "fantastical.app",     "https://flexibits.com/fantastical/support"),
+            CatalogItem("Raycast Pro",             BigDecimal("10.89"),  "EUR", BillingCycle.MONTHLY, "Launcher y productividad avanzada para Mac",                                    "software", 14, "raycast.com",         "https://raycast.com/pricing"),
+            CatalogItem("Pitch Pro",               BigDecimal("18.15"),  "EUR", BillingCycle.MONTHLY, "Presentaciones colaborativas modernas",                                         "software", domain = "pitch.com",           cancelUrl = "https://app.pitch.com/app/settings/billing"),
+            CatalogItem("Jira Software Standard",  BigDecimal("9.67"),   "EUR", BillingCycle.MONTHLY, "Gestión ágil de proyectos de software",                                         "software", 14, "atlassian.com",       "https://support.atlassian.com/billing-and-licensing/docs/cancel-your-subscription"),
+            CatalogItem("Confluence Standard",     BigDecimal("6.04"),   "EUR", BillingCycle.MONTHLY, "Wiki corporativa y gestión del conocimiento",                                   "software", 14, "atlassian.com",       "https://support.atlassian.com/billing-and-licensing/docs/cancel-your-subscription"),
+            CatalogItem("CleanMyMac Business",     BigDecimal("14.52"),  "EUR", BillingCycle.MONTHLY, "Optimización y limpieza de Mac",                                                "software", 7,  "cleanmymac.com",      "https://account.macpaw.com"),
+            CatalogItem("X Premium",               BigDecimal("14.52"),  "EUR", BillingCycle.MONTHLY, "Verificación, editar tweets y funciones extra en X",                            "software", domain = "x.com",              cancelUrl = "https://x.com/settings/account/subscription")
         ),
 
         // ── Almacenamiento en la nube ────────────────────────────────────────────
@@ -126,7 +160,12 @@ class CatalogService {
             CatalogItem("Render Starter",          BigDecimal("7.26"),   "EUR", BillingCycle.MONTHLY, "Render Starter — despliegue de apps web con SSDs y builds automáticos",         "cloud", domain = "render.com",      cancelUrl = "https://dashboard.render.com/billing"),
             CatalogItem("Supabase Pro",            BigDecimal("27.22"),  "EUR", BillingCycle.MONTHLY, "Supabase Pro — base de datos Postgres, auth y storage gestionados",             "cloud", 14, "supabase.com",     "https://supabase.com/dashboard/account/billing"),
             CatalogItem("MongoDB Atlas",           BigDecimal("60.50"),  "EUR", BillingCycle.MONTHLY, "MongoDB Atlas — base de datos NoSQL en la nube totalmente gestionada",          "cloud", domain = "mongodb.com",     cancelUrl = "https://account.mongodb.com/account/billing/overview"),
-            CatalogItem("Algolia Search",          BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Algolia — búsqueda como servicio con IA y analíticas avanzadas",                "cloud", domain = "algolia.com",     cancelUrl = "https://dashboard.algolia.com/account/billing")
+            CatalogItem("Algolia Search",          BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Algolia — búsqueda como servicio con IA y analíticas avanzadas",                "cloud", domain = "algolia.com",     cancelUrl = "https://dashboard.algolia.com/account/billing"),
+            CatalogItem("Mega Pro Lite",           BigDecimal("5.44"),   "EUR", BillingCycle.MONTHLY, "2TB cifrado de extremo a extremo en la nube",                                   "cloud", domain = "mega.io",          cancelUrl = "https://mega.io/cancel"),
+            CatalogItem("Box Personal Pro",        BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Almacenamiento en la nube para profesionales",                                  "cloud", 14, "box.com",           "https://account.box.com/settings"),
+            CatalogItem("Sync.com Solo Basic",     BigDecimal("9.67"),   "EUR", BillingCycle.MONTHLY, "Almacenamiento seguro con cifrado zero-knowledge",                              "cloud", domain = "sync.com",         cancelUrl = "https://www.sync.com/account"),
+            CatalogItem("Tresorit Personal",       BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Almacenamiento en la nube ultra-seguro y cifrado",                              "cloud", 14, "tresorit.com",      "https://app.tresorit.com/account"),
+            CatalogItem("Icedrive Pro",            BigDecimal("5.44"),   "EUR", BillingCycle.MONTHLY, "Almacenamiento en la nube con cifrado cliente",                                 "cloud", domain = "icedrive.net",     cancelUrl = "https://icedrive.net/account")
         ),
 
         // ── Gaming ───────────────────────────────────────────────────────────────
@@ -141,7 +180,12 @@ class CatalogService {
             CatalogItem("Apple Arcade",            BigDecimal("8.46"),   "EUR", BillingCycle.MONTHLY, "Apple Arcade — más de 200 juegos premium sin anuncios",                         "gaming", domain = "apple.com",         cancelUrl = "https://appleid.apple.com/account/manage"),
             CatalogItem("Humble Choice",           BigDecimal("11.48"),  "EUR", BillingCycle.MONTHLY, "Humble Choice — 9 juegos de PC al mes + descuentos en la tienda",               "gaming", domain = "humblebundle.com",  cancelUrl = "https://www.humblebundle.com/subscription"),
             CatalogItem("GeForce Now Priority",    BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "GeForce Now Priority — streaming de juegos en la nube con RTX",                 "gaming", 30, "nvidia.com",         "https://www.nvidia.com/es-es/geforce-now/account/"),
-            CatalogItem("Shadow PC",               BigDecimal("36.29"),  "EUR", BillingCycle.MONTHLY, "Shadow PC — PC gaming en la nube de alta gama accesible desde cualquier lugar", "gaming", domain = "shadow.tech",      cancelUrl = "https://account.shadow.tech/billing")
+            CatalogItem("Shadow PC",               BigDecimal("36.29"),  "EUR", BillingCycle.MONTHLY, "Shadow PC — PC gaming en la nube de alta gama accesible desde cualquier lugar", "gaming", domain = "shadow.tech",      cancelUrl = "https://account.shadow.tech/billing"),
+            CatalogItem("Discord Nitro",           BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Emojis custom, boosts de servidor y más en Discord",                            "gaming", domain = "discord.com",       cancelUrl = "https://discord.com/settings/subscriptions"),
+            CatalogItem("Discord Nitro Basic",     BigDecimal("3.62"),   "EUR", BillingCycle.MONTHLY, "Emojis animados y mayor límite de archivos en Discord",                         "gaming", domain = "discord.com",       cancelUrl = "https://discord.com/settings/subscriptions"),
+            CatalogItem("Ubisoft+ Essential",      BigDecimal("17.99"),  "EUR", BillingCycle.MONTHLY, "Catálogo de juegos Ubisoft en PC",                                              "gaming", 7,  "ubisoftplus.com",    "https://ubisoftconnect.com/en-US/ubisoftplus/subscription"),
+            CatalogItem("Roblox Premium 1000",     BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "1000 Robux/mes y ventajas de trading en Roblox",                                "gaming", domain = "roblox.com",        cancelUrl = "https://www.roblox.com/account/membership"),
+            CatalogItem("Xbox PC Game Pass",       BigDecimal("14.51"),  "EUR", BillingCycle.MONTHLY, "Catálogo de juegos para PC + EA Play incluido",                                 "gaming", 30, "xbox.com",           "https://account.microsoft.com/services")
         ),
 
         // ── Seguridad y privacidad ───────────────────────────────────────────────
@@ -159,7 +203,14 @@ class CatalogService {
             CatalogItem("Keeper Security",         BigDecimal("4.84"),   "EUR", BillingCycle.MONTHLY, "Keeper Security — gestor de contraseñas con bóveda segura y auditoría",         "seguridad", 30, "keepersecurity.com", "https://keepersecurity.com/vault/#account"),
             CatalogItem("Fastmail",                BigDecimal("6.05"),   "EUR", BillingCycle.MONTHLY, "Fastmail — correo privado sin anuncios con dominio personalizado",               "seguridad", 30, "fastmail.com",       "https://www.fastmail.com/settings/billing/"),
             CatalogItem("Tutanota Premium",        BigDecimal("3.63"),   "EUR", BillingCycle.MONTHLY, "Tutanota Premium — correo cifrado de extremo a extremo y calendario privado",   "seguridad", domain = "tutanota.com",    cancelUrl = "https://mail.tutanota.com/#settings/subscription"),
-            CatalogItem("ProtonDrive Plus",        BigDecimal("4.84"),   "EUR", BillingCycle.MONTHLY, "Proton Drive Plus — almacenamiento cifrado en la nube con 200 GB",              "seguridad", domain = "proton.me",       cancelUrl = "https://account.proton.me/dashboard")
+            CatalogItem("ProtonDrive Plus",        BigDecimal("4.84"),   "EUR", BillingCycle.MONTHLY, "Proton Drive Plus — almacenamiento cifrado en la nube con 200 GB",              "seguridad", domain = "proton.me",       cancelUrl = "https://account.proton.me/dashboard"),
+            CatalogItem("NordPass Premium",        BigDecimal("3.62"),   "EUR", BillingCycle.MONTHLY, "Gestor de contraseñas del equipo de NordVPN",                                   "seguridad", 30, "nordpass.com",       "https://nordpass.com/account"),
+            CatalogItem("Norton 360 Standard",     BigDecimal("6.04"),   "EUR", BillingCycle.MONTHLY, "Antivirus, VPN y backup en la nube para 1 equipo",                              "seguridad", 7,  "norton.com",         "https://my.norton.com/account/cancel"),
+            CatalogItem("CyberGhost VPN",          BigDecimal("15.72"),  "EUR", BillingCycle.MONTHLY, "VPN rápida con 9000+ servidores en 90 países",                                  "seguridad", 45, "cyberghostvpn.com",  "https://my.cyberghostvpn.com/account"),
+            CatalogItem("Private Internet Access", BigDecimal("4.84"),   "EUR", BillingCycle.MONTHLY, "VPN de código abierto, sin registros verificado",                               "seguridad", 30, "privateinternetaccess.com", "https://www.privateinternetaccess.com/account/cancel"),
+            CatalogItem("AdGuard Premium",         BigDecimal("3.01"),   "EUR", BillingCycle.MONTHLY, "Bloqueo de anuncios y rastreadores en todos los dispositivos",                  "seguridad", domain = "adguard.com",     cancelUrl = "https://my.adguard.com"),
+            CatalogItem("Proton Pass Plus",        BigDecimal("4.84"),   "EUR", BillingCycle.MONTHLY, "Gestor de contraseñas del ecosistema Proton",                                   "seguridad", domain = "proton.me",       cancelUrl = "https://account.proton.me/settings#subscription"),
+            CatalogItem("RoboForm Premium",        BigDecimal("2.42"),   "EUR", BillingCycle.MONTHLY, "Gestor de contraseñas con autocompletado web",                                  "seguridad", 30, "roboform.com",       "https://my.roboform.com")
         ),
 
         // ── Noticias y Lectura ───────────────────────────────────────────────────
@@ -175,7 +226,15 @@ class CatalogService {
             CatalogItem("Pocket Premium",          BigDecimal("5.45"),   "EUR", BillingCycle.MONTHLY, "Pocket Premium — guarda y lee artículos sin conexión con búsqueda avanzada",    "noticias", domain = "getpocket.com", cancelUrl = "https://getpocket.com/premium/manage"),
             CatalogItem("Feedly Pro",              BigDecimal("9.06"),   "EUR", BillingCycle.MONTHLY, "Feedly Pro — agregador de noticias con IA y flujos sin límite",                 "noticias", 14, "feedly.com",    "https://feedly.com/i/subscription/feedly.pro"),
             CatalogItem("Inoreader Pro",           BigDecimal("9.06"),   "EUR", BillingCycle.MONTHLY, "Inoreader Pro — lector RSS con automatizaciones, filtros y búsqueda completa",  "noticias", domain = "inoreader.com", cancelUrl = "https://www.inoreader.com/account/subscription"),
-            CatalogItem("Overcast Premium",        BigDecimal("12.09"),  "EUR", BillingCycle.YEARLY,  "Overcast Premium — el mejor cliente de podcasts para iPhone",                   "noticias", domain = "overcast.fm",  cancelUrl = "https://overcast.fm/account")
+            CatalogItem("Overcast Premium",        BigDecimal("12.09"),  "EUR", BillingCycle.YEARLY,  "Overcast Premium — el mejor cliente de podcasts para iPhone",                   "noticias", domain = "overcast.fm",  cancelUrl = "https://overcast.fm/account"),
+            CatalogItem("The Wall Street Journal", BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Noticias financieras y de negocios globales",                                   "noticias", domain = "wsj.com",      cancelUrl = "https://customercenter.wsj.com"),
+            CatalogItem("Financial Times",         BigDecimal("48.37"),  "EUR", BillingCycle.MONTHLY, "Noticias económicas y financieras internacionales",                             "noticias", 4,  "ft.com",        "https://help.ft.com/faq/subscribing-to-ft"),
+            CatalogItem("The Economist",           BigDecimal("26.62"),  "EUR", BillingCycle.MONTHLY, "Análisis político y económico global semanal",                                  "noticias", domain = "economist.com", cancelUrl = "https://myaccount.economist.com"),
+            CatalogItem("La Vanguardia Premium",   BigDecimal("3.62"),   "EUR", BillingCycle.MONTHLY, "Diario digital catalán con contenido exclusivo",                                "noticias", domain = "lavanguardia.com", cancelUrl = "https://suscripcion.lavanguardia.com"),
+            CatalogItem("The Athletic",            BigDecimal("9.67"),   "EUR", BillingCycle.MONTHLY, "Periodismo deportivo en profundidad",                                           "noticias", 7,  "theathletic.com", "https://theathletic.com/account/subscription"),
+            CatalogItem("El Confidencial Premium", BigDecimal("3.62"),   "EUR", BillingCycle.MONTHLY, "Noticias y reportajes de investigación en España",                              "noticias", domain = "elconfidencial.com", cancelUrl = "https://suscripcion.elconfidencial.com"),
+            CatalogItem("Le Monde Numérique",      BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Periódico de referencia francés con archivo completo",                          "noticias", domain = "lemonde.fr",   cancelUrl = "https://abo.lemonde.fr"),
+            CatalogItem("Caixin Global",           BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Noticias económicas y financieras de China",                                    "noticias", domain = "caixinglobal.com", cancelUrl = "https://www.caixinglobal.com/account")
         ),
 
         // ── Salud y Deporte ──────────────────────────────────────────────────────
@@ -191,7 +250,14 @@ class CatalogService {
             CatalogItem("Peloton App",             BigDecimal("14.51"),  "EUR", BillingCycle.MONTHLY, "Peloton App — clases de ciclismo, yoga, fuerza y meditación en streaming",      "salud", 30, "onepeloton.com",     "https://members.onepeloton.co.uk/profile/preferences"),
             CatalogItem("Oura Ring Membership",    BigDecimal("7.26"),   "EUR", BillingCycle.MONTHLY, "Oura Ring Membership — datos avanzados de sueño y recuperación del anillo",     "salud", domain = "ouraring.com",      cancelUrl = "https://cloud.ouraring.com/user/settings/membership"),
             CatalogItem("Sleep Cycle Premium",     BigDecimal("4.84"),   "EUR", BillingCycle.MONTHLY, "Sleep Cycle Premium — análisis avanzado del sueño y alarma inteligente",        "salud", 7,  "sleepcycle.com",     "https://www.sleepcycle.com/account/"),
-            CatalogItem("Runkeeper Go",            BigDecimal("12.09"),  "EUR", BillingCycle.YEARLY,  "Runkeeper Go — planes de entrenamiento personalizados y estadísticas avanzadas", "salud", domain = "runkeeper.com",     cancelUrl = "https://runkeeper.com/user/settings/premium")
+            CatalogItem("Runkeeper Go",            BigDecimal("12.09"),  "EUR", BillingCycle.YEARLY,  "Runkeeper Go — planes de entrenamiento personalizados y estadísticas avanzadas", "salud", domain = "runkeeper.com",     cancelUrl = "https://runkeeper.com/user/settings/premium"),
+            CatalogItem("Fitbit Premium",          BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Análisis avanzado de salud y sueño con Fitbit",                                 "salud", 90, "fitbit.com",         "https://www.fitbit.com/settings/billing"),
+            CatalogItem("Freeletics Coach",        BigDecimal("15.72"),  "EUR", BillingCycle.MONTHLY, "Entrenamientos personalizados con IA sin equipamiento",                         "salud", domain = "freeletics.com",    cancelUrl = "https://www.freeletics.com/en/account/subscriptions"),
+            CatalogItem("Flo Premium",             BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Seguimiento de ciclo menstrual y salud femenina",                               "salud", 7,  "flo.health",         "https://flo.health/account"),
+            CatalogItem("Zwift",                   BigDecimal("20.57"),  "EUR", BillingCycle.MONTHLY, "Ciclismo y running indoor con mundo virtual",                                   "salud", 14, "zwift.com",          "https://www.zwift.com/cancel"),
+            CatalogItem("TrainerRoad",             BigDecimal("24.19"),  "EUR", BillingCycle.MONTHLY, "Entrenamiento de ciclismo basado en datos y zonas",                             "salud", 30, "trainerroad.com",    "https://www.trainerroad.com/account"),
+            CatalogItem("Sweat App",               BigDecimal("24.19"),  "EUR", BillingCycle.MONTHLY, "Programas de fitness para mujeres (BBG, LIFT, BREATHE)",                        "salud", 7,  "sweat.com",          "https://www.sweat.com/account/membership"),
+            CatalogItem("Centr Premium",           BigDecimal("36.29"),  "EUR", BillingCycle.MONTHLY, "App de fitness de Chris Hemsworth — gym y mindfulness",                         "salud", 7,  "centr.com",          "https://centr.com/account/subscription")
         ),
 
         // ── Pruebas gratuitas ────────────────────────────────────────────────────
@@ -235,7 +301,72 @@ class CatalogService {
             CatalogItem("Pingdom",                 BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Pingdom — monitorización de disponibilidad y rendimiento web",                   "desarrollo", domain = "pingdom.com",   cancelUrl = "https://my.pingdom.com/account/plans"),
             CatalogItem("Fly.io",                  BigDecimal("6.05"),   "EUR", BillingCycle.MONTHLY, "Fly.io — despliegue de apps cerca de tus usuarios en la edge",                  "desarrollo", domain = "fly.io",        cancelUrl = "https://fly.io/dashboard/billing"),
             CatalogItem("Neon Postgres",           BigDecimal("24.19"),  "EUR", BillingCycle.MONTHLY, "Neon Postgres — base de datos Postgres serverless con branching",                "desarrollo", domain = "neon.tech",     cancelUrl = "https://console.neon.tech/app/settings/billing"),
-            CatalogItem("Upstash",                 BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Upstash — Redis y Kafka serverless de pago por uso",                             "desarrollo", domain = "upstash.com",   cancelUrl = "https://console.upstash.com/account/billing")
+            CatalogItem("Upstash",                 BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Upstash — Redis y Kafka serverless de pago por uso",                             "desarrollo", domain = "upstash.com",   cancelUrl = "https://console.upstash.com/account/billing"),
+            CatalogItem("Tabnine Pro",             BigDecimal("14.52"),  "EUR", BillingCycle.MONTHLY, "Autocompletado de código con IA (privacidad garantizada)",                      "desarrollo", 14, "tabnine.com",    "https://app.tabnine.com/settings/subscription"),
+            CatalogItem("Plausible Analytics",     BigDecimal("10.89"),  "EUR", BillingCycle.MONTHLY, "Analítica web ligera y respetuosa con la privacidad",                           "desarrollo", 30, "plausible.io",   "https://plausible.io/settings"),
+            CatalogItem("Fathom Analytics",        BigDecimal("16.94"),  "EUR", BillingCycle.MONTHLY, "Analytics web sin cookies, compliant con GDPR",                                 "desarrollo", 30, "usefathom.com",  "https://app.usefathom.com/settings/subscription"),
+            CatalogItem("Heroku Eco",              BigDecimal("6.05"),   "EUR", BillingCycle.MONTHLY, "Dynos económicos para apps en producción en Heroku",                            "desarrollo", domain = "heroku.com",    cancelUrl = "https://dashboard.heroku.com/account/billing"),
+            CatalogItem("Warp AI",                 BigDecimal("18.15"),  "EUR", BillingCycle.MONTHLY, "Terminal con IA integrada y autocompletado de comandos",                        "desarrollo", 14, "warp.dev",       "https://app.warp.dev/account"),
+            CatalogItem("Retool Cloud",            BigDecimal("12.10"),  "EUR", BillingCycle.MONTHLY, "Plataforma de apps internas con bajo código",                                   "desarrollo", 14, "retool.com",     "https://docs.retool.com/docs/cancel"),
+            CatalogItem("Pieces for Developers",   BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Gestión de snippets de código con IA local",                                    "desarrollo", domain = "pieces.app",    cancelUrl = "https://pieces.app/account"),
+            CatalogItem("Codeium Teams",           BigDecimal("24.19"),  "EUR", BillingCycle.MONTHLY, "Autocompletado y chat IA para equipos",                                         "desarrollo", domain = "codeium.com",   cancelUrl = "https://codeium.com/account")
+        ),
+
+        // ── Finanzas personales ──────────────────────────────────────────────────
+        "finanzas" to listOf(
+            CatalogItem("YNAB",                    BigDecimal("14.52"),  "EUR", BillingCycle.MONTHLY, "Presupuesto personal con método zero-based",                                    "finanzas", 34, "ynab.com",           "https://app.youneedabudget.com/settings/subscription"),
+            CatalogItem("Copilot Money",           BigDecimal("13.31"),  "EUR", BillingCycle.MONTHLY, "App de finanzas personales impulsada por IA",                                   "finanzas", 14, "copilot.money",      "https://copilot.money/account"),
+            CatalogItem("Monarch Money",           BigDecimal("15.14"),  "EUR", BillingCycle.MONTHLY, "Gestión financiera familiar todo en uno",                                        "finanzas", 30, "monarchmoney.com",   "https://app.monarchmoney.com/settings/subscription"),
+            CatalogItem("Revolut Premium",         BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Cuenta bancaria digital con seguro de viaje y cashback",                        "finanzas", domain = "revolut.com",      cancelUrl = "https://app.revolut.com/subscription"),
+            CatalogItem("Revolut Metal",           BigDecimal("19.35"),  "EUR", BillingCycle.MONTHLY, "Plan Revolut premium con tarjeta de metal y concierge",                         "finanzas", domain = "revolut.com",      cancelUrl = "https://app.revolut.com/subscription"),
+            CatalogItem("N26 Smart",               BigDecimal("5.93"),   "EUR", BillingCycle.MONTHLY, "Cuenta bancaria digital con hasta 10 subcuentas",                               "finanzas", domain = "n26.com",          cancelUrl = "https://n26.com/en-es/membership"),
+            CatalogItem("N26 You",                 BigDecimal("11.98"),  "EUR", BillingCycle.MONTHLY, "Cuenta N26 con seguros de viaje y asistencia en viaje",                         "finanzas", domain = "n26.com",          cancelUrl = "https://n26.com/en-es/membership"),
+            CatalogItem("Vivid Standard",          BigDecimal("11.98"),  "EUR", BillingCycle.MONTHLY, "Cuenta bancaria digital con cashback en cripto",                                "finanzas", 30, "vivid.money",        "https://vivid.money/account"),
+            CatalogItem("Wallet Pro",              BigDecimal("6.05"),   "EUR", BillingCycle.MONTHLY, "Control de gastos con sincronización bancaria automática",                      "finanzas", 30, "budgetbakers.com",   "https://budgetbakers.com/account"),
+            CatalogItem("Toshl Finance Pro",       BigDecimal("4.84"),   "EUR", BillingCycle.MONTHLY, "Registro de gastos e ingresos con visualizaciones",                             "finanzas", 30, "toshl.com",          "https://toshl.com/account"),
+            CatalogItem("PocketGuard Plus",        BigDecimal("13.28"),  "EUR", BillingCycle.MONTHLY, "Presupuesto simplificado — cuánto puedo gastar hoy",                            "finanzas", 7,  "pocketguard.com",    "https://pocketguard.com/support"),
+            CatalogItem("Spendee Premium",         BigDecimal("4.84"),   "EUR", BillingCycle.MONTHLY, "App de presupuesto compartido para familias y parejas",                         "finanzas", 7,  "spendee.com",        "https://spendee.com/support")
+        ),
+
+        // ── Educación y cursos ───────────────────────────────────────────────────
+        "educacion" to listOf(
+            CatalogItem("Coursera Plus",           BigDecimal("54.39"),  "EUR", BillingCycle.MONTHLY, "Acceso ilimitado a +7000 cursos y certificaciones",                             "educacion", 7,  "coursera.org",       "https://www.coursera.org/account-profile#cancellation"),
+            CatalogItem("MasterClass",             BigDecimal("12.10"),  "EUR", BillingCycle.MONTHLY, "Clases magistrales de expertos mundiales en su campo",                          "educacion", 30, "masterclass.com",    "https://www.masterclass.com/account/membership"),
+            CatalogItem("Skillshare Premium",      BigDecimal("14.52"),  "EUR", BillingCycle.MONTHLY, "Clases de diseño, negocios, tecnología y más",                                  "educacion", 7,  "skillshare.com",     "https://www.skillshare.com/en/profile/account"),
+            CatalogItem("Brilliant Premium",       BigDecimal("25.66"),  "EUR", BillingCycle.MONTHLY, "Matemáticas, ciencia y programación de forma interactiva",                      "educacion", 7,  "brilliant.org",      "https://brilliant.org/account"),
+            CatalogItem("Babbel Premium",          BigDecimal("16.93"),  "EUR", BillingCycle.MONTHLY, "Aprendizaje de idiomas con lecciones breves de 15 min",                         "educacion", domain = "babbel.com",       cancelUrl = "https://account.babbel.com/en/account"),
+            CatalogItem("Rosetta Stone",           BigDecimal("12.28"),  "EUR", BillingCycle.MONTHLY, "Aprendizaje de idiomas con inmersión y reconocimiento de voz",                  "educacion", 3,  "rosettastone.com",   "https://support.rosettastone.com/hc/en-us/articles/204765966"),
+            CatalogItem("Domestika Plus",          BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Acceso ilimitado a cursos de diseño y creatividad",                             "educacion", domain = "domestika.org",    cancelUrl = "https://www.domestika.org/en/settings/subscription"),
+            CatalogItem("Platzi Expert",           BigDecimal("29.71"),  "EUR", BillingCycle.MONTHLY, "Cursos de tecnología y programación en español",                                "educacion", domain = "platzi.com",       cancelUrl = "https://platzi.com/account/subscriptions"),
+            CatalogItem("DataCamp Standard",       BigDecimal("25.63"),  "EUR", BillingCycle.MONTHLY, "Aprende ciencia de datos y Python/R de forma práctica",                         "educacion", domain = "datacamp.com",     cancelUrl = "https://www.datacamp.com/profile/account_settings"),
+            CatalogItem("Frontend Masters",        BigDecimal("39.96"),  "EUR", BillingCycle.MONTHLY, "Cursos avanzados de desarrollo web y JavaScript",                               "educacion", domain = "frontendmasters.com", cancelUrl = "https://frontendmasters.com/settings/subscription"),
+            CatalogItem("Udemy Personal Plan",     BigDecimal("19.99"),  "EUR", BillingCycle.MONTHLY, "Acceso a cursos seleccionados del catálogo Udemy",                              "educacion", domain = "udemy.com",        cancelUrl = "https://www.udemy.com/user/subscription"),
+            CatalogItem("Preply Business",         BigDecimal("90.75"),  "EUR", BillingCycle.MONTHLY, "Clases particulares de idiomas con tutores nativos",                            "educacion", domain = "preply.com",       cancelUrl = "https://preply.com/en/account/settings")
+        ),
+
+        // ── Creatividad y foto ───────────────────────────────────────────────────
+        "creatividad" to listOf(
+            CatalogItem("VSCO Membership",         BigDecimal("9.67"),   "EUR", BillingCycle.MONTHLY, "Edición de fotos con presets y comunidad creativa",                             "creatividad", 7,  "vsco.co",           "https://vsco.co/user/settings"),
+            CatalogItem("Adobe Lightroom Plan",    BigDecimal("14.51"),  "EUR", BillingCycle.MONTHLY, "Edición y organización profesional de fotografía",                              "creatividad", 30, "lightroom.adobe.com","https://account.adobe.com/plans"),
+            CatalogItem("Facetune Premium",        BigDecimal("7.25"),   "EUR", BillingCycle.MONTHLY, "Retoque de selfies y fotos de retrato con IA",                                  "creatividad", domain = "facetuneapp.com",   cancelUrl = "https://support.facetuneapp.com"),
+            CatalogItem("CapCut Pro",              BigDecimal("9.67"),   "EUR", BillingCycle.MONTHLY, "Edición de vídeo profesional con efectos y plantillas",                         "creatividad", 7,  "capcut.com",        "https://www.capcut.com/settings"),
+            CatalogItem("InShot Pro",              BigDecimal("4.84"),   "EUR", BillingCycle.MONTHLY, "Editor de vídeo y foto para redes sociales",                                    "creatividad", 7,  "inshot.com",        "https://help.inshot.com"),
+            CatalogItem("Adobe Premiere Rush",     BigDecimal("14.51"),  "EUR", BillingCycle.MONTHLY, "Edición de vídeo multi-plataforma para creadores",                              "creatividad", 30, "adobe.com",         "https://account.adobe.com/plans"),
+            CatalogItem("Splice Premium",          BigDecimal("6.05"),   "EUR", BillingCycle.MONTHLY, "Editor de vídeo para móvil con librería de sonidos",                            "creatividad", 7,  "splice.com",        "https://splice.com/account"),
+            CatalogItem("Unfold Pro",              BigDecimal("1.33"),   "EUR", BillingCycle.MONTHLY, "Plantillas premium para historias de Instagram y TikTok",                       "creatividad", 7,  "unfold.com",        "https://unfold.com/pages/faq"),
+            CatalogItem("Afterlight",              BigDecimal("3.62"),   "EUR", BillingCycle.MONTHLY, "Edición de fotos artística con filtros únicos",                                 "creatividad", domain = "afterlight.us",     cancelUrl = "https://afterlight.us/support")
+        ),
+
+        // ── Citas y social ───────────────────────────────────────────────────────
+        "citas" to listOf(
+            CatalogItem("Tinder Gold",             BigDecimal("36.29"),  "EUR", BillingCycle.MONTHLY, "Me gustas, rewind y passports para ligar en Tinder",                            "citas", domain = "tinder.com",    cancelUrl = "https://www.help.tinder.com/hc/en-us/articles/115005376946"),
+            CatalogItem("Tinder Platinum",         BigDecimal("48.39"),  "EUR", BillingCycle.MONTHLY, "Todo Gold más prioridad en Likes y mensajes a matches",                         "citas", domain = "tinder.com",    cancelUrl = "https://www.help.tinder.com/hc/en-us/articles/115005376946"),
+            CatalogItem("Bumble Premium",          BigDecimal("39.92"),  "EUR", BillingCycle.MONTHLY, "Filtros avanzados, modo incógnito y retroceder swipes",                         "citas", domain = "bumble.com",    cancelUrl = "https://bumble.com/en-us/the-buzz/cancellation"),
+            CatalogItem("Hinge+",                  BigDecimal("36.29"),  "EUR", BillingCycle.MONTHLY, "Filtros extendidos y likes ilimitados en Hinge",                                "citas", domain = "hinge.co",      cancelUrl = "https://hingeapp.zendesk.com/hc/en-us/articles/360007194833"),
+            CatalogItem("Meetic Premium",          BigDecimal("36.29"),  "EUR", BillingCycle.MONTHLY, "Citas online — perfil destacado y chat sin límites",                            "citas", 3,  "meetic.es",      "https://www.meetic.es/my/account/settings/subscription"),
+            CatalogItem("Badoo Premium",           BigDecimal("24.19"),  "EUR", BillingCycle.MONTHLY, "Súper poderes en Badoo — ver quién te gustó",                                   "citas", domain = "badoo.com",     cancelUrl = "https://badoo.com/settings/premium"),
+            CatalogItem("Grindr Unlimited",        BigDecimal("36.29"),  "EUR", BillingCycle.MONTHLY, "Chat sin anuncios, ver quién te visitó en Grindr",                              "citas", 7,  "grindr.com",     "https://help.grindr.com/hc/en-us/articles/115001667531"),
+            CatalogItem("OkCupid A-List",          BigDecimal("30.24"),  "EUR", BillingCycle.MONTHLY, "Ver quién te gustó y sin anuncios en OkCupid",                                  "citas", domain = "okcupid.com",   cancelUrl = "https://www.okcupid.com/faq/a-list-faq")
         )
     )
 
@@ -265,6 +396,10 @@ class CatalogService {
             name.contains("desarroll") || name.contains("devops") || name.contains("progr")
                     || name.contains("código") || name.contains("codigo") || name.contains("dev") -> "desarrollo"
             name.contains("prueba") || name.contains("trial") || name.contains("gratu") -> "prueba"
+            name.contains("finanz") || name.contains("banco") || name.contains("presupuest") -> "finanzas"
+            name.contains("educac") || name.contains("curso") || name.contains("aprendiz") -> "educacion"
+            name.contains("creativid") || name.contains("foto") || name.contains("edici") -> "creatividad"
+            name.contains("citas") || name.contains("dating") || name.contains("social") -> "citas"
             else -> null
         }
         return (if (key != null) catalog[key] else null) ?: catalog.values.flatten().sortedBy { it.name }

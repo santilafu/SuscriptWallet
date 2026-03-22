@@ -41,6 +41,10 @@ class CatalogBrowserController(
                     n.contains("salud") || n.contains("deport") -> "salud"
                     n.contains("desarroll") || n.contains("devops") -> "desarrollo"
                     n.contains("prueba") || n.contains("trial") -> "prueba"
+                    n.contains("finanz") -> "finanzas"
+                    n.contains("educac") || n.contains("educación") -> "educacion"
+                    n.contains("creativid") || n.contains("foto") -> "creatividad"
+                    n.contains("citas") || n.contains("dating") -> "citas"
                     else -> n
                 }
                 key to cat.id
