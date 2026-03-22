@@ -18,11 +18,14 @@ import java.math.BigDecimal
  * @property upcomingRenewals Suscripciones activas que renuevan en los próximos 30 días, ordenadas por fecha.
  * @property alertRenewals    Subconjunto de [upcomingRenewals] que renueva en los próximos 7 días.
  *                            Se usa para mostrar la alerta roja en la cabecera del dashboard.
+ * @property alertTrials      Suscripciones en período de prueba cuya fecha de fin cae en los
+ *                            próximos 7 días. Se usa para la alerta amber del dashboard.
  */
 data class DashboardDto(
     val totalMonthly: BigDecimal,
     val totalYearly: BigDecimal,
     val spendByCategory: Map<Category, BigDecimal>,
     val upcomingRenewals: List<Subscription>,
-    val alertRenewals: List<Subscription>
+    val alertRenewals: List<Subscription>,
+    val alertTrials: List<Subscription> = emptyList()
 )

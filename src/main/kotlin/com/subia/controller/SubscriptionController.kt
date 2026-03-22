@@ -74,14 +74,16 @@ class SubscriptionController(
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) renewalDate: LocalDate,
         @RequestParam categoryId: Long,
         @RequestParam(defaultValue = "false") active: Boolean,
-        @RequestParam(defaultValue = "") notes: String
+        @RequestParam(defaultValue = "") notes: String,
+        @RequestParam(defaultValue = "false") isTrial: Boolean,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) trialEndsAt: LocalDate?
     ): String {
         val category = categoryService.findById(categoryId)
         subscriptionService.save(
             Subscription(
                 name = name, description = description, price = price, currency = currency,
                 billingCycle = billingCycle, renewalDate = renewalDate, category = category,
-                active = active, notes = notes
+                active = active, notes = notes, isTrial = isTrial, trialEndsAt = trialEndsAt
             )
         )
         return "redirect:/subscriptions"
@@ -116,14 +118,16 @@ class SubscriptionController(
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) renewalDate: LocalDate,
         @RequestParam categoryId: Long,
         @RequestParam(defaultValue = "false") active: Boolean,
-        @RequestParam(defaultValue = "") notes: String
+        @RequestParam(defaultValue = "") notes: String,
+        @RequestParam(defaultValue = "false") isTrial: Boolean,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) trialEndsAt: LocalDate?
     ): String {
         val category = categoryService.findById(categoryId)
         subscriptionService.save(
             Subscription(
                 id = id, name = name, description = description, price = price, currency = currency,
                 billingCycle = billingCycle, renewalDate = renewalDate, category = category,
-                active = active, notes = notes
+                active = active, notes = notes, isTrial = isTrial, trialEndsAt = trialEndsAt
             )
         )
         return "redirect:/subscriptions"
@@ -166,6 +170,8 @@ class SubscriptionController(
         "renewalDate"  to LocalDate.now(),
         "category"    to null,
         "active"      to true,
-        "notes"       to ""
+        "notes"       to "",
+        "isTrial"     to false,
+        "trialEndsAt" to null
     )
 }

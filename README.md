@@ -1,6 +1,6 @@
 # Suscript Wallet — Gestor de suscripciones
 
-![Version](https://img.shields.io/badge/versión-2.4.0-6366f1?style=flat-square)
+![Version](https://img.shields.io/badge/versión-2.5.0-6366f1?style=flat-square)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-3ddc84?style=flat-square&logo=android)
 ![Stack](https://img.shields.io/badge/Spring%20Boot-3.3.5-6db33f?style=flat-square&logo=springboot)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.1.20-7f52ff?style=flat-square&logo=kotlin)
@@ -302,3 +302,4 @@ Consulta [CHANGELOG.md](CHANGELOG.md) para el historial completo de cambios.
 | 2.2.0   | 2026-03-22 | Notificaciones, caché persistente, gráfico por categoría, multi-divisa, prefill catálogo, filtros, DatePicker |
 | 2.3.0   | 2026-03-22 | Rename → SuscriptWallet, selector catálogo inline en formulario, gráfico donut, totales anuales, fix guardar suscripción, navegación desde dashboard, notificación exacta a 3 días |
 | 2.4.0   | 2026-03-22 | Rediseño visual completo — headers con gradiente, cards custom, logos con fallback, UI estilo fintech en todas las pantallas |
+| 2.5.0   | 2026-03-22 | Seguimiento de pruebas gratuitas — campo isTrial, alertas en dashboard y lista, catálogo con 12 trials reales, notificaciones Android |

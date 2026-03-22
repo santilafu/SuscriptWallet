@@ -45,13 +45,16 @@ class DashboardService(private val repo: SubscriptionRepository) {
         val active = repo.findByActiveTrue()
         val today = LocalDate.now()
 
-        // Suma de todos los gastos normalizados a mensual y anual
-        val totalMonthly = active.sumOf { toMonthly(it) }.setScale(2, RoundingMode.HALF_UP)
-        val totalYearly  = active.sumOf { toYearly(it) }.setScale(2, RoundingMode.HALF_UP)
+        // Trials excluidos del cálculo de gastos totales (spec: trials EXCLUIDOS de totalMonthly/totalYearly)
+        val paidActive = active.filter { !it.isTrial }
 
-        // Agrupa suscripciones activas por categoría y suma su gasto mensual equivalente
+        // Suma de todos los gastos normalizados a mensual y anual (solo suscripciones de pago)
+        val totalMonthly = paidActive.sumOf { toMonthly(it) }.setScale(2, RoundingMode.HALF_UP)
+        val totalYearly  = paidActive.sumOf { toYearly(it) }.setScale(2, RoundingMode.HALF_UP)
+
+        // Agrupa suscripciones de pago activas por categoría y suma su gasto mensual equivalente
         // El mapa resultante está ordenado de mayor a menor gasto
-        val spendByCategory: Map<Category, BigDecimal> = active
+        val spendByCategory: Map<Category, BigDecimal> = paidActive
             .groupBy { it.category }
             .mapValues { (_, subs) -> subs.sumOf { toMonthly(it) }.setScale(2, RoundingMode.HALF_UP) }
             .entries
@@ -66,7 +69,11 @@ class DashboardService(private val repo: SubscriptionRepository) {
         val alertRenewals = repo.findActiveRenewingBetween(today, today.plusDays(7))
             .sortedBy { it.renewalDate }
 
-        return DashboardDto(totalMonthly, totalYearly, spendByCategory, upcomingRenewals, alertRenewals)
+        // Pruebas gratuitas que vencen en los próximos 7 días (para la alerta amber)
+        val alertTrials = repo.findActiveTrialsExpiringBetween(today, today.plusDays(7))
+            .sortedBy { it.trialEndsAt }
+
+        return DashboardDto(totalMonthly, totalYearly, spendByCategory, upcomingRenewals, alertRenewals, alertTrials)
     }
 
     /**

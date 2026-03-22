@@ -151,6 +151,22 @@ class CatalogService {
             CatalogItem("Apple Fitness+",          BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Apple Fitness+ — clases de entrenamiento con métricas de Apple Watch",          "salud")
         ),
 
+        // ── Pruebas gratuitas ────────────────────────────────────────────────────
+        "prueba" to listOf(
+            CatalogItem("Netflix Estándar",        BigDecimal("21.77"),  "EUR", BillingCycle.MONTHLY, "Netflix — 2 pantallas Full HD, sin anuncios",                                   "prueba", 30),
+            CatalogItem("Spotify Premium",         BigDecimal("14.51"),  "EUR", BillingCycle.MONTHLY, "Spotify — música y podcasts sin anuncios, escucha sin conexión",                "prueba", 30),
+            CatalogItem("Amazon Prime",            BigDecimal("6.04"),   "EUR", BillingCycle.MONTHLY, "Amazon Prime — envíos gratis + Prime Video + Prime Music",                      "prueba", 30),
+            CatalogItem("Disney+",                 BigDecimal("16.93"),  "EUR", BillingCycle.MONTHLY, "Disney+ — Disney, Marvel, Star Wars y National Geographic",                     "prueba", 7),
+            CatalogItem("Apple TV+",               BigDecimal("12.09"),  "EUR", BillingCycle.MONTHLY, "Apple TV+ — series y películas originales Apple",                               "prueba", 7),
+            CatalogItem("Cursor Pro",              BigDecimal("22.98"),  "EUR", BillingCycle.MONTHLY, "Editor de código con IA — plan Pro mensual",                                    "prueba", 14),
+            CatalogItem("Adobe Creative Cloud",    BigDecimal("72.59"),  "EUR", BillingCycle.MONTHLY, "Adobe CC — suite completa con Photoshop, Illustrator, Premiere y más",         "prueba", 7),
+            CatalogItem("YouTube Premium",         BigDecimal("16.93"),  "EUR", BillingCycle.MONTHLY, "YouTube sin anuncios, reproducción en segundo plano y YouTube Music",           "prueba", 30),
+            CatalogItem("Notion Plus",             BigDecimal("18.14"),  "EUR", BillingCycle.MONTHLY, "Notion Plus — bloques ilimitados, historial de 30 días",                        "prueba", 14),
+            CatalogItem("Duolingo Super",          BigDecimal("8.46"),   "EUR", BillingCycle.MONTHLY, "Duolingo — aprendizaje de idiomas sin anuncios, con racha reparadora",          "prueba", 14),
+            CatalogItem("NordVPN",                 BigDecimal("4.83"),   "EUR", BillingCycle.MONTHLY, "NordVPN — VPN con 6 000+ servidores y bloqueador de anuncios",                  "prueba", 30),
+            CatalogItem("Grammarly Premium",       BigDecimal("13.30"),  "EUR", BillingCycle.MONTHLY, "Grammarly — corrección gramatical avanzada e inteligencia de escritura",        "prueba", 7)
+        ),
+
         // ── Desarrollo y DevOps ──────────────────────────────────────────────────
         "desarrollo" to listOf(
             CatalogItem("GitHub Pro",              BigDecimal("4.83"),   "EUR", BillingCycle.MONTHLY, "GitHub — repositorios privados ilimitados, wikis y Pages avanzadas",            "desarrollo"),
@@ -192,6 +208,7 @@ class CatalogService {
                     || name.contains("bienest") -> "salud"
             name.contains("desarroll") || name.contains("devops") || name.contains("progr")
                     || name.contains("código") || name.contains("codigo") || name.contains("dev") -> "desarrollo"
+            name.contains("prueba") || name.contains("trial") || name.contains("gratu") -> "prueba"
             else -> null
         }
         return (if (key != null) catalog[key] else null) ?: catalog.values.flatten().sortedBy { it.name }

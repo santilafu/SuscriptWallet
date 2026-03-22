@@ -15,7 +15,9 @@ data class Subscription(
     @SerialName("renewalDate") val fechaRenovacion: String,      // yyyy-MM-dd
     @SerialName("categoryId") val categoriaId: Long? = null,
     @SerialName("active") val activa: Boolean = true,
-    @SerialName("notes") val notas: String = ""
+    @SerialName("notes") val notas: String = "",
+    @SerialName("isTrial")     val esPrueba: Boolean = false,
+    @SerialName("trialEndsAt") val fechaFinPrueba: String? = null
 )
 
 /** Petición para crear o actualizar una suscripción. */

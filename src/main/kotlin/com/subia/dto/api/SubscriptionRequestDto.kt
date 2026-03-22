@@ -16,5 +16,7 @@ data class SubscriptionRequestDto(
     @field:NotNull val renewalDate: LocalDate,
     val active: Boolean = true,
     val notes: String = "",
-    @field:NotNull val categoryId: Long
+    @field:NotNull val categoryId: Long,
+    val isTrial: Boolean = false,
+    val trialEndsAt: String? = null
 )

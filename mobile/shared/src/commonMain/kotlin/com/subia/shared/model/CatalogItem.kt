@@ -12,5 +12,6 @@ data class CatalogItem(
     @SerialName("currency") val moneda: String = "EUR",
     @SerialName("billingCycle") val periodoFacturacion: String = "",
     @SerialName("description") val descripcion: String = "",
-    @SerialName("categoryKey") val categoriaKey: String = ""
+    @SerialName("categoryKey") val categoriaKey: String = "",
+    @SerialName("trialDays") val diasPrueba: Int? = null
 )

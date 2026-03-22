@@ -70,5 +70,11 @@ data class Subscription(
     val active: Boolean = true,
 
     /** Notas personales libres sobre la suscripción. */
-    val notes: String = ""
+    val notes: String = "",
+
+    /** Indica si esta suscripción está en período de prueba gratuita. */
+    val isTrial: Boolean = false,
+
+    /** Fecha en que finaliza el período de prueba (null si no es prueba o no tiene fecha). */
+    @Column(nullable = true) val trialEndsAt: LocalDate? = null
 )

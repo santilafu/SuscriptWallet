@@ -23,5 +23,6 @@ data class CatalogItem(
     val currency: String,
     val billingCycle: BillingCycle,
     val description: String,
-    val categoryKey: String
+    val categoryKey: String,
+    val trialDays: Int? = null
 )

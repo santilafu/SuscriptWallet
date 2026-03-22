@@ -63,7 +63,7 @@
     </div>
 
     <!-- ── Wizard de 3 pasos ───────────────────────────────────────────── -->
-    <div x-data="{ step: 1 }">
+    <div x-data="{ step: 1, isTrial: /*[[${sub instanceof T(com.subia.model.Subscription) and sub.isTrial}]]*/ false }">
 
         <!-- Progress bar de pasos -->
         <div class="glass-card rounded-xl p-5 mb-6">
@@ -266,6 +266,23 @@
                         </div>
                     </div>
 
+                    <!-- Trial toggle -->
+                    <div class="mt-6">
+                        <label class="flex items-center gap-3 cursor-pointer select-none">
+                            <input type="checkbox" name="isTrial" x-model="isTrial"
+                                   class="w-4 h-4 rounded accent-orange-500"
+                                   th:checked="${sub instanceof T(com.subia.model.Subscription) and sub.isTrial}">
+                            <span class="text-sm font-medium text-slate-300">Período de prueba gratuita</span>
+                        </label>
+                    </div>
+                    <!-- Trial end date (visible solo si isTrial=true) -->
+                    <div x-show="isTrial" x-transition class="mt-4">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Fecha de fin de prueba</label>
+                        <input type="date" name="trialEndsAt" id="fieldTrialEndsAt"
+                               class="w-full bg-elevated border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-accent/50"
+                               th:value="${sub instanceof T(com.subia.model.Subscription) and sub.trialEndsAt != null ? sub.trialEndsAt : ''}">
+                    </div>
+
                     <div class="flex justify-between mt-6">
                         <button type="button" @click="step = 2"
                                 class="flex items-center gap-2 px-5 py-2.5 border border-white/[0.1] text-slate-400 hover:text-slate-200 hover:border-white/20 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer">
@@ -359,6 +376,12 @@
         fieldCurrency.value   = item.currency;
         fieldCycle.value      = item.billingCycle;
         fieldCategoryId.value = categoryId;
+        if (item.trialDays) {
+            document.querySelector('[x-data]').__x.$data.isTrial = true;
+            const endsAt = new Date();
+            endsAt.setDate(endsAt.getDate() + item.trialDays);
+            document.getElementById('fieldTrialEndsAt').value = endsAt.toISOString().slice(0, 10);
+        }
         document.querySelector('form').scrollIntoView({ behavior: 'smooth' });
     });
 }());

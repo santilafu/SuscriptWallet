@@ -52,8 +52,10 @@ class RenovacionWorker(
 
         val hoy = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
+        // Notificaciones de renovaciones próximas (excluye trials)
         suscripciones
             .filter { sub ->
+                if (sub.esPrueba) return@filter false
                 val fechaRenovacion = runCatching { LocalDate.parse(sub.fechaRenovacion) }.getOrNull()
                     ?: return@filter false
                 val diasRestantes = hoy.daysUntil(fechaRenovacion)
@@ -61,6 +63,19 @@ class RenovacionWorker(
             }
             .forEachIndexed { index, sub ->
                 lanzarNotificacion(sub, index)
+            }
+
+        // Notificaciones de pruebas gratuitas por vencer en 3 días
+        suscripciones
+            .filter { sub ->
+                if (!sub.esPrueba) return@filter false
+                val fechaFinPrueba = runCatching { LocalDate.parse(sub.fechaFinPrueba ?: return@filter false) }.getOrNull()
+                    ?: return@filter false
+                val diasRestantes = hoy.daysUntil(fechaFinPrueba)
+                diasRestantes == 3
+            }
+            .forEachIndexed { index, sub ->
+                lanzarNotificacionPrueba(sub, index)
             }
 
         return Result.success()
@@ -121,12 +136,51 @@ class RenovacionWorker(
         NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_BASE + index, notificacion)
     }
 
+    /**
+     * Lanza una notificación para una suscripción en período de prueba gratuita próxima a vencer.
+     *
+     * @param suscripcion Suscripción en prueba próxima a vencer.
+     * @param index       Índice para generar un ID de notificación único (base 2500).
+     */
+    private fun lanzarNotificacionPrueba(suscripcion: Subscription, index: Int) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val permiso = ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+            if (permiso != PackageManager.PERMISSION_GRANTED) return
+        }
+
+        val fechaFormateada = runCatching {
+            val localDate = LocalDate.parse(suscripcion.fechaFinPrueba ?: return)
+            "%02d/%02d/%04d".format(localDate.dayOfMonth, localDate.monthNumber, localDate.year)
+        }.getOrElse { suscripcion.fechaFinPrueba ?: "" }
+
+        val notificacion = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("Prueba por vencer: ${suscripcion.nombre}")
+            .setContentText(
+                "Tu prueba gratuita de ${suscripcion.nombre} vence el $fechaFormateada. " +
+                "Después se cobrará ${"%.2f".format(suscripcion.precio)} ${suscripcion.moneda}/mes"
+            )
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText(
+                        "Tu período de prueba gratuita de ${suscripcion.nombre} vence el $fechaFormateada. " +
+                        "Si no cancelas, se te cobrará ${"%.2f".format(suscripcion.precio)} ${suscripcion.moneda} al mes."
+                    )
+            )
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .build()
+
+        NotificationManagerCompat.from(context).notify(TRIAL_NOTIFICATION_ID_BASE + index, notificacion)
+    }
+
     companion object {
         /** Tag único para identificar y cancelar las tareas de WorkManager. */
         const val TAG = "renovaciones"
         private const val PREFS_NAME = "subia_cache"
         private const val CHANNEL_ID = "renovaciones"
         private const val NOTIFICATION_ID_BASE = 1000
+        private const val TRIAL_NOTIFICATION_ID_BASE = 2500
         private const val CACHE_KEY_SUBS = "subscriptions"
     }
 }

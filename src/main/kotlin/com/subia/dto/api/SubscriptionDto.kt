@@ -16,5 +16,7 @@ data class SubscriptionDto(
     val categoryId: Long,
     val categoryName: String,
     val categoryColor: String,
-    val categoryIcon: String
+    val categoryIcon: String,
+    val isTrial: Boolean = false,
+    val trialEndsAt: String? = null
 )

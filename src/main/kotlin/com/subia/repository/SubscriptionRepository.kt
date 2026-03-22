@@ -3,6 +3,7 @@ package com.subia.repository
 import com.subia.model.Subscription
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import java.time.LocalDate
 
 /**
@@ -43,4 +44,15 @@ interface SubscriptionRepository : JpaRepository<Subscription, Long> {
      */
     @Query("SELECT s FROM Subscription s WHERE s.active = true AND s.renewalDate BETWEEN :from AND :to")
     fun findActiveRenewingBetween(from: LocalDate, to: LocalDate): List<Subscription>
+
+    /**
+     * Devuelve las suscripciones activas que están en período de prueba y cuya fecha de fin
+     * de prueba cae entre [from] y [to] (inclusive).
+     * Se usa en el dashboard para mostrar la alerta amber de pruebas próximas a vencer.
+     *
+     * @param from Fecha de inicio del rango (normalmente hoy).
+     * @param to   Fecha de fin del rango (normalmente hoy + 7 días).
+     */
+    @Query("SELECT s FROM Subscription s WHERE s.active = true AND s.isTrial = true AND s.trialEndsAt BETWEEN :from AND :to")
+    fun findActiveTrialsExpiringBetween(@Param("from") from: LocalDate, @Param("to") to: LocalDate): List<Subscription>
 }

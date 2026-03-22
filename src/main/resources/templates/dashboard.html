@@ -40,6 +40,21 @@
         </div>
     </div>
 
+    <!-- ── Alerta de pruebas gratuitas por vencer (7 días) ───────────── -->
+    <div th:if="${dashboard.alertTrials != null and !dashboard.alertTrials.isEmpty()}"
+         class="flex items-start gap-3 p-4 mb-6 rounded-xl border border-orange-500/30 bg-orange-500/10">
+        <i class="bi bi-hourglass-split text-lg mt-0.5 flex-shrink-0 text-orange-400"></i>
+        <div>
+            <p class="font-semibold text-orange-300 text-sm mb-1">Pruebas gratuitas por vencer</p>
+            <p class="text-sm text-orange-400/80 m-0">
+                <span th:each="s, i : ${dashboard.alertTrials}">
+                    <span th:text="${s.name}"></span>
+                    (vence <span th:text="${#temporals.format(s.trialEndsAt, 'dd MMM')}"></span>)<span th:if="${!i.last}">, </span>
+                </span>
+            </p>
+        </div>
+    </div>
+
     <!-- ── Tarjetas de estadísticas ──────────────────────────────────── -->
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
 

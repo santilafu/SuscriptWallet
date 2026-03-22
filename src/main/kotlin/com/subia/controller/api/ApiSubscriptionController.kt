@@ -9,6 +9,7 @@ import com.subia.service.SubscriptionService
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
+import java.time.LocalDate
 
 @RestController
 @RequestMapping("/api/subscriptions")
@@ -32,7 +33,9 @@ class ApiSubscriptionController(
             name = req.name, description = req.description, price = req.price,
             currency = req.currency, billingCycle = req.billingCycle,
             renewalDate = req.renewalDate, active = req.active, notes = req.notes,
-            category = category
+            category = category,
+            isTrial = req.isTrial,
+            trialEndsAt = req.trialEndsAt?.let { LocalDate.parse(it) }
         )
         return ApiResponse(data = subscriptionService.save(sub).toDto())
     }
@@ -46,7 +49,9 @@ class ApiSubscriptionController(
             id = id, name = req.name, description = req.description, price = req.price,
             currency = req.currency, billingCycle = req.billingCycle,
             renewalDate = req.renewalDate, active = req.active, notes = req.notes,
-            category = category
+            category = category,
+            isTrial = req.isTrial,
+            trialEndsAt = req.trialEndsAt?.let { LocalDate.parse(it) }
         )
         return ApiResponse(data = subscriptionService.save(sub).toDto())
     }
@@ -59,6 +64,7 @@ class ApiSubscriptionController(
         id = id, name = name, description = description, price = price,
         currency = currency, billingCycle = billingCycle.name, renewalDate = renewalDate,
         active = active, notes = notes, categoryId = category.id, categoryName = category.name,
-        categoryColor = category.color, categoryIcon = category.icon
+        categoryColor = category.color, categoryIcon = category.icon,
+        isTrial = isTrial, trialEndsAt = trialEndsAt?.toString()
     )
 }
