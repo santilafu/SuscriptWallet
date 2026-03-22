@@ -459,13 +459,14 @@ fun SuscripcionFormScreen(
             }
 
             if (esPrueba) {
+                val valorFechaFinPrueba: String = if (!fechaFinPrueba.isNullOrBlank()) {
+                    runCatching {
+                        val parts = fechaFinPrueba!!.split("-")
+                        "${parts[2]}/${parts[1]}/${parts[0]}"
+                    }.getOrElse { fechaFinPrueba!! }
+                } else ""
                 OutlinedTextField(
-                    value = if (!fechaFinPrueba.isNullOrBlank()) {
-                        runCatching {
-                            val parts = fechaFinPrueba!!.split("-")
-                            "${parts[2]}/${parts[1]}/${parts[0]}"
-                        }.getOrDefault(fechaFinPrueba ?: "")
-                    } else "",
+                    value = valorFechaFinPrueba,
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Fin de prueba") },
