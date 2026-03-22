@@ -14,5 +14,6 @@ data class CatalogItem(
     @SerialName("description") val descripcion: String = "",
     @SerialName("categoryKey") val categoriaKey: String = "",
     @SerialName("trialDays") val diasPrueba: Int? = null,
-    @SerialName("cancelUrl") val cancelUrl: String? = null
+    @SerialName("cancelUrl") val cancelUrl: String? = null,
+    @SerialName("domain") val domain: String? = null
 )

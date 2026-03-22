@@ -7,6 +7,17 @@ Todas las versiones siguen [Semantic Versioning](https://semver.org/lang/es/):
 
 ---
 
+## [2.10.2] — 2026-03-22
+
+Fix: logos del catálogo Android resueltos desde el campo `domain` del servidor.
+
+### Corregido
+- `CatalogItem` (shared model): nuevo campo `domain` (`@SerialName("domain")`, opcional) que recibe el dominio del servidor para cada servicio del catálogo
+- `ServiceLogo`: nuevo parámetro opcional `domain` — si se proporciona, tiene prioridad sobre la derivación local mediante `getLogoDomain(nombre)`
+- `CatalogoScreen`: pasa `item.domain` a `ServiceLogo` para que los logos de catálogo usen el dominio exacto definido en el backend, eliminando falsos negativos en la resolución de logos
+
+---
+
 ## [1.4.0] - 2026-03-14
 ### Changed
 - UI redesign completo con Tailwind CSS + Alpine.js (dark mode permanente)

@@ -172,7 +172,7 @@ private fun CatalogoItemCard(item: CatalogItem, onSeleccionar: (CatalogItem) -> 
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            ServiceLogo(nombre = item.nombre, size = 44.dp)
+            ServiceLogo(nombre = item.nombre, size = 44.dp, domain = item.domain)
             Text(
                 item.nombre,
                 style = MaterialTheme.typography.labelMedium,

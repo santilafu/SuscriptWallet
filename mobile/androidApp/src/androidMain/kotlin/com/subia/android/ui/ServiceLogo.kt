@@ -31,23 +31,24 @@ import coil.compose.SubcomposeAsyncImage
 fun ServiceLogo(
     nombre: String,
     modifier: Modifier = Modifier,
-    size: Dp = 48.dp
+    size: Dp = 48.dp,
+    domain: String? = null
 ) {
-    val domain = getLogoDomain(nombre)
+    val resolvedDomain = domain?.takeIf { it.isNotBlank() } ?: getLogoDomain(nombre)
     val shape = RoundedCornerShape(12.dp)
 
-    if (domain.isEmpty()) {
+    if (resolvedDomain.isEmpty()) {
         LogoFallback(nombre, size, shape, modifier)
         return
     }
 
-    val urls = remember(domain) {
+    val urls = remember(resolvedDomain) {
         listOf(
-            "https://icon.horse/icon/$domain",
-            "https://www.google.com/s2/favicons?domain=$domain&sz=128"
+            "https://icon.horse/icon/$resolvedDomain",
+            "https://www.google.com/s2/favicons?domain=$resolvedDomain&sz=128"
         )
     }
-    var intentoActual by remember(domain) { mutableIntStateOf(0) }
+    var intentoActual by remember(resolvedDomain) { mutableIntStateOf(0) }
 
     if (intentoActual >= urls.size) {
         LogoFallback(nombre, size, shape, modifier)
