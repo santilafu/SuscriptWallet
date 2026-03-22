@@ -2,6 +2,7 @@ package com.subia.android.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.AutoMirrored
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.EuroSymbol
 import androidx.compose.material.icons.filled.Subscriptions
@@ -59,7 +62,10 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardScreen(viewModel: DashboardViewModel = koinViewModel()) {
+fun DashboardScreen(
+    onNavigateToSuscripciones: () -> Unit = {},
+    viewModel: DashboardViewModel = koinViewModel()
+) {
     val uiState by viewModel.uiState.collectAsState()
     val totalesPorMoneda by viewModel.totalesPorMoneda.collectAsState()
     val totalesAnualesPorMoneda by viewModel.totalesAnualesPorMoneda.collectAsState()
@@ -75,10 +81,10 @@ fun DashboardScreen(viewModel: DashboardViewModel = koinViewModel()) {
             is DashboardUiState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                 CircularProgressIndicator()
             }
-            is DashboardUiState.Success -> DashboardContent(state.resumen, totalesPorMoneda, totalesAnualesPorMoneda, gastosPorCategoria)
+            is DashboardUiState.Success -> DashboardContent(state.resumen, totalesPorMoneda, totalesAnualesPorMoneda, gastosPorCategoria, onNavigateToSuscripciones)
             is DashboardUiState.Offline -> Column {
                 BannerOffline("Mostrando datos guardados — sin conexión")
-                state.resumenCacheado?.let { DashboardContent(it, totalesPorMoneda, totalesAnualesPorMoneda, gastosPorCategoria) }
+                state.resumenCacheado?.let { DashboardContent(it, totalesPorMoneda, totalesAnualesPorMoneda, gastosPorCategoria, onNavigateToSuscripciones) }
             }
             is DashboardUiState.Error -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -97,7 +103,8 @@ private fun DashboardContent(
     resumen: DashboardSummary,
     totalesPorMoneda: Map<String, Double> = emptyMap(),
     totalesAnualesPorMoneda: Map<String, Double> = emptyMap(),
-    gastosPorCategoria: Map<String, Double> = emptyMap()
+    gastosPorCategoria: Map<String, Double> = emptyMap(),
+    onNavigateToSuscripciones: () -> Unit = {}
 ) {
     val gradientsMensual = listOf(
         Brush.linearGradient(listOf(GradientIndigoStart, GradientIndigoEnd)),
@@ -199,7 +206,8 @@ private fun DashboardContent(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp)),
+                    .border(1.dp, MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp))
+                    .clickable { onNavigateToSuscripciones() },
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(16.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -222,6 +230,13 @@ private fun DashboardContent(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 22.sp,
                         color = Warning
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "Ver suscripciones",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }

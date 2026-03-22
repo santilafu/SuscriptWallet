@@ -79,6 +79,7 @@ fun SuscripcionFormScreen(
     val periodoFacturacion by formViewModel.periodoFacturacion.collectAsState()
     val fechaRenovacion by formViewModel.fechaRenovacion.collectAsState()
     val notas by formViewModel.notas.collectAsState()
+    val categoriaId by formViewModel.categoriaId.collectAsState()
 
     // Estado del selector de catálogo en línea
     val categorias by formViewModel.categorias.collectAsState()
@@ -111,6 +112,7 @@ fun SuscripcionFormScreen(
 
     var expandedMoneda by remember { mutableStateOf(false) }
     var expandedPeriodo by remember { mutableStateOf(false) }
+    var expandedCategoriaForm by remember { mutableStateOf(false) }
     val monedasOpciones = listOf("EUR", "USD", "GBP")
     val periodosOpciones = listOf("MONTHLY" to "Mensual", "YEARLY" to "Anual", "WEEKLY" to "Semanal")
 
@@ -351,6 +353,37 @@ fun SuscripcionFormScreen(
                         DropdownMenuItem(
                             text = { Text(etiqueta) },
                             onClick = { formViewModel.periodoFacturacion.value = valor; expandedPeriodo = false }
+                        )
+                    }
+                }
+            }
+
+            ExposedDropdownMenuBox(
+                expanded = expandedCategoriaForm,
+                onExpandedChange = { expandedCategoriaForm = it }
+            ) {
+                OutlinedTextField(
+                    value = categorias.find { it.id == categoriaId }?.nombre ?: "",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Categoría *") },
+                    placeholder = { Text("Selecciona una categoría") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandedCategoriaForm) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    enabled = !isLoading,
+                    isError = uiState is FormUiState.Error && (uiState as FormUiState.Error).mensaje == "Selecciona una categoría"
+                )
+                ExposedDropdownMenu(
+                    expanded = expandedCategoriaForm,
+                    onDismissRequest = { expandedCategoriaForm = false }
+                ) {
+                    categorias.forEach { categoria ->
+                        DropdownMenuItem(
+                            text = { Text(categoria.nombre) },
+                            onClick = {
+                                formViewModel.seleccionarCategoria(categoria.id)
+                                expandedCategoriaForm = false
+                            }
                         )
                     }
                 }

@@ -147,6 +147,11 @@ class SuscripcionFormViewModel(
         moneda.value = item.moneda
     }
 
+    /** Establece la categoría de la suscripción desde el desplegable standalone del formulario. */
+    fun seleccionarCategoria(id: Long) {
+        categoriaId.value = id
+    }
+
     /** Envía el formulario. Si [esEdicion] es true realiza PUT, si no POST. */
     fun enviar(esEdicion: Boolean, id: Long? = null) {
         val precioDouble = precio.value.replace(",", ".").toDoubleOrNull()
@@ -162,6 +167,10 @@ class SuscripcionFormViewModel(
             }
             fechaRenovacion.value.isBlank() -> {
                 _uiState.value = FormUiState.Error("La fecha de renovación es obligatoria")
+                return
+            }
+            categoriaId.value == null || categoriaId.value == 0L -> {
+                _uiState.value = FormUiState.Error("Selecciona una categoría")
                 return
             }
         }

@@ -168,7 +168,17 @@ fun SubIAApp(
                     viewModel = authViewModel
                 )
             }
-            composable<DashboardRoute> { DashboardScreen() }
+            composable<DashboardRoute> {
+                DashboardScreen(
+                    onNavigateToSuscripciones = {
+                        navController.navigate(SuscripcionesRoute) {
+                            launchSingleTop = true
+                            restoreState = true
+                            popUpTo(DashboardRoute) { saveState = true }
+                        }
+                    }
+                )
+            }
             composable<SuscripcionesRoute> {
                 SuscripcionesScreen(
                     onNavigateToDetalle = { id -> navController.navigate(SuscripcionDetalleRoute(id)) },
