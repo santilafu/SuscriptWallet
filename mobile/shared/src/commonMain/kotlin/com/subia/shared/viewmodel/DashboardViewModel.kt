@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.subia.shared.cache.CacheRepository
 import com.subia.shared.model.DashboardSummary
+import com.subia.shared.model.ProximaRenovacion
 import com.subia.shared.model.Subscription
 import com.subia.shared.network.SessionExpiredException
 import com.subia.shared.repository.DashboardRepository
