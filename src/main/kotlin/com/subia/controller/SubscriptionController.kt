@@ -38,6 +38,7 @@ class SubscriptionController(
         model.addAttribute("subscriptions", subscriptionService.findAll())
         model.addAttribute("categories", categoryService.findAll())
         model.addAttribute("serviceDomains", catalogService.getDomainMap())
+        model.addAttribute("cancelUrls", catalogService.getCancelUrlMap())
         return "subscriptions/list"
     }
 

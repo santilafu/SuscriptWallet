@@ -24,5 +24,7 @@ data class CatalogItem(
     val billingCycle: BillingCycle,
     val description: String,
     val categoryKey: String,
-    val trialDays: Int? = null
+    val trialDays: Int? = null,
+    val domain: String? = null,
+    val cancelUrl: String? = null
 )

@@ -149,6 +149,12 @@
 
                 <!-- Footer: acciones -->
                 <div class="px-5 py-3 border-t border-white/[0.05] flex items-center justify-end gap-2">
+                    <a th:if="${cancelUrls[s.name] != null}"
+                       th:href="${cancelUrls[s.name]}"
+                       target="_blank" rel="noopener noreferrer"
+                       class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-orange-400/80 hover:text-orange-300 hover:bg-orange-500/10 border border-orange-500/20 hover:border-orange-500/40 transition-all duration-200 no-underline">
+                        <i class="bi bi-x-circle"></i>Cancelar
+                    </a>
                     <a th:href="@{/subscriptions/{id}/edit(id=${s.id})}"
                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/[0.15] transition-all duration-200 no-underline">
                         <i class="bi bi-pencil"></i>Editar
