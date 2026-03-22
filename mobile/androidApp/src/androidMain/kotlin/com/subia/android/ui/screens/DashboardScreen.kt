@@ -40,7 +40,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -97,6 +103,39 @@ fun DashboardScreen(
     }
 }
 
+@OptIn(ExperimentalTextApi::class)
+@Composable
+private fun WalletHeader() {
+    val gradientBrush = Brush.linearGradient(
+        colors = listOf(GradientIndigoStart, GradientIndigoEnd, Color(0xFFA78BFA)),
+        start = Offset(0f, 0f),
+        end = Offset(Float.POSITIVE_INFINITY, 0f)
+    )
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = buildAnnotatedString {
+                withStyle(SpanStyle(brush = gradientBrush, fontWeight = FontWeight.ExtraBold, fontSize = 42.sp)) {
+                    append("Wallet")
+                }
+            },
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = "✦  tus suscripciones bajo control  ✦",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            letterSpacing = 1.5.sp
+        )
+    }
+}
+
 @Composable
 private fun DashboardContent(
     resumen: DashboardSummary,
@@ -122,16 +161,7 @@ private fun DashboardContent(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            Text(
-                "Dashboard",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.ExtraBold
-            )
-            Text(
-                "Resumen de tus suscripciones",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            WalletHeader()
         }
 
         item {
