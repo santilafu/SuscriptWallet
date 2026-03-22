@@ -88,12 +88,24 @@
                 <div class="p-5 flex-1">
                     <!-- Header: nombre + badge estado -->
                     <div class="flex items-start justify-between gap-3 mb-3">
-                        <div class="min-w-0">
-                            <h3 class="font-semibold text-slate-100 text-base truncate"
-                                th:text="${s.name}"></h3>
-                            <p th:if="${!s.description.isEmpty()}"
-                               class="text-xs text-slate-500 mt-0.5 truncate"
-                               th:text="${s.description}"></p>
+                        <div class="flex items-center gap-3 min-w-0">
+                            <!-- Logo del servicio -->
+                            <div class="w-8 h-8 rounded-lg flex-shrink-0 bg-elevated flex items-center justify-center overflow-hidden border border-white/[0.06]">
+                                <img th:if="${serviceDomains[s.name] != null}"
+                                     th:src="'https://icon.horse/icon/' + ${serviceDomains[s.name]}"
+                                     class="w-6 h-6 object-contain"
+                                     th:alt="${s.name}"
+                                     onerror="this.replaceWith(this.nextElementSibling)">
+                                <span th:text="${s.name.substring(0,1).toUpperCase()}"
+                                      class="text-xs font-bold text-accent"></span>
+                            </div>
+                            <div class="min-w-0">
+                                <h3 class="font-semibold text-slate-100 text-base truncate"
+                                    th:text="${s.name}"></h3>
+                                <p th:if="${!s.description.isEmpty()}"
+                                   class="text-xs text-slate-500 mt-0.5 truncate"
+                                   th:text="${s.description}"></p>
+                            </div>
                         </div>
                         <div class="flex flex-col items-end gap-1">
                             <th:block th:if="${s.isTrial and s.trialEndsAt != null}">

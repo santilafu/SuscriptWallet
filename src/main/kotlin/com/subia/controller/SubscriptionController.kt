@@ -25,7 +25,8 @@ import java.time.LocalDate
 @RequestMapping("/subscriptions")
 class SubscriptionController(
     private val subscriptionService: SubscriptionService,
-    private val categoryService: CategoryService
+    private val categoryService: CategoryService,
+    private val catalogService: com.subia.service.CatalogService
 ) {
 
     /**
@@ -35,8 +36,8 @@ class SubscriptionController(
     @GetMapping
     fun list(model: Model): String {
         model.addAttribute("subscriptions", subscriptionService.findAll())
-        // Se pasan las categorías para poder renderizar los pills de filtro
         model.addAttribute("categories", categoryService.findAll())
+        model.addAttribute("serviceDomains", catalogService.getDomainMap())
         return "subscriptions/list"
     }
 
