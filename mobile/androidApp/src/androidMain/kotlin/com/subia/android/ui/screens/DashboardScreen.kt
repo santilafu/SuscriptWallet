@@ -19,8 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.AutoMirrored
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.EuroSymbol
 import androidx.compose.material.icons.filled.Subscriptions
@@ -233,7 +232,7 @@ private fun DashboardContent(
                     )
                     Spacer(Modifier.width(8.dp))
                     Icon(
-                        Icons.AutoMirrored.Filled.ArrowForward,
+                        Icons.Filled.ArrowForward,
                         contentDescription = "Ver suscripciones",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
