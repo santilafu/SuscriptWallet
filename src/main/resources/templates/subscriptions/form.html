@@ -325,8 +325,9 @@
         }
 
         try {
-            const res   = await fetch('/api/catalog?categoryId=' + categoryId);
-            const items = await res.json();
+            const res      = await fetch('/api/catalog?categoryId=' + categoryId);
+            const response = await res.json();
+            const items    = response.data;
 
             svcSelect.innerHTML = '<option value="">— Elige un servicio —</option>';
             items.forEach(function (item) {
