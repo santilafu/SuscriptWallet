@@ -462,9 +462,9 @@ fun SuscripcionFormScreen(
                 OutlinedTextField(
                     value = if (!fechaFinPrueba.isNullOrBlank()) {
                         runCatching {
-                            val parts = fechaFinPrueba.split("-")
+                            val parts = fechaFinPrueba!!.split("-")
                             "${parts[2]}/${parts[1]}/${parts[0]}"
-                        }.getOrDefault(fechaFinPrueba)
+                        }.getOrDefault(fechaFinPrueba ?: "")
                     } else "",
                     onValueChange = {},
                     readOnly = true,
