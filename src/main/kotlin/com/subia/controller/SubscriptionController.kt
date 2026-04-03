@@ -5,9 +5,11 @@ import com.subia.model.Subscription
 import com.subia.service.CategoryService
 import com.subia.service.SubscriptionService
 import org.springframework.format.annotation.DateTimeFormat
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.server.ResponseStatusException
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -80,6 +82,8 @@ class SubscriptionController(
         @RequestParam(defaultValue = "false") isTrial: Boolean,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) trialEndsAt: LocalDate?
     ): String {
+        if (isTrial && trialEndsAt == null)
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "trialEndsAt is required when isTrial is true")
         val category = categoryService.findById(categoryId)
         subscriptionService.save(
             Subscription(
@@ -124,6 +128,8 @@ class SubscriptionController(
         @RequestParam(defaultValue = "false") isTrial: Boolean,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) trialEndsAt: LocalDate?
     ): String {
+        if (isTrial && trialEndsAt == null)
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "trialEndsAt is required when isTrial is true")
         val category = categoryService.findById(categoryId)
         subscriptionService.save(
             Subscription(

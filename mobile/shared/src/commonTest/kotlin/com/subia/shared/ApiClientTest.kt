@@ -78,7 +78,7 @@ class ApiClientTest {
         }
 
         val tokenStorage = InMemoryTokenStorage(
-            initialTokens = AuthTokens(accessToken = "token-viejo", refreshToken = "refresh-viejo")
+            tokens = AuthTokens(accessToken = "token-viejo", refreshToken = "refresh-viejo")
         )
         val client = ApiClient(
             baseUrl = "http://localhost",
@@ -108,7 +108,7 @@ class ApiClientTest {
         }
 
         val tokenStorage = InMemoryTokenStorage(
-            initialTokens = AuthTokens(accessToken = "token-caducado", refreshToken = "refresh-caducado")
+            tokens = AuthTokens(accessToken = "token-caducado", refreshToken = "refresh-caducado")
         )
         val client = ApiClient(
             baseUrl = "http://localhost",
@@ -139,7 +139,7 @@ class ApiClientTest {
             respond("", HttpStatusCode.OK)
         }
 
-        val tokenStorage = InMemoryTokenStorage(initialTokens = null)
+        val tokenStorage = InMemoryTokenStorage(tokens = null)
         val client = ApiClient(
             baseUrl = "http://localhost",
             tokenStorage = tokenStorage,

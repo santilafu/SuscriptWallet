@@ -7,6 +7,26 @@ Todas las versiones siguen [Semantic Versioning](https://semver.org/lang/es/):
 
 ---
 
+## [2.11.1] — 2026-04-03
+
+### Infrastructure
+- Despliegue backend en Render (Docker, Java 21, perfil prod)
+- Dockerfile multi-stage con eclipse-temurin:21-jre-jammy
+- render.yaml para auto-deploy desde GitHub
+- Flyway activado en Render: migraciones V1→V5 ejecutadas automáticamente en Aiven
+- HikariCP pool configurado a 10 conexiones para plan básico Aiven
+- Eliminado PostgreSQLDialect explícito (Hibernate 6 auto-detección)
+- spring.jpa.open-in-view desactivado en prod
+
+### Mobile (v2.8.0 — Play Store ready)
+- URL backend actualizada a https://suscriptwallet.onrender.com
+- Configuración de firma release con keystore PKCS12
+- ProGuard rules para R8: errorprone, Ktor JVM debug detector, Kotlinx Serialization
+- Iconos de lanzador en todos los tamaños mipmap (mdpi→xxxhdpi)
+- AndroidManifest actualizado con android:icon y android:roundIcon
+
+---
+
 ## [2.11.0] — 2026-04-03
 
 ### Added
