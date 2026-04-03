@@ -8,6 +8,8 @@
         android:name=".SubIAApp"
         android:allowBackup="true"
         android:label="SuscriptWallet"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.SubIA"
         android:usesCleartextTraffic="true">
