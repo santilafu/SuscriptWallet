@@ -22,8 +22,8 @@ android {
         applicationId = "com.subia.android"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 7
-        versionName = "2.7.0"
+        versionCode = 8
+        versionName = "2.8.0"
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
 

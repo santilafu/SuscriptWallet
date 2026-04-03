@@ -7,6 +7,26 @@ Todas las versiones siguen [Semantic Versioning](https://semver.org/lang/es/):
 
 ---
 
+## [2.11.0] — 2026-04-03
+
+### Added
+- Trial Tracker: campo `isTrial` y `trialEndsAt` en suscripciones para distinguir pruebas gratuitas de pagos reales
+- Nueva categoría de catálogo "Prueba gratuita" con 12 servicios y sus días reales de trial
+- Dashboard web: alerta ámbar cuando un trial vence en ≤ 7 días
+- Lista de suscripciones: badge naranja/rojo "Prueba — X días" en cards de trials
+- Formulario web: toggle para marcar suscripción como trial con autocompletado de fecha de fin
+- REST API: campos `isTrial` y `trialEndsAt` propagados en `SubscriptionDto`
+- Android WorkManager: notificación cuando un trial vence en 3 días
+- KMM shared model: campos `esPrueba` y `fechaFinPrueba` en `Subscription.kt`
+- Migración Flyway V4: columnas `is_trial` y `trial_ends_at` en tabla `subscriptions`
+
+### Infrastructure
+- Base de datos migrada de Docker local a Aiven (PostgreSQL 17.9 managed cloud)
+- Nuevo perfil `prod` con `application-prod.properties` para conexión SSL a Aiven
+- Los trials se excluyen de los totales de gasto (solo gasto real contabilizado)
+
+---
+
 ## [2.10.2] — 2026-03-22
 
 Fix: logos del catálogo Android resueltos desde el campo `domain` del servidor.
