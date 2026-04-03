@@ -200,13 +200,15 @@ fun SubIAApp(
                             restoreState = true
                             popUpTo(DashboardRoute) { saveState = true }
                         }
-                    }
+                    },
+                    onSesionExpirada = { authViewModel.logout() }
                 )
             }
             composable<SuscripcionesRoute> {
                 SuscripcionesScreen(
                     onNavigateToDetalle = { id -> navController.navigate(SuscripcionDetalleRoute(id)) },
-                    onNavigateToNueva = { navController.navigate(SuscripcionFormRoute()) }
+                    onNavigateToNueva = { navController.navigate(SuscripcionFormRoute()) },
+                    onSesionExpirada = { authViewModel.logout() }
                 )
             }
             composable<SuscripcionDetalleRoute> { backStackEntry ->

@@ -81,6 +81,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun SuscripcionesScreen(
     onNavigateToDetalle: (Long) -> Unit,
     onNavigateToNueva: () -> Unit,
+    onSesionExpirada: () -> Unit = {},
     viewModel: SuscripcionesViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -139,7 +140,7 @@ fun SuscripcionesScreen(
                         TextButton(onClick = { viewModel.cargar() }) { Text("Reintentar") }
                     }
                 }
-                is SuscripcionesUiState.SesionExpirada -> Unit
+                is SuscripcionesUiState.SesionExpirada -> LaunchedEffect(Unit) { onSesionExpirada() }
             }
         }
     }

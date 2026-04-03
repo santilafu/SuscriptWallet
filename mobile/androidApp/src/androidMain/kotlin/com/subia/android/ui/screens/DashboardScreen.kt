@@ -34,6 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -70,6 +71,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun DashboardScreen(
     onNavigateToSuscripciones: () -> Unit = {},
+    onSesionExpirada: () -> Unit = {},
     viewModel: DashboardViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -100,7 +102,7 @@ fun DashboardScreen(
                     TextButton(onClick = { viewModel.cargarEstadisticas() }) { Text("Reintentar") }
                 }
             }
-            is DashboardUiState.SesionExpirada -> Unit
+            is DashboardUiState.SesionExpirada -> LaunchedEffect(Unit) { onSesionExpirada() }
         }
     }
 }
