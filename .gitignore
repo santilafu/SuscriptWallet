@@ -34,5 +34,7 @@ spring-shell.log
 .env
 .env.local
 application-local.properties
-application-prod.properties
 local.properties
+
+# Aiven SSL certificate
+src/main/resources/aiven-ca.crt
