@@ -13,6 +13,10 @@ val localProps = Properties().apply {
     if (f.exists()) load(f.inputStream())
 }
 val apiBaseUrl: String = localProps.getProperty("API_BASE_URL", "http://10.0.2.2:8081")
+val keystorePath: String = localProps.getProperty("KEYSTORE_PATH", "")
+val keystorePass: String = localProps.getProperty("KEYSTORE_PASSWORD", "")
+val releaseKeyAlias: String = localProps.getProperty("KEY_ALIAS", "")
+val keyPass: String = localProps.getProperty("KEY_PASSWORD", "")
 
 android {
     namespace = "com.subia.android"
@@ -27,6 +31,17 @@ android {
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
 
+    signingConfigs {
+        create("release") {
+            if (keystorePath.isNotEmpty()) {
+                storeFile = file(keystorePath)
+                storePassword = keystorePass
+                keyAlias = releaseKeyAlias
+                keyPassword = keyPass
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -34,6 +49,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     buildFeatures {

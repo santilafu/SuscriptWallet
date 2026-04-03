@@ -38,3 +38,7 @@ local.properties
 
 # Aiven SSL certificate
 src/main/resources/aiven-ca.crt
+
+# Android keystore (nunca subir a git)
+*.jks
+*.keystore
