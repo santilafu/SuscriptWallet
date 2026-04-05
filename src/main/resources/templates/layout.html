@@ -24,9 +24,9 @@
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
 
-    <!-- Tailwind CDN con config dark mode -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- IMPORTANTE: tailwind.config DEBE ir ANTES del script CDN -->
     <script>
+        tailwind = window.tailwind || {};
         tailwind.config = {
             darkMode: 'class',
             theme: {
@@ -44,8 +44,9 @@
                     }
                 }
             }
-        }
+        };
     </script>
+    <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
@@ -53,80 +54,113 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 
     <style>
-        /* ── Estilos base explícitos (no dependen de custom Tailwind classes) ── */
-        html, body { background-color: #0a0f1e !important; color: #f1f5f9; }
-
-        /* Colores personalizados como CSS vars */
+        /* ── Variables CSS (usadas como fallback si Tailwind custom no carga) ── */
         :root {
-            --color-accent: #6366f1;
-            --color-accent-hover: #4f46e5;
-            --color-accent-light: #818cf8;
-            --color-surface: #111827;
-            --color-elevated: #1a2235;
+            --accent:         #6366f1;
+            --accent-hover:   #4f46e5;
+            --accent-light:   #818cf8;
+            --surface:        #111827;
+            --elevated:       #1a2235;
+            --base:           #0a0f1e;
         }
 
-        /* Scrollbar dark */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #0a0f1e; }
-        ::-webkit-scrollbar-thumb { background: #1e2d45; border-radius: 3px; }
+        /* ── Base: fondo y texto siempre oscuro ─────────────────────────────── */
+        html, body { background-color: var(--base) !important; color: #f1f5f9 !important; }
 
-        /* Animación de entrada */
+        /* ── Fallbacks para custom Tailwind classes ──────────────────────────── */
+        /* Backgrounds */
+        .bg-base     { background-color: var(--base) !important; }
+        .bg-surface  { background-color: var(--surface) !important; }
+        .bg-elevated { background-color: var(--elevated) !important; }
+        .bg-hover    { background-color: #1e2d45 !important; }
+        .bg-accent   { background-color: var(--accent) !important; }
+        .hover\:bg-accent-hover:hover { background-color: var(--accent-hover) !important; }
+
+        /* Opacity variants de accent */
+        .bg-accent\/10  { background-color: rgba(99,102,241,0.10) !important; }
+        .bg-accent\/15  { background-color: rgba(99,102,241,0.15) !important; }
+        .bg-accent\/20  { background-color: rgba(99,102,241,0.20) !important; }
+
+        /* Text */
+        .text-accent { color: var(--accent-light) !important; }
+        .hover\:text-accent\/80:hover { color: rgba(99,102,241,0.8) !important; }
+
+        /* Borders */
+        .border-accent      { border-color: var(--accent) !important; }
+        .border-accent\/60  { border-color: rgba(99,102,241,0.60) !important; }
+        .border-accent\/40  { border-color: rgba(99,102,241,0.40) !important; }
+        .hover\:border-accent\/40:hover { border-color: rgba(99,102,241,0.40) !important; }
+
+        /* Focus states */
+        .focus\:border-accent\/60:focus { border-color: rgba(99,102,241,0.60) !important; }
+        .focus\:ring-accent\/30:focus   { box-shadow: 0 0 0 3px rgba(99,102,241,0.30) !important; }
+
+        /* ── Elementos de formulario siempre oscuros ─────────────────────────── */
+        input:not([type=checkbox]):not([type=radio]):not([type=color]),
+        select,
+        textarea {
+            background-color: var(--elevated) !important;
+            color: #f1f5f9 !important;
+            border-color: rgba(255,255,255,0.12) !important;
+        }
+        input::placeholder, textarea::placeholder { color: #64748b !important; }
+        input:disabled, select:disabled, textarea:disabled {
+            background-color: rgba(26,34,53,0.5) !important;
+            color: #64748b !important;
+        }
+        input:focus:not([type=checkbox]):not([type=radio]),
+        select:focus, textarea:focus {
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.25) !important;
+            outline: none !important;
+        }
+
+        /* Date picker icon visible en dark */
+        input[type=date]::-webkit-calendar-picker-indicator {
+            filter: invert(1) opacity(0.5);
+        }
+        input[type=color] { padding: 2px; cursor: pointer; }
+
+        /* ── Glassmorphism stat cards ─────────────────────────────────────────── */
+        .glass-card {
+            background: rgba(255,255,255,0.03) !important;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 4px 24px rgba(0,0,0,0.4);
+        }
+
+        /* ── Animación de entrada ─────────────────────────────────────────────── */
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(10px); }
             to   { opacity: 1; transform: translateY(0); }
         }
         .page-content { animation: fadeInUp 0.25s ease both; }
 
-        /* Glassmorphism stat cards */
-        .glass-card {
-            background: rgba(255,255,255,0.03);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255,255,255,0.08);
-            box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 4px 24px rgba(0,0,0,0.4);
+        /* ── Scrollbar dark ───────────────────────────────────────────────────── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--base); }
+        ::-webkit-scrollbar-thumb { background: #1e2d45; border-radius: 3px; }
+
+        /* ── Botones accent (clase helper) ───────────────────────────────────── */
+        a.bg-accent, button.bg-accent {
+            color: #fff !important;
+        }
+        a.bg-accent:hover, button.bg-accent:hover,
+        a.hover\:bg-accent-hover:hover, button.hover\:bg-accent-hover:hover {
+            background-color: var(--accent-hover) !important;
+            color: #fff !important;
         }
 
-        /* Botones accent */
-        .btn-accent {
-            background-color: var(--color-accent);
-            color: #fff;
-            border-radius: 0.5rem;
-            padding: 0.5rem 1rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            transition: background-color 0.15s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .btn-accent:hover { background-color: var(--color-accent-hover); color: #fff; }
+        /* Alpine.js cloak */
+        [x-cloak] { display: none !important; }
 
-        /* Inputs dark */
-        .input-dark {
-            background-color: var(--color-elevated);
-            border: 1px solid rgba(255,255,255,0.12);
-            color: #f1f5f9;
-            border-radius: 0.5rem;
-            padding: 0.5rem 0.75rem;
-            font-size: 0.875rem;
-            width: 100%;
-            box-sizing: border-box;
-            outline: none;
+        /* line-clamp */
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
-        .input-dark::placeholder { color: #64748b; }
-        .input-dark:focus { border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
-
-        /* Input / select dark override para compatibilidad con Tailwind CDN */
-        input[type=date]::-webkit-calendar-picker-indicator {
-            filter: invert(1) opacity(0.5);
-        }
-        input[type=color] {
-            padding: 2px;
-            cursor: pointer;
-        }
-
-        /* Selects */
-        select { background-color: var(--color-elevated) !important; color: #f1f5f9 !important; }
     </style>
 </head>
 <body class="bg-base text-slate-100 font-sans antialiased min-h-screen flex flex-col">
@@ -148,32 +182,36 @@
                 <a th:href="@{/dashboard}"
                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline"
                    th:classappend="${currentPath == '/dashboard'}
-                       ? ' text-accent border-b-2 border-accent bg-accent/10'
-                       : ' text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]'">
+                       ? ' border-b-2 border-accent bg-accent/10'
+                       : ' text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]'"
+                   th:style="${currentPath == '/dashboard'} ? 'color:#818cf8;' : ''">
                     <i class="bi bi-speedometer2"></i>
                     <span>Dashboard</span>
                 </a>
                 <a th:href="@{/subscriptions}"
                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline"
                    th:classappend="${currentPath != null and currentPath.startsWith('/subscriptions')}
-                       ? ' text-accent border-b-2 border-accent bg-accent/10'
-                       : ' text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]'">
+                       ? ' border-b-2 border-accent bg-accent/10'
+                       : ' text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]'"
+                   th:style="${currentPath != null and currentPath.startsWith('/subscriptions')} ? 'color:#818cf8;' : ''">
                     <i class="bi bi-list-ul"></i>
                     <span>Suscripciones</span>
                 </a>
                 <a th:href="@{/categories}"
                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline"
                    th:classappend="${currentPath != null and currentPath.startsWith('/categories')}
-                       ? ' text-accent border-b-2 border-accent bg-accent/10'
-                       : ' text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]'">
+                       ? ' border-b-2 border-accent bg-accent/10'
+                       : ' text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]'"
+                   th:style="${currentPath != null and currentPath.startsWith('/categories')} ? 'color:#818cf8;' : ''">
                     <i class="bi bi-tags"></i>
                     <span>Categorías</span>
                 </a>
                 <a th:href="@{/catalog-browser}"
                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline"
                    th:classappend="${currentPath != null and currentPath.startsWith('/catalog-browser')}
-                       ? ' text-accent border-b-2 border-accent bg-accent/10'
-                       : ' text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]'">
+                       ? ' border-b-2 border-accent bg-accent/10'
+                       : ' text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]'"
+                   th:style="${currentPath != null and currentPath.startsWith('/catalog-browser')} ? 'color:#818cf8;' : ''">
                     <i class="bi bi-grid-3x3-gap"></i>
                     <span>Catálogo</span>
                 </a>
