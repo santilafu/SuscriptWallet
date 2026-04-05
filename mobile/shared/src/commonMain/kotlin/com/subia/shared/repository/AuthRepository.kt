@@ -17,10 +17,10 @@ class AuthRepository(
      * Inicia sesión con email y contraseña.
      * En caso de éxito, guarda los tokens en almacenamiento seguro.
      */
-    suspend fun login(username: String, password: String): Result<Unit> {
+    suspend fun login(email: String, password: String): Result<Unit> {
         val result = apiClient.post<AuthTokens, LoginRequest>(
             path = ApiRoutes.LOGIN,
-            body = LoginRequest(username, password),
+            body = LoginRequest(email, password),
             authenticated = false
         )
         return result.map { tokens -> tokenStorage.saveTokens(tokens) }

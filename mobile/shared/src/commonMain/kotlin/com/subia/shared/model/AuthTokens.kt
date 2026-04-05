@@ -18,7 +18,7 @@ data class ApiResponse<T>(
 /** Petición de login con credenciales. */
 @Serializable
 data class LoginRequest(
-    val username: String,
+    val email: String,
     val password: String
 )
 
@@ -27,3 +27,7 @@ data class LoginRequest(
 data class RefreshRequest(
     val refreshToken: String
 )
+
+/** Petición de autenticación con Google idToken. */
+@Serializable
+data class GoogleAuthRequest(val idToken: String)

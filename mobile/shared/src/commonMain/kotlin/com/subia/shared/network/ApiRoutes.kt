@@ -8,6 +8,7 @@ object ApiRoutes {
     const val LOGIN = "$BASE/auth/login"
     const val REFRESH = "$BASE/auth/refresh"
     const val LOGOUT = "$BASE/auth/logout"
+    const val GOOGLE_AUTH = "$BASE/auth/google"
 
     // Dashboard
     const val DASHBOARD_STATS = "$BASE/dashboard/stats"

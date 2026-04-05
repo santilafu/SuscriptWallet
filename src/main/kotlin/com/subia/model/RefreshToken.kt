@@ -12,7 +12,11 @@ data class RefreshToken(
     @Column(nullable = false, unique = true, columnDefinition = "TEXT")
     val token: String,
     @Column(nullable = false, length = 64)
-    val username: String,
+    val email: String,
+    @Column(name = "user_id")
+    val userId: Long? = null,
+    @Column(name = "family_id", nullable = false)
+    val familyId: UUID = UUID.randomUUID(),
     @Column(name = "issued_at", nullable = false)
     val issuedAt: OffsetDateTime = OffsetDateTime.now(),
     @Column(name = "expires_at", nullable = false)

@@ -33,15 +33,15 @@ class AuthViewModel(
         _isLoggedIn.value = authRepository.hasValidSession()
     }
 
-    /** Inicia sesión con usuario y contraseña. */
-    fun login(username: String, password: String) {
-        if (username.isBlank() || password.isBlank()) {
-            _uiState.value = AuthUiState.Error("El usuario y la contraseña son obligatorios")
+    /** Inicia sesión con email y contraseña. */
+    fun login(email: String, password: String) {
+        if (email.isBlank() || password.isBlank()) {
+            _uiState.value = AuthUiState.Error("El correo electrónico y la contraseña son obligatorios")
             return
         }
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
-            authRepository.login(username, password)
+            authRepository.login(email, password)
                 .onSuccess {
                     _isLoggedIn.value = true
                     _uiState.value = AuthUiState.Success

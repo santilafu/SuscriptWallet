@@ -33,27 +33,17 @@ class DashboardService(private val repo: SubscriptionRepository) {
     private val WEEKS_IN_YEAR = BigDecimal("52")
 
     /**
-     * Construye y devuelve el [DashboardDto] con todos los datos necesarios para la pantalla principal.
-     *
-     * Pasos:
-     * 1. Carga todas las suscripciones activas.
-     * 2. Calcula el gasto mensual y anual equivalente total.
-     * 3. Agrupa el gasto mensual por categoría (ordenado de mayor a menor).
-     * 4. Filtra las renovaciones próximas a 30 días y a 7 días.
+     * Construye y devuelve el [DashboardDto] filtrado por userId.
      */
-    fun getDashboard(): DashboardDto {
-        val active = repo.findByActiveTrue()
+    fun getDashboard(userId: Long): DashboardDto {
+        val active = repo.findByUserIdAndActiveTrue(userId)
         val today = LocalDate.now()
 
-        // Trials excluidos del cálculo de gastos totales (spec: trials EXCLUIDOS de totalMonthly/totalYearly)
         val paidActive = active.filter { !it.isTrial }
 
-        // Suma de todos los gastos normalizados a mensual y anual (solo suscripciones de pago)
         val totalMonthly = paidActive.sumOf { toMonthly(it) }.setScale(2, RoundingMode.HALF_UP)
         val totalYearly  = paidActive.sumOf { toYearly(it) }.setScale(2, RoundingMode.HALF_UP)
 
-        // Agrupa suscripciones de pago activas por categoría y suma su gasto mensual equivalente
-        // El mapa resultante está ordenado de mayor a menor gasto
         val spendByCategory: Map<Category, BigDecimal> = paidActive
             .groupBy { it.category }
             .mapValues { (_, subs) -> subs.sumOf { toMonthly(it) }.setScale(2, RoundingMode.HALF_UP) }
@@ -61,15 +51,43 @@ class DashboardService(private val repo: SubscriptionRepository) {
             .sortedByDescending { it.value }
             .associate { it.key to it.value }
 
-        // Renovaciones en los próximos 30 días (para la tabla del dashboard)
+        val upcomingRenewals = repo.findActiveRenewingBetweenForUser(userId, today, today.plusDays(30))
+            .sortedBy { it.renewalDate }
+
+        val alertRenewals = repo.findActiveRenewingBetweenForUser(userId, today, today.plusDays(7))
+            .sortedBy { it.renewalDate }
+
+        val alertTrials = repo.findActiveTrialsExpiringBetweenForUser(userId, today, today.plusDays(7))
+            .sortedBy { it.trialEndsAt }
+
+        return DashboardDto(totalMonthly, totalYearly, spendByCategory, upcomingRenewals, alertRenewals, alertTrials)
+    }
+
+    /**
+     * Construye y devuelve el [DashboardDto] sin filtro por usuario (legado).
+     */
+    fun getDashboard(): DashboardDto {
+        val active = repo.findByActiveTrue()
+        val today = LocalDate.now()
+
+        val paidActive = active.filter { !it.isTrial }
+
+        val totalMonthly = paidActive.sumOf { toMonthly(it) }.setScale(2, RoundingMode.HALF_UP)
+        val totalYearly  = paidActive.sumOf { toYearly(it) }.setScale(2, RoundingMode.HALF_UP)
+
+        val spendByCategory: Map<Category, BigDecimal> = paidActive
+            .groupBy { it.category }
+            .mapValues { (_, subs) -> subs.sumOf { toMonthly(it) }.setScale(2, RoundingMode.HALF_UP) }
+            .entries
+            .sortedByDescending { it.value }
+            .associate { it.key to it.value }
+
         val upcomingRenewals = repo.findActiveRenewingBetween(today, today.plusDays(30))
             .sortedBy { it.renewalDate }
 
-        // Renovaciones en los próximos 7 días (para la alerta roja en la cabecera)
         val alertRenewals = repo.findActiveRenewingBetween(today, today.plusDays(7))
             .sortedBy { it.renewalDate }
 
-        // Pruebas gratuitas que vencen en los próximos 7 días (para la alerta amber)
         val alertTrials = repo.findActiveTrialsExpiringBetween(today, today.plusDays(7))
             .sortedBy { it.trialEndsAt }
 
@@ -78,9 +96,40 @@ class DashboardService(private val repo: SubscriptionRepository) {
 
     /**
      * Devuelve las estadísticas del dashboard en el formato que consume la app móvil KMM.
-     *
-     * Reutiliza la lógica de normalización de precios de [getDashboard] y calcula
-     * los días restantes hasta cada renovación próxima (máximo 10).
+     * Filtrado por userId.
+     */
+    fun getDashboardStats(userId: Long): DashboardMobileStatsDto {
+        val active = repo.findByUserIdAndActiveTrue(userId)
+        val today = LocalDate.now()
+
+        val gastoMensual = active.sumOf { toMonthly(it) }
+            .setScale(2, RoundingMode.HALF_UP).toDouble()
+        val gastoAnual = active.sumOf { toYearly(it) }
+            .setScale(2, RoundingMode.HALF_UP).toDouble()
+
+        val renovaciones = repo.findActiveRenewingBetweenForUser(userId, today, today.plusDays(30))
+            .sortedBy { it.renewalDate }
+            .take(10)
+            .map { sub ->
+                ProximaRenovacionMobileDto(
+                    id = sub.id,
+                    nombre = sub.name,
+                    precio = sub.price.toDouble(),
+                    fechaRenovacion = sub.renewalDate.toString(),
+                    diasRestantes = ChronoUnit.DAYS.between(today, sub.renewalDate).toInt()
+                )
+            }
+
+        return DashboardMobileStatsDto(
+            gastoMensual = gastoMensual,
+            gastoAnual = gastoAnual,
+            totalSuscripciones = active.size,
+            renovacionesProximas = renovaciones
+        )
+    }
+
+    /**
+     * Devuelve las estadísticas del dashboard sin filtro por usuario (legado).
      */
     fun getDashboardStats(): DashboardMobileStatsDto {
         val active = repo.findByActiveTrue()
@@ -114,10 +163,6 @@ class DashboardService(private val repo: SubscriptionRepository) {
 
     /**
      * Convierte el precio de una suscripción a su equivalente mensual.
-     *
-     * - MONTHLY: el precio ya es mensual, se devuelve tal cual.
-     * - YEARLY:  se divide entre 12 meses.
-     * - WEEKLY:  se multiplica por 4,33 (promedio de semanas por mes).
      */
     private fun toMonthly(s: Subscription): BigDecimal = when (s.billingCycle) {
         BillingCycle.MONTHLY -> s.price
@@ -127,10 +172,6 @@ class DashboardService(private val repo: SubscriptionRepository) {
 
     /**
      * Convierte el precio de una suscripción a su equivalente anual.
-     *
-     * - MONTHLY: se multiplica por 12.
-     * - YEARLY:  el precio ya es anual, se devuelve tal cual.
-     * - WEEKLY:  se multiplica por 52 semanas.
      */
     private fun toYearly(s: Subscription): BigDecimal = when (s.billingCycle) {
         BillingCycle.MONTHLY -> s.price.multiply(MONTHS_IN_YEAR)

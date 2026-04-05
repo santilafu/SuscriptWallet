@@ -21,15 +21,25 @@ class SubscriptionService(private val repo: SubscriptionRepository) {
 
     /**
      * Devuelve todas las suscripciones, activas e inactivas, sin ningún orden garantizado.
-     * Se usa en la pantalla de lista completa de suscripciones.
+     * Se usa en la pantalla de lista completa de suscripciones (admin/legacy).
      */
     fun findAll(): List<Subscription> = repo.findAll()
 
     /**
+     * Devuelve todas las suscripciones de un usuario.
+     */
+    fun findAll(userId: Long): List<Subscription> = repo.findByUserId(userId)
+
+    /**
      * Devuelve solo las suscripciones marcadas como activas.
-     * Se usa en el dashboard para calcular totales y renovaciones próximas.
+     * Se usa en el dashboard para calcular totales y renovaciones próximas (legacy).
      */
     fun findActive(): List<Subscription> = repo.findByActiveTrue()
+
+    /**
+     * Devuelve solo las suscripciones activas de un usuario.
+     */
+    fun findActive(userId: Long): List<Subscription> = repo.findByUserIdAndActiveTrue(userId)
 
     /**
      * Busca una suscripción por su ID.
@@ -40,6 +50,15 @@ class SubscriptionService(private val repo: SubscriptionRepository) {
         repo.findById(id).orElseThrow { NoSuchElementException("Suscripción $id no encontrada") }
 
     /**
+     * Busca una suscripción por ID verificando que pertenece al usuario indicado.
+     *
+     * @throws NoSuchElementException si no existe o no pertenece al usuario.
+     */
+    fun findById(id: Long, userId: Long): Subscription =
+        repo.findByIdAndUserId(id, userId)
+            ?: throw NoSuchElementException("Suscripción $id no encontrada")
+
+    /**
      * Guarda una suscripción nueva o actualiza una existente.
      * Si [subscription.id] es 0, JPA hace INSERT; si tiene un ID válido, hace UPDATE.
      *
@@ -48,8 +67,24 @@ class SubscriptionService(private val repo: SubscriptionRepository) {
     fun save(subscription: Subscription): Subscription = repo.save(subscription)
 
     /**
+     * Guarda una suscripción asignándole el userId indicado.
+     */
+    fun save(subscription: Subscription, userId: Long): Subscription =
+        repo.save(subscription.copy(userId = userId))
+
+    /**
      * Elimina permanentemente la suscripción con el ID indicado.
      * No comprueba si el ID existe; si no existe, Spring Data lanza [EmptyResultDataAccessException].
      */
     fun delete(id: Long) = repo.deleteById(id)
+
+    /**
+     * Elimina la suscripción verificando que pertenece al usuario indicado.
+     *
+     * @throws NoSuchElementException si no existe o no pertenece al usuario.
+     */
+    fun delete(id: Long, userId: Long) {
+        findById(id, userId) // verifica ownership
+        repo.deleteById(id)
+    }
 }

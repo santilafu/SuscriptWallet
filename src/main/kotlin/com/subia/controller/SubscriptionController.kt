@@ -2,10 +2,13 @@ package com.subia.controller
 
 import com.subia.model.BillingCycle
 import com.subia.model.Subscription
+import com.subia.repository.UserRepository
 import com.subia.service.CategoryService
 import com.subia.service.SubscriptionService
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.*
@@ -28,16 +31,22 @@ import java.time.LocalDate
 class SubscriptionController(
     private val subscriptionService: SubscriptionService,
     private val categoryService: CategoryService,
-    private val catalogService: com.subia.service.CatalogService
+    private val catalogService: com.subia.service.CatalogService,
+    private val userRepository: UserRepository
 ) {
 
+    private fun resolveUserId(userDetails: UserDetails): Long =
+        userRepository.findByEmail(userDetails.username)?.id
+            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado")
+
     /**
-     * Muestra la lista de todas las suscripciones (activas e inactivas).
+     * Muestra la lista de todas las suscripciones del usuario autenticado.
      * GET /subscriptions
      */
     @GetMapping
-    fun list(model: Model): String {
-        model.addAttribute("subscriptions", subscriptionService.findAll())
+    fun list(@AuthenticationPrincipal userDetails: UserDetails, model: Model): String {
+        val userId = resolveUserId(userDetails)
+        model.addAttribute("subscriptions", subscriptionService.findAll(userId))
         model.addAttribute("categories", categoryService.findAll())
         model.addAttribute("serviceDomains", catalogService.getDomainMap())
         model.addAttribute("cancelUrls", catalogService.getCancelUrlMap())
@@ -70,6 +79,7 @@ class SubscriptionController(
      */
     @PostMapping
     fun create(
+        @AuthenticationPrincipal userDetails: UserDetails,
         @RequestParam name: String,
         @RequestParam(defaultValue = "") description: String,
         @RequestParam price: BigDecimal,
@@ -84,13 +94,15 @@ class SubscriptionController(
     ): String {
         if (isTrial && trialEndsAt == null)
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "trialEndsAt is required when isTrial is true")
+        val userId = resolveUserId(userDetails)
         val category = categoryService.findById(categoryId)
         subscriptionService.save(
             Subscription(
                 name = name, description = description, price = price, currency = currency,
                 billingCycle = billingCycle, renewalDate = renewalDate, category = category,
                 active = active, notes = notes, isTrial = isTrial, trialEndsAt = trialEndsAt
-            )
+            ),
+            userId
         )
         return "redirect:/subscriptions"
     }
@@ -100,8 +112,13 @@ class SubscriptionController(
      * GET /subscriptions/{id}/edit
      */
     @GetMapping("/{id}/edit")
-    fun editForm(@PathVariable id: Long, model: Model): String {
-        model.addAttribute("sub", subscriptionService.findById(id))
+    fun editForm(
+        @AuthenticationPrincipal userDetails: UserDetails,
+        @PathVariable id: Long,
+        model: Model
+    ): String {
+        val userId = resolveUserId(userDetails)
+        model.addAttribute("sub", subscriptionService.findById(id, userId))
         model.addAttribute("categories", categoryService.findAll())
         model.addAttribute("billingCycles", BillingCycle.values())
         return "subscriptions/form"
@@ -115,6 +132,7 @@ class SubscriptionController(
      */
     @PostMapping("/{id}")
     fun update(
+        @AuthenticationPrincipal userDetails: UserDetails,
         @PathVariable id: Long,
         @RequestParam name: String,
         @RequestParam(defaultValue = "") description: String,
@@ -130,12 +148,16 @@ class SubscriptionController(
     ): String {
         if (isTrial && trialEndsAt == null)
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "trialEndsAt is required when isTrial is true")
+        val userId = resolveUserId(userDetails)
+        // verify ownership
+        subscriptionService.findById(id, userId)
         val category = categoryService.findById(categoryId)
         subscriptionService.save(
             Subscription(
                 id = id, name = name, description = description, price = price, currency = currency,
                 billingCycle = billingCycle, renewalDate = renewalDate, category = category,
-                active = active, notes = notes, isTrial = isTrial, trialEndsAt = trialEndsAt
+                active = active, notes = notes, isTrial = isTrial, trialEndsAt = trialEndsAt,
+                userId = userId
             )
         )
         return "redirect:/subscriptions"
@@ -151,6 +173,7 @@ class SubscriptionController(
      */
     @PostMapping("/add-from-catalog")
     fun addFromCatalog(
+        @AuthenticationPrincipal userDetails: UserDetails,
         @RequestParam name: String,
         @RequestParam(defaultValue = "") description: String,
         @RequestParam price: BigDecimal,
@@ -160,6 +183,7 @@ class SubscriptionController(
         @RequestParam(defaultValue = "false") isTrial: Boolean,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) trialEndsAt: LocalDate?
     ): String {
+        val userId = resolveUserId(userDetails)
         val category = categoryService.findById(categoryId)
         subscriptionService.save(
             Subscription(
@@ -168,7 +192,8 @@ class SubscriptionController(
                 renewalDate = if (isTrial && trialEndsAt != null) trialEndsAt else LocalDate.now().plusMonths(1),
                 category = category, active = true, notes = "",
                 isTrial = isTrial, trialEndsAt = trialEndsAt
-            )
+            ),
+            userId
         )
         return "redirect:/subscriptions"
     }
@@ -178,8 +203,13 @@ class SubscriptionController(
      * GET /subscriptions/{id}/delete
      */
     @GetMapping("/{id}/delete")
-    fun deleteConfirm(@PathVariable id: Long, model: Model): String {
-        model.addAttribute("sub", subscriptionService.findById(id))
+    fun deleteConfirm(
+        @AuthenticationPrincipal userDetails: UserDetails,
+        @PathVariable id: Long,
+        model: Model
+    ): String {
+        val userId = resolveUserId(userDetails)
+        model.addAttribute("sub", subscriptionService.findById(id, userId))
         return "subscriptions/confirm-delete"
     }
 
@@ -188,8 +218,12 @@ class SubscriptionController(
      * POST /subscriptions/{id}/delete
      */
     @PostMapping("/{id}/delete")
-    fun delete(@PathVariable id: Long): String {
-        subscriptionService.delete(id)
+    fun delete(
+        @AuthenticationPrincipal userDetails: UserDetails,
+        @PathVariable id: Long
+    ): String {
+        val userId = resolveUserId(userDetails)
+        subscriptionService.delete(id, userId)
         return "redirect:/subscriptions"
     }
 

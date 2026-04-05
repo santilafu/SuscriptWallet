@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotBlank
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 
-data class LoginRequest(@field:NotBlank val username: String = "", @field:NotBlank val password: String = "")
+data class LoginRequest(@field:NotBlank val email: String = "", @field:NotBlank val password: String = "")
 data class RefreshRequest(@field:NotBlank val refreshToken: String = "")
 data class LogoutRequest(@field:NotBlank val refreshToken: String = "")
 data class TokenResponse(val accessToken: String, val refreshToken: String, val expiresInSeconds: Long, val tokenType: String = "Bearer")
@@ -18,7 +18,7 @@ class AuthController(private val tokenService: TokenService) {
 
     @PostMapping("/login")
     fun login(@Valid @RequestBody req: LoginRequest): ApiResponse<TokenResponse> {
-        val pair = tokenService.login(req.username, req.password)
+        val pair = tokenService.login(req.email, req.password)
         return ApiResponse(data = TokenResponse(pair.accessToken, pair.refreshToken, pair.expiresInSeconds))
     }
 

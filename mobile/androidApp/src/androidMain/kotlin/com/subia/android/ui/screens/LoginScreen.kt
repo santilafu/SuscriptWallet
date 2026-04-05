@@ -125,7 +125,7 @@ fun LoginScreen(
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Usuario") },
+            label = { Text("Correo electrónico") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -134,7 +134,7 @@ fun LoginScreen(
                 focusedLabelColor = Indigo400
             ),
             keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Text,
+                keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next
             ),
             keyboardActions = KeyboardActions(

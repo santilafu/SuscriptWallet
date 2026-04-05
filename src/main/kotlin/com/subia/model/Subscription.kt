@@ -76,5 +76,9 @@ data class Subscription(
     val isTrial: Boolean = false,
 
     /** Fecha en que finaliza el período de prueba (null si no es prueba o no tiene fecha). */
-    @Column(nullable = true) val trialEndsAt: LocalDate? = null
+    @Column(nullable = true) val trialEndsAt: LocalDate? = null,
+
+    /** ID del usuario propietario de esta suscripción (nullable por compatibilidad con datos existentes). */
+    @Column(name = "user_id", nullable = true)
+    val userId: Long? = null
 )

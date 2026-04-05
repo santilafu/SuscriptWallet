@@ -22,6 +22,18 @@ interface SubscriptionRepository : JpaRepository<Subscription, Long> {
      */
     fun findByActiveTrue(): List<Subscription>
 
+    /** Devuelve todas las suscripciones de un usuario. */
+    fun findByUserId(userId: Long): List<Subscription>
+
+    /** Elimina todas las suscripciones de un usuario. */
+    fun deleteByUserId(userId: Long)
+
+    /** Devuelve solo las suscripciones activas de un usuario. */
+    fun findByUserIdAndActiveTrue(userId: Long): List<Subscription>
+
+    /** Busca una suscripción por ID verificando que pertenece al usuario. */
+    fun findByIdAndUserId(id: Long, userId: Long): Subscription?
+
     /**
      * Comprueba si existe alguna suscripción asociada a la categoría indicada.
      * Se usa en [com.subia.service.CategoryService] para impedir el borrado de
@@ -45,6 +57,9 @@ interface SubscriptionRepository : JpaRepository<Subscription, Long> {
     @Query("SELECT s FROM Subscription s WHERE s.active = true AND s.renewalDate BETWEEN :from AND :to")
     fun findActiveRenewingBetween(from: LocalDate, to: LocalDate): List<Subscription>
 
+    @Query("SELECT s FROM Subscription s WHERE s.userId = :userId AND s.active = true AND s.renewalDate BETWEEN :from AND :to")
+    fun findActiveRenewingBetweenForUser(@Param("userId") userId: Long, @Param("from") from: LocalDate, @Param("to") to: LocalDate): List<Subscription>
+
     /**
      * Devuelve las suscripciones activas que están en período de prueba y cuya fecha de fin
      * de prueba cae entre [from] y [to] (inclusive).
@@ -55,4 +70,7 @@ interface SubscriptionRepository : JpaRepository<Subscription, Long> {
      */
     @Query("SELECT s FROM Subscription s WHERE s.active = true AND s.isTrial = true AND s.trialEndsAt BETWEEN :from AND :to")
     fun findActiveTrialsExpiringBetween(@Param("from") from: LocalDate, @Param("to") to: LocalDate): List<Subscription>
+
+    @Query("SELECT s FROM Subscription s WHERE s.userId = :userId AND s.active = true AND s.isTrial = true AND s.trialEndsAt BETWEEN :from AND :to")
+    fun findActiveTrialsExpiringBetweenForUser(@Param("userId") userId: Long, @Param("from") from: LocalDate, @Param("to") to: LocalDate): List<Subscription>
 }

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" class="dark">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Cuenta eliminada — SusCriptWallet</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+                    colors: {
+                        base:     '#0a0f1e',
+                        surface:  '#111827',
+                        elevated: '#1a2235',
+                        hover:    '#1e2d45',
+                        accent: { DEFAULT: '#6366f1', hover: '#4f46e5' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-base text-slate-100 font-sans antialiased min-h-screen flex items-center justify-center px-4">
+
+<div class="w-full max-w-md">
+
+    <!-- Logo -->
+    <div class="text-center mb-8">
+        <a href="/login" class="inline-flex items-center gap-2 font-bold text-2xl no-underline">
+            <i class="bi bi-credit-card-2-front text-accent text-3xl"></i>
+            <span class="text-accent">SusCript</span><span class="text-slate-100">Wallet</span>
+        </a>
+        <p class="mt-2 text-slate-400 text-sm">Gestión de suscripciones</p>
+    </div>
+
+    <!-- Card -->
+    <div class="rounded-2xl border border-white/[0.08] p-8 text-center" style="background:#111827;">
+
+        <div class="flex justify-center mb-4">
+            <div class="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center">
+                <i class="bi bi-check-lg text-green-400 text-3xl"></i>
+            </div>
+        </div>
+
+        <h1 class="text-xl font-semibold mb-3">Cuenta eliminada</h1>
+
+        <p class="text-slate-400 text-sm mb-6">
+            Tu cuenta ha sido eliminada correctamente. Todos tus datos y suscripciones han sido borrados de forma permanente.
+        </p>
+
+        <a href="/login"
+           class="inline-flex items-center gap-2 rounded-lg bg-accent hover:bg-accent-hover text-white font-medium px-6 py-2.5 text-sm transition-colors no-underline">
+            <i class="bi bi-arrow-left"></i>
+            Volver al inicio
+        </a>
+
+    </div>
+</div>
+
+</body>
+</html>

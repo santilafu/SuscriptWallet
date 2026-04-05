@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Eliminar cuenta – SuscriptWallet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col items-center justify-start py-12 px-4">
+
+    <div class="w-full max-w-2xl">
+
+        <!-- Cabecera -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-white mb-2">Eliminar cuenta</h1>
+            <p class="text-gray-400">SuscriptWallet — desarrollado por Santiago Lafuente</p>
+        </div>
+
+        <!-- Información pública (visible sin login) -->
+        <div class="bg-gray-900 rounded-2xl p-6 mb-6 border border-gray-800">
+            <h2 class="text-lg font-semibold text-white mb-3">¿Qué se elimina?</h2>
+            <ul class="space-y-2 text-gray-300 text-sm">
+                <li class="flex items-start gap-2"><span class="text-red-400 mt-0.5">✕</span> Tu cuenta de usuario (email, contraseña cifrada)</li>
+                <li class="flex items-start gap-2"><span class="text-red-400 mt-0.5">✕</span> Todas tus suscripciones registradas</li>
+                <li class="flex items-start gap-2"><span class="text-red-400 mt-0.5">✕</span> Tu historial de actividad y eventos de seguridad</li>
+                <li class="flex items-start gap-2"><span class="text-red-400 mt-0.5">✕</span> Los tokens de sesión activos</li>
+                <li class="flex items-start gap-2"><span class="text-red-400 mt-0.5">✕</span> La vinculación con tu cuenta de Google (si la tienes)</li>
+            </ul>
+            <p class="text-gray-500 text-xs mt-4">No conservamos ningún dato tuyo tras la eliminación. La acción es inmediata e irreversible.</p>
+        </div>
+
+        <!-- Pasos para eliminar la cuenta -->
+        <div class="bg-gray-900 rounded-2xl p-6 mb-6 border border-gray-800">
+            <h2 class="text-lg font-semibold text-white mb-3">Cómo eliminar tu cuenta</h2>
+            <ol class="space-y-2 text-gray-300 text-sm list-decimal list-inside">
+                <li>Inicia sesión en SuscriptWallet con tu email y contraseña (o con Google).</li>
+                <li>Vuelve a esta página una vez autenticado.</li>
+                <li>Si tienes contraseña, confírmala para verificar tu identidad.</li>
+                <li>Pulsa el botón rojo <strong>"Eliminar mi cuenta definitivamente"</strong>.</li>
+            </ol>
+        </div>
+
+        <!-- Formulario si está logueado / botón de login si no lo está -->
+        <div th:if="${loggedIn}" class="bg-gray-900 rounded-2xl p-6 border border-red-900">
+            <div class="bg-red-950 border border-red-800 rounded-xl p-4 mb-5">
+                <p class="text-red-300 text-sm font-medium">⚠️ Estás a punto de eliminar la cuenta <strong th:text="${userEmail}">usuario@email.com</strong>. Esta acción es permanente e irreversible.</p>
+            </div>
+
+            <form th:action="@{/delete-account}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+                <div th:if="${hasPassword}" class="mb-5">
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Confirma tu contraseña actual</label>
+                    <input type="password" name="password" required
+                           class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-red-500"
+                           placeholder="Tu contraseña actual"/>
+                </div>
+
+                <div th:if="${param.error}" class="mb-4 text-red-400 text-sm bg-red-950 border border-red-800 rounded-lg p-3">
+                    <span th:if="${param.error[0] == 'wrongPassword'}">Contraseña incorrecta.</span>
+                    <span th:if="${param.error[0] == 'passwordRequired'}">Debes introducir tu contraseña para confirmar.</span>
+                    <span th:if="${param.error[0] == 'notFound'}">No se encontró tu cuenta. Intenta de nuevo.</span>
+                </div>
+
+                <button type="submit"
+                        class="w-full bg-red-700 hover:bg-red-600 text-white font-semibold py-3 rounded-xl transition-colors">
+                    Eliminar mi cuenta definitivamente
+                </button>
+            </form>
+        </div>
+
+        <div th:unless="${loggedIn}" class="text-center mt-4">
+            <a href="/login" class="inline-block bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-8 rounded-xl transition-colors">
+                Iniciar sesión para eliminar mi cuenta
+            </a>
+        </div>
+
+        <div class="text-center mt-6">
+            <a href="/login" class="text-gray-500 hover:text-gray-300 text-sm">← Volver al inicio</a>
+        </div>
+
+    </div>
+</body>
+</html>

@@ -2,13 +2,17 @@ package com.subia.security
 
 import com.subia.model.RefreshToken
 import com.subia.repository.RefreshTokenRepository
-import jakarta.annotation.PostConstruct
+import com.subia.service.UserService
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.authentication.BadCredentialsException
+import org.springframework.security.authentication.DisabledException
+import org.springframework.security.authentication.LockedException
+import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.OffsetDateTime
+import java.util.UUID
 
 data class TokenPair(val accessToken: String, val refreshToken: String, val expiresInSeconds: Long)
 
@@ -17,39 +21,58 @@ class TokenService(
     private val jwtService: JwtService,
     private val refreshTokenRepository: RefreshTokenRepository,
     private val passwordEncoder: PasswordEncoder,
+    private val userDetailsService: UserDetailsServiceImpl,
+    private val userService: UserService,
     @Value("\${jwt.access-token-ttl-minutes:15}") private val accessTtlMinutes: Long,
-    @Value("\${jwt.refresh-token-ttl-days:30}") private val refreshTtlDays: Long,
-    @Value("\${app.auth.username}") private val adminUsername: String,
-    @Value("\${app.auth.password}") private val adminPasswordRaw: String
+    @Value("\${jwt.refresh-token-ttl-days:30}") private val refreshTtlDays: Long
 ) {
-    private lateinit var adminPasswordHash: String
-
-    @PostConstruct
-    fun init() {
-        // Si ya es un hash BCrypt lo usamos directamente; si no, lo hasheamos al arrancar
-        adminPasswordHash = if (adminPasswordRaw.startsWith("\$2a\$") || adminPasswordRaw.startsWith("\$2b\$")) {
-            adminPasswordRaw
-        } else {
-            passwordEncoder.encode(adminPasswordRaw)
-        }
-    }
 
     @Transactional
-    fun login(username: String, rawPassword: String): TokenPair {
-        if (username != adminUsername || !passwordEncoder.matches(rawPassword, adminPasswordHash)) {
+    fun login(email: String, rawPassword: String): TokenPair {
+        val userDetails = try {
+            userDetailsService.loadUserByUsername(email)
+        } catch (ex: UsernameNotFoundException) {
+            throw BadCredentialsException("Credenciales inválidas")
+        } catch (ex: LockedException) {
+            throw ex
+        } catch (ex: DisabledException) {
+            throw ex
+        }
+
+        if (!passwordEncoder.matches(rawPassword, userDetails.password)) {
+            userService.handleFailedLogin(email)
             throw BadCredentialsException("Credenciales inválidas")
         }
-        return issueTokenPair(username)
+
+        userService.resetFailedAttempts(email)
+        return issueTokenPair(email)
     }
 
     @Transactional
     fun refresh(rawRefreshToken: String): TokenPair {
         val entity = refreshTokenRepository.findByToken(rawRefreshToken)
             ?: throw BadCredentialsException("Refresh token no encontrado")
-        if (entity.revoked) throw BadCredentialsException("Refresh token revocado")
-        if (entity.expiresAt.isBefore(OffsetDateTime.now())) throw BadCredentialsException("Refresh token expirado")
+
+        if (entity.revoked) {
+            // Token reuse detected — revoke entire family
+            val family = refreshTokenRepository.findAllByFamilyId(entity.familyId)
+            family.forEach { token ->
+                if (!token.revoked) {
+                    refreshTokenRepository.save(token.copy(revoked = true, revokedAt = OffsetDateTime.now()))
+                }
+            }
+            throw BadCredentialsException("TOKEN_REUSE_DETECTED")
+        }
+
+        if (entity.expiresAt.isBefore(OffsetDateTime.now())) {
+            throw BadCredentialsException("Refresh token expirado")
+        }
+
+        // Revoke the current token
         refreshTokenRepository.save(entity.copy(revoked = true, revokedAt = OffsetDateTime.now()))
-        return issueTokenPair(entity.username)
+
+        // Issue new pair with same familyId
+        return issueTokenPair(entity.email, entity.familyId)
     }
 
     @Transactional
@@ -60,18 +83,24 @@ class TokenService(
         }
     }
 
-    private fun issueTokenPair(username: String): TokenPair {
-        val accessToken = jwtService.generateAccessToken(username)
-        val rawRefreshToken = java.util.UUID.randomUUID().toString()
+    @Transactional
+    fun issueTokenPairForEmail(email: String): TokenPair = issueTokenPair(email)
+
+    private fun issueTokenPair(email: String, familyId: UUID = UUID.randomUUID()): TokenPair {
+        val accessToken = jwtService.generateAccessToken(email)
+        val rawRefreshToken = UUID.randomUUID().toString()
         val now = OffsetDateTime.now()
+
         refreshTokenRepository.save(
             RefreshToken(
                 token = rawRefreshToken,
-                username = username,
+                email = email,
+                familyId = familyId,
                 issuedAt = now,
                 expiresAt = now.plusDays(refreshTtlDays)
             )
         )
+
         return TokenPair(accessToken, rawRefreshToken, accessTtlMinutes * 60)
     }
 }
