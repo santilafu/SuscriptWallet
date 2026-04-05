@@ -1,6 +1,6 @@
 # Suscript Wallet — Gestor de suscripciones
 
-![Version](https://img.shields.io/badge/versión-2.11.1-6366f1?style=flat-square)
+![Version](https://img.shields.io/badge/versión-3.0.0-6366f1?style=flat-square)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-3ddc84?style=flat-square&logo=android)
 ![Stack](https://img.shields.io/badge/Spring%20Boot-3.3.5-6db33f?style=flat-square&logo=springboot)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.1.20-7f52ff?style=flat-square&logo=kotlin)
@@ -15,6 +15,7 @@
 
 | Función | Web | Android |
 |---------|:---:|:-------:|
+| 👤 **Multi-usuario** — registro con email, login, Google One Tap | ✅ | ✅ |
 | 📊 **Dashboard** — gasto por divisa, gráfico por categoría, alertas de renovación | ✅ | ✅ |
 | 🔍 **Búsqueda en tiempo real** de suscripciones | ✅ | ✅ |
 | 🏷️ **Filtro por categoría** — chips interactivos | ✅ | ✅ |
@@ -26,6 +27,7 @@
 | 🔒 **Tokens seguros** — EncryptedSharedPreferences (Android Keystore) | — | ✅ |
 | 🗂️ **Categorías predefinidas** — 10 listas desde el primer arranque | ✅ | ✅ |
 | 💱 **Multi-divisa** — totales separados por EUR/USD/GBP | — | ✅ |
+| 🆓 **Trial Tracker** — alertas de pruebas gratuitas por vencer | ✅ | ✅ |
 
 ---
 
@@ -58,9 +60,10 @@ Desde v1.3.0 los endpoints `/api/**` (salvo `/api/auth/**`, `/api/catalog` y `/a
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| POST | `/api/auth/login` | Recibe `{username, password}` → devuelve `{accessToken, refreshToken, expiresInSeconds, tokenType}` |
-| POST | `/api/auth/refresh` | Recibe `{refreshToken}` → devuelve tokens renovados (rotación automática) |
+| POST | `/api/auth/login` | Recibe `{email, password}` → devuelve `{accessToken, refreshToken, expiresInSeconds, tokenType}` |
+| POST | `/api/auth/refresh` | Recibe `{refreshToken}` → devuelve tokens renovados (rotación automática + reuse detection) |
 | POST | `/api/auth/logout` | Invalida el refresh token → 204 No Content |
+| POST | `/api/auth/google` | Recibe `{idToken}` (Google ID Token) → devuelve tokens JWT |
 
 **Ejemplo de uso con curl**:
 
@@ -68,7 +71,7 @@ Desde v1.3.0 los endpoints `/api/**` (salvo `/api/auth/**`, `/api/catalog` y `/a
 # 1. Login
 TOKEN=$(curl -s -X POST http://localhost:8081/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"password"}' | jq -r '.accessToken')
+  -d '{"email":"usuario@email.com","password":"tu_contraseña"}' | jq -r '.accessToken')
 
 # 2. Llamada autenticada
 curl -H "Authorization: Bearer $TOKEN" http://localhost:8081/api/subscriptions
@@ -126,7 +129,7 @@ Los errores de autenticación se devuelven en JSON estándar: `{ "data": null, "
 
 **Requisitos previos**: JDK 21 o superior y Docker.
 
-Para producción se necesitan las variables de entorno `JWT_SECRET` (clave HMAC de mínimo 32 caracteres) y `APP_AUTH_PASSWORD` (hash BCrypt de la contraseña). En desarrollo, los valores por defecto son suficientes para arrancar sin configuración adicional.
+Variables de entorno requeridas en producción: `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `GOOGLE_CLIENT_ID`, `RESEND_API_KEY`, `AIVEN_DB_PASSWORD`, `APP_BASE_URL`. En desarrollo los valores por defecto son suficientes para arrancar.
 
 ```bash
 # 1. Arrancar PostgreSQL con Docker
@@ -288,9 +291,17 @@ Los precios están definidos en `CatalogService.kt` y son de **marzo 2026**. Par
 
 ## 🔒 Seguridad
 
-- **Cabeceras HTTP**: `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`.
-- **Sin autenticación**: app de uso personal, sin exposición a internet.
-- **CSRF**: desactivado en local (uso personal). Para exposición pública, activar `CookieCsrfTokenRepository` en `SecurityConfig.kt`.
+- **Multi-usuario real**: cada usuario solo accede a sus propios datos (IDOR prevention en capa de repositorio).
+- **Contraseñas**: BCrypt cost 12 (mayor coste computacional para atacantes que el estándar cost 10).
+- **Lockout exponencial**: 5 intentos fallidos → bloqueo con tiempo creciente (5 min → 15 → 60 → 1440).
+- **Anti-enumeración**: los errores de login/registro nunca revelan si un email existe.
+- **Refresh token rotation**: cada uso del refresh token emite uno nuevo. Si se detecta reutilización de un token ya revocado, se revoca toda la familia de sesión.
+- **Rate limiting**: 10 req/min por IP en endpoints de autenticación (separado del límite global de 100/min).
+- **Google OAuth**: el ID token de Google se verifica siempre en el servidor (validación de `aud` e `iss`), nunca en el cliente.
+- **Cabeceras HTTP**: `Strict-Transport-Security`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Content-Security-Policy`, `Referrer-Policy`.
+- **CSRF**: activo en la web (Spring Security). La API REST es stateless (JWT).
+- **Spring Session JDBC**: las sesiones web persisten en PostgreSQL — sobreviven reinicios del servidor.
+- **Audit log**: tabla `security_events` registra cada login, fallo, registro, lockout y eliminación de cuenta con IP y user-agent.
 
 ---
 
@@ -329,3 +340,4 @@ Consulta [CHANGELOG.md](CHANGELOG.md) para el historial completo de cambios.
 | 2.10.2  | 2026-03-22 | Fix logos en catálogo Android: campo `domain` en CatalogItem propagado a ServiceLogo para resolver logos correctamente desde el servidor |
 | 2.11.0  | 2026-04-03 | Trial Tracker + migración BD a Aiven |
 | 2.11.1  | 2026-04-03 | Despliegue Render + Play Store ready (iconos, firma, ProGuard) |
+| 3.0.0   | 2026-04-06 | **Multi-usuario** — registro/login email+contraseña, Google One Tap, BCrypt cost 12, lockout exponencial, refresh token rotation+reuse detection, Spring Session JDBC, IDOR prevention, audit log, reset de contraseña, eliminación de cuenta (requisito Google Play), headers de seguridad hardened |
