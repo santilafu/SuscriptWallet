@@ -5,7 +5,7 @@
 En **SuscriptWallet** nos tomamos muy en serio tu privacidad. Esta Política de Privacidad explica cómo recopilamos, usamos y protegemos tu información cuando utilizas nuestra aplicación.
 
 ## 1. Responsable del Tratamiento
-El responsable del tratamiento de los datos es **[Tu Nombre]**, con correo electrónico de contacto: **[Tu Email]**.
+El responsable del tratamiento de los datos es **Santiago Lafuente Hernández**, con correo electrónico de contacto: **santi10dy@gmail.com**.
 
 ## 2. Datos que recopilamos
 Para que SuscriptWallet pueda funcionar, recopilamos:
@@ -19,4 +19,4 @@ Utilizamos tus datos **exclusivamente** para proporcionarte el servicio de gesti
 Aplicamos medidas de seguridad técnicas (como conexiones cifradas HTTPS y autenticación por tokens) para proteger tu información.
 
 ## 5. Tus Derechos
-Tienes derecho a acceder, rectificar, suprimir u oponerte al tratamiento de tus datos en cualquier momento enviando un correo a **[Tu Email]**.
+Tienes derecho a acceder, rectificar, suprimir u oponerte al tratamiento de tus datos en cualquier momento enviando un correo a **santi10dy@gmail.com**.
