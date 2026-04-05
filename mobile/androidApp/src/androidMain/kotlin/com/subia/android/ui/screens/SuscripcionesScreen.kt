@@ -60,6 +60,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.subia.android.ui.BannerAdView
 import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.theme.GradientIndigoEnd
 import com.subia.android.ui.theme.GradientIndigoStart
@@ -101,6 +102,9 @@ fun SuscripcionesScreen(
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Añadir", tint = Color.White)
             }
+        },
+        bottomBar = {
+            BannerAdView(modifier = Modifier.fillMaxWidth())
         }
     ) { innerPadding ->
         PullToRefreshBox(

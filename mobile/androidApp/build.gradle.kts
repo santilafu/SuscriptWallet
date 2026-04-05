@@ -90,6 +90,7 @@ kotlin {
             implementation(libs.coil.compose)
             implementation(libs.vico.compose.m3)
             implementation(libs.androidx.work.runtime.ktx)
+            implementation("com.google.android.gms:play-services-ads:23.6.0")
         }
     }
 }

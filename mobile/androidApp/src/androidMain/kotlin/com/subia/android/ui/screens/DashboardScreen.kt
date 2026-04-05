@@ -52,6 +52,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.subia.android.ui.BannerAdView
 import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.components.GastosPorCategoriaCard
 import com.subia.android.ui.theme.GradientAmberEnd
@@ -81,29 +82,32 @@ fun DashboardScreen(
     val pruebasPorVencer by viewModel.pruebasPorVencer.collectAsState()
     val isRefreshing = uiState is DashboardUiState.Loading
 
-    PullToRefreshBox(
-        isRefreshing = isRefreshing,
-        onRefresh = { viewModel.refrescar() },
-        modifier = Modifier.fillMaxSize()
-    ) {
-        when (val state = uiState) {
-            is DashboardUiState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                CircularProgressIndicator()
-            }
-            is DashboardUiState.Success -> DashboardContent(state.resumen, totalesPorMoneda, totalesAnualesPorMoneda, gastosPorCategoria, pruebasPorVencer, onNavigateToSuscripciones)
-            is DashboardUiState.Offline -> Column {
-                BannerOffline("Mostrando datos guardados — sin conexión")
-                state.resumenCacheado?.let { DashboardContent(it, totalesPorMoneda, totalesAnualesPorMoneda, gastosPorCategoria, pruebasPorVencer, onNavigateToSuscripciones) }
-            }
-            is DashboardUiState.Error -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(state.mensaje, color = MaterialTheme.colorScheme.error)
-                    Spacer(Modifier.height(8.dp))
-                    TextButton(onClick = { viewModel.cargarEstadisticas() }) { Text("Reintentar") }
+    Column(modifier = Modifier.fillMaxSize()) {
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { viewModel.refrescar() },
+            modifier = Modifier.weight(1f)
+        ) {
+            when (val state = uiState) {
+                is DashboardUiState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) {
+                    CircularProgressIndicator()
                 }
+                is DashboardUiState.Success -> DashboardContent(state.resumen, totalesPorMoneda, totalesAnualesPorMoneda, gastosPorCategoria, pruebasPorVencer, onNavigateToSuscripciones)
+                is DashboardUiState.Offline -> Column {
+                    BannerOffline("Mostrando datos guardados — sin conexión")
+                    state.resumenCacheado?.let { DashboardContent(it, totalesPorMoneda, totalesAnualesPorMoneda, gastosPorCategoria, pruebasPorVencer, onNavigateToSuscripciones) }
+                }
+                is DashboardUiState.Error -> Box(Modifier.fillMaxSize(), Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(state.mensaje, color = MaterialTheme.colorScheme.error)
+                        Spacer(Modifier.height(8.dp))
+                        TextButton(onClick = { viewModel.cargarEstadisticas() }) { Text("Reintentar") }
+                    }
+                }
+                is DashboardUiState.SesionExpirada -> LaunchedEffect(Unit) { onSesionExpirada() }
             }
-            is DashboardUiState.SesionExpirada -> LaunchedEffect(Unit) { onSesionExpirada() }
         }
+        BannerAdView(modifier = Modifier.fillMaxWidth())
     }
 }
 
