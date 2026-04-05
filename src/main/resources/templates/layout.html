@@ -53,6 +53,18 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 
     <style>
+        /* ── Estilos base explícitos (no dependen de custom Tailwind classes) ── */
+        html, body { background-color: #0a0f1e !important; color: #f1f5f9; }
+
+        /* Colores personalizados como CSS vars */
+        :root {
+            --color-accent: #6366f1;
+            --color-accent-hover: #4f46e5;
+            --color-accent-light: #818cf8;
+            --color-surface: #111827;
+            --color-elevated: #1a2235;
+        }
+
         /* Scrollbar dark */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #0a0f1e; }
@@ -73,6 +85,37 @@
             box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 4px 24px rgba(0,0,0,0.4);
         }
 
+        /* Botones accent */
+        .btn-accent {
+            background-color: var(--color-accent);
+            color: #fff;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: background-color 0.15s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-accent:hover { background-color: var(--color-accent-hover); color: #fff; }
+
+        /* Inputs dark */
+        .input-dark {
+            background-color: var(--color-elevated);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: #f1f5f9;
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            width: 100%;
+            box-sizing: border-box;
+            outline: none;
+        }
+        .input-dark::placeholder { color: #64748b; }
+        .input-dark:focus { border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
+
         /* Input / select dark override para compatibilidad con Tailwind CDN */
         input[type=date]::-webkit-calendar-picker-indicator {
             filter: invert(1) opacity(0.5);
@@ -81,6 +124,9 @@
             padding: 2px;
             cursor: pointer;
         }
+
+        /* Selects */
+        select { background-color: var(--color-elevated) !important; color: #f1f5f9 !important; }
     </style>
 </head>
 <body class="bg-base text-slate-100 font-sans antialiased min-h-screen flex flex-col">
@@ -92,9 +138,9 @@
 
             <!-- Logo -->
             <a th:href="@{/dashboard}"
-               class="flex items-center gap-2 font-bold text-lg tracking-tight no-underline">
-                <i class="bi bi-credit-card-2-front text-accent text-xl"></i>
-                <span class="text-accent">SusCript</span><span class="text-slate-100">Wallet</span>
+               class="flex items-center gap-2 font-bold text-lg tracking-tight no-underline" style="color:inherit;">
+                <i class="bi bi-credit-card-2-front text-xl" style="color:#818cf8;"></i>
+                <span style="color:#818cf8;">SusCript</span><span style="color:#f1f5f9;">Wallet</span>
             </a>
 
             <!-- Nav links -->

@@ -13,54 +13,54 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" type="image/x-icon" href="/favicon.ico"/>
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-                    colors: {
-                        base:     '#0a0f1e',
-                        surface:  '#111827',
-                        elevated: '#1a2235',
-                        hover:    '#1e2d45',
-                        accent: { DEFAULT: '#6366f1', hover: '#4f46e5' }
-                    }
-                }
-            }
+    <style>
+        body { background-color: #0a0f1e; color: #f1f5f9; font-family: 'Inter', system-ui, sans-serif; }
+        .card { background-color: #111827; border: 1px solid rgba(255,255,255,0.08); border-radius: 1rem; }
+        .btn-accent {
+            background-color: #6366f1;
+            color: #fff;
+            border-radius: 0.5rem;
+            padding: 0.625rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.15s;
         }
-    </script>
+        .btn-accent:hover { background-color: #4f46e5; color: #fff; }
+    </style>
 </head>
-<body class="bg-base text-slate-100 font-sans antialiased min-h-screen flex items-center justify-center px-4">
+<body class="min-h-screen flex items-center justify-center px-4">
 
 <div class="w-full max-w-md">
 
     <!-- Logo -->
     <div class="text-center mb-8">
-        <a href="/login" class="inline-flex items-center gap-2 font-bold text-2xl no-underline">
-            <i class="bi bi-credit-card-2-front text-accent text-3xl"></i>
-            <span class="text-accent">SusCript</span><span class="text-slate-100">Wallet</span>
+        <a href="/login" class="inline-flex items-center gap-2 font-bold text-2xl no-underline" style="color:inherit;">
+            <i class="bi bi-credit-card-2-front text-3xl" style="color:#818cf8;"></i>
+            <span style="color:#818cf8;">SusCript</span><span style="color:#f1f5f9;">Wallet</span>
         </a>
-        <p class="mt-2 text-slate-400 text-sm">Gestión de suscripciones</p>
+        <p class="mt-2 text-sm" style="color:#94a3b8;">Gestión de suscripciones</p>
     </div>
 
     <!-- Card -->
-    <div class="rounded-2xl border border-white/[0.08] p-8 text-center" style="background:#111827;">
+    <div class="card p-8 text-center">
 
         <div class="flex justify-center mb-4">
-            <div class="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center">
-                <i class="bi bi-check-lg text-green-400 text-3xl"></i>
+            <div class="w-16 h-16 rounded-full flex items-center justify-center" style="background:rgba(34,197,94,0.2);">
+                <i class="bi bi-check-lg text-3xl" style="color:#4ade80;"></i>
             </div>
         </div>
 
-        <h1 class="text-xl font-semibold mb-3">Cuenta eliminada</h1>
+        <h1 class="text-xl font-semibold mb-3" style="color:#f1f5f9;">Cuenta eliminada</h1>
 
-        <p class="text-slate-400 text-sm mb-6">
+        <p class="text-sm mb-6" style="color:#94a3b8;">
             Tu cuenta ha sido eliminada correctamente. Todos tus datos y suscripciones han sido borrados de forma permanente.
         </p>
 
-        <a href="/login"
-           class="inline-flex items-center gap-2 rounded-lg bg-accent hover:bg-accent-hover text-white font-medium px-6 py-2.5 text-sm transition-colors no-underline">
+        <a href="/login" class="btn-accent">
             <i class="bi bi-arrow-left"></i>
             Volver al inicio
         </a>

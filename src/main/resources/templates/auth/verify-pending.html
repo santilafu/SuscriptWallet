@@ -13,42 +13,31 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" type="image/x-icon" href="/favicon.ico"/>
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-                    colors: {
-                        base:     '#0a0f1e',
-                        surface:  '#111827',
-                        elevated: '#1a2235',
-                        accent: { DEFAULT: '#6366f1', hover: '#4f46e5' }
-                    }
-                }
-            }
-        }
-    </script>
+    <style>
+        body { background-color: #0a0f1e; color: #f1f5f9; font-family: 'Inter', system-ui, sans-serif; }
+        .card { background-color: #111827; border: 1px solid rgba(255,255,255,0.08); border-radius: 1rem; }
+        .link-accent { color: #818cf8; text-decoration: none; font-weight: 500; }
+        .link-accent:hover { color: #6366f1; }
+    </style>
 </head>
-<body class="bg-base text-slate-100 font-sans antialiased min-h-screen flex items-center justify-center px-4">
+<body class="min-h-screen flex items-center justify-center px-4">
 
 <div class="w-full max-w-md text-center">
 
-    <!-- Logo -->
+    <!-- Icono -->
     <div class="mb-8">
-        <i class="bi bi-envelope-check text-accent text-5xl"></i>
+        <i class="bi bi-envelope-check text-5xl" style="color:#818cf8;"></i>
     </div>
 
-    <div class="rounded-2xl border border-white/[0.08] p-8" style="background:#111827;">
-        <h1 class="text-xl font-semibold mb-3">Revisa tu correo</h1>
-        <p class="text-slate-400 text-sm mb-6">
+    <div class="card p-8">
+        <h1 class="text-xl font-semibold mb-3" style="color:#f1f5f9;">Revisa tu correo</h1>
+        <p class="text-sm mb-6" style="color:#94a3b8;">
             Te hemos enviado un enlace de verificación. Abre tu correo y haz clic en el enlace para activar tu cuenta.
         </p>
-        <p class="text-slate-500 text-xs mb-6">
+        <p class="text-xs mb-6" style="color:#64748b;">
             Si no ves el correo en tu bandeja de entrada, revisa la carpeta de spam.
         </p>
-        <a href="/login"
-           class="inline-flex items-center gap-2 text-sm text-accent hover:text-accent-hover no-underline font-medium">
+        <a href="/login" class="inline-flex items-center gap-2 text-sm link-accent">
             <i class="bi bi-arrow-left"></i>
             Volver al inicio de sesión
         </a>
