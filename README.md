@@ -1,6 +1,6 @@
 # Suscript Wallet — Gestor de suscripciones
 
-![Version](https://img.shields.io/badge/versión-3.0.0-6366f1?style=flat-square)
+![Version](https://img.shields.io/badge/versión-3.0.1-6366f1?style=flat-square)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-3ddc84?style=flat-square&logo=android)
 ![Stack](https://img.shields.io/badge/Spring%20Boot-3.3.5-6db33f?style=flat-square&logo=springboot)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.1.20-7f52ff?style=flat-square&logo=kotlin)
@@ -341,3 +341,4 @@ Consulta [CHANGELOG.md](CHANGELOG.md) para el historial completo de cambios.
 | 2.11.0  | 2026-04-03 | Trial Tracker + migración BD a Aiven |
 | 2.11.1  | 2026-04-03 | Despliegue Render + Play Store ready (iconos, firma, ProGuard) |
 | 3.0.0   | 2026-04-06 | **Multi-usuario** — registro/login email+contraseña, Google One Tap, BCrypt cost 12, lockout exponencial, refresh token rotation+reuse detection, Spring Session JDBC, IDOR prevention, audit log, reset de contraseña, eliminación de cuenta (requisito Google Play), headers de seguridad hardened |
+| 3.0.1   | 2026-04-06 | Fix UI web — dark theme en todas las páginas (causa raíz: tailwind.config antes del CDN + CSS fallbacks), iconos de servicios visibles, gráfico Chart.js y selector de catálogo funcionando (fix CSP: unsafe-inline en script-src, icon.horse en img-src, fuentes externas) · Android 2.10.0 (versionCode 11): AdMob banner |
