@@ -178,6 +178,18 @@
                             <div class="flex items-center gap-2">
                                 <span th:if="${dashboard.alertRenewals.contains(s)}"
                                       class="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0"></span>
+                                <!-- Logo -->
+                                <div class="w-6 h-6 rounded flex-shrink-0 flex items-center justify-center overflow-hidden border border-white/[0.08]" style="background-color:#1a2235;">
+                                    <img th:if="${serviceDomains[s.name] != null}"
+                                         th:src="'https://icon.horse/icon/' + ${serviceDomains[s.name]}"
+                                         class="w-5 h-5 object-contain"
+                                         th:alt="${s.name}"
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <span th:text="${s.name.substring(0,1).toUpperCase()}"
+                                          class="text-xs font-bold w-full h-full items-center justify-center"
+                                          style="color:#818cf8; font-size:10px;"
+                                          th:style="${serviceDomains[s.name] != null} ? 'display:none;' : 'display:flex;'"></span>
+                                </div>
                                 <span class="text-slate-200 font-medium" th:text="${s.name}"></span>
                             </div>
                         </td>

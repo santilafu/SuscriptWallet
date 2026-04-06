@@ -1,6 +1,7 @@
 package com.subia.controller
 
 import com.subia.repository.UserRepository
+import com.subia.service.CatalogService
 import com.subia.service.DashboardService
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -19,7 +20,8 @@ import org.springframework.web.server.ResponseStatusException
 @Controller
 class DashboardController(
     private val dashboardService: DashboardService,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val catalogService: CatalogService
 ) {
 
     /**
@@ -40,6 +42,7 @@ class DashboardController(
         val userId = userRepository.findByEmail(userDetails.username)?.id
             ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado")
         model.addAttribute("dashboard", dashboardService.getDashboard(userId))
+        model.addAttribute("serviceDomains", catalogService.getDomainMap())
         return "dashboard"
     }
 }
