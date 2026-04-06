@@ -95,9 +95,11 @@ class SecurityConfig(
                 headers.contentSecurityPolicy { csp ->
                     csp.policyDirectives(
                         "default-src 'self'; " +
-                        "script-src 'self' https://accounts.google.com https://cdn.tailwindcss.com https://cdn.jsdelivr.net; " +
-                        "style-src 'self' 'unsafe-inline'; " +
-                        "img-src 'self' data:; " +
+                        "script-src 'self' 'unsafe-inline' https://accounts.google.com https://cdn.tailwindcss.com https://cdn.jsdelivr.net; " +
+                        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; " +
+                        "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; " +
+                        "img-src 'self' data: https://icon.horse https://*.googleusercontent.com; " +
+                        "connect-src 'self'; " +
                         "frame-src 'none'; " +
                         "object-src 'none'"
                     )
