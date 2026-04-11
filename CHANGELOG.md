@@ -7,6 +7,31 @@ Todas las versiones siguen [Semantic Versioning](https://semver.org/lang/es/):
 
 ---
 
+## [2.12.0] — 2026-04-11
+
+### Mobile (Android)
+
+#### Added
+- **Login con Google** usando Credential Manager API (`androidx.credentials` + `googleid`) — botón "Continuar con Google" en la pantalla de login, bajo divisor "o" e icono oficial multicolor. El `idToken` se valida contra el endpoint existente `POST /api/auth/google` y el flujo de sesión reutiliza `EncryptedSharedPreferences` del login email/contraseña.
+- **Pantalla de Ajustes** accesible desde el dropdown del TopAppBar. Incluye:
+  - **Recordatorios configurables**: selector 1/3/7/14 días antes de una renovación o fin de trial (persistido en SharedPreferences `subia_cache/notification_days_before`, default 3).
+  - **Exportar suscripciones a CSV** vía `ActivityResultContracts.CreateDocument` (Storage Access Framework). El fichero se llama `subia_suscripciones.csv` y contiene todas las suscripciones con todos los campos del modelo, con escape RFC 4180.
+- **Top 5 gastos mensuales**: nuevo `TopSuscripcionesChartCard` en el Dashboard con un `ColumnCartesianLayer` de **Vico 2.0.0-beta.2** (primer uso real de la librería en el proyecto). Normaliza YEARLY→mensual en `DashboardViewModel.calcularTopSuscripciones`.
+- Nuevos tipos en `shared/commonMain` (multiplataforma, listos para iOS):
+  - `AuthRepository.loginWithGoogle(idToken): Result<Unit>`
+  - `AuthViewModel.loginWithGoogle(idToken)` + `showGoogleError(mensaje)`
+
+#### Changed
+- `RenovacionWorker` ahora lee el umbral de días desde SharedPreferences en vez del literal `3`. Si no hay valor guardado, mantiene el comportamiento anterior (3 días).
+- `SubIAApp.kt`: el dropdown del TopAppBar incorpora un item "Ajustes" encima de "Cerrar sesión".
+
+#### Infrastructure
+- Dependencias nuevas en `androidApp/build.gradle.kts`: `androidx.credentials:credentials:1.3.0`, `androidx.credentials:credentials-play-services-auth:1.3.0`, `com.google.android.libraries.identity.googleid:googleid:1.1.1`.
+- Nueva propiedad `SUBIA_GOOGLE_WEB_CLIENT_ID` leída de `local.properties` y expuesta como `BuildConfig.SUBIA_GOOGLE_WEB_CLIENT_ID` (fallback `""`). El Web Client ID **no** se commitea al repositorio.
+- Requiere registrar dos Android OAuth Clients en Google Cloud Console (proyecto `suscriptwallet`) con package `com.subia.android`: uno con el SHA-1 release y otro con el SHA-1 debug.
+
+---
+
 ## [2.11.1] — 2026-04-03
 
 ### Infrastructure

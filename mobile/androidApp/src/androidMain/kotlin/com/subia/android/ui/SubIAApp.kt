@@ -51,6 +51,7 @@ import kotlinx.serialization.json.Json
 import com.subia.android.navigation.CategoriasRoute
 import com.subia.android.navigation.DashboardRoute
 import com.subia.android.navigation.LoginRoute
+import com.subia.android.navigation.SettingsRoute
 import com.subia.android.navigation.SuscripcionDetalleRoute
 import com.subia.android.navigation.SuscripcionFormRoute
 import com.subia.android.navigation.SuscripcionesRoute
@@ -58,6 +59,7 @@ import com.subia.android.ui.screens.CatalogoScreen
 import com.subia.android.ui.screens.CategoriasScreen
 import com.subia.android.ui.screens.DashboardScreen
 import com.subia.android.ui.screens.LoginScreen
+import com.subia.android.ui.screens.SettingsScreen
 import com.subia.android.ui.screens.SuscripcionDetalleScreen
 import com.subia.android.ui.screens.SuscripcionFormScreen
 import com.subia.android.ui.screens.SuscripcionesScreen
@@ -133,6 +135,13 @@ fun SubIAApp(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
+                            DropdownMenuItem(
+                                text = { Text("Ajustes") },
+                                onClick = {
+                                    navController.navigate(SettingsRoute)
+                                    showMenu = false
+                                }
+                            )
                             DropdownMenuItem(
                                 text = { Text("Cerrar sesión") },
                                 onClick = {
@@ -228,6 +237,9 @@ fun SubIAApp(
                 )
             }
             composable<CategoriasRoute> { CategoriasScreen() }
+            composable<SettingsRoute> {
+                SettingsScreen(onBack = { navController.popBackStack() })
+            }
             composable<CatalogoRoute> {
                 CatalogoScreen(
                     onSeleccionarItem = { item ->

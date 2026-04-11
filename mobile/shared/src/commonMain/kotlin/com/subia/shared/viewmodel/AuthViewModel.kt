@@ -54,6 +54,32 @@ class AuthViewModel(
         }
     }
 
+    /** Inicia sesión con un idToken de Google obtenido por la UI (vía CredentialManager en Android). */
+    fun loginWithGoogle(idToken: String) {
+        if (idToken.isBlank()) {
+            _uiState.value = AuthUiState.Error("Token de Google vacío")
+            return
+        }
+        viewModelScope.launch {
+            _uiState.value = AuthUiState.Loading
+            authRepository.loginWithGoogle(idToken)
+                .onSuccess {
+                    _isLoggedIn.value = true
+                    _uiState.value = AuthUiState.Success
+                }
+                .onFailure {
+                    _uiState.value = AuthUiState.Error(
+                        it.message ?: "No se pudo verificar la cuenta de Google"
+                    )
+                }
+        }
+    }
+
+    /** Expone el estado de error para errores surgidos fuera del repositorio (p.ej. CredentialManager). */
+    fun showGoogleError(mensaje: String) {
+        _uiState.value = AuthUiState.Error(mensaje)
+    }
+
     /** Cierra sesión. Garantiza limpieza local incluso sin red. */
     fun logout() {
         viewModelScope.launch {

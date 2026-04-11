@@ -1,6 +1,7 @@
 package com.subia.shared.repository
 
 import com.subia.shared.model.AuthTokens
+import com.subia.shared.model.GoogleAuthRequest
 import com.subia.shared.model.LoginRequest
 import com.subia.shared.network.ApiClient
 import com.subia.shared.network.ApiRoutes
@@ -21,6 +22,19 @@ class AuthRepository(
         val result = apiClient.post<AuthTokens, LoginRequest>(
             path = ApiRoutes.LOGIN,
             body = LoginRequest(email, password),
+            authenticated = false
+        )
+        return result.map { tokens -> tokenStorage.saveTokens(tokens) }
+    }
+
+    /**
+     * Inicia sesión con un idToken de Google ya obtenido por el cliente.
+     * En caso de éxito, guarda los tokens en almacenamiento seguro.
+     */
+    suspend fun loginWithGoogle(idToken: String): Result<Unit> {
+        val result = apiClient.post<AuthTokens, GoogleAuthRequest>(
+            path = ApiRoutes.GOOGLE_AUTH,
+            body = GoogleAuthRequest(idToken),
             authenticated = false
         )
         return result.map { tokens -> tokenStorage.saveTokens(tokens) }

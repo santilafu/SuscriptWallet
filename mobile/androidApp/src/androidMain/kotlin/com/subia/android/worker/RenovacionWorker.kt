@@ -19,6 +19,10 @@ import kotlinx.datetime.daysUntil
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.Json
 
+/** Clave de SharedPreferences("subia_cache") con el umbral de días para avisar. */
+const val KEY_NOTIFICATION_DAYS_BEFORE = "notification_days_before"
+const val DEFAULT_NOTIFICATION_DAYS_BEFORE = 3
+
 /**
  * Worker periódico que revisa las próximas renovaciones de suscripciones y lanza
  * una notificación local para aquellas que se renuevan exactamente en 3 días.
@@ -50,6 +54,7 @@ class RenovacionWorker(
             json.decodeFromString<List<Subscription>>(subsJson)
         }.getOrNull() ?: return Result.success()
 
+        val umbralDias = prefs.getInt(KEY_NOTIFICATION_DAYS_BEFORE, DEFAULT_NOTIFICATION_DAYS_BEFORE)
         val hoy = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
         // Notificaciones de renovaciones próximas (excluye trials)
@@ -59,20 +64,20 @@ class RenovacionWorker(
                 val fechaRenovacion = runCatching { LocalDate.parse(sub.fechaRenovacion) }.getOrNull()
                     ?: return@filter false
                 val diasRestantes = hoy.daysUntil(fechaRenovacion)
-                diasRestantes == 3
+                diasRestantes == umbralDias
             }
             .forEachIndexed { index, sub ->
                 lanzarNotificacion(sub, index)
             }
 
-        // Notificaciones de pruebas gratuitas por vencer en 3 días
+        // Notificaciones de pruebas gratuitas por vencer en el mismo umbral
         suscripciones
             .filter { sub ->
                 if (!sub.esPrueba) return@filter false
                 val fechaFinPrueba = runCatching { LocalDate.parse(sub.fechaFinPrueba ?: return@filter false) }.getOrNull()
                     ?: return@filter false
                 val diasRestantes = hoy.daysUntil(fechaFinPrueba)
-                diasRestantes == 3
+                diasRestantes == umbralDias
             }
             .forEachIndexed { index, sub ->
                 lanzarNotificacionPrueba(sub, index)

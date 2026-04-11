@@ -1,5 +1,6 @@
 package com.subia.android.ui.screens
 
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.Image
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -23,7 +25,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -34,6 +39,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,10 +61,13 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.subia.android.R
+import com.subia.android.auth.GoogleSignInHelper
+import com.subia.android.auth.GoogleSignInResult
 import com.subia.android.ui.theme.GradientIndigoEnd
 import com.subia.android.ui.theme.GradientIndigoStart
 import com.subia.shared.viewmodel.AuthUiState
 import com.subia.shared.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 private const val WEB_BASE = "https://suscriptwallet.onrender.com"
@@ -75,6 +84,8 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val activity = context as? Activity
     val isLoading = uiState is AuthUiState.Loading
 
     val buttonGradient = Brush.horizontalGradient(
@@ -286,6 +297,67 @@ fun LoginScreen(
                                 Text("Entrar", fontWeight = FontWeight.Medium, fontSize = 15.sp)
                             }
                         }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        HorizontalDivider(
+                            modifier = Modifier.weight(1f),
+                            color = Color(0x1FFFFFFF)
+                        )
+                        Text(
+                            text = "o",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF94A3B8),
+                            modifier = Modifier.padding(horizontal = 12.dp)
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.weight(1f),
+                            color = Color(0x1FFFFFFF)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    OutlinedButton(
+                        onClick = {
+                            val act = activity ?: return@OutlinedButton
+                            scope.launch {
+                                when (val result = GoogleSignInHelper.signIn(act)) {
+                                    is GoogleSignInResult.Success ->
+                                        viewModel.loginWithGoogle(result.idToken)
+                                    GoogleSignInResult.UserCancelled -> Unit
+                                    GoogleSignInResult.NoGoogleAccounts ->
+                                        viewModel.showGoogleError("No hay cuentas de Google en este dispositivo. Añade una en Ajustes > Cuentas e inténtalo de nuevo.")
+                                    GoogleSignInResult.NotConfigured ->
+                                        viewModel.showGoogleError("Google Sign-In no está configurado en este build.")
+                                    is GoogleSignInResult.Unknown ->
+                                        viewModel.showGoogleError("Error de Google Sign-In: ${result.message}")
+                                }
+                            }
+                        },
+                        enabled = !isLoading,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_google),
+                            contentDescription = null,
+                            tint = Color.Unspecified
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Continuar con Google",
+                            color = Color(0xFFF1F5F9),
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 15.sp
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))

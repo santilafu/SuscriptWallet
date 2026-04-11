@@ -22,6 +22,12 @@ import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
+data class TopSuscripcion(
+    val nombre: String,
+    val gastoMensual: Double,
+    val moneda: String
+)
+
 sealed interface DashboardUiState {
     data object Loading : DashboardUiState
     data class Success(val resumen: DashboardSummary) : DashboardUiState
@@ -78,6 +84,14 @@ class DashboardViewModel(
      */
     val pruebasPorVencer: StateFlow<List<ProximaRenovacion>> = _pruebasPorVencer.asStateFlow()
 
+    private val _topSuscripciones = MutableStateFlow<List<TopSuscripcion>>(emptyList())
+    /**
+     * Top 5 suscripciones con mayor gasto mensual normalizado.
+     * Las anuales se dividen entre 12 para obtener el equivalente mensual,
+     * idéntico al cálculo usado en [calcularTotalesPorMoneda].
+     */
+    val topSuscripciones: StateFlow<List<TopSuscripcion>> = _topSuscripciones.asStateFlow()
+
     init { cargarEstadisticas() }
 
     /** Carga las estadísticas del dashboard y los totales por divisa en paralelo. */
@@ -100,6 +114,7 @@ class DashboardViewModel(
                     _totalesAnualesPorMoneda.value = calcularTotalesAnualesPorMoneda(cachedSubs)
                     _gastosPorCategoria.value = calcularGastosPorCategoria(cachedSubs)
                     _pruebasPorVencer.value = calcularPruebasPorVencer(cachedSubs)
+                    _topSuscripciones.value = calcularTopSuscripciones(cachedSubs)
                 }
             }
 
@@ -140,6 +155,7 @@ class DashboardViewModel(
                 _totalesAnualesPorMoneda.value = calcularTotalesAnualesPorMoneda(subs)
                 _gastosPorCategoria.value = calcularGastosPorCategoria(subs)
                 _pruebasPorVencer.value = calcularPruebasPorVencer(subs)
+                _topSuscripciones.value = calcularTopSuscripciones(subs)
                 cacheRepository.saveString(CACHE_KEY_SUBS, json.encodeToString(subs))
                 cacheRepository.saveTimestamp(CACHE_KEY_SUBS)
             }
@@ -238,4 +254,18 @@ class DashboardViewModel(
             .sortedByDescending { it.value }
             .associate { it.key to it.value }
     }
+
+    /**
+     * Devuelve las 5 suscripciones con mayor gasto mensual normalizado.
+     * Las anuales se dividen entre 12 para obtener el equivalente mensual,
+     * idéntico al cálculo usado en [calcularTotalesPorMoneda].
+     */
+    internal fun calcularTopSuscripciones(subs: List<Subscription>): List<TopSuscripcion> =
+        subs
+            .map { sub ->
+                val mensual = if (sub.periodoFacturacion == "YEARLY") sub.precio / 12.0 else sub.precio
+                TopSuscripcion(nombre = sub.nombre, gastoMensual = mensual, moneda = sub.moneda)
+            }
+            .sortedByDescending { it.gastoMensual }
+            .take(5)
 }

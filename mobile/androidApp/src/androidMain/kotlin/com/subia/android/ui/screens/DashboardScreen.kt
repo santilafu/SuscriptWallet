@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.sp
 import com.subia.android.ui.BannerAdView
 import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.components.GastosPorCategoriaCard
+import com.subia.android.ui.components.TopSuscripcionesChartCard
 import com.subia.android.ui.theme.GradientAmberEnd
 import com.subia.android.ui.theme.GradientAmberStart
 import com.subia.android.ui.theme.GradientIndigoEnd
@@ -66,6 +67,7 @@ import com.subia.shared.model.DashboardSummary
 import com.subia.shared.model.ProximaRenovacion
 import com.subia.shared.viewmodel.DashboardUiState
 import com.subia.shared.viewmodel.DashboardViewModel
+import com.subia.shared.viewmodel.TopSuscripcion
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -80,6 +82,7 @@ fun DashboardScreen(
     val totalesAnualesPorMoneda by viewModel.totalesAnualesPorMoneda.collectAsState()
     val gastosPorCategoria by viewModel.gastosPorCategoria.collectAsState()
     val pruebasPorVencer by viewModel.pruebasPorVencer.collectAsState()
+    val topSuscripciones by viewModel.topSuscripciones.collectAsState()
     val isRefreshing = uiState is DashboardUiState.Loading
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -92,10 +95,10 @@ fun DashboardScreen(
                 is DashboardUiState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                     CircularProgressIndicator()
                 }
-                is DashboardUiState.Success -> DashboardContent(state.resumen, totalesPorMoneda, totalesAnualesPorMoneda, gastosPorCategoria, pruebasPorVencer, onNavigateToSuscripciones)
+                is DashboardUiState.Success -> DashboardContent(state.resumen, totalesPorMoneda, totalesAnualesPorMoneda, gastosPorCategoria, pruebasPorVencer, topSuscripciones, onNavigateToSuscripciones)
                 is DashboardUiState.Offline -> Column {
                     BannerOffline("Mostrando datos guardados — sin conexión")
-                    state.resumenCacheado?.let { DashboardContent(it, totalesPorMoneda, totalesAnualesPorMoneda, gastosPorCategoria, pruebasPorVencer, onNavigateToSuscripciones) }
+                    state.resumenCacheado?.let { DashboardContent(it, totalesPorMoneda, totalesAnualesPorMoneda, gastosPorCategoria, pruebasPorVencer, topSuscripciones, onNavigateToSuscripciones) }
                 }
                 is DashboardUiState.Error -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -151,6 +154,7 @@ private fun DashboardContent(
     totalesAnualesPorMoneda: Map<String, Double> = emptyMap(),
     gastosPorCategoria: Map<String, Double> = emptyMap(),
     pruebasPorVencer: List<com.subia.shared.model.ProximaRenovacion> = emptyList(),
+    topSuscripciones: List<TopSuscripcion> = emptyList(),
     onNavigateToSuscripciones: () -> Unit = {}
 ) {
     val gradientsMensual = listOf(
@@ -306,6 +310,10 @@ private fun DashboardContent(
 
         item {
             GastosPorCategoriaCard(gastosPorCategoria = gastosPorCategoria)
+        }
+
+        item {
+            TopSuscripcionesChartCard(topSuscripciones = topSuscripciones)
         }
     }
 }

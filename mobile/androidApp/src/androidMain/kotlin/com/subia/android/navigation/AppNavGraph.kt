@@ -10,3 +10,4 @@ import kotlinx.serialization.Serializable
 @Serializable data class SuscripcionFormRoute(val id: Long? = null)
 @Serializable object CategoriasRoute
 @Serializable object CatalogoRoute
+@Serializable object SettingsRoute
