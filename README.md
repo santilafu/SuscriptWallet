@@ -1,6 +1,7 @@
 # Suscript Wallet — Gestor de suscripciones
 
 ![Version](https://img.shields.io/badge/versión-3.0.1-6366f1?style=flat-square)
+![Android](https://img.shields.io/badge/Android-2.11.0-3ddc84?style=flat-square&logo=android&label=App)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-3ddc84?style=flat-square&logo=android)
 ![Stack](https://img.shields.io/badge/Spring%20Boot-3.3.5-6db33f?style=flat-square&logo=springboot)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.1.20-7f52ff?style=flat-square&logo=kotlin)
@@ -27,7 +28,7 @@
 | 🔒 **Tokens seguros** — EncryptedSharedPreferences (Android Keystore) | — | ✅ |
 | 🗂️ **Categorías predefinidas** — 10 listas desde el primer arranque | ✅ | ✅ |
 | 💱 **Multi-divisa** — totales separados por EUR/USD/GBP | — | ✅ |
-| 🆓 **Trial Tracker** — alertas de pruebas gratuitas por vencer | ✅ | ✅ |
+| 🆓 **Trial Tracker** — alertas de pruebas gratuitas por vencer | 🔜 | 🔜 |
 
 ---
 
@@ -338,7 +339,6 @@ Consulta [CHANGELOG.md](CHANGELOG.md) para el historial completo de cambios.
 | 2.10.0  | 2026-03-22 | Fix crítico mapeo de categorías (citas/noticias no aparecían), +50 apps Play Store populares (320+ total) |
 | 2.10.1  | 2026-03-22 | Fix logos: dominios corregidos (LiveOne, Pokémon GO, Clash Royale, Brawl Stars), Stadia eliminado → Minecraft Realms |
 | 2.10.2  | 2026-03-22 | Fix logos en catálogo Android: campo `domain` en CatalogItem propagado a ServiceLogo para resolver logos correctamente desde el servidor |
-| 2.11.0  | 2026-04-03 | Trial Tracker + migración BD a Aiven |
-| 2.11.1  | 2026-04-03 | Despliegue Render + Play Store ready (iconos, firma, ProGuard) |
+| 2.11.0  | 2026-04-11 | Nuevo icono de app (logo ocupa frame completo), pantalla de login rediseñada estilo web — fondo oscuro, card, "¿Olvidaste tu contraseña?" y "Crear cuenta" |
 | 3.0.0   | 2026-04-06 | **Multi-usuario** — registro/login email+contraseña, Google One Tap, BCrypt cost 12, lockout exponencial, refresh token rotation+reuse detection, Spring Session JDBC, IDOR prevention, audit log, reset de contraseña, eliminación de cuenta (requisito Google Play), headers de seguridad hardened |
 | 3.0.1   | 2026-04-06 | Fix UI web — dark theme en todas las páginas (causa raíz: tailwind.config antes del CDN + CSS fallbacks), iconos de servicios visibles, gráfico Chart.js y selector de catálogo funcionando (fix CSP: unsafe-inline en script-src, icon.horse en img-src, fuentes externas) · Android 2.10.0 (versionCode 11): AdMob banner |
