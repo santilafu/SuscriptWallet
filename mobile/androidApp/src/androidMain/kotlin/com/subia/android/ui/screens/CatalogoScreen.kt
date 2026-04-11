@@ -153,12 +153,6 @@ fun CatalogoScreen(
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = Indigo400,
                         selectedLabelColor = Color.White
-                    ),
-                    border = FilterChipDefaults.filterChipBorder(
-                        enabled = true,
-                        selected = categoriaFiltro == null,
-                        selectedBorderColor = Indigo400,
-                        borderColor = MaterialTheme.colorScheme.outline
                     )
                 )
                 // Chips por categoría
@@ -172,12 +166,6 @@ fun CatalogoScreen(
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = Indigo400,
                             selectedLabelColor = Color.White
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            enabled = true,
-                            selected = categoriaFiltro == key,
-                            selectedBorderColor = Indigo400,
-                            borderColor = MaterialTheme.colorScheme.outline
                         )
                     )
                 }
@@ -186,21 +174,25 @@ fun CatalogoScreen(
 
         Spacer(Modifier.height(12.dp))
 
-        when (val state = uiState) {
-            is CatalogoUiState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
-            is CatalogoUiState.Offline -> {
-                BannerOffline("Catálogo guardado — sin conexión")
-                CatalogoGrid(itemsFiltrados, onSeleccionarItem)
-            }
-            is CatalogoUiState.Success -> CatalogoGrid(itemsFiltrados, onSeleccionarItem)
-            is CatalogoUiState.Error -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(state.mensaje, color = MaterialTheme.colorScheme.error)
-                    Spacer(Modifier.height(8.dp))
-                    TextButton(onClick = { viewModel.cargarCatalogo() }) { Text("Reintentar") }
+        Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+            when (val state = uiState) {
+                is CatalogoUiState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
+                is CatalogoUiState.Offline -> {
+                    Column(Modifier.fillMaxSize()) {
+                        BannerOffline("Catálogo guardado — sin conexión")
+                        CatalogoGrid(itemsFiltrados, onSeleccionarItem)
+                    }
                 }
+                is CatalogoUiState.Success -> CatalogoGrid(itemsFiltrados, onSeleccionarItem)
+                is CatalogoUiState.Error -> Box(Modifier.fillMaxSize(), Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(state.mensaje, color = MaterialTheme.colorScheme.error)
+                        Spacer(Modifier.height(8.dp))
+                        TextButton(onClick = { viewModel.cargarCatalogo() }) { Text("Reintentar") }
+                    }
+                }
+                is CatalogoUiState.SesionExpirada -> Unit
             }
-            is CatalogoUiState.SesionExpirada -> Unit
         }
     }
 }
@@ -214,6 +206,7 @@ private fun CatalogoGrid(items: List<CatalogItem>, onSeleccionar: (CatalogItem) 
         return
     }
     LazyVerticalGrid(
+        modifier = Modifier.fillMaxSize(),
         columns = GridCells.Fixed(3),
         contentPadding = PaddingValues(bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
