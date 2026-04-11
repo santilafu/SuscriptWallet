@@ -2,10 +2,12 @@ package com.subia.android.ui.screens
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -21,6 +24,8 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -53,6 +58,26 @@ import com.subia.shared.viewmodel.CatalogoUiState
 import com.subia.shared.viewmodel.CatalogoViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
+/** Mapeo de clave de categoría → nombre legible. */
+private fun nombreCategoria(key: String): String = when (key) {
+    "ia"          -> "IA"
+    "streaming"   -> "Streaming"
+    "musica"      -> "Música"
+    "software"    -> "Software"
+    "cloud"       -> "Cloud"
+    "gaming"      -> "Gaming"
+    "seguridad"   -> "Seguridad"
+    "noticias"    -> "Noticias"
+    "salud"       -> "Salud"
+    "desarrollo"  -> "Desarrollo"
+    "prueba"      -> "Pruebas"
+    "finanzas"    -> "Finanzas"
+    "educacion"   -> "Educación"
+    "creatividad" -> "Creatividad"
+    "citas"       -> "Social"
+    else          -> key.replaceFirstChar { it.uppercaseChar() }
+}
+
 @OptIn(ExperimentalTextApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun CatalogoScreen(
@@ -62,6 +87,8 @@ fun CatalogoScreen(
     val uiState by viewModel.uiState.collectAsState()
     val itemsFiltrados by viewModel.itemsFiltrados.collectAsState()
     val busqueda by viewModel.busqueda.collectAsState()
+    val categorias by viewModel.categorias.collectAsState()
+    val categoriaFiltro by viewModel.categoriaFiltro.collectAsState()
 
     val gradientBrush = Brush.linearGradient(
         colors = listOf(GradientIndigoStart, GradientIndigoEnd, Color(0xFFA78BFA)),
@@ -72,30 +99,24 @@ fun CatalogoScreen(
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         Spacer(Modifier.height(20.dp))
 
-        // Cabecera con gradiente
+        // Cabecera
         Text(
             text = buildAnnotatedString {
-                withStyle(
-                    SpanStyle(
-                        brush = gradientBrush,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 34.sp
-                    )
-                ) {
+                withStyle(SpanStyle(brush = gradientBrush, fontWeight = FontWeight.ExtraBold, fontSize = 34.sp)) {
                     append("Catálogo")
                 }
             }
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "80+ servicios disponibles",
+            text = "${if (itemsFiltrados.isEmpty() && uiState is CatalogoUiState.Loading) "320+" else itemsFiltrados.size} servicios disponibles",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             letterSpacing = 0.8.sp
         )
         Spacer(Modifier.height(16.dp))
 
-        // Campo de búsqueda — estilo filled con esquinas redondeadas
+        // Campo de búsqueda
         TextField(
             value = busqueda,
             onValueChange = { viewModel.busqueda.value = it },
@@ -114,6 +135,55 @@ fun CatalogoScreen(
                 unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
             )
         )
+
+        // Chips de categoría (solo cuando hay datos)
+        if (categorias.isNotEmpty()) {
+            Spacer(Modifier.height(10.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Chip "Todos"
+                FilterChip(
+                    selected = categoriaFiltro == null,
+                    onClick = { viewModel.categoriaFiltro.value = null },
+                    label = { Text("Todos", fontSize = 12.sp) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Indigo400,
+                        selectedLabelColor = Color.White
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = categoriaFiltro == null,
+                        selectedBorderColor = Indigo400,
+                        borderColor = MaterialTheme.colorScheme.outline
+                    )
+                )
+                // Chips por categoría
+                categorias.forEach { key ->
+                    FilterChip(
+                        selected = categoriaFiltro == key,
+                        onClick = {
+                            viewModel.categoriaFiltro.value = if (categoriaFiltro == key) null else key
+                        },
+                        label = { Text(nombreCategoria(key), fontSize = 12.sp) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Indigo400,
+                            selectedLabelColor = Color.White
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = categoriaFiltro == key,
+                            selectedBorderColor = Indigo400,
+                            borderColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
+                }
+            }
+        }
+
         Spacer(Modifier.height(12.dp))
 
         when (val state = uiState) {

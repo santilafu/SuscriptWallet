@@ -46,20 +46,35 @@ class CatalogoViewModel(
     val uiState: StateFlow<CatalogoUiState> = _uiState.asStateFlow()
 
     val busqueda = MutableStateFlow("")
+    val categoriaFiltro = MutableStateFlow<String?>(null)
 
     private var todosLosItems: List<CatalogItem> = emptyList()
 
-    /** Items filtrados por el término de búsqueda (actualización reactiva). */
-    val itemsFiltrados: StateFlow<List<CatalogItem>> = combine(
+    /** Claves de categoría únicas derivadas de los items cargados. */
+    val categorias: StateFlow<List<String>> = combine(
         _uiState, busqueda
-    ) { state, query ->
+    ) { state, _ ->
         val items = when (state) {
             is CatalogoUiState.Success -> state.items
             is CatalogoUiState.Offline -> state.items
             else -> emptyList()
         }
-        if (query.isBlank()) items
-        else items.filter { it.nombre.contains(query, ignoreCase = true) }
+        items.map { it.categoriaKey }.filter { it.isNotBlank() }.distinct().sorted()
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Items filtrados por categoría y término de búsqueda (actualización reactiva). */
+    val itemsFiltrados: StateFlow<List<CatalogItem>> = combine(
+        _uiState, busqueda, categoriaFiltro
+    ) { state, query, categoria ->
+        val items = when (state) {
+            is CatalogoUiState.Success -> state.items
+            is CatalogoUiState.Offline -> state.items
+            else -> emptyList()
+        }
+        var resultado = items
+        if (categoria != null) resultado = resultado.filter { it.categoriaKey == categoria }
+        if (query.isNotBlank()) resultado = resultado.filter { it.nombre.contains(query, ignoreCase = true) }
+        resultado
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     init { cargarCatalogo() }
