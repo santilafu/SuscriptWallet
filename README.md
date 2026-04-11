@@ -21,14 +21,14 @@
 | 🔍 **Búsqueda en tiempo real** de suscripciones | ✅ | ✅ |
 | 🏷️ **Filtro por categoría** — chips interactivos | ✅ | ✅ |
 | 📋 **Catálogo integrado** — 320+ servicios, prerellena el formulario automáticamente | ✅ | ✅ |
-| 🌐 **Catálogo browser** — busca y añade servicios con un clic desde /catalog-browser | ✅ | — |
+| 🌐 **Catálogo browser** — busca y añade servicios con un clic desde /catalog-browser | ✅ | 🔜 |
 | 🖼️ **Logos de servicios** (Spotify, Netflix, ChatGPT…) | ✅ | ✅ |
 | 💾 **Modo offline** — caché persistente (DataStore), stale-while-revalidate | — | ✅ |
 | 🔔 **Notificaciones de renovación** — aviso 1–3 días antes (WorkManager) | — | ✅ |
 | 🔒 **Tokens seguros** — EncryptedSharedPreferences (Android Keystore) | — | ✅ |
 | 🗂️ **Categorías predefinidas** — 10 listas desde el primer arranque | ✅ | ✅ |
 | 💱 **Multi-divisa** — totales separados por EUR/USD/GBP | — | ✅ |
-| 🆓 **Trial Tracker** — alertas de pruebas gratuitas por vencer | 🔜 | 🔜 |
+| 🆓 **Trial Tracker** — alertas de pruebas gratuitas por vencer | ✅ | 🔜 |
 
 ---
 
