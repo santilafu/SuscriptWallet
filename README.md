@@ -28,7 +28,7 @@
 | 🔒 **Tokens seguros** — EncryptedSharedPreferences (Android Keystore) | — | ✅ |
 | 🗂️ **Categorías predefinidas** — 10 listas desde el primer arranque | ✅ | ✅ |
 | 💱 **Multi-divisa** — totales separados por EUR/USD/GBP | — | ✅ |
-| 🆓 **Trial Tracker** — alertas de pruebas gratuitas por vencer | ✅ | 🔜 |
+| 🆓 **Trial Tracker** — alertas de pruebas gratuitas por vencer | ✅ | ✅ |
 
 ---
 
