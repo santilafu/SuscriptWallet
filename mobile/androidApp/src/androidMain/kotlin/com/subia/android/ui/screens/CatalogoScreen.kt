@@ -212,7 +212,7 @@ private fun CatalogoGrid(items: List<CatalogItem>, onSeleccionar: (CatalogItem) 
         verticalArrangement = Arrangement.spacedBy(10.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        items(items, key = { it.id }) { item ->
+        items(items) { item ->
             CatalogoItemCard(item, onSeleccionar)
         }
     }

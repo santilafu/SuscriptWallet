@@ -37,7 +37,7 @@ fun sharedModule(apiBaseUrl: String, isDebug: Boolean = false) = module {
 
     // ViewModels
     viewModel { AuthViewModel(get()) }
-    viewModel { DashboardViewModel(get(), get(), get()) }
+    viewModel { DashboardViewModel(get(), get(), get(), get()) }
     viewModel { SuscripcionesViewModel(get(), get(), get()) }
     viewModel { SuscripcionFormViewModel(get(), get(), get()) }
     viewModel { CategoriasViewModel(get()) }

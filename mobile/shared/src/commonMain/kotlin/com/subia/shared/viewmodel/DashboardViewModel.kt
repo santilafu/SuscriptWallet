@@ -7,6 +7,7 @@ import com.subia.shared.model.DashboardSummary
 import com.subia.shared.model.ProximaRenovacion
 import com.subia.shared.model.Subscription
 import com.subia.shared.network.SessionExpiredException
+import com.subia.shared.repository.CategoryRepository
 import com.subia.shared.repository.DashboardRepository
 import com.subia.shared.repository.SubscriptionRepository
 import kotlinx.coroutines.async
@@ -51,6 +52,7 @@ private const val CACHE_KEY_SUBS = "dashboard_subscriptions"
 class DashboardViewModel(
     private val dashboardRepository: DashboardRepository,
     private val subscriptionRepository: SubscriptionRepository,
+    private val categoryRepository: CategoryRepository,
     private val cacheRepository: CacheRepository
 ) : ViewModel() {
 
@@ -97,6 +99,10 @@ class DashboardViewModel(
     /** Carga las estadísticas del dashboard y los totales por divisa en paralelo. */
     fun cargarEstadisticas() {
         viewModelScope.launch {
+            // Lanzamos la carga de categorías en paralelo para poder mapear id→nombre
+            // en calcularGastosPorCategoria y evitar el fallback "Categoría N".
+            val categoriasDeferred = async { categoryRepository.getAll() }
+
             // --- Stale-while-revalidate: emitir caché inmediatamente ---
             val cachedSummaryJson = cacheRepository.getString(CACHE_KEY_DASHBOARD)
             val cachedSubsJson = cacheRepository.getString(CACHE_KEY_SUBS)
@@ -107,12 +113,17 @@ class DashboardViewModel(
                     _uiState.value = DashboardUiState.Success(cachedSummary)
                 }
             }
+            // Esperamos el mapa de categorías una sola vez: las llamadas de caché y de red
+            // comparten el mismo mapa id→nombre para resolver los nombres reales.
+            val nombreCatMap = categoriasDeferred.await().getOrNull().orEmpty()
+                .associate { it.id to it.nombre }
+
             if (cachedSubsJson != null) {
                 val cachedSubs = runCatching { json.decodeFromString<List<Subscription>>(cachedSubsJson) }.getOrNull()
                 if (cachedSubs != null) {
                     _totalesPorMoneda.value = calcularTotalesPorMoneda(cachedSubs)
                     _totalesAnualesPorMoneda.value = calcularTotalesAnualesPorMoneda(cachedSubs)
-                    _gastosPorCategoria.value = calcularGastosPorCategoria(cachedSubs)
+                    _gastosPorCategoria.value = calcularGastosPorCategoria(cachedSubs, nombreCatMap)
                     _pruebasPorVencer.value = calcularPruebasPorVencer(cachedSubs)
                     _topSuscripciones.value = calcularTopSuscripciones(cachedSubs)
                 }
@@ -153,7 +164,7 @@ class DashboardViewModel(
             subsResult.onSuccess { subs ->
                 _totalesPorMoneda.value = calcularTotalesPorMoneda(subs)
                 _totalesAnualesPorMoneda.value = calcularTotalesAnualesPorMoneda(subs)
-                _gastosPorCategoria.value = calcularGastosPorCategoria(subs)
+                _gastosPorCategoria.value = calcularGastosPorCategoria(subs, nombreCatMap)
                 _pruebasPorVencer.value = calcularPruebasPorVencer(subs)
                 _topSuscripciones.value = calcularTopSuscripciones(subs)
                 cacheRepository.saveString(CACHE_KEY_SUBS, json.encodeToString(subs))

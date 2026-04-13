@@ -180,7 +180,7 @@ private fun CategoriasList(categorias: List<Category>, modifier: Modifier) {
             )
             Spacer(Modifier.height(8.dp))
         }
-        items(categorias, key = { it.id }) { cat ->
+        items(categorias) { cat ->
             CategoriaCard(cat)
         }
     }

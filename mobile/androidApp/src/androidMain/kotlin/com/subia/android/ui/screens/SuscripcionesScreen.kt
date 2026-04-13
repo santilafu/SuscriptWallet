@@ -254,7 +254,7 @@ private fun ListaSuscripciones(
                             )
                         )
                     }
-                    items(categorias, key = { it.id }) { cat ->
+                    items(categorias) { cat ->
                         FilterChip(
                             selected = categoriaSeleccionada == cat.id,
                             onClick = {
@@ -288,7 +288,7 @@ private fun ListaSuscripciones(
                 }
             }
         } else {
-            items(suscripciones, key = { it.id }) { sub ->
+            items(suscripciones) { sub ->
                 SuscripcionCard(sub, onNavigateToDetalle, modifier = Modifier.padding(horizontal = 16.dp))
             }
         }
