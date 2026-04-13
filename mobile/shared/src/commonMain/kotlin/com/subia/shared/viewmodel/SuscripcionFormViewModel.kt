@@ -2,6 +2,7 @@ package com.subia.shared.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.subia.shared.model.BillingCycle
 import com.subia.shared.model.CatalogItem
 import com.subia.shared.model.Category
 import com.subia.shared.model.NuevaSuscripcionRequest
@@ -111,7 +112,7 @@ class SuscripcionFormViewModel(
      * selección.
      */
     fun seleccionarServicioDelCatalogo(item: CatalogItem) {
-        prerellenarDesdeCatalogo(item)
+        prerellenarDesdeCatalogo(item, BillingCycle.fromWire(item.periodoFacturacion))
 
         // Normaliza una cadena eliminando acentos y pasándola a minúsculas para comparar
         fun String.normalizar(): String =
@@ -146,13 +147,21 @@ class SuscripcionFormViewModel(
         fechaFinPrueba.value = suscripcion.fechaFinPrueba
     }
 
-    /** Precarga nombre, precio y categoría desde un ítem del catálogo. */
-    fun prerellenarDesdeCatalogo(item: CatalogItem) {
+    /**
+     * Precarga nombre, precio y periodo desde un ítem del catálogo según el ciclo elegido.
+     *
+     * Para [BillingCycle.MONTHLY] usa [CatalogItem.precioMensual]; si no existe pero hay
+     * precio anual, cae a `precioAnual / 12`. Para [BillingCycle.YEARLY] usa
+     * [CatalogItem.precioAnual]; si no existe pero hay mensual, cae a `precioMensual * 12`.
+     */
+    fun prerellenarDesdeCatalogo(item: CatalogItem, cicloElegido: BillingCycle) {
         nombre.value = item.nombre
-        item.precioMensual?.let {
-            precio.value = it.toString()
-            periodoFacturacion.value = item.periodoFacturacion.ifBlank { "MONTHLY" }
+        val precioElegido: Double? = when (cicloElegido) {
+            BillingCycle.MONTHLY -> item.precioMensual ?: item.precioAnual?.div(12.0)
+            BillingCycle.YEARLY -> item.precioAnual ?: item.precioMensual?.times(12.0)
         }
+        precioElegido?.let { precio.value = it.toString() }
+        periodoFacturacion.value = cicloElegido.wire
         moneda.value = item.moneda
         val diasPrueba = item.diasPrueba
         if (diasPrueba != null) {

@@ -67,6 +67,7 @@ import com.subia.android.ui.theme.GradientIndigoEnd
 import com.subia.android.ui.theme.GradientIndigoStart
 import com.subia.android.ui.theme.Indigo400
 import com.subia.android.ui.theme.Indigo500
+import com.subia.shared.model.BillingCycle
 import com.subia.shared.model.CatalogItem
 import com.subia.shared.viewmodel.FormUiState
 import kotlinx.serialization.json.Json
@@ -117,7 +118,10 @@ fun SuscripcionFormScreen(
             ?.get<String>("catalog_item_json")
         itemJson?.let { json ->
             runCatching { Json.decodeFromString<CatalogItem>(json) }.getOrNull()?.let { item ->
-                formViewModel.prerellenarDesdeCatalogo(item)
+                formViewModel.prerellenarDesdeCatalogo(
+                    item,
+                    BillingCycle.fromWire(item.periodoFacturacion)
+                )
             }
             navController.previousBackStackEntry?.savedStateHandle?.remove<String>("catalog_item_json")
         }
