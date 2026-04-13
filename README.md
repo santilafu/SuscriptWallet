@@ -1,7 +1,7 @@
 # Suscript Wallet — Gestor de suscripciones
 
 ![Version](https://img.shields.io/badge/versión-3.0.1-6366f1?style=flat-square)
-![Android](https://img.shields.io/badge/Android-2.12.5-3ddc84?style=flat-square&logo=android&label=App)
+![Android](https://img.shields.io/badge/Android-2.12.7-3ddc84?style=flat-square&logo=android&label=App)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-3ddc84?style=flat-square&logo=android)
 ![Stack](https://img.shields.io/badge/Spring%20Boot-3.3.5-6db33f?style=flat-square&logo=springboot)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.1.20-7f52ff?style=flat-square&logo=kotlin)
@@ -347,3 +347,4 @@ Consulta [CHANGELOG.md](CHANGELOG.md) para el historial completo de cambios.
 | 2.12.0  | 2026-04-11 | **Login con Google en Android** (Credential Manager API), pantalla **Ajustes** con recordatorios configurables (1/3/7/14 días) y **exportar a CSV**, gráfico **Top 5 gastos mensuales** en Dashboard con Vico |
 | 3.0.0   | 2026-04-06 | **Multi-usuario** — registro/login email+contraseña, Google One Tap, BCrypt cost 12, lockout exponencial, refresh token rotation+reuse detection, Spring Session JDBC, IDOR prevention, audit log, reset de contraseña, eliminación de cuenta (requisito Google Play), headers de seguridad hardened |
 | 3.0.1   | 2026-04-06 | Fix UI web — dark theme en todas las páginas (causa raíz: tailwind.config antes del CDN + CSS fallbacks), iconos de servicios visibles, gráfico Chart.js y selector de catálogo funcionando (fix CSP: unsafe-inline en script-src, icon.horse en img-src, fuentes externas) · Android 2.10.0 (versionCode 11): AdMob banner |
+| 2.12.7  | 2026-04-13 | Android — preparación interna para v2.13.0 (catálogo modelo dual pricing): `CatalogItem` con `precioAnual` e `iconUrl` opcionales + helpers (`hasBothCycles`, `monthlyEquivalent`, `annualSavingsPercent`), enum `BillingCycle` interno al formulario y migración de `prerellenarDesdeCatalogo` a la nueva firma con ciclo. Sin cambios visibles para el usuario; 100% backward compatible con el backend actual gracias a `ignoreUnknownKeys`. Cubierto por `CatalogItemSerializationTest` y `CatalogItemHelpersTest` en commonTest |
