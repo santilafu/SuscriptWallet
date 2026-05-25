@@ -1,7 +1,7 @@
 # Suscript Wallet — Gestor de suscripciones
 
 ![Version](https://img.shields.io/badge/versión-3.0.1-6366f1?style=flat-square)
-![Android](https://img.shields.io/badge/Android-2.12.7-3ddc84?style=flat-square&logo=android&label=App)
+![Android](https://img.shields.io/badge/Android-2.13.0-3ddc84?style=flat-square&logo=android&label=App)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-3ddc84?style=flat-square&logo=android)
 ![Stack](https://img.shields.io/badge/Spring%20Boot-3.3.5-6db33f?style=flat-square&logo=springboot)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.1.20-7f52ff?style=flat-square&logo=kotlin)
@@ -19,19 +19,19 @@
 | 👤 **Multi-usuario** — registro con email y contraseña | ✅ | ✅ |
 | 🔐 **Login con Google** — Credential Manager en Android, One Tap en web | ✅ | ✅ |
 | 📊 **Dashboard** — gasto por divisa, gráfico por categoría, alertas de renovación | ✅ | ✅ |
-| 📈 **Top 5 gastos mensuales** — bar chart Vico en el Dashboard | — | ✅ |
+| 📈 **Top 5 gastos mensuales** — bar chart en el Dashboard | ✅ | ✅ |
 | 🔍 **Búsqueda en tiempo real** de suscripciones | ✅ | ✅ |
 | 🏷️ **Filtro por categoría** — chips interactivos | ✅ | ✅ |
 | 📋 **Catálogo integrado** — 320+ servicios, prerellena el formulario automáticamente | ✅ | ✅ |
 | 🌐 **Catálogo browser** — busca y añade servicios con un clic desde /catalog-browser | ✅ | ✅ |
 | 🖼️ **Logos de servicios** (Spotify, Netflix, ChatGPT…) | ✅ | ✅ |
-| ⚙️ **Pantalla de Ajustes** — recordatorios configurables y exportación de datos | — | ✅ |
-| 📤 **Exportar suscripciones a CSV** — guardado con Storage Access Framework | — | ✅ |
+| ⚙️ **Pantalla de Ajustes** — exportación de datos e info de cuenta | ✅ | ✅ |
+| 📤 **Exportar suscripciones a CSV** | ✅ | ✅ |
 | 💾 **Modo offline** — caché persistente, stale-while-revalidate | — | ✅ |
 | 🔔 **Notificaciones de renovación** — aviso configurable 1/3/7/14 días antes (WorkManager) | — | ✅ |
 | 🔒 **Tokens seguros** — EncryptedSharedPreferences (Android Keystore) | — | ✅ |
 | 🗂️ **Categorías predefinidas** — 10 listas desde el primer arranque | ✅ | ✅ |
-| 💱 **Multi-divisa** — totales separados por EUR/USD/GBP | — | ✅ |
+| 💱 **Multi-divisa** — totales separados por EUR/USD/GBP | ✅ | ✅ |
 | 🆓 **Trial Tracker** — alertas de pruebas gratuitas por vencer | ✅ | ✅ |
 
 ---
@@ -348,3 +348,4 @@ Consulta [CHANGELOG.md](CHANGELOG.md) para el historial completo de cambios.
 | 3.0.0   | 2026-04-06 | **Multi-usuario** — registro/login email+contraseña, Google One Tap, BCrypt cost 12, lockout exponencial, refresh token rotation+reuse detection, Spring Session JDBC, IDOR prevention, audit log, reset de contraseña, eliminación de cuenta (requisito Google Play), headers de seguridad hardened |
 | 3.0.1   | 2026-04-06 | Fix UI web — dark theme en todas las páginas (causa raíz: tailwind.config antes del CDN + CSS fallbacks), iconos de servicios visibles, gráfico Chart.js y selector de catálogo funcionando (fix CSP: unsafe-inline en script-src, icon.horse en img-src, fuentes externas) · Android 2.10.0 (versionCode 11): AdMob banner |
 | 2.12.7  | 2026-04-13 | Android — preparación interna para v2.13.0 (catálogo modelo dual pricing): `CatalogItem` con `precioAnual` e `iconUrl` opcionales + helpers (`hasBothCycles`, `monthlyEquivalent`, `annualSavingsPercent`), enum `BillingCycle` interno al formulario y migración de `prerellenarDesdeCatalogo` a la nueva firma con ciclo. Sin cambios visibles para el usuario; 100% backward compatible con el backend actual gracias a `ignoreUnknownKeys`. Cubierto por `CatalogItemSerializationTest` y `CatalogItemHelpersTest` en commonTest |
+| 2.13.0  | 2026-05-25 | **Precios reales del mercado español** — 341 servicios actualizados a precios EUR con IVA del mercado español (antes eran USD×1.21). Backend: campos `priceAnnual` e `iconUrl` en CatalogItem. Android: badge de ahorro anual (ej. "−37% anual") en tarjetas del catálogo, fallback de logo mejorado (iconUrl → icon.horse → Google Favicons → inicial) |
