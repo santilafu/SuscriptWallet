@@ -1,6 +1,6 @@
 # Suscript Wallet — Gestor de suscripciones
 
-![Version](https://img.shields.io/badge/versión-3.0.1-6366f1?style=flat-square)
+![Version](https://img.shields.io/badge/versión-3.1.0-6366f1?style=flat-square)
 ![Android](https://img.shields.io/badge/Android-2.13.0-3ddc84?style=flat-square&logo=android&label=App)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-3ddc84?style=flat-square&logo=android)
 ![Stack](https://img.shields.io/badge/Spring%20Boot-3.3.5-6db33f?style=flat-square&logo=springboot)
