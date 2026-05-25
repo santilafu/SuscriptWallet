@@ -22,31 +22,36 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import coil.compose.SubcomposeAsyncImage
 
 /**
- * Muestra el logo de un servicio con tres niveles de fallback:
- *  1. icon.horse (gratuito, fiable)
- *  2. Google Favicons (sz=128, muy amplia cobertura)
- *  3. Inicial del nombre sobre fondo de color
+ * Muestra el logo de un servicio con fallback en cascada:
+ *  1. iconUrl del catálogo (si existe)
+ *  2. icon.horse (gratuito, fiable)
+ *  3. Google Favicons (sz=128, muy amplia cobertura)
+ *  4. Inicial del nombre sobre fondo de color
  */
 @Composable
 fun ServiceLogo(
     nombre: String,
     modifier: Modifier = Modifier,
     size: Dp = 48.dp,
-    domain: String? = null
+    domain: String? = null,
+    iconUrl: String? = null
 ) {
     val resolvedDomain = domain?.takeIf { it.isNotBlank() } ?: getLogoDomain(nombre)
     val shape = RoundedCornerShape(12.dp)
 
-    if (resolvedDomain.isEmpty()) {
+    if (resolvedDomain.isEmpty() && iconUrl.isNullOrBlank()) {
         LogoFallback(nombre, size, shape, modifier)
         return
     }
 
-    val urls = remember(resolvedDomain) {
-        listOf(
-            "https://icon.horse/icon/$resolvedDomain",
-            "https://www.google.com/s2/favicons?domain=$resolvedDomain&sz=128"
-        )
+    val urls = remember(resolvedDomain, iconUrl) {
+        buildList {
+            if (!iconUrl.isNullOrBlank()) add(iconUrl)
+            if (resolvedDomain.isNotEmpty()) {
+                add("https://icon.horse/icon/$resolvedDomain")
+                add("https://www.google.com/s2/favicons?domain=$resolvedDomain&sz=128")
+            }
+        }
     }
     var intentoActual by remember(resolvedDomain) { mutableIntStateOf(0) }
 

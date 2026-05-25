@@ -49,6 +49,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.width
 import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.theme.GradientIndigoEnd
 import com.subia.android.ui.theme.GradientIndigoStart
@@ -235,7 +236,7 @@ private fun CatalogoItemCard(item: CatalogItem, onSeleccionar: (CatalogItem) -> 
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            ServiceLogo(nombre = item.nombre, size = 44.dp, domain = item.domain)
+            ServiceLogo(nombre = item.nombre, size = 44.dp, domain = item.domain, iconUrl = item.iconUrl)
             Text(
                 item.nombre,
                 style = MaterialTheme.typography.labelMedium,
@@ -250,6 +251,15 @@ private fun CatalogoItemCard(item: CatalogItem, onSeleccionar: (CatalogItem) -> 
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = Indigo400,
+                    textAlign = TextAlign.Center
+                )
+            }
+            item.annualSavingsPercent()?.takeIf { it > 0 }?.let { pct ->
+                Text(
+                    "-$pct% anual",
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF10B981),
                     textAlign = TextAlign.Center
                 )
             }

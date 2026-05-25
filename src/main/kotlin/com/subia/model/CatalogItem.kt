@@ -16,6 +16,8 @@ import java.math.BigDecimal
  * @property categoryKey Clave interna que agrupa los servicios por tipo.
  *                       Valores posibles: "ia", "streaming", "software", "cloud".
  *                       Se usa para filtrar el catálogo cuando el usuario selecciona una categoría.
+ * @property priceAnnual Precio anual del servicio (si ofrece plan anual). null si no aplica.
+ * @property iconUrl     URL directa al icono/logo del servicio. null si se usa el fallback por dominio.
  */
 data class CatalogItem(
     val name: String,
@@ -26,5 +28,7 @@ data class CatalogItem(
     val categoryKey: String,
     val trialDays: Int? = null,
     val domain: String? = null,
-    val cancelUrl: String? = null
+    val cancelUrl: String? = null,
+    val priceAnnual: BigDecimal? = null,
+    val iconUrl: String? = null
 )
