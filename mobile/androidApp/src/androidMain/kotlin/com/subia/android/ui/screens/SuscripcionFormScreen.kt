@@ -58,7 +58,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import com.subia.android.R
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -136,7 +138,11 @@ fun SuscripcionFormScreen(
     var expandedPeriodo by remember { mutableStateOf(false) }
     var expandedCategoriaForm by remember { mutableStateOf(false) }
     val monedasOpciones = listOf("EUR", "USD", "GBP")
-    val periodosOpciones = listOf("MONTHLY" to "Mensual", "YEARLY" to "Anual", "WEEKLY" to "Semanal")
+    val periodosOpciones = listOf(
+        "MONTHLY" to stringResource(R.string.monthly),
+        "YEARLY" to stringResource(R.string.yearly),
+        "WEEKLY" to stringResource(R.string.weekly)
+    )
 
     var selectorExpandido by remember { mutableStateOf(false) }
     var expandedCategoriaSel by remember { mutableStateOf(false) }
@@ -150,10 +156,10 @@ fun SuscripcionFormScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (suscripcionId != null) "Editar suscripción" else "Nueva suscripción") },
+                title = { Text(if (suscripcionId != null) stringResource(R.string.edit_subscription) else stringResource(R.string.new_subscription)) },
                 navigationIcon = {
                     IconButton(onClick = onSuccess) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -201,13 +207,13 @@ fun SuscripcionFormScreen(
                             )
                             Column {
                                 Text(
-                                    text = "Elegir del catálogo",
+                                    text = stringResource(R.string.choose_from_catalog),
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.SemiBold,
                                     color = Indigo400
                                 )
                                 Text(
-                                    text = "Rellena los campos automáticamente",
+                                    text = stringResource(R.string.auto_fill_fields),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -215,7 +221,7 @@ fun SuscripcionFormScreen(
                         }
                         Icon(
                             imageVector = if (selectorExpandido) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                            contentDescription = if (selectorExpandido) "Contraer" else "Expandir",
+                            contentDescription = if (selectorExpandido) stringResource(R.string.collapse) else stringResource(R.string.expand),
                             tint = Indigo400
                         )
                     }
@@ -236,8 +242,8 @@ fun SuscripcionFormScreen(
                                 value = categorias.find { it.id == categoriaSeleccionadaId }?.nombre ?: "",
                                 onValueChange = {},
                                 readOnly = true,
-                                label = { Text("Categoría") },
-                                placeholder = { Text("Selecciona una categoría") },
+                                label = { Text(stringResource(R.string.category)) },
+                                placeholder = { Text(stringResource(R.string.select_category)) },
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandedCategoriaSel) },
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -266,14 +272,14 @@ fun SuscripcionFormScreen(
                         ) {
                             OutlinedTextField(
                                 value = when {
-                                    cargandoServicios -> "Cargando servicios…"
+                                    cargandoServicios -> stringResource(R.string.loading_services)
                                     servicioSeleccionado != null -> servicioSeleccionado!!.nombre
                                     else -> ""
                                 },
                                 onValueChange = {},
                                 readOnly = true,
-                                label = { Text("Servicio") },
-                                placeholder = { Text(if (categoriaSeleccionadaId == null) "Primero elige una categoría" else "Selecciona un servicio") },
+                                label = { Text(stringResource(R.string.service)) },
+                                placeholder = { Text(if (categoriaSeleccionadaId == null) stringResource(R.string.select_category_first) else stringResource(R.string.select_service)) },
                                 trailingIcon = {
                                     if (cargandoServicios) {
                                         CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
@@ -293,9 +299,9 @@ fun SuscripcionFormScreen(
                                 serviciosPorCategoria.forEach { item ->
                                     val etiquetaPrecio = if (item.precioMensual != null) {
                                         val periodoCorto = when (item.periodoFacturacion.uppercase()) {
-                                            "YEARLY" -> "año"
-                                            "WEEKLY" -> "sem."
-                                            else -> "mes"
+                                            "YEARLY" -> stringResource(R.string.period_year)
+                                            "WEEKLY" -> stringResource(R.string.period_week)
+                                            else -> stringResource(R.string.period_month)
                                         }
                                         " — ${item.precioMensual} ${item.moneda}/$periodoCorto"
                                     } else ""
@@ -318,7 +324,7 @@ fun SuscripcionFormScreen(
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text("Aplicar selección")
+                                Text(stringResource(R.string.apply_selection))
                             }
                         }
                     }
@@ -326,12 +332,12 @@ fun SuscripcionFormScreen(
             }
 
             // ── Sección: Información del servicio ─────────────────────────
-            SeccionFormulario("Información del servicio")
+            SeccionFormulario(stringResource(R.string.service_info_section))
 
             OutlinedTextField(
                 value = nombre,
                 onValueChange = { formViewModel.nombre.value = it },
-                label = { Text("Nombre del servicio *") },
+                label = { Text(stringResource(R.string.service_name_label)) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isLoading,
                 singleLine = true
@@ -340,20 +346,20 @@ fun SuscripcionFormScreen(
             OutlinedTextField(
                 value = descripcion,
                 onValueChange = { formViewModel.descripcion.value = it },
-                label = { Text("Descripción") },
+                label = { Text(stringResource(R.string.description_label)) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isLoading,
                 maxLines = 3
             )
 
             // ── Sección: Facturación ───────────────────────────────────────
-            SeccionFormulario("Facturación")
+            SeccionFormulario(stringResource(R.string.billing_section))
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = precio,
                     onValueChange = { formViewModel.precio.value = it },
-                    label = { Text("Importe *") },
+                    label = { Text(stringResource(R.string.amount_label)) },
                     modifier = Modifier.weight(1f),
                     enabled = !isLoading,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -368,7 +374,7 @@ fun SuscripcionFormScreen(
                         value = moneda,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Moneda") },
+                        label = { Text(stringResource(R.string.currency_label)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandedMoneda) },
                         modifier = Modifier.menuAnchor(),
                         enabled = !isLoading
@@ -389,7 +395,7 @@ fun SuscripcionFormScreen(
                     value = periodosOpciones.find { it.first == periodoFacturacion }?.second ?: periodoFacturacion,
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Frecuencia de pago") },
+                    label = { Text(stringResource(R.string.payment_frequency)) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandedPeriodo) },
                     modifier = Modifier.fillMaxWidth().menuAnchor(),
                     enabled = !isLoading
@@ -413,10 +419,10 @@ fun SuscripcionFormScreen(
                 } else "",
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Fecha de renovación *") },
+                label = { Text(stringResource(R.string.renewal_date_label)) },
                 trailingIcon = {
                     IconButton(onClick = { showDatePicker = true }) {
-                        Icon(Icons.Default.CalendarToday, contentDescription = "Seleccionar fecha")
+                        Icon(Icons.Default.CalendarToday, contentDescription = stringResource(R.string.select_date))
                     }
                 },
                 modifier = Modifier.fillMaxWidth().clickable { showDatePicker = true },
@@ -435,10 +441,10 @@ fun SuscripcionFormScreen(
                                 formViewModel.fechaRenovacion.value = localDate.toString()
                             }
                             showDatePicker = false
-                        }) { Text("Aceptar") }
+                        }) { Text(stringResource(R.string.accept)) }
                     },
                     dismissButton = {
-                        TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
+                        TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel)) }
                     }
                 ) {
                     DatePicker(state = datePickerState)
@@ -452,7 +458,7 @@ fun SuscripcionFormScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    "Período de prueba gratuita",
+                    stringResource(R.string.free_trial_period),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Switch(
@@ -473,10 +479,10 @@ fun SuscripcionFormScreen(
                     value = valorFechaFinPrueba,
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Fin de prueba") },
+                    label = { Text(stringResource(R.string.trial_end_label)) },
                     trailingIcon = {
                         IconButton(onClick = { showDatePickerPrueba = true }) {
-                            Icon(Icons.Default.CalendarToday, contentDescription = "Seleccionar fecha fin de prueba")
+                            Icon(Icons.Default.CalendarToday, contentDescription = stringResource(R.string.select_trial_end_date))
                         }
                     },
                     modifier = Modifier.fillMaxWidth().clickable { showDatePickerPrueba = true },
@@ -496,10 +502,10 @@ fun SuscripcionFormScreen(
                                 formViewModel.seleccionarFechaFinPrueba(localDate.toString())
                             }
                             showDatePickerPrueba = false
-                        }) { Text("Aceptar") }
+                        }) { Text(stringResource(R.string.accept)) }
                     },
                     dismissButton = {
-                        TextButton(onClick = { showDatePickerPrueba = false }) { Text("Cancelar") }
+                        TextButton(onClick = { showDatePickerPrueba = false }) { Text(stringResource(R.string.cancel)) }
                     }
                 ) {
                     DatePicker(state = datePickerStatePrueba)
@@ -514,8 +520,8 @@ fun SuscripcionFormScreen(
                     value = categorias.find { it.id == categoriaId }?.nombre ?: "",
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Categoría *") },
-                    placeholder = { Text("Selecciona una categoría") },
+                    label = { Text(stringResource(R.string.category_required)) },
+                    placeholder = { Text(stringResource(R.string.select_category)) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandedCategoriaForm) },
                     modifier = Modifier.fillMaxWidth().menuAnchor(),
                     enabled = !isLoading,
@@ -538,12 +544,12 @@ fun SuscripcionFormScreen(
             }
 
             // ── Sección: Notas ─────────────────────────────────────────────
-            SeccionFormulario("Notas adicionales")
+            SeccionFormulario(stringResource(R.string.notes_section))
 
             OutlinedTextField(
                 value = notas,
                 onValueChange = { formViewModel.notas.value = it },
-                label = { Text("Notas") },
+                label = { Text(stringResource(R.string.notes_label)) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isLoading,
                 maxLines = 3
@@ -569,7 +575,7 @@ fun SuscripcionFormScreen(
                 enabled = !isLoading
             ) {
                 if (isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White)
-                else Text("Guardar", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                else Text(stringResource(R.string.save), fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
             }
         }
     }

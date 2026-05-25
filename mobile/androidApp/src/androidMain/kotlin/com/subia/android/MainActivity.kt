@@ -3,9 +3,9 @@ package com.subia.android
 import android.Manifest
 import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -24,7 +24,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import java.util.concurrent.TimeUnit
 
 /** Punto de entrada de la app. Única Activity, todo lo demás es Compose. */
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     /**
      * Lanzador de petición de permiso POST_NOTIFICATIONS (Android 13+).

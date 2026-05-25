@@ -8,7 +8,8 @@
     <application
         android:name=".SubIAApp"
         android:allowBackup="true"
-        android:label="SuscriptWallet"
+        android:label="@string/app_name"
+        android:localeConfig="@xml/locales_config"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"

@@ -48,6 +48,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.res.stringResource
+import com.subia.android.R
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.ExperimentalTextApi
@@ -109,10 +111,10 @@ fun SuscripcionDetalleScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(suscripcion?.nombre ?: "Detalle") },
+                title = { Text(suscripcion?.nombre ?: stringResource(R.string.detail)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -166,7 +168,7 @@ fun SuscripcionDetalleScreen(
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = if (suscripcion.activa) "Activa" else "Inactiva",
+                        text = if (suscripcion.activa) stringResource(R.string.active) else stringResource(R.string.inactive),
                         style = MaterialTheme.typography.labelMedium,
                         color = if (suscripcion.activa) Indigo400 else MaterialTheme.colorScheme.onSurfaceVariant,
                         letterSpacing = 0.8.sp
@@ -180,18 +182,18 @@ fun SuscripcionDetalleScreen(
                         .padding(horizontal = 20.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
-                    DetalleRow("Importe", "${suscripcion.precio} ${suscripcion.moneda}")
+                    DetalleRow(stringResource(R.string.amount), "${suscripcion.precio} ${suscripcion.moneda}")
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
-                    DetalleRow("Facturación", periodoCiclo(suscripcion.periodoFacturacion))
+                    DetalleRow(stringResource(R.string.billing), periodoCiclo(suscripcion.periodoFacturacion))
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
-                    DetalleRow("Próxima renovación", suscripcion.fechaRenovacion)
+                    DetalleRow(stringResource(R.string.next_renewal), suscripcion.fechaRenovacion)
                     if (suscripcion.descripcion.isNotBlank()) {
                         HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
-                        DetalleRow("Descripción", suscripcion.descripcion)
+                        DetalleRow(stringResource(R.string.description), suscripcion.descripcion)
                     }
                     if (suscripcion.notas.isNotBlank()) {
                         HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
-                        DetalleRow("Notas", suscripcion.notas)
+                        DetalleRow(stringResource(R.string.notes), suscripcion.notas)
                     }
                 }
 
@@ -215,7 +217,7 @@ fun SuscripcionDetalleScreen(
                         ) {
                             Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Editar suscripción", fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.edit_subscription), fontWeight = FontWeight.SemiBold)
                         }
                         // Botón cancelar suscripción — solo si existe URL oficial
                         if (cancelUrl != null) {
@@ -233,7 +235,7 @@ fun SuscripcionDetalleScreen(
                             ) {
                                 Icon(Icons.Default.Cancel, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("Ir a cancelar suscripción", fontWeight = FontWeight.SemiBold)
+                                Text(stringResource(R.string.go_cancel_subscription), fontWeight = FontWeight.SemiBold)
                             }
                         }
                         // Botón eliminar — outlined error
@@ -251,7 +253,7 @@ fun SuscripcionDetalleScreen(
                         ) {
                             Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Eliminar suscripción", fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.delete_subscription), fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -261,8 +263,8 @@ fun SuscripcionDetalleScreen(
         if (mostrarDialogoEliminar) {
             AlertDialog(
                 onDismissRequest = { mostrarDialogoEliminar = false },
-                title = { Text("¿Eliminar suscripción?") },
-                text = { Text("Esta acción no se puede deshacer.") },
+                title = { Text(stringResource(R.string.delete_subscription_confirm)) },
+                text = { Text(stringResource(R.string.delete_irreversible)) },
                 confirmButton = {
                     TextButton(
                         onClick = {
@@ -271,10 +273,10 @@ fun SuscripcionDetalleScreen(
                             onNavigateBack()
                         },
                         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                    ) { Text("Eliminar") }
+                    ) { Text(stringResource(R.string.delete)) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { mostrarDialogoEliminar = false }) { Text("Cancelar") }
+                    TextButton(onClick = { mostrarDialogoEliminar = false }) { Text(stringResource(R.string.cancel)) }
                 }
             )
         }
@@ -306,9 +308,10 @@ private fun DetalleRow(etiqueta: String, valor: String) {
     }
 }
 
+@Composable
 private fun periodoCiclo(ciclo: String): String = when (ciclo) {
-    "MONTHLY" -> "Mensual"
-    "YEARLY" -> "Anual"
-    "WEEKLY" -> "Semanal"
+    "MONTHLY" -> stringResource(R.string.monthly)
+    "YEARLY" -> stringResource(R.string.yearly)
+    "WEEKLY" -> stringResource(R.string.weekly)
     else -> ciclo
 }

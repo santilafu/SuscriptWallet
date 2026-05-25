@@ -4,11 +4,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.sp
+import com.subia.android.R
 import com.subia.android.ui.theme.GradientIndigoEnd
 import com.subia.android.ui.theme.GradientIndigoStart
 import androidx.compose.material.icons.Icons
@@ -65,11 +67,13 @@ import com.subia.android.ui.screens.SuscripcionFormScreen
 import com.subia.android.ui.screens.SuscripcionesScreen
 import com.subia.shared.viewmodel.AuthViewModel
 
+private data class NavItem(val route: Any, val icon: androidx.compose.ui.graphics.vector.ImageVector, val labelRes: Int)
+
 private val bottomNavItems = listOf(
-    Triple(DashboardRoute, Icons.Default.Home, "Inicio"),
-    Triple(SuscripcionesRoute, Icons.Default.List, "Suscripciones"),
-    Triple(CategoriasRoute, Icons.Default.Category, "Categorías"),
-    Triple(CatalogoRoute, Icons.Default.Shop, "Catálogo")
+    NavItem(DashboardRoute, Icons.Default.Home, R.string.nav_home),
+    NavItem(SuscripcionesRoute, Icons.Default.List, R.string.nav_subscriptions),
+    NavItem(CategoriasRoute, Icons.Default.Category, R.string.nav_categories),
+    NavItem(CatalogoRoute, Icons.Default.Shop, R.string.nav_catalog)
 )
 
 /** Composable raíz: gestiona NavHost, barra superior con logout y barra de navegación inferior. */
@@ -94,7 +98,7 @@ fun SubIAApp(
     }
 
     val showBottomBar = currentDestination?.let { dest ->
-        bottomNavItems.any { (route, _, _) -> dest.hasRoute(route::class) }
+        bottomNavItems.any { item -> dest.hasRoute(item.route::class) }
     } ?: false
 
     val gradientBrush = Brush.linearGradient(
@@ -129,21 +133,21 @@ fun SubIAApp(
                     ),
                     actions = {
                         IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "Más opciones")
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.more_options))
                         }
                         DropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Ajustes") },
+                                text = { Text(stringResource(R.string.settings)) },
                                 onClick = {
                                     navController.navigate(SettingsRoute)
                                     showMenu = false
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Cerrar sesión") },
+                                text = { Text(stringResource(R.string.logout)) },
                                 onClick = {
                                     authViewModel.logout()
                                     showMenu = false
@@ -160,18 +164,19 @@ fun SubIAApp(
                     containerColor = MaterialTheme.colorScheme.surface,
                     tonalElevation = androidx.compose.ui.unit.Dp.Unspecified
                 ) {
-                    bottomNavItems.forEach { (route, icon, label) ->
-                        val selected = currentDestination?.hasRoute(route::class) == true
+                    bottomNavItems.forEach { item ->
+                        val label = stringResource(item.labelRes)
+                        val selected = currentDestination?.hasRoute(item.route::class) == true
                         NavigationBarItem(
                             selected = selected,
                             onClick = {
-                                navController.navigate(route) {
+                                navController.navigate(item.route) {
                                     launchSingleTop = true
                                     restoreState = true
                                     popUpTo(DashboardRoute) { saveState = true }
                                 }
                             },
-                            icon = { Icon(icon, contentDescription = label) },
+                            icon = { Icon(item.icon, contentDescription = label) },
                             label = { Text(label) },
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.colorScheme.primary,

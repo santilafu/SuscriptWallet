@@ -52,7 +52,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
+import com.subia.android.R
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -100,7 +102,7 @@ fun SuscripcionesScreen(
                 containerColor = Indigo500,
                 elevation = FloatingActionButtonDefaults.elevation(4.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Añadir", tint = Color.White)
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add), tint = Color.White)
             }
         },
         bottomBar = {
@@ -128,7 +130,7 @@ fun SuscripcionesScreen(
                     }
                 }
                 is SuscripcionesUiState.Offline -> Column {
-                    BannerOffline("Mostrando datos guardados — sin conexión")
+                    BannerOffline(stringResource(R.string.offline_data))
                     ListaSuscripciones(
                         suscripciones = state.suscripciones,
                         categorias = state.categorias,
@@ -141,7 +143,7 @@ fun SuscripcionesScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(state.mensaje, color = MaterialTheme.colorScheme.error)
                         Spacer(Modifier.height(8.dp))
-                        TextButton(onClick = { viewModel.cargar() }) { Text("Reintentar") }
+                        TextButton(onClick = { viewModel.cargar() }) { Text(stringResource(R.string.retry)) }
                     }
                 }
                 is SuscripcionesUiState.SesionExpirada -> LaunchedEffect(Unit) { onSesionExpirada() }
@@ -162,13 +164,13 @@ private fun EmptyStateSuscripciones() {
             )
             Spacer(Modifier.height(16.dp))
             Text(
-                "Sin suscripciones",
+                stringResource(R.string.no_subscriptions),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                "Toca + para añadir la primera",
+                stringResource(R.string.tap_to_add_first),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall
             )
@@ -213,7 +215,7 @@ private fun ListaSuscripciones(
                                 fontSize = 28.sp
                             )
                         ) {
-                            append("Mis suscripciones")
+                            append(stringResource(R.string.my_subscriptions))
                         }
                     }
                 )
@@ -247,7 +249,7 @@ private fun ListaSuscripciones(
                         FilterChip(
                             selected = categoriaSeleccionada == null,
                             onClick = { onFiltrar(null) },
-                            label = { Text("Todas") },
+                            label = { Text(stringResource(R.string.all_filter)) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = Indigo500,
                                 selectedLabelColor = Color.White
@@ -280,7 +282,7 @@ private fun ListaSuscripciones(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            "No hay suscripciones en esta categoría",
+                            stringResource(R.string.no_subscriptions_in_category),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyMedium
                         )
@@ -344,7 +346,7 @@ private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Un
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "Renueva: ${sub.fechaRenovacion}",
+                        stringResource(R.string.renews_on, sub.fechaRenovacion),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -367,7 +369,7 @@ private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Un
                         .padding(horizontal = 7.dp, vertical = 3.dp)
                 ) {
                     Text(
-                        text = "Prueba · ${diasPrueba}d",
+                        text = stringResource(R.string.trial_badge, diasPrueba),
                         color = Color.White,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.SemiBold
@@ -378,9 +380,10 @@ private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Un
     }
 }
 
+@Composable
 private fun periodoCiclo(ciclo: String): String = when (ciclo) {
-    "MONTHLY" -> "Mensual"
-    "YEARLY" -> "Anual"
-    "WEEKLY" -> "Semanal"
+    "MONTHLY" -> stringResource(R.string.monthly)
+    "YEARLY" -> stringResource(R.string.yearly)
+    "WEEKLY" -> stringResource(R.string.weekly)
     else -> ciclo
 }

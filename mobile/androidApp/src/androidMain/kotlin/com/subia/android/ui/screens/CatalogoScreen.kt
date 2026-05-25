@@ -50,6 +50,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.res.stringResource
+import com.subia.android.R
 import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.theme.GradientIndigoEnd
 import com.subia.android.ui.theme.GradientIndigoStart
@@ -60,22 +62,23 @@ import com.subia.shared.viewmodel.CatalogoViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Mapeo de clave de categoría → nombre legible. */
+@Composable
 private fun nombreCategoria(key: String): String = when (key) {
-    "ia"          -> "IA"
-    "streaming"   -> "Streaming"
-    "musica"      -> "Música"
-    "software"    -> "Software"
-    "cloud"       -> "Cloud"
-    "gaming"      -> "Gaming"
-    "seguridad"   -> "Seguridad"
-    "noticias"    -> "Noticias"
-    "salud"       -> "Salud"
-    "desarrollo"  -> "Desarrollo"
-    "prueba"      -> "Pruebas"
-    "finanzas"    -> "Finanzas"
-    "educacion"   -> "Educación"
-    "creatividad" -> "Creatividad"
-    "citas"       -> "Social"
+    "ia"          -> stringResource(R.string.cat_ia)
+    "streaming"   -> stringResource(R.string.cat_streaming)
+    "musica"      -> stringResource(R.string.cat_musica)
+    "software"    -> stringResource(R.string.cat_software)
+    "cloud"       -> stringResource(R.string.cat_cloud)
+    "gaming"      -> stringResource(R.string.cat_gaming)
+    "seguridad"   -> stringResource(R.string.cat_seguridad)
+    "noticias"    -> stringResource(R.string.cat_noticias)
+    "salud"       -> stringResource(R.string.cat_salud)
+    "desarrollo"  -> stringResource(R.string.cat_desarrollo)
+    "prueba"      -> stringResource(R.string.cat_prueba)
+    "finanzas"    -> stringResource(R.string.cat_finanzas)
+    "educacion"   -> stringResource(R.string.cat_educacion)
+    "creatividad" -> stringResource(R.string.cat_creatividad)
+    "citas"       -> stringResource(R.string.cat_citas)
     else          -> key.replaceFirstChar { it.uppercaseChar() }
 }
 
@@ -104,13 +107,16 @@ fun CatalogoScreen(
         Text(
             text = buildAnnotatedString {
                 withStyle(SpanStyle(brush = gradientBrush, fontWeight = FontWeight.ExtraBold, fontSize = 34.sp)) {
-                    append("Catálogo")
+                    append(stringResource(R.string.catalog_title))
                 }
             }
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "${if (itemsFiltrados.isEmpty() && uiState is CatalogoUiState.Loading) "320+" else itemsFiltrados.size} servicios disponibles",
+            text = if (itemsFiltrados.isEmpty() && uiState is CatalogoUiState.Loading)
+                stringResource(R.string.services_available_loading)
+            else
+                stringResource(R.string.services_available, itemsFiltrados.size),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             letterSpacing = 0.8.sp
@@ -121,7 +127,7 @@ fun CatalogoScreen(
         TextField(
             value = busqueda,
             onValueChange = { viewModel.busqueda.value = it },
-            placeholder = { Text("Buscar servicio...") },
+            placeholder = { Text(stringResource(R.string.search_service)) },
             leadingIcon = { Icon(Icons.Default.Search, null, tint = Indigo400) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
@@ -150,7 +156,7 @@ fun CatalogoScreen(
                 FilterChip(
                     selected = categoriaFiltro == null,
                     onClick = { viewModel.categoriaFiltro.value = null },
-                    label = { Text("Todos", fontSize = 12.sp) },
+                    label = { Text(stringResource(R.string.all_categories), fontSize = 12.sp) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = Indigo400,
                         selectedLabelColor = Color.White
@@ -180,7 +186,7 @@ fun CatalogoScreen(
                 is CatalogoUiState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
                 is CatalogoUiState.Offline -> {
                     Column(Modifier.fillMaxSize()) {
-                        BannerOffline("Catálogo guardado — sin conexión")
+                        BannerOffline(stringResource(R.string.offline_catalog))
                         CatalogoGrid(itemsFiltrados, onSeleccionarItem)
                     }
                 }
@@ -189,7 +195,7 @@ fun CatalogoScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(state.mensaje, color = MaterialTheme.colorScheme.error)
                         Spacer(Modifier.height(8.dp))
-                        TextButton(onClick = { viewModel.cargarCatalogo() }) { Text("Reintentar") }
+                        TextButton(onClick = { viewModel.cargarCatalogo() }) { Text(stringResource(R.string.retry)) }
                     }
                 }
                 is CatalogoUiState.SesionExpirada -> Unit
@@ -202,7 +208,7 @@ fun CatalogoScreen(
 private fun CatalogoGrid(items: List<CatalogItem>, onSeleccionar: (CatalogItem) -> Unit) {
     if (items.isEmpty()) {
         Box(Modifier.fillMaxSize(), Alignment.Center) {
-            Text("Sin resultados", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.no_results), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         return
     }
@@ -256,7 +262,7 @@ private fun CatalogoItemCard(item: CatalogItem, onSeleccionar: (CatalogItem) -> 
             }
             item.annualSavingsPercent()?.takeIf { it > 0 }?.let { pct ->
                 Text(
-                    "-$pct% anual",
+                    stringResource(R.string.annual_savings, pct),
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF10B981),

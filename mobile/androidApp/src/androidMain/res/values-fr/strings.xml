@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SuscriptWallet</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Accueil</string>
+    <string name="nav_subscriptions">Abonnements</string>
+    <string name="nav_categories">Catégories</string>
+    <string name="nav_catalog">Catalogue</string>
+    <string name="more_options">Plus d\'options</string>
+    <string name="settings">Paramètres</string>
+    <string name="logout">Déconnexion</string>
+    <string name="back">Retour</string>
+
+    <!-- Login -->
+    <string name="subscription_management">Gestion des abonnements</string>
+    <string name="sign_in">Se connecter</string>
+    <string name="email_label">Adresse e-mail</string>
+    <string name="email_placeholder">vous@email.com</string>
+    <string name="password_label">Mot de passe</string>
+    <string name="forgot_password">Mot de passe oublié ?</string>
+    <string name="login_button">Connexion</string>
+    <string name="or_divider">ou</string>
+    <string name="continue_with_google">Continuer avec Google</string>
+    <string name="no_account">Pas de compte ? </string>
+    <string name="create_account">Créer un compte</string>
+    <string name="google_no_accounts">Aucun compte Google sur cet appareil. Ajoutez-en un dans Paramètres > Comptes et réessayez.</string>
+    <string name="google_not_configured">Google Sign-In n\'est pas configuré dans cette version.</string>
+    <string name="google_error">Erreur Google Sign-In : %1$s</string>
+
+    <!-- Dashboard -->
+    <string name="wallet_subtitle">✦  vos abonnements sous contrôle  ✦</string>
+    <string name="monthly">Mensuel</string>
+    <string name="yearly">Annuel</string>
+    <string name="weekly">Hebdomadaire</string>
+    <string name="monthly_currency">Mensuel (%1$s)</string>
+    <string name="yearly_currency">Annuel (%1$s)</string>
+    <string name="active_subscriptions">Abonnements actifs</string>
+    <string name="view_subscriptions">Voir les abonnements</string>
+    <string name="upcoming_renewals">Prochains renouvellements</string>
+    <string name="no_upcoming_renewals">Aucun renouvellement à venir</string>
+    <string name="offline_data">Données en cache — hors ligne</string>
+    <string name="offline_catalog">Catalogue en cache — hors ligne</string>
+    <string name="retry">Réessayer</string>
+    <string name="trials_expiring">Essais expirant bientôt</string>
+    <string name="expires_on">Expire le %1$s</string>
+
+    <!-- Subscriptions list -->
+    <string name="add">Ajouter</string>
+    <string name="no_subscriptions">Aucun abonnement</string>
+    <string name="tap_to_add_first">Appuyez sur + pour ajouter le premier</string>
+    <string name="my_subscriptions">Mes abonnements</string>
+    <string name="all_filter">Tous</string>
+    <string name="no_subscriptions_in_category">Aucun abonnement dans cette catégorie</string>
+    <string name="renews_on">Renouvelle : %1$s</string>
+    <string name="trial_badge">Essai · %1$dj</string>
+
+    <!-- Subscription form -->
+    <string name="edit_subscription">Modifier l\'abonnement</string>
+    <string name="new_subscription">Nouvel abonnement</string>
+    <string name="choose_from_catalog">Choisir du catalogue</string>
+    <string name="auto_fill_fields">Remplit les champs automatiquement</string>
+    <string name="collapse">Réduire</string>
+    <string name="expand">Développer</string>
+    <string name="category">Catégorie</string>
+    <string name="select_category">Sélectionnez une catégorie</string>
+    <string name="loading_services">Chargement des services…</string>
+    <string name="service">Service</string>
+    <string name="select_category_first">Choisissez d\'abord une catégorie</string>
+    <string name="select_service">Sélectionnez un service</string>
+    <string name="period_year">an</string>
+    <string name="period_week">sem.</string>
+    <string name="period_month">mois</string>
+    <string name="apply_selection">Appliquer la sélection</string>
+    <string name="service_info_section">Informations du service</string>
+    <string name="service_name_label">Nom du service *</string>
+    <string name="description_label">Description</string>
+    <string name="billing_section">Facturation</string>
+    <string name="amount_label">Montant *</string>
+    <string name="currency_label">Devise</string>
+    <string name="payment_frequency">Fréquence de paiement</string>
+    <string name="renewal_date_label">Date de renouvellement *</string>
+    <string name="select_date">Sélectionner la date</string>
+    <string name="accept">Accepter</string>
+    <string name="cancel">Annuler</string>
+    <string name="free_trial_period">Période d\'essai gratuite</string>
+    <string name="trial_end_label">Fin de l\'essai</string>
+    <string name="select_trial_end_date">Sélectionner la date de fin d\'essai</string>
+    <string name="category_required">Catégorie *</string>
+    <string name="notes_section">Notes supplémentaires</string>
+    <string name="notes_label">Notes</string>
+    <string name="save">Enregistrer</string>
+
+    <!-- Subscription detail -->
+    <string name="detail">Détail</string>
+    <string name="active">Actif</string>
+    <string name="inactive">Inactif</string>
+    <string name="amount">Montant</string>
+    <string name="billing">Facturation</string>
+    <string name="next_renewal">Prochain renouvellement</string>
+    <string name="description">Description</string>
+    <string name="notes">Notes</string>
+    <string name="go_cancel_subscription">Annuler l\'abonnement</string>
+    <string name="delete_subscription">Supprimer l\'abonnement</string>
+    <string name="delete_subscription_confirm">Supprimer l\'abonnement ?</string>
+    <string name="delete_irreversible">Cette action est irréversible.</string>
+    <string name="delete">Supprimer</string>
+
+    <!-- Settings -->
+    <string name="notifications">Notifications</string>
+    <string name="notify_before_renewal">Me prévenir avant un renouvellement</string>
+    <string name="one_day">1 jour</string>
+    <string name="n_days">%1$d jours</string>
+    <string name="also_applies_to_trials">S\'applique aussi aux essais gratuits</string>
+    <string name="data_section">Données</string>
+    <string name="export_subscriptions">Exporter les abonnements</string>
+    <string name="export_description">Téléchargez tous vos abonnements au format CSV.</string>
+    <string name="export_to_csv">Exporter en CSV</string>
+    <string name="export_success">Exporté vers %1$s</string>
+    <string name="export_error">Erreur d\'exportation</string>
+    <string name="file_open_error">Impossible d\'ouvrir le fichier</string>
+
+    <!-- Categories -->
+    <string name="new_category">Nouvelle catégorie</string>
+    <string name="offline_no_create">Hors ligne — impossible de créer des catégories</string>
+    <string name="categories_title">Catégories</string>
+    <string name="organize_expenses">Organisez vos dépenses</string>
+    <string name="name_required">Nom *</string>
+    <string name="create">Créer</string>
+
+    <!-- Catalog -->
+    <string name="catalog_title">Catalogue</string>
+    <string name="services_available">%1$d services disponibles</string>
+    <string name="services_available_loading">320+ services disponibles</string>
+    <string name="search_service">Rechercher un service…</string>
+    <string name="all_categories">Tous</string>
+    <string name="no_results">Aucun résultat</string>
+    <string name="annual_savings">-%1$d%% annuel</string>
+
+    <!-- Catalog category names -->
+    <string name="cat_ia">IA</string>
+    <string name="cat_streaming">Streaming</string>
+    <string name="cat_musica">Musique</string>
+    <string name="cat_software">Logiciel</string>
+    <string name="cat_cloud">Cloud</string>
+    <string name="cat_gaming">Jeux</string>
+    <string name="cat_seguridad">Sécurité</string>
+    <string name="cat_noticias">Actualités</string>
+    <string name="cat_salud">Santé</string>
+    <string name="cat_desarrollo">Développement</string>
+    <string name="cat_prueba">Tests</string>
+    <string name="cat_finanzas">Finance</string>
+    <string name="cat_educacion">Éducation</string>
+    <string name="cat_creatividad">Créativité</string>
+    <string name="cat_citas">Social</string>
+
+    <!-- Language -->
+    <string name="language">Langue</string>
+    <string name="language_system">Système</string>
+    <string name="language_es">Español</string>
+    <string name="language_en">English</string>
+    <string name="language_fr">Français</string>
+
+    <!-- Charts -->
+    <string name="spending_by_category">Dépenses par catégorie</string>
+    <string name="no_category_data">Aucune donnée de catégorie</string>
+    <string name="others">Autres</string>
+    <string name="monthly_label">mensuel</string>
+    <string name="top_5_monthly">Top 5 dépenses mensuelles</string>
+    <string name="add_subscriptions_for_stats">Ajoutez des abonnements pour voir les statistiques</string>
+</resources>

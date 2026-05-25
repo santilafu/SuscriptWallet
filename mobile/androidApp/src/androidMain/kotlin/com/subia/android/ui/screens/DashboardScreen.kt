@@ -47,9 +47,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontWeight
+import com.subia.android.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.subia.android.ui.BannerAdView
@@ -97,14 +99,14 @@ fun DashboardScreen(
                 }
                 is DashboardUiState.Success -> DashboardContent(state.resumen, totalesPorMoneda, totalesAnualesPorMoneda, gastosPorCategoria, pruebasPorVencer, topSuscripciones, onNavigateToSuscripciones)
                 is DashboardUiState.Offline -> Column {
-                    BannerOffline("Mostrando datos guardados — sin conexión")
+                    BannerOffline(stringResource(R.string.offline_data))
                     state.resumenCacheado?.let { DashboardContent(it, totalesPorMoneda, totalesAnualesPorMoneda, gastosPorCategoria, pruebasPorVencer, topSuscripciones, onNavigateToSuscripciones) }
                 }
                 is DashboardUiState.Error -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(state.mensaje, color = MaterialTheme.colorScheme.error)
                         Spacer(Modifier.height(8.dp))
-                        TextButton(onClick = { viewModel.cargarEstadisticas() }) { Text("Reintentar") }
+                        TextButton(onClick = { viewModel.cargarEstadisticas() }) { Text(stringResource(R.string.retry)) }
                     }
                 }
                 is DashboardUiState.SesionExpirada -> LaunchedEffect(Unit) { onSesionExpirada() }
@@ -138,7 +140,7 @@ private fun WalletHeader() {
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = "✦  tus suscripciones bajo control  ✦",
+            text = stringResource(R.string.wallet_subtitle),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -184,14 +186,14 @@ private fun DashboardContent(
                     GradientStatCard(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Default.EuroSymbol,
-                        label = "Mensual",
+                        label = stringResource(R.string.monthly),
                         value = "%.2f €".format(resumen.gastoMensual),
                         gradient = gradientsMensual[0]
                     )
                     GradientStatCard(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Default.CalendarToday,
-                        label = "Anual",
+                        label = stringResource(R.string.yearly),
                         value = "%.0f €".format(resumen.gastoAnual),
                         gradient = gradientsAnual[0]
                     )
@@ -208,7 +210,7 @@ private fun DashboardContent(
                                 GradientStatCard(
                                     modifier = Modifier.weight(1f),
                                     icon = Icons.Default.EuroSymbol,
-                                    label = "Mensual ($moneda)",
+                                    label = stringResource(R.string.monthly_currency, moneda),
                                     value = "%.2f %s".format(total, moneda),
                                     gradient = gradientsMensual[gradientIdx]
                                 )
@@ -229,7 +231,7 @@ private fun DashboardContent(
                                     GradientStatCard(
                                         modifier = Modifier.weight(1f),
                                         icon = Icons.Default.CalendarToday,
-                                        label = "Anual ($moneda)",
+                                        label = stringResource(R.string.yearly_currency, moneda),
                                         value = "%.0f %s".format(total, moneda),
                                         gradient = gradientsAnual[gradientIdx]
                                     )
@@ -263,7 +265,7 @@ private fun DashboardContent(
                     )
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        "Suscripciones activas",
+                        stringResource(R.string.active_subscriptions),
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.weight(1f)
                     )
@@ -276,7 +278,7 @@ private fun DashboardContent(
                     Spacer(Modifier.width(8.dp))
                     Icon(
                         Icons.Filled.ArrowForward,
-                        contentDescription = "Ver suscripciones",
+                        contentDescription = stringResource(R.string.view_subscriptions),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
                     )
@@ -293,7 +295,7 @@ private fun DashboardContent(
         if (resumen.renovacionesProximas.isNotEmpty()) {
             item {
                 Text(
-                    "Próximas renovaciones",
+                    stringResource(R.string.upcoming_renewals),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -302,7 +304,7 @@ private fun DashboardContent(
         } else {
             item {
                 Text(
-                    "No tienes renovaciones próximas",
+                    stringResource(R.string.no_upcoming_renewals),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -391,7 +393,7 @@ private fun PruebasPorVencerCard(pruebas: List<com.subia.shared.model.ProximaRen
     ) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
-                "Pruebas por vencer",
+                stringResource(R.string.trials_expiring),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = naranja
@@ -405,7 +407,7 @@ private fun PruebasPorVencerCard(pruebas: List<com.subia.shared.model.ProximaRen
                     Column(Modifier.weight(1f)) {
                         Text(prueba.nombre, fontWeight = FontWeight.SemiBold, maxLines = 1)
                         Text(
-                            "Vence el ${prueba.fechaRenovacion}",
+                            stringResource(R.string.expires_on, prueba.fechaRenovacion),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

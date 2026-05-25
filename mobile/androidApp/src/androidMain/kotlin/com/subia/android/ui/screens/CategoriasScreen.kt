@@ -44,7 +44,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
+import com.subia.android.R
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -84,7 +86,7 @@ fun CategoriasScreen(viewModel: CategoriasViewModel = koinViewModel()) {
                 containerColor = Indigo500,
                 elevation = FloatingActionButtonDefaults.elevation(4.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Nueva categoría", tint = Color.White)
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.new_category), tint = Color.White)
             }
         }
     ) { innerPadding ->
@@ -96,14 +98,14 @@ fun CategoriasScreen(viewModel: CategoriasViewModel = koinViewModel()) {
                 state.categorias, Modifier.padding(innerPadding)
             )
             is CategoriasUiState.Offline -> Column(Modifier.padding(innerPadding)) {
-                BannerOffline("Sin conexión — no es posible crear categorías")
+                BannerOffline(stringResource(R.string.offline_no_create))
                 CategoriasList(state.categorias, Modifier)
             }
             is CategoriasUiState.Error -> Box(Modifier.fillMaxSize().padding(innerPadding), Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(state.mensaje, color = MaterialTheme.colorScheme.error)
                     Spacer(Modifier.height(8.dp))
-                    TextButton(onClick = { viewModel.cargarCategorias() }) { Text("Reintentar") }
+                    TextButton(onClick = { viewModel.cargarCategorias() }) { Text(stringResource(R.string.retry)) }
                 }
             }
             is CategoriasUiState.SesionExpirada -> Unit
@@ -113,13 +115,13 @@ fun CategoriasScreen(viewModel: CategoriasViewModel = koinViewModel()) {
     if (mostrarFormulario) {
         AlertDialog(
             onDismissRequest = { mostrarFormulario = false },
-            title = { Text("Nueva categoría", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.new_category), fontWeight = FontWeight.Bold) },
             text = {
                 Column {
                     OutlinedTextField(
                         value = nombreNueva,
                         onValueChange = { nombreNueva = it },
-                        label = { Text("Nombre *") },
+                        label = { Text(stringResource(R.string.name_required)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
@@ -133,11 +135,11 @@ fun CategoriasScreen(viewModel: CategoriasViewModel = koinViewModel()) {
             confirmButton = {
                 TextButton(onClick = { viewModel.crearCategoria(nombreNueva) }, enabled = crearState !is CrearCategoriaUiState.Loading) {
                     if (crearState is CrearCategoriaUiState.Loading) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                    else Text("Crear")
+                    else Text(stringResource(R.string.create))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { mostrarFormulario = false; nombreNueva = "" }) { Text("Cancelar") }
+                TextButton(onClick = { mostrarFormulario = false; nombreNueva = "" }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
@@ -167,13 +169,13 @@ private fun CategoriasList(categorias: List<Category>, modifier: Modifier) {
                             fontSize = 34.sp
                         )
                     ) {
-                        append("Categorías")
+                        append(stringResource(R.string.categories_title))
                     }
                 }
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "Organiza tus gastos",
+                text = stringResource(R.string.organize_expenses),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 letterSpacing = 0.8.sp

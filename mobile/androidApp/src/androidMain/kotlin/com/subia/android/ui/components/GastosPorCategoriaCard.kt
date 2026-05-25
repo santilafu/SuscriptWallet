@@ -33,7 +33,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.background
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import com.subia.android.R
 
 // Paleta de colores fija para los segmentos del gráfico
 private val DonutColors = listOf(
@@ -71,7 +73,7 @@ fun GastosPorCategoriaCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Gasto por categoría",
+                text = stringResource(R.string.spending_by_category),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -79,7 +81,7 @@ fun GastosPorCategoriaCard(
             if (gastosPorCategoria.isEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "Sin datos de categorías",
+                    text = stringResource(R.string.no_category_data),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -93,7 +95,7 @@ fun GastosPorCategoriaCard(
                 } else {
                     val visibles = entradasOrdenadas.take(5).map { (k, v) -> etiquetaSinMoneda(k) to v }
                     val otros = entradasOrdenadas.drop(5).sumOf { it.value }
-                    visibles + listOf("Otros" to otros)
+                    visibles + listOf(stringResource(R.string.others) to otros)
                 }
 
                 val total = segmentos.sumOf { it.second }
@@ -107,6 +109,7 @@ fun GastosPorCategoriaCard(
                     DonutChart(
                         segmentos = segmentos,
                         total = total,
+                        centerLabel = stringResource(R.string.monthly_label),
                         modifier = Modifier.size(140.dp)
                     )
 
@@ -140,6 +143,7 @@ fun GastosPorCategoriaCard(
 private fun DonutChart(
     segmentos: List<Pair<String, Double>>,
     total: Double,
+    centerLabel: String = "mensual",
     modifier: Modifier = Modifier
 ) {
     val textMeasurer = rememberTextMeasurer()
@@ -187,7 +191,7 @@ private fun DonutChart(
         // Texto central: total formateado
         val totalFormateado = "%.2f".format(total)
         val measured = textMeasurer.measure(totalFormateado, labelStyle)
-        val sublabelMeasured = textMeasurer.measure("mensual", sublabelStyle)
+        val sublabelMeasured = textMeasurer.measure(centerLabel, sublabelStyle)
         val centerX = size.width / 2f
         val centerY = size.height / 2f
         drawText(

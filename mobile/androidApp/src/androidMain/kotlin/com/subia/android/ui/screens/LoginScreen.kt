@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -135,7 +136,7 @@ fun LoginScreen(
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Gestión de suscripciones",
+                text = stringResource(R.string.subscription_management),
                 style = MaterialTheme.typography.bodySmall,
                 color = Color(0xFF94A3B8),
                 textAlign = TextAlign.Center
@@ -153,7 +154,7 @@ fun LoginScreen(
                 Column(modifier = Modifier.padding(24.dp)) {
 
                     Text(
-                        text = "Iniciar sesión",
+                        text = stringResource(R.string.sign_in),
                         style = MaterialTheme.typography.titleMedium,
                         color = Color(0xFFF1F5F9),
                         fontWeight = FontWeight.SemiBold,
@@ -181,12 +182,12 @@ fun LoginScreen(
                     }
 
                     // Campo email
-                    Text("Correo electrónico", style = MaterialTheme.typography.labelMedium, color = Color(0xFFCBD5E1))
+                    Text(stringResource(R.string.email_label), style = MaterialTheme.typography.labelMedium, color = Color(0xFFCBD5E1))
                     Spacer(modifier = Modifier.height(4.dp))
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
-                        placeholder = { Text("tu@email.com", color = Color(0xFF64748B)) },
+                        placeholder = { Text(stringResource(R.string.email_placeholder), color = Color(0xFF64748B)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
@@ -211,7 +212,7 @@ fun LoginScreen(
                     Spacer(modifier = Modifier.height(14.dp))
 
                     // Campo contraseña
-                    Text("Contraseña", style = MaterialTheme.typography.labelMedium, color = Color(0xFFCBD5E1))
+                    Text(stringResource(R.string.password_label), style = MaterialTheme.typography.labelMedium, color = Color(0xFFCBD5E1))
                     Spacer(modifier = Modifier.height(4.dp))
                     OutlinedTextField(
                         value = password,
@@ -246,7 +247,7 @@ fun LoginScreen(
                     // ¿Olvidaste tu contraseña?
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                         Text(
-                            text = "¿Olvidaste tu contraseña?",
+                            text = stringResource(R.string.forgot_password),
                             color = Color(0xFF818CF8),
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Medium,
@@ -294,7 +295,7 @@ fun LoginScreen(
                                     color = Color.White
                                 )
                             } else {
-                                Text("Entrar", fontWeight = FontWeight.Medium, fontSize = 15.sp)
+                                Text(stringResource(R.string.login_button), fontWeight = FontWeight.Medium, fontSize = 15.sp)
                             }
                         }
                     }
@@ -310,7 +311,7 @@ fun LoginScreen(
                             color = Color(0x1FFFFFFF)
                         )
                         Text(
-                            text = "o",
+                            text = stringResource(R.string.or_divider),
                             style = MaterialTheme.typography.bodySmall,
                             color = Color(0xFF94A3B8),
                             modifier = Modifier.padding(horizontal = 12.dp)
@@ -332,11 +333,11 @@ fun LoginScreen(
                                         viewModel.loginWithGoogle(result.idToken)
                                     GoogleSignInResult.UserCancelled -> Unit
                                     GoogleSignInResult.NoGoogleAccounts ->
-                                        viewModel.showGoogleError("No hay cuentas de Google en este dispositivo. Añade una en Ajustes > Cuentas e inténtalo de nuevo.")
+                                        viewModel.showGoogleError(context.getString(R.string.google_no_accounts))
                                     GoogleSignInResult.NotConfigured ->
-                                        viewModel.showGoogleError("Google Sign-In no está configurado en este build.")
+                                        viewModel.showGoogleError(context.getString(R.string.google_not_configured))
                                     is GoogleSignInResult.Unknown ->
-                                        viewModel.showGoogleError("Error de Google Sign-In: ${result.message}")
+                                        viewModel.showGoogleError(context.getString(R.string.google_error, result.message))
                                 }
                             }
                         },
@@ -353,7 +354,7 @@ fun LoginScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Continuar con Google",
+                            text = stringResource(R.string.continue_with_google),
                             color = Color(0xFFF1F5F9),
                             fontWeight = FontWeight.Medium,
                             fontSize = 15.sp
@@ -368,12 +369,12 @@ fun LoginScreen(
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = "¿No tienes cuenta? ",
+                            text = stringResource(R.string.no_account),
                             style = MaterialTheme.typography.bodySmall,
                             color = Color(0xFF94A3B8)
                         )
                         Text(
-                            text = "Crear cuenta",
+                            text = stringResource(R.string.create_account),
                             style = MaterialTheme.typography.bodySmall,
                             color = Color(0xFF818CF8),
                             fontWeight = FontWeight.Medium,

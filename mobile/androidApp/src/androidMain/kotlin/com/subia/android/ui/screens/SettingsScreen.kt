@@ -3,6 +3,7 @@ package com.subia.android.ui.screens
 import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,13 +31,17 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.core.os.LocaleListCompat
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import com.subia.android.R
 import androidx.compose.ui.unit.dp
 import com.subia.android.util.toCsv
 import com.subia.android.worker.DEFAULT_NOTIFICATION_DAYS_BEFORE
@@ -52,6 +57,12 @@ private const val PREFS_NAME_SETTINGS = "subia_cache"
 private const val KEY_SUBSCRIPTIONS = "subscriptions"
 
 private val reminderOptions = listOf(1, 3, 7, 14)
+private val languageOptions = listOf(
+    "" to R.string.language_system,
+    "es" to R.string.language_es,
+    "en" to R.string.language_en,
+    "fr" to R.string.language_fr
+)
 private val csvJson = Json { ignoreUnknownKeys = true; isLenient = true; coerceInputValues = true }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -64,6 +75,11 @@ fun SettingsScreen(onBack: () -> Unit) {
 
     var selectedDays by remember {
         mutableIntStateOf(prefs.getInt(KEY_NOTIFICATION_DAYS_BEFORE, DEFAULT_NOTIFICATION_DAYS_BEFORE))
+    }
+
+    var selectedLocale by remember {
+        val current = AppCompatDelegate.getApplicationLocales()
+        mutableStateOf(if (current.isEmpty) "" else current.get(0)?.language ?: "")
     }
 
     val exportLauncher = rememberLauncherForActivityResult(
@@ -84,13 +100,13 @@ fun SettingsScreen(onBack: () -> Unit) {
                         OutputStreamWriter(os, Charsets.UTF_8).use { writer ->
                             writer.write(csv)
                         }
-                    } ?: error("No se pudo abrir el fichero")
+                    } ?: error(context.getString(R.string.file_open_error))
                 }
             }
             if (result.isSuccess) {
-                snackbarHostState.showSnackbar("Exportado a ${uri.lastPathSegment ?: "fichero"}")
+                snackbarHostState.showSnackbar(context.getString(R.string.export_success, uri.lastPathSegment ?: "file"))
             } else {
-                snackbarHostState.showSnackbar("Error al exportar")
+                snackbarHostState.showSnackbar(context.getString(R.string.export_error))
             }
         }
     }
@@ -98,10 +114,10 @@ fun SettingsScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Ajustes") },
+                title = { Text(stringResource(R.string.settings)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -115,15 +131,58 @@ fun SettingsScreen(onBack: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
+            // ── Idioma ────────────────────────────────────────────────
             Text(
-                text = "Notificaciones",
+                text = stringResource(R.string.language),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(Modifier.height(8.dp))
+
+            languageOptions.forEach { (localeTag, labelRes) ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            selectedLocale = localeTag
+                            val locales = if (localeTag.isEmpty()) LocaleListCompat.getEmptyLocaleList()
+                            else LocaleListCompat.forLanguageTags(localeTag)
+                            AppCompatDelegate.setApplicationLocales(locales)
+                        }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = selectedLocale == localeTag,
+                        onClick = {
+                            selectedLocale = localeTag
+                            val locales = if (localeTag.isEmpty()) LocaleListCompat.getEmptyLocaleList()
+                            else LocaleListCompat.forLanguageTags(localeTag)
+                            AppCompatDelegate.setApplicationLocales(locales)
+                        }
+                    )
+                    Text(
+                        text = stringResource(labelRes),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
+            HorizontalDivider()
+            Spacer(Modifier.height(24.dp))
+
+            // ── Notificaciones ────────────────────────────────────────
+            Text(
+                text = stringResource(R.string.notifications),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Avisarme antes de una renovación",
+                text = stringResource(R.string.notify_before_renewal),
                 style = MaterialTheme.typography.bodyLarge
             )
             Spacer(Modifier.height(8.dp))
@@ -147,7 +206,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                         }
                     )
                     Text(
-                        text = if (dias == 1) "1 día" else "$dias días",
+                        text = if (dias == 1) stringResource(R.string.one_day) else stringResource(R.string.n_days, dias),
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
@@ -155,7 +214,7 @@ fun SettingsScreen(onBack: () -> Unit) {
 
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "También se aplica a las pruebas gratuitas",
+                text = stringResource(R.string.also_applies_to_trials),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -165,19 +224,19 @@ fun SettingsScreen(onBack: () -> Unit) {
             Spacer(Modifier.height(24.dp))
 
             Text(
-                text = "Datos",
+                text = stringResource(R.string.data_section),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Exportar suscripciones",
+                text = stringResource(R.string.export_subscriptions),
                 style = MaterialTheme.typography.bodyLarge
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "Descarga todas tus suscripciones en formato CSV.",
+                text = stringResource(R.string.export_description),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -186,7 +245,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                 onClick = { exportLauncher.launch("subia_suscripciones.csv") },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Exportar a CSV")
+                Text(stringResource(R.string.export_to_csv))
             }
         }
     }
