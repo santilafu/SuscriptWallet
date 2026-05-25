@@ -1,13 +1,8 @@
 <!DOCTYPE html>
-<!--
-  Pantalla de confirmación de borrado (fallback para acceso directo a la URL).
-  La UI principal usa un modal Alpine inline en list.html.
-  Este template se mantiene por compatibilidad con el controlador.
--->
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout}">
-<head><title>Eliminar suscripción</title></head>
+<head><title th:text="#{sub.delete.title}">Eliminar suscripción</title></head>
 <body>
 <div layout:fragment="content">
 
@@ -16,17 +11,17 @@
              style="border-top: 4px solid #ef4444;">
 
             <div class="p-10">
-                <!-- Icono -->
                 <div class="w-16 h-16 rounded-full bg-red-500/15 border border-red-500/30 flex items-center justify-center mx-auto mb-5">
                     <i class="bi bi-trash3 text-2xl text-red-400"></i>
                 </div>
 
-                <h2 class="text-xl font-bold text-slate-100 mb-3">Eliminar suscripción</h2>
+                <h2 class="text-xl font-bold text-slate-100 mb-3" th:text="#{sub.delete.title}">Eliminar suscripción</h2>
                 <p class="text-sm text-slate-400 mb-2">
-                    ¿Estás seguro de que quieres eliminar
+                    <span th:text="#{sub.delete.confirm}">¿Estás seguro de que quieres eliminar</span>
                     <strong class="text-slate-200" th:text="${sub.name}"></strong>?
                 </p>
-                <span class="inline-block text-xs text-red-400/70 font-medium bg-red-500/10 border border-red-500/20 rounded-full px-3 py-1">
+                <span class="inline-block text-xs text-red-400/70 font-medium bg-red-500/10 border border-red-500/20 rounded-full px-3 py-1"
+                      th:text="#{sub.delete.irreversible}">
                     Esta acción no se puede deshacer
                 </span>
             </div>
@@ -35,11 +30,12 @@
                 <form th:action="@{/subscriptions/{id}/delete(id=${sub.id})}" method="post">
                     <button type="submit"
                             class="flex items-center gap-2 px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer">
-                        <i class="bi bi-trash"></i>Sí, eliminar
+                        <i class="bi bi-trash"></i><span th:text="#{sub.delete.yes}">Sí, eliminar</span>
                     </button>
                 </form>
                 <a th:href="@{/subscriptions}"
-                   class="flex items-center px-5 py-2.5 border border-white/[0.1] text-slate-400 hover:text-slate-200 hover:border-white/20 text-sm font-medium rounded-lg transition-all duration-200 no-underline">
+                   class="flex items-center px-5 py-2.5 border border-white/[0.1] text-slate-400 hover:text-slate-200 hover:border-white/20 text-sm font-medium rounded-lg transition-all duration-200 no-underline"
+                   th:text="#{sub.delete.cancel}">
                     Cancelar
                 </a>
             </div>

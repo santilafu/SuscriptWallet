@@ -1,6 +1,6 @@
 # Suscript Wallet — Gestor de suscripciones
 
-![Version](https://img.shields.io/badge/versión-3.1.0-6366f1?style=flat-square)
+![Version](https://img.shields.io/badge/versión-3.2.0-6366f1?style=flat-square)
 ![Android](https://img.shields.io/badge/Android-2.13.0-3ddc84?style=flat-square&logo=android&label=App)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-3ddc84?style=flat-square&logo=android)
 ![Stack](https://img.shields.io/badge/Spring%20Boot-3.3.5-6db33f?style=flat-square&logo=springboot)
@@ -32,6 +32,7 @@
 | 🔒 **Tokens seguros** — EncryptedSharedPreferences (Android Keystore) | — | ✅ |
 | 🗂️ **Categorías predefinidas** — 10 listas desde el primer arranque | ✅ | ✅ |
 | 💱 **Multi-divisa** — totales separados por EUR/USD/GBP | ✅ | ✅ |
+| 🌐 **Internacionalización (i18n)** — español, inglés y francés con selector de idioma | ✅ | ✅ |
 | 🆓 **Trial Tracker** — alertas de pruebas gratuitas por vencer | ✅ | ✅ |
 
 ---
@@ -107,6 +108,7 @@ Los errores de autenticación se devuelven en JSON estándar: `{ "data": null, "
 | Persistencia | Spring Data JPA + Hibernate |
 | Base de datos | PostgreSQL 17.9 (Aiven managed cloud) · PostgreSQL 16 (Docker, desarrollo local) |
 | Migraciones | Flyway |
+| Internacionalización | Spring MessageSource + CookieLocaleResolver (ES / EN / FR) |
 | Frontend | Thymeleaf + Tailwind CSS CDN + Alpine.js CDN + Chart.js 4 |
 | Tipografía | Inter (Google Fonts) |
 | Build | Gradle (Kotlin DSL) |
@@ -349,3 +351,4 @@ Consulta [CHANGELOG.md](CHANGELOG.md) para el historial completo de cambios.
 | 3.0.1   | 2026-04-06 | Fix UI web — dark theme en todas las páginas (causa raíz: tailwind.config antes del CDN + CSS fallbacks), iconos de servicios visibles, gráfico Chart.js y selector de catálogo funcionando (fix CSP: unsafe-inline en script-src, icon.horse en img-src, fuentes externas) · Android 2.10.0 (versionCode 11): AdMob banner |
 | 2.12.7  | 2026-04-13 | Android — preparación interna para v2.13.0 (catálogo modelo dual pricing): `CatalogItem` con `precioAnual` e `iconUrl` opcionales + helpers (`hasBothCycles`, `monthlyEquivalent`, `annualSavingsPercent`), enum `BillingCycle` interno al formulario y migración de `prerellenarDesdeCatalogo` a la nueva firma con ciclo. Sin cambios visibles para el usuario; 100% backward compatible con el backend actual gracias a `ignoreUnknownKeys`. Cubierto por `CatalogItemSerializationTest` y `CatalogItemHelpersTest` en commonTest |
 | 2.13.0  | 2026-05-25 | **Precios reales del mercado español** — 341 servicios actualizados a precios EUR con IVA del mercado español (antes eran USD×1.21). Backend: campos `priceAnnual` e `iconUrl` en CatalogItem. Android: badge de ahorro anual (ej. "−37% anual") en tarjetas del catálogo, fallback de logo mejorado (iconUrl → icon.horse → Google Favicons → inicial) |
+| 3.2.0   | 2026-05-25 | **Internacionalización web** — soporte completo para español, inglés y francés en las 15 plantillas Thymeleaf. CookieLocaleResolver con selector de idioma (ES/EN/FR). ~260 claves por idioma, JS del formulario también traducido |

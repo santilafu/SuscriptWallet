@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <title>Cuenta eliminada — SusCriptWallet</title>
+    <title th:text="#{deleted.title} + ' — SusCriptWallet'">Cuenta eliminada — SusCriptWallet</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
@@ -36,13 +36,22 @@
 
 <div class="w-full max-w-md">
 
+    <!-- Language switcher -->
+    <div class="flex justify-center gap-2 mb-4">
+        <a href="?lang=es" class="text-xs text-slate-500 hover:text-slate-200 no-underline">ES</a>
+        <span class="text-slate-600">·</span>
+        <a href="?lang=en" class="text-xs text-slate-500 hover:text-slate-200 no-underline">EN</a>
+        <span class="text-slate-600">·</span>
+        <a href="?lang=fr" class="text-xs text-slate-500 hover:text-slate-200 no-underline">FR</a>
+    </div>
+
     <!-- Logo -->
     <div class="text-center mb-8">
         <a href="/login" class="inline-flex items-center gap-2 font-bold text-2xl no-underline" style="color:inherit;">
             <i class="bi bi-credit-card-2-front text-3xl" style="color:#818cf8;"></i>
             <span style="color:#818cf8;">SusCript</span><span style="color:#f1f5f9;">Wallet</span>
         </a>
-        <p class="mt-2 text-sm" style="color:#94a3b8;">Gestión de suscripciones</p>
+        <p class="mt-2 text-sm" style="color:#94a3b8;" th:text="#{app.subtitle}">Gestión de suscripciones</p>
     </div>
 
     <!-- Card -->
@@ -54,15 +63,15 @@
             </div>
         </div>
 
-        <h1 class="text-xl font-semibold mb-3" style="color:#f1f5f9;">Cuenta eliminada</h1>
+        <h1 class="text-xl font-semibold mb-3" style="color:#f1f5f9;" th:text="#{deleted.title}">Cuenta eliminada</h1>
 
-        <p class="text-sm mb-6" style="color:#94a3b8;">
+        <p class="text-sm mb-6" style="color:#94a3b8;" th:text="#{deleted.text}">
             Tu cuenta ha sido eliminada correctamente. Todos tus datos y suscripciones han sido borrados de forma permanente.
         </p>
 
         <a href="/login" class="btn-accent">
             <i class="bi bi-arrow-left"></i>
-            Volver al inicio
+            <span th:text="#{deleted.back}">Volver al inicio</span>
         </a>
 
     </div>

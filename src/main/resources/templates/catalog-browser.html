@@ -1,12 +1,8 @@
 <!DOCTYPE html>
-<!--
-  Buscador / directorio de aplicaciones — catálogo de servicios conocidos.
-  Permite buscar, filtrar por categoría y añadir servicios como suscripciones.
--->
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout}">
-<head><title>Catálogo</title></head>
+<head><title th:text="#{catalog.title}">Catálogo</title></head>
 <body>
 <div layout:fragment="content"
      x-data="{ search: '', cat: '' }">
@@ -16,15 +12,15 @@
         <div>
             <h1 class="text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
                 <i class="bi bi-grid-3x3-gap text-accent"></i>
-                Catálogo de servicios
+                <span th:text="#{catalog.title}">Catálogo de servicios</span>
             </h1>
             <p class="text-sm text-slate-500 mt-0.5">
-                <span th:text="${allItems.size()}"></span> servicios disponibles
+                <span th:text="#{catalog.count(${allItems.size()})}"></span>
             </p>
         </div>
         <a th:href="@{/subscriptions/new}"
            class="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-all duration-200 no-underline shadow-lg shadow-accent/20">
-            <i class="bi bi-plus-lg"></i>Nueva manual
+            <i class="bi bi-plus-lg"></i><span th:text="#{catalog.new-manual}">Nueva manual</span>
         </a>
     </div>
 
@@ -38,7 +34,7 @@
                 <input type="text"
                        x-model="search"
                        class="w-full pl-9 pr-4 py-2 bg-elevated border border-white/[0.08] rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-all duration-200"
-                       placeholder="Buscar servicio…"
+                       th:placeholder="#{catalog.search}"
                        autocomplete="off"/>
             </div>
 
@@ -48,84 +44,96 @@
                         :class="cat === ''
                             ? 'border-accent/60 bg-accent/15 text-indigo-300'
                             : 'border-white/[0.1] text-slate-400 hover:border-accent/40 hover:text-accent/80'"
-                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer">
+                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer"
+                        th:text="#{catalog.filter.all}">
                     Todos
                 </button>
                 <button @click="cat = 'ia'"
                         :class="cat === 'ia'
                             ? 'border-accent/60 bg-accent/15 text-indigo-300'
                             : 'border-white/[0.1] text-slate-400 hover:border-accent/40 hover:text-accent/80'"
-                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer">
+                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer"
+                        th:text="'🤖 ' + #{catalog.chip.ia}">
                     🤖 IA
                 </button>
                 <button @click="cat = 'streaming'"
                         :class="cat === 'streaming'
                             ? 'border-accent/60 bg-accent/15 text-indigo-300'
                             : 'border-white/[0.1] text-slate-400 hover:border-accent/40 hover:text-accent/80'"
-                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer">
+                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer"
+                        th:text="'📺 ' + #{catalog.chip.streaming}">
                     📺 Streaming
                 </button>
                 <button @click="cat = 'musica'"
                         :class="cat === 'musica'
                             ? 'border-accent/60 bg-accent/15 text-indigo-300'
                             : 'border-white/[0.1] text-slate-400 hover:border-accent/40 hover:text-accent/80'"
-                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer">
+                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer"
+                        th:text="'🎵 ' + #{catalog.chip.musica}">
                     🎵 Música
                 </button>
                 <button @click="cat = 'software'"
                         :class="cat === 'software'
                             ? 'border-accent/60 bg-accent/15 text-indigo-300'
                             : 'border-white/[0.1] text-slate-400 hover:border-accent/40 hover:text-accent/80'"
-                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer">
+                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer"
+                        th:text="'💼 ' + #{catalog.chip.software}">
                     💼 Software
                 </button>
                 <button @click="cat = 'cloud'"
                         :class="cat === 'cloud'
                             ? 'border-accent/60 bg-accent/15 text-indigo-300'
                             : 'border-white/[0.1] text-slate-400 hover:border-accent/40 hover:text-accent/80'"
-                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer">
+                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer"
+                        th:text="'☁️ ' + #{catalog.chip.cloud}">
                     ☁️ Cloud
                 </button>
                 <button @click="cat = 'gaming'"
                         :class="cat === 'gaming'
                             ? 'border-accent/60 bg-accent/15 text-indigo-300'
                             : 'border-white/[0.1] text-slate-400 hover:border-accent/40 hover:text-accent/80'"
-                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer">
+                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer"
+                        th:text="'🎮 ' + #{catalog.chip.gaming}">
                     🎮 Gaming
                 </button>
                 <button @click="cat = 'seguridad'"
                         :class="cat === 'seguridad'
                             ? 'border-accent/60 bg-accent/15 text-indigo-300'
                             : 'border-white/[0.1] text-slate-400 hover:border-accent/40 hover:text-accent/80'"
-                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer">
+                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer"
+                        th:text="'🔒 ' + #{catalog.chip.seguridad}">
                     🔒 Seguridad
                 </button>
                 <button @click="cat = 'noticias'"
                         :class="cat === 'noticias'
                             ? 'border-accent/60 bg-accent/15 text-indigo-300'
                             : 'border-white/[0.1] text-slate-400 hover:border-accent/40 hover:text-accent/80'"
-                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer">
+                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer"
+                        th:text="'📰 ' + #{catalog.chip.noticias}">
                     📰 Noticias
                 </button>
                 <button @click="cat = 'salud'"
                         :class="cat === 'salud'
                             ? 'border-accent/60 bg-accent/15 text-indigo-300'
                             : 'border-white/[0.1] text-slate-400 hover:border-accent/40 hover:text-accent/80'"
-                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer">
+                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer"
+                        th:text="'🏃 ' + #{catalog.chip.salud}">
                     🏃 Salud
                 </button>
                 <button @click="cat = 'desarrollo'"
                         :class="cat === 'desarrollo'
                             ? 'border-accent/60 bg-accent/15 text-indigo-300'
                             : 'border-white/[0.1] text-slate-400 hover:border-accent/40 hover:text-accent/80'"
-                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer">
+                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer"
+                        th:text="'💻 ' + #{catalog.chip.desarrollo}">
                     💻 Desarrollo
                 </button>
                 <button @click="cat = 'prueba'"
                         :class="cat === 'prueba'
                             ? 'border-orange-500/60 bg-orange-500/15 text-orange-300'
                             : 'border-white/[0.1] text-slate-400 hover:border-orange-500/40 hover:text-orange-300'"
-                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer">
+                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer"
+                        th:text="'🆓 ' + #{catalog.chip.prueba}">
                     🆓 Pruebas gratuitas
                 </button>
             </div>
@@ -165,7 +173,7 @@
                                 th:text="${item.name}"></h3>
                             <!-- Badge prueba -->
                             <span th:if="${item.trialDays != null}"
-                                  th:text="'Prueba ' + ${item.trialDays} + 'd'"
+                                  th:text="#{catalog.trial-badge(${item.trialDays})}"
                                   class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border border-orange-500/30 bg-orange-500/10 text-orange-300 flex-shrink-0">
                             </span>
                         </div>
@@ -178,11 +186,14 @@
                 <div class="flex items-baseline gap-1 mb-4">
                     <span class="text-xl font-bold text-slate-100"
                           th:text="'€' + ${#numbers.formatDecimal(item.price, 1, 2)}"></span>
-                    <span class="text-xs text-slate-500"
-                          th:text="${item.billingCycle.name() == 'MONTHLY' ? '/mes' : (item.billingCycle.name() == 'YEARLY' ? '/año' : '/sem.')}"></span>
+                    <th:block th:switch="${item.billingCycle.name()}">
+                        <span th:case="'MONTHLY'" class="text-xs text-slate-500" th:text="#{sub.billing.monthly}">/mes</span>
+                        <span th:case="'YEARLY'" class="text-xs text-slate-500" th:text="#{sub.billing.yearly}">/año</span>
+                        <span th:case="'WEEKLY'" class="text-xs text-slate-500" th:text="#{sub.billing.weekly}">/sem.</span>
+                    </th:block>
                 </div>
 
-                <!-- Spacer para empujar footer abajo -->
+                <!-- Spacer -->
                 <div class="flex-1"></div>
 
                 <!-- Footer: acciones -->
@@ -193,10 +204,10 @@
                        th:href="${item.cancelUrl}"
                        target="_blank" rel="noopener noreferrer"
                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-orange-400/80 hover:text-orange-300 hover:bg-orange-500/10 border border-orange-500/20 hover:border-orange-500/40 transition-all duration-200 no-underline">
-                        <i class="bi bi-x-circle"></i>Cancelar
+                        <i class="bi bi-x-circle"></i><span th:text="#{catalog.cancel}">Cancelar</span>
                     </a>
 
-                    <!-- Botón Añadir — deshabilitado si categoryId no está mapeado -->
+                    <!-- Botón Añadir -->
                     <th:block th:if="${categoryKeyToId[item.categoryKey] != null}">
                         <form th:action="@{/subscriptions/add-from-catalog}" method="post" class="inline">
                             <input type="hidden" name="name"         th:value="${item.name}">
@@ -211,17 +222,17 @@
                                    th:value="${T(java.time.LocalDate).now().plusDays(item.trialDays)}">
                             <button type="submit"
                                     class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-accent hover:bg-accent-hover text-white transition-all duration-200 cursor-pointer shadow-sm shadow-accent/20">
-                                <i class="bi bi-plus-lg"></i>Añadir
+                                <i class="bi bi-plus-lg"></i><span th:text="#{catalog.add}">Añadir</span>
                             </button>
                         </form>
                     </th:block>
 
-                    <!-- Categoría no mapeada: botón deshabilitado -->
+                    <!-- Categoría no mapeada -->
                     <th:block th:unless="${categoryKeyToId[item.categoryKey] != null}">
                         <button type="button" disabled
-                                title="Crea primero la categoría correspondiente en la app"
+                                th:title="#{catalog.create-cat-first}"
                                 class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-700/50 text-slate-500 border border-white/[0.06] cursor-not-allowed">
-                            <i class="bi bi-plus-lg"></i>Añadir
+                            <i class="bi bi-plus-lg"></i><span th:text="#{catalog.add}">Añadir</span>
                         </button>
                     </th:block>
                 </div>
@@ -229,14 +240,15 @@
         </div>
     </div>
 
-    <!-- Estado vacío: ningún resultado -->
+    <!-- Estado vacío -->
     <div x-show="$el.previousElementSibling.querySelectorAll('[x-show]').length === 0"
          class="glass-card rounded-xl p-16 text-center mt-4" style="display:none"
          id="noResults">
         <i class="bi bi-search text-5xl text-slate-600 block mb-4"></i>
-        <p class="text-slate-400 mb-4">No se encontraron servicios</p>
+        <p class="text-slate-400 mb-4" th:text="#{catalog.empty}">No se encontraron servicios</p>
         <button @click="search = ''; cat = ''"
-                class="px-4 py-2 border border-white/[0.1] text-slate-400 hover:text-slate-200 hover:border-white/20 rounded-lg text-sm transition-all duration-200 cursor-pointer">
+                class="px-4 py-2 border border-white/[0.1] text-slate-400 hover:text-slate-200 hover:border-white/20 rounded-lg text-sm transition-all duration-200 cursor-pointer"
+                th:text="#{catalog.clear}">
             Limpiar filtros
         </button>
     </div>
@@ -245,9 +257,7 @@
 
 <th:block layout:fragment="scripts">
 <style>
-    /* Evita flash de contenido sin filtrar antes de Alpine */
     [x-cloak] { display: none !important; }
-    /* Limitar descripción a 2 líneas */
     .line-clamp-2 {
         display: -webkit-box;
         -webkit-line-clamp: 2;

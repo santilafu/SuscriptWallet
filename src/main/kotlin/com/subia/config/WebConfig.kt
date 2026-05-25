@@ -2,33 +2,40 @@ package com.subia.config
 
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.servlet.HandlerInterceptor
+import org.springframework.web.servlet.LocaleResolver
 import org.springframework.web.servlet.ModelAndView
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
+import org.springframework.web.servlet.i18n.CookieLocaleResolver
+import org.springframework.web.servlet.i18n.LocaleChangeInterceptor
+import java.util.Locale
 
-/**
- * Configuración de Spring MVC.
- *
- * Registra un interceptor que añade [currentPath] al modelo de cada petición,
- * permitiendo que layout.html resalte el enlace de navegación activo sin
- * depender de #request (eliminado en Thymeleaf 3.1).
- */
 @Configuration
 class WebConfig : WebMvcConfigurer {
 
+    @Bean
+    fun localeResolver(): LocaleResolver {
+        val resolver = CookieLocaleResolver("lang")
+        resolver.setDefaultLocale(Locale("es"))
+        return resolver
+    }
+
+    @Bean
+    fun localeChangeInterceptor(): LocaleChangeInterceptor {
+        val interceptor = LocaleChangeInterceptor()
+        interceptor.paramName = "lang"
+        return interceptor
+    }
+
     override fun addInterceptors(registry: InterceptorRegistry) {
+        registry.addInterceptor(localeChangeInterceptor())
         registry.addInterceptor(CurrentPathInterceptor())
     }
 }
 
-/**
- * Interceptor que inyecta la ruta actual en el modelo como [currentPath].
- *
- * Se ejecuta después de que el controlador procesa la petición, justo antes
- * de que Thymeleaf renderice la plantilla.
- */
 class CurrentPathInterceptor : HandlerInterceptor {
 
     override fun postHandle(

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <title>Iniciar sesión — SusCriptWallet</title>
+    <title th:text="#{login.title} + ' — SusCriptWallet'">Iniciar sesión — SusCriptWallet</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
@@ -17,30 +17,16 @@
         body { background-color: #0a0f1e; color: #f1f5f9; font-family: 'Inter', system-ui, sans-serif; }
         .card { background-color: #111827; border: 1px solid rgba(255,255,255,0.08); border-radius: 1rem; }
         .input-field {
-            background-color: #1a2235;
-            border: 1px solid rgba(255,255,255,0.12);
-            color: #f1f5f9;
-            border-radius: 0.5rem;
-            padding: 0.625rem 0.75rem;
-            font-size: 0.875rem;
-            width: 100%;
-            box-sizing: border-box;
-            outline: none;
-            transition: border-color 0.15s, box-shadow 0.15s;
+            background-color: #1a2235; border: 1px solid rgba(255,255,255,0.12); color: #f1f5f9;
+            border-radius: 0.5rem; padding: 0.625rem 0.75rem; font-size: 0.875rem; width: 100%;
+            box-sizing: border-box; outline: none; transition: border-color 0.15s, box-shadow 0.15s;
         }
         .input-field::placeholder { color: #64748b; }
         .input-field:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
         .btn-primary {
-            background-color: #6366f1;
-            color: #fff;
-            border: none;
-            border-radius: 0.5rem;
-            padding: 0.625rem 1rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            width: 100%;
-            cursor: pointer;
-            transition: background-color 0.15s;
+            background-color: #6366f1; color: #fff; border: none; border-radius: 0.5rem;
+            padding: 0.625rem 1rem; font-size: 0.875rem; font-weight: 500; width: 100%;
+            cursor: pointer; transition: background-color 0.15s;
         }
         .btn-primary:hover { background-color: #4f46e5; }
         .label { display: block; font-size: 0.875rem; font-weight: 500; color: #cbd5e1; margin-bottom: 0.25rem; }
@@ -54,74 +40,79 @@
 
 <div class="w-full max-w-md">
 
+    <!-- Language switcher -->
+    <div class="flex justify-center gap-2 mb-4">
+        <a href="?lang=es" class="text-xs text-slate-500 hover:text-slate-200 no-underline" th:text="#{lang.es}">ES</a>
+        <span class="text-slate-600">·</span>
+        <a href="?lang=en" class="text-xs text-slate-500 hover:text-slate-200 no-underline" th:text="#{lang.en}">EN</a>
+        <span class="text-slate-600">·</span>
+        <a href="?lang=fr" class="text-xs text-slate-500 hover:text-slate-200 no-underline" th:text="#{lang.fr}">FR</a>
+    </div>
+
     <!-- Logo -->
     <div class="text-center mb-8">
         <a href="/dashboard" class="inline-flex items-center gap-2 font-bold text-2xl no-underline" style="color: inherit;">
             <i class="bi bi-credit-card-2-front text-3xl" style="color: #818cf8;"></i>
             <span style="color: #818cf8;">SusCript</span><span style="color: #f1f5f9;">Wallet</span>
         </a>
-        <p class="mt-2 text-sm" style="color: #94a3b8;">Gestión de suscripciones</p>
+        <p class="mt-2 text-sm" style="color: #94a3b8;" th:text="#{app.subtitle}">Gestión de suscripciones</p>
     </div>
 
     <!-- Card -->
     <div class="card p-8">
 
-        <h1 class="text-xl font-semibold mb-6 text-center" style="color: #f1f5f9;">Iniciar sesión</h1>
+        <h1 class="text-xl font-semibold mb-6 text-center" style="color: #f1f5f9;" th:text="#{login.title}">Iniciar sesión</h1>
 
-        <!-- Mensajes de estado -->
         <div th:if="${param.logout}" class="mb-4 rounded-lg px-4 py-3 text-sm" style="background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); color:#4ade80;">
-            <i class="bi bi-check-circle mr-1"></i> Has cerrado sesión correctamente.
+            <i class="bi bi-check-circle mr-1"></i> <span th:text="#{login.msg.logout}">Has cerrado sesión correctamente.</span>
         </div>
         <div th:if="${param.verified}" class="mb-4 rounded-lg px-4 py-3 text-sm" style="background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); color:#4ade80;">
-            <i class="bi bi-check-circle mr-1"></i> ¡Correo verificado! Ya puedes iniciar sesión.
+            <i class="bi bi-check-circle mr-1"></i> <span th:text="#{login.msg.verified}">¡Correo verificado!</span>
         </div>
         <div th:if="${param.passwordReset}" class="mb-4 rounded-lg px-4 py-3 text-sm" style="background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); color:#4ade80;">
-            <i class="bi bi-check-circle mr-1"></i> Contraseña restablecida. Inicia sesión con tu nueva contraseña.
+            <i class="bi bi-check-circle mr-1"></i> <span th:text="#{login.msg.password-reset}">Contraseña restablecida.</span>
         </div>
         <div th:if="${param.expired}" class="mb-4 rounded-lg px-4 py-3 text-sm" style="background:rgba(234,179,8,0.1); border:1px solid rgba(234,179,8,0.3); color:#facc15;">
-            <i class="bi bi-clock mr-1"></i> Tu sesión ha expirado. Por favor, inicia sesión de nuevo.
+            <i class="bi bi-clock mr-1"></i> <span th:text="#{login.msg.expired}">Tu sesión ha expirado.</span>
         </div>
         <div th:if="${param.error}" class="mb-4 rounded-lg px-4 py-3 text-sm" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171;">
-            <i class="bi bi-exclamation-triangle mr-1"></i> Correo o contraseña incorrectos.
+            <i class="bi bi-exclamation-triangle mr-1"></i> <span th:text="#{login.msg.error}">Correo o contraseña incorrectos.</span>
         </div>
         <div th:if="${param.googleFailed}" class="mb-4 rounded-lg px-4 py-3 text-sm" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171;">
-            <i class="bi bi-exclamation-triangle mr-1"></i> No se pudo autenticar con Google. Inténtalo de nuevo.
+            <i class="bi bi-exclamation-triangle mr-1"></i> <span th:text="#{login.msg.google-failed}">No se pudo autenticar con Google.</span>
         </div>
 
-        <!-- Form login -->
         <form method="POST" th:action="@{/login}" class="space-y-4">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
             <div>
-                <label for="username" class="label">Correo electrónico</label>
+                <label for="username" class="label" th:text="#{login.email}">Correo electrónico</label>
                 <input type="email" id="username" name="username" required autocomplete="email"
                        class="input-field" placeholder="tu@email.com"/>
             </div>
 
             <div>
-                <label for="password" class="label">Contraseña</label>
+                <label for="password" class="label" th:text="#{login.password}">Contraseña</label>
                 <input type="password" id="password" name="password" required autocomplete="current-password"
                        class="input-field" placeholder="••••••••••"/>
             </div>
 
             <div class="flex justify-end">
-                <a href="/forgot-password" class="link-accent text-xs">¿Olvidaste tu contraseña?</a>
+                <a href="/forgot-password" class="link-accent text-xs" th:text="#{login.forgot}">¿Olvidaste tu contraseña?</a>
             </div>
 
-            <button type="submit" class="btn-primary">Entrar</button>
+            <button type="submit" class="btn-primary" th:text="#{login.submit}">Entrar</button>
         </form>
 
-        <!-- Divisor -->
         <div class="relative my-5">
             <div class="absolute inset-0 flex items-center">
                 <div class="w-full border-t divider-line"></div>
             </div>
             <div class="relative flex justify-center">
-                <span class="divider-text">o continúa con</span>
+                <span class="divider-text" th:text="#{login.or-continue}">o continúa con</span>
             </div>
         </div>
 
-        <!-- Google One Tap -->
         <div id="g_id_onload"
              th:attr="data-client_id=${@environment.getProperty('app.google.client-id','')}"
              data-callback="handleGoogleCredential"
@@ -136,15 +127,13 @@
              data-width="100%">
         </div>
 
-        <!-- Enlace registro -->
         <p class="mt-6 text-center text-sm" style="color: #94a3b8;">
-            ¿No tienes cuenta?
-            <a href="/register" class="link-accent">Crear cuenta</a>
+            <span th:text="#{login.no-account}">¿No tienes cuenta?</span>
+            <a href="/register" class="link-accent" th:text="#{login.create}">Crear cuenta</a>
         </p>
     </div>
 </div>
 
-<!-- Google GSI script -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
     function handleGoogleCredential(response) {

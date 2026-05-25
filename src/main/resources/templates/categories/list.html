@@ -1,12 +1,8 @@
 <!DOCTYPE html>
-<!--
-  Lista de categorías — Tailwind CSS dark mode
-  Grid de cards con borde izquierdo coloreado y color picker.
--->
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout}">
-<head><title>Categorías</title></head>
+<head><title th:text="#{cat.title}">Categorías</title></head>
 <body>
 <div layout:fragment="content">
 
@@ -22,14 +18,14 @@
         <div>
             <h1 class="text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
                 <i class="bi bi-tags text-accent"></i>
-                Categorías
+                <span th:text="#{cat.title}">Categorías</span>
             </h1>
             <p class="text-sm text-slate-500 mt-0.5"
-               th:text="${categories.size() + ' categorías configuradas'}"></p>
+               th:text="#{cat.count(${categories.size()})}"></p>
         </div>
         <a th:href="@{/categories/new}"
            class="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-all duration-200 no-underline shadow-lg shadow-accent/20">
-            <i class="bi bi-plus-lg"></i>Nueva
+            <i class="bi bi-plus-lg"></i><span th:text="#{cat.new}">Nueva</span>
         </a>
     </div>
 
@@ -45,16 +41,11 @@
                  th:style="'border-left: 4px solid ' + ${cat.color}">
 
                 <div class="p-5 flex-1">
-                    <!-- Icono en círculo con color de la categoría -->
                     <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4"
                          th:style="'background:' + ${cat.color} + '22;'">
                         <span th:text="${cat.icon.isEmpty() ? '📁' : cat.icon}"></span>
                     </div>
-
-                    <!-- Nombre -->
                     <div class="font-bold text-slate-100 text-base mb-2" th:text="${cat.name}"></div>
-
-                    <!-- Color swatch + código hex -->
                     <div class="flex items-center gap-2">
                         <span class="w-4 h-4 rounded flex-shrink-0"
                               th:style="'background:' + ${cat.color}"></span>
@@ -66,10 +57,10 @@
                 <div class="px-5 py-3 border-t border-white/[0.05] flex items-center gap-2">
                     <a th:href="@{/categories/{id}/edit(id=${cat.id})}"
                        class="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/[0.15] transition-all duration-200 no-underline">
-                        <i class="bi bi-pencil"></i>Editar
+                        <i class="bi bi-pencil"></i><span th:text="#{cat.action.edit}">Editar</span>
                     </a>
                     <form th:action="@{/categories/{id}/delete(id=${cat.id})}" method="post"
-                          onsubmit="return confirm('¿Eliminar esta categoría?')">
+                          th:attr="onsubmit='return confirm(\'' + #{cat.action.delete-confirm} + '\')'">
                         <button type="submit"
                                 class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-400/70 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 transition-all duration-200 cursor-pointer">
                             <i class="bi bi-trash"></i>
@@ -84,10 +75,10 @@
     <div th:if="${categories.isEmpty()}"
          class="glass-card rounded-xl p-16 text-center">
         <i class="bi bi-tags text-5xl text-slate-600 block mb-4"></i>
-        <p class="text-slate-400 mb-4">No hay ninguna categoría todavía</p>
+        <p class="text-slate-400 mb-4" th:text="#{cat.empty}">No hay ninguna categoría todavía</p>
         <a th:href="@{/categories/new}"
            class="inline-flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-all duration-200 no-underline">
-            <i class="bi bi-plus-lg"></i>Crear la primera
+            <i class="bi bi-plus-lg"></i><span th:text="#{cat.empty.add}">Crear la primera</span>
         </a>
     </div>
 

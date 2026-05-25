@@ -15,13 +15,13 @@
         <div>
             <h1 class="text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
                 <i class="bi bi-speedometer2 text-accent"></i>
-                Dashboard
+                <span th:text="#{dashboard.title}">Dashboard</span>
             </h1>
-            <p class="text-sm text-slate-500 mt-0.5">Resumen de tus suscripciones activas</p>
+            <p class="text-sm text-slate-500 mt-0.5" th:text="#{dashboard.subtitle}">Resumen de tus suscripciones activas</p>
         </div>
         <a th:href="@{/subscriptions/new}"
            class="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-all duration-200 no-underline shadow-lg shadow-accent/20">
-            <i class="bi bi-plus-lg"></i>Nueva suscripción
+            <i class="bi bi-plus-lg"></i><span th:text="#{dashboard.new}">Nueva suscripción</span>
         </a>
     </div>
 
@@ -30,7 +30,7 @@
          class="flex items-start gap-3 p-4 mb-6 rounded-xl border border-red-500/30 bg-red-500/10 text-red-300">
         <i class="bi bi-exclamation-triangle-fill text-lg mt-0.5 flex-shrink-0 text-red-400"></i>
         <div>
-            <p class="font-semibold text-red-300 text-sm mb-0.5">Renovaciones en los próximos 7 días</p>
+            <p class="font-semibold text-red-300 text-sm mb-0.5" th:text="#{dashboard.alert.renewals}">Renovaciones en los próximos 7 días</p>
             <p class="text-sm text-red-400/80 m-0">
                 <span th:each="s, i : ${dashboard.alertRenewals}">
                     <span th:text="${s.name}"></span>
@@ -45,7 +45,7 @@
          class="flex items-start gap-3 p-4 mb-6 rounded-xl border border-orange-500/30 bg-orange-500/10">
         <i class="bi bi-hourglass-split text-lg mt-0.5 flex-shrink-0 text-orange-400"></i>
         <div>
-            <p class="font-semibold text-orange-300 text-sm mb-1">Pruebas gratuitas por vencer</p>
+            <p class="font-semibold text-orange-300 text-sm mb-1" th:text="#{dashboard.alert.trials}">Pruebas gratuitas por vencer</p>
             <p class="text-sm text-orange-400/80 m-0">
                 <span th:each="s, i : ${dashboard.alertTrials}">
                     <span th:text="${s.name}"></span>
@@ -65,7 +65,7 @@
                 <i class="bi bi-calendar-month text-accent"></i>
             </div>
             <div>
-                <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1">Gasto mensual</p>
+                <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1" th:text="#{dashboard.stat.monthly}">Gasto mensual</p>
                 <div th:if="${dashboard.monthlyByCurrency.size() <= 1}">
                     <p class="text-3xl font-bold tracking-tight text-slate-100"
                        th:text="'€' + ${#numbers.formatDecimal(dashboard.totalMonthly, 1, 2)}"></p>
@@ -85,7 +85,7 @@
                 <i class="bi bi-calendar-check" style="color:#22c55e;"></i>
             </div>
             <div>
-                <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1">Gasto anual</p>
+                <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1" th:text="#{dashboard.stat.yearly}">Gasto anual</p>
                 <div th:if="${dashboard.yearlyByCurrency.size() <= 1}">
                     <p class="text-3xl font-bold tracking-tight text-slate-100"
                        th:text="'€' + ${#numbers.formatDecimal(dashboard.totalYearly, 1, 2)}"></p>
@@ -105,7 +105,7 @@
                 <i class="bi bi-clock-history" style="color:#f59e0b;"></i>
             </div>
             <div>
-                <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1">Renov. en 30 días</p>
+                <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1" th:text="#{dashboard.stat.renewals}">Renov. en 30 días</p>
                 <p class="text-3xl font-bold tracking-tight text-slate-100"
                    th:text="${dashboard.upcomingRenewals.size()}"></p>
             </div>
@@ -118,7 +118,7 @@
                 <i class="bi bi-bell" style="color:#ef4444;"></i>
             </div>
             <div>
-                <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1">Alertas (7 días)</p>
+                <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1" th:text="#{dashboard.stat.alerts}">Alertas (7 días)</p>
                 <p class="text-3xl font-bold tracking-tight text-slate-100"
                    th:text="${dashboard.alertRenewals.size()}"></p>
             </div>
@@ -132,7 +132,7 @@
         <div class="lg:col-span-2 glass-card rounded-xl overflow-hidden">
             <div class="px-5 py-4 border-b border-white/[0.06] flex items-center gap-2">
                 <i class="bi bi-pie-chart text-accent"></i>
-                <span class="text-sm font-semibold text-slate-200">Gasto por categoría</span>
+                <span class="text-sm font-semibold text-slate-200" th:text="#{dashboard.chart.category}">Gasto por categoría</span>
             </div>
             <div class="p-5">
                 <!-- Gráfico solo si hay datos -->
@@ -160,9 +160,10 @@
                 <div th:if="${dashboard.spendByCategory.isEmpty()}"
                      class="flex flex-col items-center justify-center py-12 text-slate-500">
                     <i class="bi bi-pie-chart text-4xl mb-3 opacity-30"></i>
-                    <p class="text-sm mb-4">Sin suscripciones activas todavía</p>
+                    <p class="text-sm mb-4" th:text="#{dashboard.empty.chart}">Sin suscripciones activas todavía</p>
                     <a th:href="@{/subscriptions/new}"
-                       class="px-4 py-2 bg-accent hover:bg-accent-hover text-white text-xs font-medium rounded-lg transition-all duration-200 no-underline">
+                       class="px-4 py-2 bg-accent hover:bg-accent-hover text-white text-xs font-medium rounded-lg transition-all duration-200 no-underline"
+                       th:text="#{dashboard.empty.chart.add}">
                         Añadir la primera
                     </a>
                 </div>
@@ -173,16 +174,16 @@
         <div class="lg:col-span-3 glass-card rounded-xl overflow-hidden">
             <div class="px-5 py-4 border-b border-white/[0.06] flex items-center gap-2">
                 <i class="bi bi-calendar-event text-accent"></i>
-                <span class="text-sm font-semibold text-slate-200">Próximas renovaciones (30 días)</span>
+                <span class="text-sm font-semibold text-slate-200" th:text="#{dashboard.table.title}">Próximas renovaciones (30 días)</span>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>
                     <tr class="border-b border-white/[0.06]">
-                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Suscripción</th>
-                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Categoría</th>
-                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Fecha</th>
-                        <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Precio</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500" th:text="#{dashboard.table.subscription}">Suscripción</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500" th:text="#{dashboard.table.category}">Categoría</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500" th:text="#{dashboard.table.date}">Fecha</th>
+                        <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500" th:text="#{dashboard.table.price}">Precio</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -221,7 +222,7 @@
                         <td colspan="4">
                             <div class="flex flex-col items-center py-12 text-slate-500">
                                 <i class="bi bi-calendar-check text-4xl mb-3 opacity-30"></i>
-                                <p class="text-sm">Sin renovaciones próximas</p>
+                                <p class="text-sm" th:text="#{dashboard.empty.renewals}">Sin renovaciones próximas</p>
                             </div>
                         </td>
                     </tr>
@@ -236,7 +237,7 @@
         <div class="glass-card rounded-xl overflow-hidden">
             <div class="px-5 py-4 border-b border-white/[0.06] flex items-center gap-2">
                 <i class="bi bi-bar-chart text-accent"></i>
-                <span class="text-sm font-semibold text-slate-200">Top 5 gastos mensuales</span>
+                <span class="text-sm font-semibold text-slate-200" th:text="#{dashboard.chart.top5}">Top 5 gastos mensuales</span>
             </div>
             <div class="p-5">
                 <div class="flex justify-center">

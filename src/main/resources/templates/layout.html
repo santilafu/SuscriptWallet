@@ -186,7 +186,7 @@
                        : ' text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]'"
                    th:style="${currentPath == '/dashboard'} ? 'color:#818cf8;' : ''">
                     <i class="bi bi-speedometer2"></i>
-                    <span>Dashboard</span>
+                    <span th:text="#{nav.dashboard}">Dashboard</span>
                 </a>
                 <a th:href="@{/subscriptions}"
                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline"
@@ -195,7 +195,7 @@
                        : ' text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]'"
                    th:style="${currentPath != null and currentPath.startsWith('/subscriptions')} ? 'color:#818cf8;' : ''">
                     <i class="bi bi-list-ul"></i>
-                    <span>Suscripciones</span>
+                    <span th:text="#{nav.subscriptions}">Suscripciones</span>
                 </a>
                 <a th:href="@{/categories}"
                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline"
@@ -204,7 +204,7 @@
                        : ' text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]'"
                    th:style="${currentPath != null and currentPath.startsWith('/categories')} ? 'color:#818cf8;' : ''">
                     <i class="bi bi-tags"></i>
-                    <span>Categorías</span>
+                    <span th:text="#{nav.categories}">Categorías</span>
                 </a>
                 <a th:href="@{/catalog-browser}"
                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline"
@@ -213,10 +213,9 @@
                        : ' text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]'"
                    th:style="${currentPath != null and currentPath.startsWith('/catalog-browser')} ? 'color:#818cf8;' : ''">
                     <i class="bi bi-grid-3x3-gap"></i>
-                    <span>Catálogo</span>
+                    <span th:text="#{nav.catalog}">Catálogo</span>
                 </a>
 
-                <!-- Ajustes -->
                 <a th:href="@{/settings}"
                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline"
                    th:classappend="${currentPath != null and currentPath.startsWith('/settings')}
@@ -224,23 +223,28 @@
                        : ' text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]'"
                    th:style="${currentPath != null and currentPath.startsWith('/settings')} ? 'color:#818cf8;' : ''">
                     <i class="bi bi-gear"></i>
-                    <span>Ajustes</span>
+                    <span th:text="#{nav.settings}">Ajustes</span>
                 </a>
 
-                <!-- Eliminar cuenta -->
+                <!-- Language selector -->
+                <div class="flex items-center gap-0.5 ml-1 border-l border-white/[0.08] pl-2">
+                    <a th:href="@{''(lang='es')}" class="px-1.5 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]" th:text="#{lang.es}">ES</a>
+                    <a th:href="@{''(lang='en')}" class="px-1.5 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]" th:text="#{lang.en}">EN</a>
+                    <a th:href="@{''(lang='fr')}" class="px-1.5 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]" th:text="#{lang.fr}">FR</a>
+                </div>
+
                 <a th:href="@{/delete-account}"
                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline text-slate-400 hover:text-red-400 hover:bg-red-500/[0.06]">
                     <i class="bi bi-person-x"></i>
-                    <span class="hidden sm:inline">Eliminar cuenta</span>
+                    <span class="hidden sm:inline" th:text="#{nav.delete-account}">Eliminar cuenta</span>
                 </a>
 
-                <!-- Logout -->
                 <form method="POST" th:action="@{/logout}" class="ml-2">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                     <button type="submit"
                             class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]">
                         <i class="bi bi-box-arrow-right"></i>
-                        <span>Cerrar sesión</span>
+                        <span th:text="#{nav.logout}">Cerrar sesión</span>
                     </button>
                 </form>
             </div>
@@ -258,7 +262,7 @@
 <footer class="border-t border-white/[0.06] mt-auto py-5">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500">
         <i class="bi bi-credit-card-2-front mr-1"></i>
-        SusCriptWallet &mdash; Gestión de suscripciones · Precios actualizados a marzo 2026
+        <span th:text="#{footer.text}">SusCriptWallet — Gestión de suscripciones</span>
     </div>
 </footer>
 
