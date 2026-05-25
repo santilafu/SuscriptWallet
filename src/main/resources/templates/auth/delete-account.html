@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title th:text="#{delete.title} + ' — SusCriptWallet'">Eliminar cuenta — SusCriptWallet</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" type="image/x-icon" href="/favicon.ico"/>
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/>
@@ -13,12 +14,17 @@
     <div class="w-full max-w-2xl">
 
         <!-- Language switcher -->
-        <div class="flex justify-center gap-2 mb-4">
-            <a href="?lang=es" class="text-xs text-gray-500 hover:text-gray-200 no-underline">ES</a>
-            <span class="text-gray-600">·</span>
-            <a href="?lang=en" class="text-xs text-gray-500 hover:text-gray-200 no-underline">EN</a>
-            <span class="text-gray-600">·</span>
-            <a href="?lang=fr" class="text-xs text-gray-500 hover:text-gray-200 no-underline">FR</a>
+        <div class="flex items-center justify-center gap-1 mb-4">
+            <i class="bi bi-globe2 text-gray-500 text-xs mr-1"></i>
+            <a href="?lang=es" class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
+               th:classappend="${#locale.language == 'es'} ? 'text-indigo-300' : 'text-gray-500 hover:text-gray-200'"
+               th:styleappend="${#locale.language == 'es'} ? 'background:rgba(99,102,241,0.2);' : ''">ES</a>
+            <a href="?lang=en" class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
+               th:classappend="${#locale.language == 'en'} ? 'text-indigo-300' : 'text-gray-500 hover:text-gray-200'"
+               th:styleappend="${#locale.language == 'en'} ? 'background:rgba(99,102,241,0.2);' : ''">EN</a>
+            <a href="?lang=fr" class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
+               th:classappend="${#locale.language == 'fr'} ? 'text-indigo-300' : 'text-gray-500 hover:text-gray-200'"
+               th:styleappend="${#locale.language == 'fr'} ? 'background:rgba(99,102,241,0.2);' : ''">FR</a>
         </div>
 
         <!-- Cabecera -->

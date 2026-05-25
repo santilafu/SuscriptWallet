@@ -4,7 +4,7 @@
 -->
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      class="dark">
+      th:lang="${#locale.language}" class="dark">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -174,7 +174,7 @@
             <a th:href="@{/dashboard}"
                class="flex items-center gap-2 font-bold text-lg tracking-tight no-underline" style="color:inherit;">
                 <i class="bi bi-credit-card-2-front text-xl" style="color:#818cf8;"></i>
-                <span style="color:#818cf8;">SusCript</span><span style="color:#f1f5f9;">Wallet</span>
+                <span translate="no" style="color:#818cf8;">SusCript</span><span translate="no" style="color:#f1f5f9;">Wallet</span>
             </a>
 
             <!-- Nav links -->
@@ -227,10 +227,20 @@
                 </a>
 
                 <!-- Language selector -->
-                <div class="flex items-center gap-0.5 ml-1 border-l border-white/[0.08] pl-2">
-                    <a th:href="@{''(lang='es')}" class="px-1.5 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]" th:text="#{lang.es}">ES</a>
-                    <a th:href="@{''(lang='en')}" class="px-1.5 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]" th:text="#{lang.en}">EN</a>
-                    <a th:href="@{''(lang='fr')}" class="px-1.5 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]" th:text="#{lang.fr}">FR</a>
+                <div class="flex items-center gap-0.5 ml-2 px-2 py-1 rounded-lg border border-white/[0.08]" style="background:rgba(255,255,255,0.03);">
+                    <i class="bi bi-globe2 text-slate-500 text-xs mr-0.5"></i>
+                    <a th:href="@{''(lang='es')}"
+                       class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
+                       th:classappend="${#locale.language == 'es'} ? 'text-indigo-300' : 'text-slate-500 hover:text-slate-200'"
+                       th:styleappend="${#locale.language == 'es'} ? 'background:rgba(99,102,241,0.2);' : ''">ES</a>
+                    <a th:href="@{''(lang='en')}"
+                       class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
+                       th:classappend="${#locale.language == 'en'} ? 'text-indigo-300' : 'text-slate-500 hover:text-slate-200'"
+                       th:styleappend="${#locale.language == 'en'} ? 'background:rgba(99,102,241,0.2);' : ''">EN</a>
+                    <a th:href="@{''(lang='fr')}"
+                       class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
+                       th:classappend="${#locale.language == 'fr'} ? 'text-indigo-300' : 'text-slate-500 hover:text-slate-200'"
+                       th:styleappend="${#locale.language == 'fr'} ? 'background:rgba(99,102,241,0.2);' : ''">FR</a>
                 </div>
 
                 <a th:href="@{/delete-account}"
