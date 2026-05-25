@@ -5,6 +5,7 @@ import com.subia.model.Subscription
 import com.subia.repository.UserRepository
 import com.subia.service.CategoryService
 import com.subia.service.SubscriptionService
+import jakarta.servlet.http.HttpServletResponse
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -234,6 +235,45 @@ class SubscriptionController(
      * crear un objeto con campos obligatorios (como category y billingCycle) sin valor.
      * El template Thymeleaf distingue entre mapa y objeto con instanceof.
      */
+    @GetMapping("/export")
+    fun exportCsv(
+        @AuthenticationPrincipal userDetails: UserDetails,
+        response: HttpServletResponse
+    ) {
+        val userId = resolveUserId(userDetails)
+        val subs = subscriptionService.findAll(userId)
+
+        response.contentType = "text/csv; charset=UTF-8"
+        response.setHeader("Content-Disposition", "attachment; filename=\"suscripciones.csv\"")
+
+        val writer = response.writer
+        writer.println("Nombre,Descripcion,Precio,Moneda,Ciclo,Fecha renovacion,Categoria,Activa,Prueba gratuita,Fin prueba,Notas")
+        for (s in subs) {
+            val line = listOf(
+                csvEscape(s.name),
+                csvEscape(s.description),
+                s.price.toPlainString(),
+                s.currency,
+                s.billingCycle.name,
+                s.renewalDate.toString(),
+                csvEscape(s.category.name),
+                if (s.active) "Sí" else "No",
+                if (s.isTrial) "Sí" else "No",
+                s.trialEndsAt?.toString() ?: "",
+                csvEscape(s.notes)
+            ).joinToString(",")
+            writer.println(line)
+        }
+        writer.flush()
+    }
+
+    private fun csvEscape(value: String): String {
+        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+            return "\"" + value.replace("\"", "\"\"") + "\""
+        }
+        return value
+    }
+
     private fun emptyForm() = mapOf(
         "id"          to 0L,
         "name"        to "",

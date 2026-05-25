@@ -58,7 +58,7 @@
     <!-- ── Tarjetas de estadísticas ──────────────────────────────────── -->
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
 
-        <!-- Gasto mensual -->
+        <!-- Gasto mensual (multi-divisa) -->
         <div class="glass-card rounded-xl p-5 flex items-center gap-4">
             <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
                  style="background:rgba(99,102,241,0.15);">
@@ -66,21 +66,35 @@
             </div>
             <div>
                 <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1">Gasto mensual</p>
-                <p class="text-3xl font-bold tracking-tight text-slate-100"
-                   th:text="'€' + ${#numbers.formatDecimal(dashboard.totalMonthly, 1, 2)}"></p>
+                <div th:if="${dashboard.monthlyByCurrency.size() <= 1}">
+                    <p class="text-3xl font-bold tracking-tight text-slate-100"
+                       th:text="'€' + ${#numbers.formatDecimal(dashboard.totalMonthly, 1, 2)}"></p>
+                </div>
+                <div th:if="${dashboard.monthlyByCurrency.size() > 1}">
+                    <p th:each="entry : ${dashboard.monthlyByCurrency}"
+                       class="text-xl font-bold tracking-tight text-slate-100 leading-tight"
+                       th:text="${entry.key} + ' ' + ${#numbers.formatDecimal(entry.value, 1, 2)}"></p>
+                </div>
             </div>
         </div>
 
-        <!-- Gasto anual -->
+        <!-- Gasto anual (multi-divisa) -->
         <div class="glass-card rounded-xl p-5 flex items-center gap-4">
-            <div class="w-12 h-12 rounded-xl flex items-center justify-content-center text-xl flex-shrink-0"
-                 style="background:rgba(34,197,94,0.15); display:flex; align-items:center; justify-content:center;">
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+                 style="background:rgba(34,197,94,0.15);">
                 <i class="bi bi-calendar-check" style="color:#22c55e;"></i>
             </div>
             <div>
                 <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1">Gasto anual</p>
-                <p class="text-3xl font-bold tracking-tight text-slate-100"
-                   th:text="'€' + ${#numbers.formatDecimal(dashboard.totalYearly, 1, 2)}"></p>
+                <div th:if="${dashboard.yearlyByCurrency.size() <= 1}">
+                    <p class="text-3xl font-bold tracking-tight text-slate-100"
+                       th:text="'€' + ${#numbers.formatDecimal(dashboard.totalYearly, 1, 2)}"></p>
+                </div>
+                <div th:if="${dashboard.yearlyByCurrency.size() > 1}">
+                    <p th:each="entry : ${dashboard.yearlyByCurrency}"
+                       class="text-xl font-bold tracking-tight text-slate-100 leading-tight"
+                       th:text="${entry.key} + ' ' + ${#numbers.formatDecimal(entry.value, 1, 2)}"></p>
+                </div>
             </div>
         </div>
 
@@ -217,6 +231,21 @@
         </div>
     </div>
 
+    <!-- ── Top 5 gastos mensuales (gráfico de barras) ───────────────── -->
+    <div th:if="${!dashboard.topSubscriptions.isEmpty()}" class="mt-6">
+        <div class="glass-card rounded-xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-white/[0.06] flex items-center gap-2">
+                <i class="bi bi-bar-chart text-accent"></i>
+                <span class="text-sm font-semibold text-slate-200">Top 5 gastos mensuales</span>
+            </div>
+            <div class="p-5">
+                <div class="flex justify-center">
+                    <canvas id="topChart" style="max-height:260px; width:100%;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <!-- ── Script del gráfico de dona ─────────────────────────────────────── -->
@@ -267,6 +296,67 @@
                             return ' €' + ctx.parsed.toFixed(2);
                         }
                     }
+                }
+            }
+        }
+    });
+}());
+
+// ── Top 5 bar chart ──
+(function () {
+    'use strict';
+    const canvas = document.getElementById('topChart');
+    if (!canvas) return;
+
+    const names   = [];
+    const amounts = [];
+    const colors  = [];
+    const palette = ['#6366f1','#22c55e','#f59e0b','#ef4444','#06b6d4'];
+
+    /*[# th:each="s, i : ${dashboard.topSubscriptions}"]*/
+    names.push(/*[[${s.name}]]*/ '');
+    amounts.push(/*[[${s.price}]]*/ 0);
+    colors.push(palette[/*[[${i.index}]]*/ 0] || '#94a3b8');
+    /*[/]*/
+
+    new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: names,
+            datasets: [{
+                data: amounts,
+                backgroundColor: colors,
+                borderRadius: 6,
+                borderSkipped: false,
+                barPercentage: 0.6
+            }]
+        },
+        options: {
+            responsive: true,
+            indexAxis: 'y',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1a2235',
+                    borderColor: 'rgba(255,255,255,0.08)',
+                    borderWidth: 1,
+                    titleColor: '#f1f5f9',
+                    bodyColor: '#94a3b8',
+                    callbacks: {
+                        label: function(ctx) {
+                            return ' €' + ctx.parsed.x.toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    ticks: { color: '#64748b', callback: function(v) { return '€' + v; } }
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: { color: '#cbd5e1', font: { weight: 500 } }
                 }
             }
         }

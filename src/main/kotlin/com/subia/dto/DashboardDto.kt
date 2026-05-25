@@ -27,5 +27,8 @@ data class DashboardDto(
     val spendByCategory: Map<Category, BigDecimal>,
     val upcomingRenewals: List<Subscription>,
     val alertRenewals: List<Subscription>,
-    val alertTrials: List<Subscription> = emptyList()
+    val alertTrials: List<Subscription> = emptyList(),
+    val monthlyByCurrency: Map<String, BigDecimal> = emptyMap(),
+    val yearlyByCurrency: Map<String, BigDecimal> = emptyMap(),
+    val topSubscriptions: List<Subscription> = emptyList()
 )

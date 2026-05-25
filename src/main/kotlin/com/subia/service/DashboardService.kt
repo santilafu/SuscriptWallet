@@ -51,6 +51,18 @@ class DashboardService(private val repo: SubscriptionRepository) {
             .sortedByDescending { it.value }
             .associate { it.key to it.value }
 
+        val monthlyByCurrency = paidActive
+            .groupBy { it.currency }
+            .mapValues { (_, subs) -> subs.sumOf { toMonthly(it) }.setScale(2, RoundingMode.HALF_UP) }
+
+        val yearlyByCurrency = paidActive
+            .groupBy { it.currency }
+            .mapValues { (_, subs) -> subs.sumOf { toYearly(it) }.setScale(2, RoundingMode.HALF_UP) }
+
+        val topSubscriptions = paidActive
+            .sortedByDescending { toMonthly(it) }
+            .take(5)
+
         val upcomingRenewals = repo.findActiveRenewingBetweenForUser(userId, today, today.plusDays(30))
             .sortedBy { it.renewalDate }
 
@@ -60,7 +72,11 @@ class DashboardService(private val repo: SubscriptionRepository) {
         val alertTrials = repo.findActiveTrialsExpiringBetweenForUser(userId, today, today.plusDays(7))
             .sortedBy { it.trialEndsAt }
 
-        return DashboardDto(totalMonthly, totalYearly, spendByCategory, upcomingRenewals, alertRenewals, alertTrials)
+        return DashboardDto(
+            totalMonthly, totalYearly, spendByCategory,
+            upcomingRenewals, alertRenewals, alertTrials,
+            monthlyByCurrency, yearlyByCurrency, topSubscriptions
+        )
     }
 
     /**
