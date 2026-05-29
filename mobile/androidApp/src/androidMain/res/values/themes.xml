@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.SubIA" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Debe heredar de Theme.AppCompat: MainActivity extiende AppCompatActivity
+         (necesario para AppCompatDelegate del selector de idioma i18n). Con un tema
+         del framework (android:Theme.Material) la app crashea al iniciar con
+         "You need to use a Theme.AppCompat theme". -->
+    <style name="Theme.SubIA" parent="Theme.AppCompat.Light.NoActionBar" />
 </resources>
