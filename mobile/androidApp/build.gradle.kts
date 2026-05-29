@@ -27,8 +27,8 @@ android {
         applicationId = "com.subia.android"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 25
-        versionName = "2.15.0"
+        versionCode = 26
+        versionName = "2.16.0"
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
         buildConfigField("String", "SUBIA_GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
     }
@@ -97,6 +97,9 @@ kotlin {
             implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
             implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
             implementation("androidx.appcompat:appcompat:1.7.0")
+            // Widget de pantalla de inicio (Jetpack Glance)
+            implementation("androidx.glance:glance-appwidget:1.1.1")
+            implementation("androidx.glance:glance-material3:1.1.1")
         }
     }
 }

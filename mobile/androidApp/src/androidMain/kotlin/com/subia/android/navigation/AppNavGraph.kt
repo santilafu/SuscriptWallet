@@ -11,3 +11,5 @@ import kotlinx.serialization.Serializable
 @Serializable object CategoriasRoute
 @Serializable object CatalogoRoute
 @Serializable object SettingsRoute
+@Serializable object ResumenAnualRoute
+@Serializable object OnboardingRoute

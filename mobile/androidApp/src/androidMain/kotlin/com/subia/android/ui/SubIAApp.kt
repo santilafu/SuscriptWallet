@@ -59,6 +59,8 @@ import kotlinx.serialization.json.Json
 import com.subia.android.navigation.CategoriasRoute
 import com.subia.android.navigation.DashboardRoute
 import com.subia.android.navigation.LoginRoute
+import com.subia.android.navigation.OnboardingRoute
+import com.subia.android.navigation.ResumenAnualRoute
 import com.subia.android.navigation.SettingsRoute
 import com.subia.android.navigation.SuscripcionDetalleRoute
 import com.subia.android.navigation.SuscripcionFormRoute
@@ -67,7 +69,10 @@ import com.subia.android.ui.screens.CatalogoScreen
 import com.subia.android.ui.screens.CategoriasScreen
 import com.subia.android.ui.screens.DashboardScreen
 import com.subia.android.ui.screens.LoginScreen
+import com.subia.android.ui.screens.OnboardingScreen
+import com.subia.android.ui.screens.ResumenAnualScreen
 import com.subia.android.ui.screens.SettingsScreen
+import com.subia.android.util.OnboardingPrefs
 import com.subia.android.ui.screens.SuscripcionDetalleScreen
 import com.subia.android.ui.screens.SuscripcionFormScreen
 import com.subia.android.ui.screens.SuscripcionesScreen
@@ -90,6 +95,7 @@ fun SubIAApp(
     startDestination: Any,
     authViewModel: AuthViewModel
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -145,6 +151,13 @@ fun SubIAApp(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.resumen_anual_title)) },
+                                onClick = {
+                                    navController.navigate(ResumenAnualRoute)
+                                    showMenu = false
+                                }
+                            )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.settings)) },
                                 onClick = {
@@ -211,7 +224,9 @@ fun SubIAApp(
             composable<LoginRoute> {
                 LoginScreen(
                     onLoginSuccess = {
-                        navController.navigate(DashboardRoute) {
+                        // Primer login: mostrar onboarding una sola vez; después, directo al dashboard.
+                        val destino = if (OnboardingPrefs.isCompleted(context)) DashboardRoute else OnboardingRoute
+                        navController.navigate(destino) {
                             popUpTo(LoginRoute) { inclusive = true }
                         }
                     },
@@ -256,6 +271,17 @@ fun SubIAApp(
             composable<CategoriasRoute> { CategoriasScreen() }
             composable<SettingsRoute> {
                 SettingsScreen(onBack = { navController.popBackStack() })
+            }
+            composable<ResumenAnualRoute> {
+                ResumenAnualScreen(onBack = { navController.popBackStack() })
+            }
+            composable<OnboardingRoute> {
+                OnboardingScreen(onFinish = {
+                    OnboardingPrefs.setCompleted(context)
+                    navController.navigate(DashboardRoute) {
+                        popUpTo(OnboardingRoute) { inclusive = true }
+                    }
+                })
             }
             composable<CatalogoRoute> {
                 CatalogoScreen(

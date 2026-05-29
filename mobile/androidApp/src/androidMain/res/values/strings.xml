@@ -175,4 +175,28 @@
     <!-- Estados de error y vacío -->
     <string name="error_title">Algo ha ido mal</string>
     <string name="add_first_subscription">Añadir mi primera suscripción</string>
+    <!-- Resumen anual compartible -->
+    <string name="resumen_anual_title">Tu año en suscripciones</string>
+    <string name="resumen_anual_subtitle">Esto es lo que suman tus suscripciones</string>
+    <string name="resumen_anual_total_label">Gasto anual</string>
+    <string name="resumen_anual_subs">%d suscripciones activas</string>
+    <string name="resumen_anual_top_service">Tu servicio más caro</string>
+    <string name="resumen_anual_top_category">Donde más gastas</string>
+    <string name="resumen_anual_share">Compartir mi resumen</string>
+    <string name="resumen_anual_brand">Calculado con SuscriptWallet</string>
+    <string name="resumen_anual_empty">Añade alguna suscripción para ver tu resumen.</string>
+    <!-- Onboarding -->
+    <string name="onb_skip">Saltar</string>
+    <string name="onb_next">Siguiente</string>
+    <string name="onb_start">Empezar</string>
+    <string name="onb1_title">Todas tus suscripciones, en un sitio</string>
+    <string name="onb1_desc">Netflix, Spotify, HBO, ChatGPT… Añádelas en segundos desde un catálogo con más de 320 servicios.</string>
+    <string name="onb2_title">Descubre cuánto gastas de verdad</string>
+    <string name="onb2_desc">Tu gasto mensual y anual, claro y a la vista. El número te va a sorprender.</string>
+    <string name="onb3_title">Nunca más un cobro por sorpresa</string>
+    <string name="onb3_desc">Te avisamos antes de cada renovación y antes de que acabe una prueba gratis, para cancelar a tiempo.</string>
+    <!-- Widget -->
+    <string name="widget_monthly_label">Gasto este mes</string>
+    <string name="widget_next">Próxima: %1$s · %2$d días</string>
+    <string name="widget_no_data">Abre la app para empezar</string>
 </resources>
