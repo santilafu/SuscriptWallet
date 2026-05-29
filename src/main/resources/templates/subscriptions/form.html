@@ -181,9 +181,14 @@
 
                     <div>
                         <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5" th:text="#{form.field.currency}">Moneda</label>
-                        <input type="hidden" name="currency" id="fieldCurrency" value="EUR"/>
-                        <input type="text" value="EUR €" disabled
-                               class="w-full px-3 py-2.5 rounded-lg text-sm cursor-not-allowed opacity-50"/>
+                        <select name="currency" id="fieldCurrency"
+                                class="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none transition-all duration-200">
+                            <option th:each="cur : ${currencies}"
+                                    th:value="${cur.key}"
+                                    th:text="${cur.key + '  ' + cur.value}"
+                                    th:selected="${(sub instanceof T(com.subia.model.Subscription) ? sub.currency : 'EUR') == cur.key}">
+                            </option>
+                        </select>
                     </div>
 
                     <div>

@@ -30,5 +30,11 @@ data class DashboardDto(
     val alertTrials: List<Subscription> = emptyList(),
     val monthlyByCurrency: Map<String, BigDecimal> = emptyMap(),
     val yearlyByCurrency: Map<String, BigDecimal> = emptyMap(),
-    val topSubscriptions: List<Subscription> = emptyList()
+    val topSubscriptions: List<Subscription> = emptyList(),
+    /** Divisa actualmente seleccionada para los totales y gráficos (ISO 4217). */
+    val selectedCurrency: String = "EUR",
+    /** Símbolo de [selectedCurrency] para mostrar en la UI. */
+    val currencySymbol: String = "€",
+    /** Divisas distintas presentes en las suscripciones activas, para el selector. */
+    val availableCurrencies: List<String> = emptyList()
 )

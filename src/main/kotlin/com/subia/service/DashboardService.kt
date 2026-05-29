@@ -34,32 +34,49 @@ class DashboardService(private val repo: SubscriptionRepository) {
 
     /**
      * Construye y devuelve el [DashboardDto] filtrado por userId.
+     *
+     * Los totales y gráficos se calculan sobre UNA sola divisa para no mezclar importes
+     * de monedas distintas (no se aplica conversión de tasas). La divisa se elige así:
+     * la pedida en [selectedCurrency] si existe entre las del usuario; si no, la de mayor
+     * gasto mensual; y como último recurso, EUR.
      */
-    fun getDashboard(userId: Long): DashboardDto {
+    fun getDashboard(userId: Long, selectedCurrency: String? = null): DashboardDto {
         val active = repo.findByUserIdAndActiveTrue(userId)
         val today = LocalDate.now()
 
         val paidActive = active.filter { !it.isTrial }
 
-        val totalMonthly = paidActive.sumOf { toMonthly(it) }.setScale(2, RoundingMode.HALF_UP)
-        val totalYearly  = paidActive.sumOf { toYearly(it) }.setScale(2, RoundingMode.HALF_UP)
+        // Divisas presentes, ordenadas según el catálogo soportado (resto al final)
+        val present = paidActive.map { it.currency }.toSet()
+        val availableCurrencies = com.subia.model.Currencies.SUPPORTED.keys
+            .filter { it in present }
+            .plus(present.filter { it !in com.subia.model.Currencies.SUPPORTED.keys }.sorted())
 
-        val spendByCategory: Map<Category, BigDecimal> = paidActive
+        // Gasto mensual por divisa (para elegir la predeterminada y mantener compatibilidad)
+        val monthlyByCurrency = paidActive
+            .groupBy { it.currency }
+            .mapValues { (_, subs) -> subs.sumOf { toMonthly(it) }.setScale(2, RoundingMode.HALF_UP) }
+        val yearlyByCurrency = paidActive
+            .groupBy { it.currency }
+            .mapValues { (_, subs) -> subs.sumOf { toYearly(it) }.setScale(2, RoundingMode.HALF_UP) }
+
+        val chosen = selectedCurrency?.takeIf { it in present }
+            ?: monthlyByCurrency.maxByOrNull { it.value }?.key
+            ?: "EUR"
+
+        val inCurrency = paidActive.filter { it.currency == chosen }
+
+        val totalMonthly = inCurrency.sumOf { toMonthly(it) }.setScale(2, RoundingMode.HALF_UP)
+        val totalYearly  = inCurrency.sumOf { toYearly(it) }.setScale(2, RoundingMode.HALF_UP)
+
+        val spendByCategory: Map<Category, BigDecimal> = inCurrency
             .groupBy { it.category }
             .mapValues { (_, subs) -> subs.sumOf { toMonthly(it) }.setScale(2, RoundingMode.HALF_UP) }
             .entries
             .sortedByDescending { it.value }
             .associate { it.key to it.value }
 
-        val monthlyByCurrency = paidActive
-            .groupBy { it.currency }
-            .mapValues { (_, subs) -> subs.sumOf { toMonthly(it) }.setScale(2, RoundingMode.HALF_UP) }
-
-        val yearlyByCurrency = paidActive
-            .groupBy { it.currency }
-            .mapValues { (_, subs) -> subs.sumOf { toYearly(it) }.setScale(2, RoundingMode.HALF_UP) }
-
-        val topSubscriptions = paidActive
+        val topSubscriptions = inCurrency
             .sortedByDescending { toMonthly(it) }
             .take(5)
 
@@ -75,7 +92,10 @@ class DashboardService(private val repo: SubscriptionRepository) {
         return DashboardDto(
             totalMonthly, totalYearly, spendByCategory,
             upcomingRenewals, alertRenewals, alertTrials,
-            monthlyByCurrency, yearlyByCurrency, topSubscriptions
+            monthlyByCurrency, yearlyByCurrency, topSubscriptions,
+            selectedCurrency = chosen,
+            currencySymbol = com.subia.model.Currencies.symbol(chosen),
+            availableCurrencies = availableCurrencies
         )
     }
 

@@ -38,11 +38,16 @@ class DashboardController(
      * Pasa el [com.subia.dto.DashboardDto] al template bajo la clave "dashboard".
      */
     @GetMapping("/dashboard")
-    fun dashboard(@AuthenticationPrincipal userDetails: UserDetails, model: Model): String {
+    fun dashboard(
+        @AuthenticationPrincipal userDetails: UserDetails,
+        @org.springframework.web.bind.annotation.RequestParam(required = false) currency: String?,
+        model: Model
+    ): String {
         val userId = userRepository.findByEmail(userDetails.username)?.id
             ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado")
-        model.addAttribute("dashboard", dashboardService.getDashboard(userId))
+        model.addAttribute("dashboard", dashboardService.getDashboard(userId, currency))
         model.addAttribute("serviceDomains", catalogService.getDomainMap())
+        model.addAttribute("currencySymbols", com.subia.model.Currencies.SUPPORTED)
         return "dashboard"
     }
 }

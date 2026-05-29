@@ -67,6 +67,7 @@ class SubscriptionController(
     fun newForm(model: Model): String {
         model.addAttribute("categories", categoryService.findAll())
         model.addAttribute("billingCycles", BillingCycle.values())
+        model.addAttribute("currencies", com.subia.model.Currencies.SUPPORTED)
         model.addAttribute("sub", emptyForm())
         return "subscriptions/form"
     }
@@ -122,6 +123,7 @@ class SubscriptionController(
         model.addAttribute("sub", subscriptionService.findById(id, userId))
         model.addAttribute("categories", categoryService.findAll())
         model.addAttribute("billingCycles", BillingCycle.values())
+        model.addAttribute("currencies", com.subia.model.Currencies.SUPPORTED)
         return "subscriptions/form"
     }
 

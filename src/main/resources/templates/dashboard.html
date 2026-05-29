@@ -25,6 +25,20 @@
         </a>
     </div>
 
+    <!-- ── Selector de divisa (solo si hay más de una) ─────────────────── -->
+    <div th:if="${dashboard.availableCurrencies.size() > 1}" class="flex items-center gap-2.5 mb-6 flex-wrap">
+        <span class="text-xs font-semibold uppercase tracking-wider flex items-center gap-1" style="color:#4a5a78;">
+            <i class="bi bi-coin"></i>
+        </span>
+        <a th:each="c : ${dashboard.availableCurrencies}"
+           th:href="@{/dashboard(currency=${c})}"
+           class="px-3 py-1 rounded-full text-xs font-semibold no-underline transition-all"
+           th:styleappend="${c == dashboard.selectedCurrency}
+               ? 'background:rgba(99,102,241,0.15);color:#a5b4fc;border:1px solid rgba(99,102,241,0.5);'
+               : 'background:transparent;color:#64748b;border:1px solid rgba(255,255,255,0.08);'"
+           th:text="${c + (currencySymbols.containsKey(c) ? ' ' + currencySymbols.get(c) : '')}">EUR €</a>
+    </div>
+
     <!-- ── Alerta de renovaciones urgentes (7 días) ───────────────────── -->
     <div th:if="${!dashboard.alertRenewals.isEmpty()}"
          class="flex items-start gap-3 p-4 mb-6 rounded-xl"
@@ -71,15 +85,8 @@
             </div>
             <div class="min-w-0">
                 <p class="text-[0.65rem] font-semibold uppercase tracking-[0.08em] mb-1.5" style="color:#4a5a78;" th:text="#{dashboard.stat.monthly}">Gasto mensual</p>
-                <div th:if="${dashboard.monthlyByCurrency.size() <= 1}">
-                    <p class="text-2xl font-bold text-slate-100 tabular-num leading-none" style="letter-spacing:-0.03em;"
-                       th:text="'€' + ${#numbers.formatDecimal(dashboard.totalMonthly, 1, 2)}"></p>
-                </div>
-                <div th:if="${dashboard.monthlyByCurrency.size() > 1}">
-                    <p th:each="entry : ${dashboard.monthlyByCurrency}"
-                       class="text-lg font-bold text-slate-100 tabular-num leading-tight" style="letter-spacing:-0.02em;"
-                       th:text="${entry.key} + ' ' + ${#numbers.formatDecimal(entry.value, 1, 2)}"></p>
-                </div>
+                <p class="text-2xl font-bold text-slate-100 tabular-num leading-none" style="letter-spacing:-0.03em;"
+                   th:text="${dashboard.currencySymbol} + ${#numbers.formatDecimal(dashboard.totalMonthly, 1, 2)}"></p>
             </div>
         </div>
 
@@ -90,15 +97,8 @@
             </div>
             <div class="min-w-0">
                 <p class="text-[0.65rem] font-semibold uppercase tracking-[0.08em] mb-1.5" style="color:#4a5a78;" th:text="#{dashboard.stat.yearly}">Gasto anual</p>
-                <div th:if="${dashboard.yearlyByCurrency.size() <= 1}">
-                    <p class="text-2xl font-bold text-slate-100 tabular-num leading-none" style="letter-spacing:-0.03em;"
-                       th:text="'€' + ${#numbers.formatDecimal(dashboard.totalYearly, 1, 2)}"></p>
-                </div>
-                <div th:if="${dashboard.yearlyByCurrency.size() > 1}">
-                    <p th:each="entry : ${dashboard.yearlyByCurrency}"
-                       class="text-lg font-bold text-slate-100 tabular-num leading-tight" style="letter-spacing:-0.02em;"
-                       th:text="${entry.key} + ' ' + ${#numbers.formatDecimal(entry.value, 1, 2)}"></p>
-                </div>
+                <p class="text-2xl font-bold text-slate-100 tabular-num leading-none" style="letter-spacing:-0.03em;"
+                   th:text="${dashboard.currencySymbol} + ${#numbers.formatDecimal(dashboard.totalYearly, 1, 2)}"></p>
             </div>
         </div>
 
@@ -151,7 +151,7 @@
                                       th:text="${entry.key.icon + ' ' + entry.key.name}"></span>
                             </div>
                             <span class="text-xs font-semibold tabular-num ml-3 flex-shrink-0" style="color:#cbd5e1;"
-                                  th:text="'€' + ${#numbers.formatDecimal(entry.value, 1, 2)}"></span>
+                                  th:text="${dashboard.currencySymbol} + ${#numbers.formatDecimal(entry.value, 1, 2)}"></span>
                         </div>
                     </div>
                 </div>
@@ -213,7 +213,7 @@
                         <td class="px-5 py-3.5 tabular-num" style="color:#64748b;font-size:0.8125rem;"
                             th:text="${#temporals.format(s.renewalDate, 'dd MMM yyyy')}"></td>
                         <td class="px-5 py-3.5 text-right font-semibold tabular-num" style="color:#dde4f0;"
-                            th:text="'€' + ${#numbers.formatDecimal(s.price, 1, 2)}"></td>
+                            th:text="${(currencySymbols.containsKey(s.currency) ? currencySymbols.get(s.currency) : s.currency)} + ${#numbers.formatDecimal(s.price, 1, 2)}"></td>
                     </tr>
                     <tr th:if="${dashboard.upcomingRenewals.isEmpty()}">
                         <td colspan="4">
@@ -250,6 +250,8 @@
 <th:block layout:fragment="scripts">
 <script th:inline="javascript">
 /*<![CDATA[*/
+var currencySym = /*[[${dashboard.currencySymbol}]]*/ '€';
+
 (function () {
     'use strict';
 
@@ -294,7 +296,7 @@
                     cornerRadius: 8,
                     callbacks: {
                         label: function(ctx) {
-                            return '  €' + ctx.parsed.toFixed(2);
+                            return '  ' + currencySym + ctx.parsed.toFixed(2);
                         }
                     }
                 }
@@ -348,7 +350,7 @@
                     cornerRadius: 8,
                     callbacks: {
                         label: function(ctx) {
-                            return '  €' + ctx.parsed.x.toFixed(2);
+                            return '  ' + currencySym + ctx.parsed.x.toFixed(2);
                         }
                     }
                 }
@@ -356,7 +358,7 @@
             scales: {
                 x: {
                     grid: { color: 'rgba(255,255,255,0.04)' },
-                    ticks: { color: '#3d4d66', font: { size: 11 }, callback: function(v) { return '€' + v; } }
+                    ticks: { color: '#3d4d66', font: { size: 11 }, callback: function(v) { return currencySym + v; } }
                 },
                 y: {
                     grid: { display: false },
