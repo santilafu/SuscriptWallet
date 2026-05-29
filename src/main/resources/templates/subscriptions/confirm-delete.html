@@ -28,6 +28,7 @@
 
             <div class="px-8 py-5 border-t border-white/[0.06] flex gap-3 justify-center">
                 <form th:action="@{/subscriptions/{id}/delete(id=${sub.id})}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                     <button type="submit"
                             class="flex items-center gap-2 px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer">
                         <i class="bi bi-trash"></i><span th:text="#{sub.delete.yes}">Sí, eliminar</span>

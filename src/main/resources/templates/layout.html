@@ -10,10 +10,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title layout:title-pattern="$CONTENT_TITLE — SusCriptWallet">SusCriptWallet</title>
 
-    <!-- Inter font -->
+    <!-- Tipografía: DM Sans (cuerpo) + DM Mono (monoespaciado) -->
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 
     <!-- Favicons -->
     <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}"/>
@@ -31,16 +31,33 @@
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+                    fontFamily: {
+                        sans: ['DM Sans', 'system-ui', 'sans-serif'],
+                        mono: ['DM Mono', 'ui-monospace', 'monospace']
+                    },
                     colors: {
-                        base:     '#0a0f1e',
-                        surface:  '#111827',
-                        elevated: '#1a2235',
-                        hover:    '#1e2d45',
+                        base:     '#08091a',
+                        surface:  '#0f1629',
+                        elevated: '#182038',
+                        hover:    '#1e2a47',
                         accent: {
                             DEFAULT: '#6366f1',
-                            hover:   '#4f46e5'
+                            hover:   '#4f46e5',
+                            muted:   '#818cf8'
                         }
+                    },
+                    boxShadow: {
+                        'card':      '0 1px 0 0 rgba(255,255,255,0.04), 0 4px 16px rgba(0,0,0,0.5)',
+                        'card-hover':'0 1px 0 0 rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.6)',
+                        'accent-glow':'0 0 0 1px rgba(99,102,241,0.4), 0 4px 20px rgba(99,102,241,0.2)'
+                    },
+                    borderRadius: {
+                        'xl2': '1rem',
+                        'xl3': '1.25rem'
+                    },
+                    transitionTimingFunction: {
+                        'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
+                        'spring': 'cubic-bezier(0.34, 1.2, 0.64, 1)'
                     }
                 }
             }
@@ -54,101 +71,175 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 
     <style>
-        /* ── Variables CSS (usadas como fallback si Tailwind custom no carga) ── */
+        /* ── Variables CSS ───────────────────────────────────────────────────── */
         :root {
             --accent:         #6366f1;
             --accent-hover:   #4f46e5;
             --accent-light:   #818cf8;
-            --surface:        #111827;
-            --elevated:       #1a2235;
-            --base:           #0a0f1e;
+            --surface:        #0f1629;
+            --elevated:       #182038;
+            --base:           #08091a;
+            --border-subtle:  rgba(255,255,255,0.07);
+            --border-mid:     rgba(255,255,255,0.12);
+            --text-muted:     #64748b;
+            --text-secondary: #94a3b8;
+            --easing-smooth:  cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* ── Base: fondo y texto siempre oscuro ─────────────────────────────── */
-        html, body { background-color: var(--base) !important; color: #f1f5f9 !important; }
+        /* ── Base ───────────────────────────────────────────────────────────── */
+        html, body {
+            background-color: var(--base) !important;
+            color: #e8edf5 !important;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
 
-        /* ── Fallbacks para custom Tailwind classes ──────────────────────────── */
-        /* Backgrounds */
+        /* ── Fallbacks custom Tailwind ───────────────────────────────────────── */
         .bg-base     { background-color: var(--base) !important; }
         .bg-surface  { background-color: var(--surface) !important; }
         .bg-elevated { background-color: var(--elevated) !important; }
-        .bg-hover    { background-color: #1e2d45 !important; }
+        .bg-hover    { background-color: #1e2a47 !important; }
         .bg-accent   { background-color: var(--accent) !important; }
         .hover\:bg-accent-hover:hover { background-color: var(--accent-hover) !important; }
 
-        /* Opacity variants de accent */
         .bg-accent\/10  { background-color: rgba(99,102,241,0.10) !important; }
         .bg-accent\/15  { background-color: rgba(99,102,241,0.15) !important; }
         .bg-accent\/20  { background-color: rgba(99,102,241,0.20) !important; }
 
-        /* Text */
         .text-accent { color: var(--accent-light) !important; }
-        .hover\:text-accent\/80:hover { color: rgba(99,102,241,0.8) !important; }
+        .hover\:text-accent\/80:hover { color: rgba(129,140,248,0.8) !important; }
 
-        /* Borders */
         .border-accent      { border-color: var(--accent) !important; }
         .border-accent\/60  { border-color: rgba(99,102,241,0.60) !important; }
         .border-accent\/40  { border-color: rgba(99,102,241,0.40) !important; }
         .hover\:border-accent\/40:hover { border-color: rgba(99,102,241,0.40) !important; }
 
-        /* Focus states */
         .focus\:border-accent\/60:focus { border-color: rgba(99,102,241,0.60) !important; }
-        .focus\:ring-accent\/30:focus   { box-shadow: 0 0 0 3px rgba(99,102,241,0.30) !important; }
+        .focus\:ring-accent\/30:focus   { box-shadow: 0 0 0 3px rgba(99,102,241,0.25) !important; }
 
-        /* ── Elementos de formulario siempre oscuros ─────────────────────────── */
+        /* ── Campos de formulario ────────────────────────────────────────────── */
         input:not([type=checkbox]):not([type=radio]):not([type=color]),
         select,
         textarea {
             background-color: var(--elevated) !important;
-            color: #f1f5f9 !important;
-            border-color: rgba(255,255,255,0.12) !important;
+            color: #e8edf5 !important;
+            border-color: var(--border-mid) !important;
+            transition: border-color 0.15s var(--easing-smooth),
+                        box-shadow 0.15s var(--easing-smooth) !important;
         }
-        input::placeholder, textarea::placeholder { color: #64748b !important; }
+        input::placeholder, textarea::placeholder { color: #4a5568 !important; }
         input:disabled, select:disabled, textarea:disabled {
-            background-color: rgba(26,34,53,0.5) !important;
-            color: #64748b !important;
+            background-color: rgba(24,32,56,0.5) !important;
+            color: var(--text-muted) !important;
+            opacity: 0.6 !important;
         }
         input:focus:not([type=checkbox]):not([type=radio]),
         select:focus, textarea:focus {
             border-color: var(--accent) !important;
-            box-shadow: 0 0 0 3px rgba(99,102,241,0.25) !important;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.22) !important;
             outline: none !important;
         }
-
-        /* Date picker icon visible en dark */
         input[type=date]::-webkit-calendar-picker-indicator {
-            filter: invert(1) opacity(0.5);
+            filter: invert(1) opacity(0.4);
         }
         input[type=color] { padding: 2px; cursor: pointer; }
 
-        /* ── Glassmorphism stat cards ─────────────────────────────────────────── */
+        /* ── Glass card — refinado ───────────────────────────────────────────── */
         .glass-card {
-            background: rgba(255,255,255,0.03) !important;
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255,255,255,0.08);
-            box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 4px 24px rgba(0,0,0,0.4);
+            background: linear-gradient(
+                145deg,
+                rgba(255,255,255,0.035) 0%,
+                rgba(255,255,255,0.018) 100%
+            ) !important;
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-subtle);
+            box-shadow:
+                0 1px 0 0 rgba(255,255,255,0.05),
+                0 4px 20px rgba(0,0,0,0.5),
+                inset 0 1px 0 rgba(255,255,255,0.04);
+            transition: box-shadow 0.2s var(--easing-smooth),
+                        transform 0.2s var(--easing-smooth),
+                        border-color 0.2s var(--easing-smooth);
+        }
+        .glass-card:hover {
+            border-color: rgba(255,255,255,0.10);
+            box-shadow:
+                0 1px 0 0 rgba(255,255,255,0.07),
+                0 8px 32px rgba(0,0,0,0.6),
+                inset 0 1px 0 rgba(255,255,255,0.06);
         }
 
-        /* ── Animación de entrada ─────────────────────────────────────────────── */
+        /* ── Animación de entrada ────────────────────────────────────────────── */
         @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; transform: translateY(8px); }
             to   { opacity: 1; transform: translateY(0); }
         }
-        .page-content { animation: fadeInUp 0.25s ease both; }
+        .page-content {
+            animation: fadeInUp 0.22s cubic-bezier(0.4, 0, 0.2, 1) both;
+        }
 
-        /* ── Scrollbar dark ───────────────────────────────────────────────────── */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: var(--base); }
-        ::-webkit-scrollbar-thumb { background: #1e2d45; border-radius: 3px; }
+        /* ── Scrollbar refinada ──────────────────────────────────────────────── */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99,102,241,0.2);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99,102,241,0.35);
+        }
 
-        /* ── Botones accent (clase helper) ───────────────────────────────────── */
+        /* ── Botones accent ──────────────────────────────────────────────────── */
         a.bg-accent, button.bg-accent {
             color: #fff !important;
+            box-shadow: 0 1px 8px rgba(99,102,241,0.35);
+            transition: background-color 0.15s var(--easing-smooth),
+                        box-shadow 0.15s var(--easing-smooth),
+                        transform 0.1s var(--easing-smooth) !important;
         }
         a.bg-accent:hover, button.bg-accent:hover,
         a.hover\:bg-accent-hover:hover, button.hover\:bg-accent-hover:hover {
             background-color: var(--accent-hover) !important;
+            box-shadow: 0 2px 12px rgba(99,102,241,0.5) !important;
             color: #fff !important;
+        }
+        a.bg-accent:active, button.bg-accent:active {
+            transform: scale(0.975) !important;
+        }
+
+        /* ── Navbar links ────────────────────────────────────────────────────── */
+        nav a, nav button {
+            transition: color 0.15s var(--easing-smooth),
+                        background 0.15s var(--easing-smooth) !important;
+        }
+
+        /* ── Tabla rows ──────────────────────────────────────────────────────── */
+        tbody tr {
+            transition: background-color 0.12s var(--easing-smooth);
+        }
+
+        /* ── Separador fino entre secciones ──────────────────────────────────── */
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                var(--border-subtle) 20%,
+                var(--border-subtle) 80%,
+                transparent 100%
+            );
+        }
+
+        /* ── Tipografía: tracking ajustado ───────────────────────────────────── */
+        h1 { letter-spacing: -0.025em; }
+        h2 { letter-spacing: -0.015em; }
+
+        /* ── Etiquetas de campo en formularios ───────────────────────────────── */
+        .field-label {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            color: var(--text-muted);
         }
 
         /* Alpine.js cloak */
@@ -161,99 +252,108 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
+
+        /* ── Números/importes: monoespaciado ─────────────────────────────────── */
+        .tabular-num {
+            font-family: 'DM Mono', ui-monospace, monospace;
+            font-variant-numeric: tabular-nums;
+        }
     </style>
 </head>
 <body class="bg-base text-slate-100 font-sans antialiased min-h-screen flex flex-col">
 
 <!-- ── Navbar ─────────────────────────────────────────────────────────── -->
-<nav class="sticky top-0 z-50 border-b border-white/[0.08]" style="background:#0a0f1e;">
+<nav class="sticky top-0 z-50" style="background:rgba(8,9,26,0.92); backdrop-filter:blur(16px); border-bottom:1px solid rgba(255,255,255,0.06);">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-14">
+        <div class="flex items-center justify-between h-[3.5rem]">
 
             <!-- Logo -->
             <a th:href="@{/dashboard}"
-               class="flex items-center gap-2 font-bold text-lg tracking-tight no-underline" style="color:inherit;">
-                <i class="bi bi-credit-card-2-front text-xl" style="color:#818cf8;"></i>
-                <span translate="no" style="color:#818cf8;">SusCript</span><span translate="no" style="color:#f1f5f9;">Wallet</span>
+               class="flex items-center gap-2.5 font-bold text-base tracking-tight no-underline group" style="color:inherit;">
+                <div style="width:28px;height:28px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);border-radius:8px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;">
+                    <i class="bi bi-credit-card-2-front text-sm" style="color:#818cf8;"></i>
+                </div>
+                <span translate="no" style="color:#818cf8;letter-spacing:-0.01em;">SusCript</span><span translate="no" style="color:#e8edf5;letter-spacing:-0.01em;">Wallet</span>
             </a>
 
             <!-- Nav links -->
-            <div class="flex items-center gap-1">
+            <div class="flex items-center gap-0.5">
                 <a th:href="@{/dashboard}"
-                   class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline"
+                   class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium no-underline"
                    th:classappend="${currentPath == '/dashboard'}
-                       ? ' border-b-2 border-accent bg-accent/10'
-                       : ' text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]'"
+                       ? ' bg-accent/10'
+                       : ' text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'"
                    th:style="${currentPath == '/dashboard'} ? 'color:#818cf8;' : ''">
-                    <i class="bi bi-speedometer2"></i>
+                    <i class="bi bi-speedometer2 text-xs"></i>
                     <span th:text="#{nav.dashboard}">Dashboard</span>
                 </a>
                 <a th:href="@{/subscriptions}"
-                   class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline"
+                   class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium no-underline"
                    th:classappend="${currentPath != null and currentPath.startsWith('/subscriptions')}
-                       ? ' border-b-2 border-accent bg-accent/10'
-                       : ' text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]'"
+                       ? ' bg-accent/10'
+                       : ' text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'"
                    th:style="${currentPath != null and currentPath.startsWith('/subscriptions')} ? 'color:#818cf8;' : ''">
-                    <i class="bi bi-list-ul"></i>
+                    <i class="bi bi-list-ul text-xs"></i>
                     <span th:text="#{nav.subscriptions}">Suscripciones</span>
                 </a>
                 <a th:href="@{/categories}"
-                   class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline"
+                   class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium no-underline"
                    th:classappend="${currentPath != null and currentPath.startsWith('/categories')}
-                       ? ' border-b-2 border-accent bg-accent/10'
-                       : ' text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]'"
+                       ? ' bg-accent/10'
+                       : ' text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'"
                    th:style="${currentPath != null and currentPath.startsWith('/categories')} ? 'color:#818cf8;' : ''">
-                    <i class="bi bi-tags"></i>
+                    <i class="bi bi-tags text-xs"></i>
                     <span th:text="#{nav.categories}">Categorías</span>
                 </a>
                 <a th:href="@{/catalog-browser}"
-                   class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline"
+                   class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium no-underline"
                    th:classappend="${currentPath != null and currentPath.startsWith('/catalog-browser')}
-                       ? ' border-b-2 border-accent bg-accent/10'
-                       : ' text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]'"
+                       ? ' bg-accent/10'
+                       : ' text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'"
                    th:style="${currentPath != null and currentPath.startsWith('/catalog-browser')} ? 'color:#818cf8;' : ''">
-                    <i class="bi bi-grid-3x3-gap"></i>
+                    <i class="bi bi-grid-3x3-gap text-xs"></i>
                     <span th:text="#{nav.catalog}">Catálogo</span>
                 </a>
-
                 <a th:href="@{/settings}"
-                   class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline"
+                   class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium no-underline"
                    th:classappend="${currentPath != null and currentPath.startsWith('/settings')}
-                       ? ' border-b-2 border-accent bg-accent/10'
-                       : ' text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]'"
+                       ? ' bg-accent/10'
+                       : ' text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'"
                    th:style="${currentPath != null and currentPath.startsWith('/settings')} ? 'color:#818cf8;' : ''">
-                    <i class="bi bi-gear"></i>
+                    <i class="bi bi-gear text-xs"></i>
                     <span th:text="#{nav.settings}">Ajustes</span>
                 </a>
 
+                <!-- Separador visual -->
+                <div style="width:1px;height:20px;background:rgba(255,255,255,0.08);margin:0 6px;"></div>
+
                 <!-- Language selector -->
-                <div class="flex items-center gap-0.5 ml-2 px-2 py-1 rounded-lg border border-white/[0.08]" style="background:rgba(255,255,255,0.03);">
-                    <i class="bi bi-globe2 text-slate-500 text-xs mr-0.5"></i>
+                <div class="flex items-center gap-0.5 px-1.5 py-1 rounded-lg" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);">
                     <a th:href="@{''(lang='es')}"
-                       class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
-                       th:classappend="${#locale.language == 'es'} ? 'text-indigo-300' : 'text-slate-500 hover:text-slate-200'"
-                       th:styleappend="${#locale.language == 'es'} ? 'background:rgba(99,102,241,0.2);' : ''">ES</a>
+                       class="px-1.5 py-0.5 rounded text-xs font-semibold no-underline tracking-wide transition-all"
+                       th:classappend="${#locale.language == 'es'} ? 'text-indigo-300' : 'text-slate-600 hover:text-slate-300'"
+                       th:styleappend="${#locale.language == 'es'} ? 'background:rgba(99,102,241,0.18);' : ''">ES</a>
                     <a th:href="@{''(lang='en')}"
-                       class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
-                       th:classappend="${#locale.language == 'en'} ? 'text-indigo-300' : 'text-slate-500 hover:text-slate-200'"
-                       th:styleappend="${#locale.language == 'en'} ? 'background:rgba(99,102,241,0.2);' : ''">EN</a>
+                       class="px-1.5 py-0.5 rounded text-xs font-semibold no-underline tracking-wide transition-all"
+                       th:classappend="${#locale.language == 'en'} ? 'text-indigo-300' : 'text-slate-600 hover:text-slate-300'"
+                       th:styleappend="${#locale.language == 'en'} ? 'background:rgba(99,102,241,0.18);' : ''">EN</a>
                     <a th:href="@{''(lang='fr')}"
-                       class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
-                       th:classappend="${#locale.language == 'fr'} ? 'text-indigo-300' : 'text-slate-500 hover:text-slate-200'"
-                       th:styleappend="${#locale.language == 'fr'} ? 'background:rgba(99,102,241,0.2);' : ''">FR</a>
+                       class="px-1.5 py-0.5 rounded text-xs font-semibold no-underline tracking-wide transition-all"
+                       th:classappend="${#locale.language == 'fr'} ? 'text-indigo-300' : 'text-slate-600 hover:text-slate-300'"
+                       th:styleappend="${#locale.language == 'fr'} ? 'background:rgba(99,102,241,0.18);' : ''">FR</a>
                 </div>
 
                 <a th:href="@{/delete-account}"
-                   class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline text-slate-400 hover:text-red-400 hover:bg-red-500/[0.06]">
-                    <i class="bi bi-person-x"></i>
+                   class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium no-underline text-slate-500 hover:text-red-400 hover:bg-red-500/[0.06] transition-all">
+                    <i class="bi bi-person-x text-xs"></i>
                     <span class="hidden sm:inline" th:text="#{nav.delete-account}">Eliminar cuenta</span>
                 </a>
 
-                <form method="POST" th:action="@{/logout}" class="ml-2">
+                <form method="POST" th:action="@{/logout}" class="ml-0.5">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                     <button type="submit"
-                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-100 hover:bg-white/[0.06]">
-                        <i class="bi bi-box-arrow-right"></i>
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]">
+                        <i class="bi bi-box-arrow-right text-xs"></i>
                         <span th:text="#{nav.logout}">Cerrar sesión</span>
                     </button>
                 </form>
@@ -263,15 +363,14 @@
 </nav>
 
 <!-- ── Contenido principal ────────────────────────────────────────────── -->
-<main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 page-content"
+<main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 page-content"
       layout:fragment="content">
     <!-- Cada página inyecta aquí su contenido -->
 </main>
 
 <!-- ── Footer ─────────────────────────────────────────────────────────── -->
-<footer class="border-t border-white/[0.06] mt-auto py-5">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500">
-        <i class="bi bi-credit-card-2-front mr-1"></i>
+<footer class="mt-auto py-6" style="border-top:1px solid rgba(255,255,255,0.05);">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs" style="color:#3d4d66;">
         <span th:text="#{footer.text}">SusCriptWallet — Gestión de suscripciones</span>
     </div>
 </footer>

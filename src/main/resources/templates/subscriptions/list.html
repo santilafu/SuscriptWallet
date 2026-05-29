@@ -18,43 +18,45 @@
          }
      }">
 
-    <div class="flex items-center justify-between mb-8">
+    <div class="flex items-center justify-between mb-10">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
-                <i class="bi bi-list-ul text-accent"></i>
+            <h1 class="text-[1.6rem] font-bold text-slate-100 leading-tight" style="letter-spacing:-0.03em;">
                 <span th:text="#{sub.title}">Suscripciones</span>
             </h1>
-            <p class="text-sm text-slate-500 mt-0.5">
+            <p class="text-sm mt-1" style="color:#4a5a78;">
                 <span id="resultCount" th:text="${subscriptions.size()}"></span> <span th:text="#{nav.subscriptions}">suscripciones</span>
             </p>
         </div>
         <a th:href="@{/subscriptions/new}"
-           class="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-all duration-200 no-underline shadow-lg shadow-accent/20">
-            <i class="bi bi-plus-lg"></i><span th:text="#{sub.new}">Nueva suscripción</span>
+           class="flex items-center gap-2 px-4 py-2.5 bg-accent hover:bg-accent-hover text-white text-sm font-semibold rounded-xl transition-all no-underline"
+           style="box-shadow:0 1px 8px rgba(99,102,241,0.4),0 0 0 1px rgba(99,102,241,0.2);">
+            <i class="bi bi-plus-lg text-xs"></i><span th:text="#{sub.new}">Nueva suscripción</span>
         </a>
     </div>
 
     <div class="glass-card rounded-xl p-4 mb-6">
         <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
             <div class="relative flex-shrink-0 w-full sm:w-72">
-                <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none text-sm"></i>
+                <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style="color:#3d4d66;font-size:0.75rem;"></i>
                 <input type="text" id="searchInput"
                        x-model="search"
                        @input="applyFilters()"
-                       class="w-full pl-9 pr-4 py-2 bg-elevated border border-white/[0.08] rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-all duration-200"
+                       class="w-full pl-9 pr-4 py-2.5 rounded-lg text-sm focus:outline-none transition-all"
+                       style="background:#182038;border:1px solid rgba(255,255,255,0.09);color:#dde4f0;"
                        th:placeholder="#{sub.search}"
                        autocomplete="off"/>
             </div>
-            <div class="flex flex-wrap gap-2">
-                <button class="filter-pill px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer active"
+            <div class="flex flex-wrap gap-1.5">
+                <button class="filter-pill px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer active"
                         data-category=""
                         onclick="setCategory(this, '')"
-                        style="border-color:rgba(99,102,241,0.6); background:rgba(99,102,241,0.15); color:#a5b4fc;"
+                        style="border-color:rgba(99,102,241,0.5);background:rgba(99,102,241,0.12);color:#a5b4fc;"
                         th:text="#{sub.filter.all}">
                     Todas
                 </button>
                 <button th:each="cat : ${categories}"
-                        class="filter-pill px-3 py-1 rounded-full text-xs font-medium border border-white/[0.1] text-slate-400 hover:border-accent/40 hover:text-accent/80 transition-all duration-200 cursor-pointer"
+                        class="filter-pill px-3 py-1.5 rounded-lg text-xs font-semibold border cursor-pointer transition-all"
+                        style="border-color:rgba(255,255,255,0.08);background:transparent;color:#64748b;"
                         th:data-category="${cat.name}"
                         th:text="${cat.icon + ' ' + cat.name}"
                         onclick="setCategory(this, this.getAttribute('data-category'))">
@@ -69,15 +71,20 @@
         <div th:each="s : ${subscriptions}"
              th:data-name="${#strings.toLowerCase(s.name + ' ' + s.description + ' ' + s.notes)}"
              th:data-category="${s.category.name}"
-             class="sub-card glass-card rounded-xl overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/30">
+             class="sub-card glass-card rounded-xl overflow-hidden flex flex-col"
+             style="transition:transform 0.18s cubic-bezier(0.4,0,0.2,1),box-shadow 0.18s cubic-bezier(0.4,0,0.2,1);"
+             onmouseenter="this.style.transform='translateY(-2px)'"
+             onmouseleave="this.style.transform='translateY(0)'">
 
             <div class="flex flex-col flex-1"
-                 th:style="'border-left: 4px solid ' + ${s.category.color}">
+                 th:style="'border-left: 3px solid ' + ${s.category.color}">
 
                 <div class="p-5 flex-1">
-                    <div class="flex items-start justify-between gap-3 mb-3">
+                    <!-- Cabecera de la tarjeta -->
+                    <div class="flex items-start justify-between gap-3 mb-4">
                         <div class="flex items-center gap-3 min-w-0">
-                            <div class="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden border border-white/[0.06]" style="background-color:#1a2235;">
+                            <div class="w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center overflow-hidden"
+                                 style="background:#182038;border:1px solid rgba(255,255,255,0.07);">
                                 <img th:if="${serviceDomains[s.name] != null}"
                                      th:src="'https://icon.horse/icon/' + ${serviceDomains[s.name]}"
                                      class="w-6 h-6 object-contain"
@@ -89,67 +96,82 @@
                                       th:style="${serviceDomains[s.name] != null} ? 'display:none;' : 'display:flex;'"></span>
                             </div>
                             <div class="min-w-0">
-                                <h3 class="font-semibold text-slate-100 text-base truncate"
+                                <h3 class="font-semibold text-sm truncate" style="color:#dde4f0;letter-spacing:-0.01em;"
                                     th:text="${s.name}"></h3>
                                 <p th:if="${!s.description.isEmpty()}"
-                                   class="text-xs text-slate-500 mt-0.5 truncate"
+                                   class="text-xs mt-0.5 truncate" style="color:#4a5a78;"
                                    th:text="${s.description}"></p>
                             </div>
                         </div>
-                        <div class="flex flex-col items-end gap-1">
+                        <!-- Badges de estado -->
+                        <div class="flex flex-col items-end gap-1.5 flex-shrink-0">
                             <th:block th:if="${s.isTrial and s.trialEndsAt != null}">
                                 <span th:with="daysLeft=${T(java.time.temporal.ChronoUnit).DAYS.between(T(java.time.LocalDate).now(), s.trialEndsAt)}"
-                                      class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border"
-                                      th:classappend="${daysLeft le 3} ? 'border-red-500/30 bg-red-500/10 text-red-300' : 'border-orange-500/30 bg-orange-500/10 text-orange-300'">
-                                    🆓 <span th:text="#{sub.trial}">Prueba</span> —
-                                    <span th:text="${daysLeft}"></span>d
+                                      class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border"
+                                      th:style="${daysLeft le 3} ? 'border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);color:#fca5a5;' : 'border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.08);color:#fcd34d;'">
+                                    <span th:text="#{sub.trial}">Prueba</span>&nbsp;·&nbsp;<span th:text="${daysLeft}"></span>d
                                 </span>
                             </th:block>
                             <span th:if="${s.active}"
-                                  class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/15 text-green-400 border border-green-500/20"
-                                  th:text="#{sub.status.active}">
-                                Activa
+                                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold"
+                                  style="background:rgba(34,197,94,0.1);color:#4ade80;border:1px solid rgba(34,197,94,0.2);">
+                                <span class="w-1.5 h-1.5 rounded-full" style="background:#4ade80;"></span>
+                                <span th:text="#{sub.status.active}">Activa</span>
                             </span>
                             <span th:unless="${s.active}"
-                                  class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-700/50 text-slate-400 border border-slate-600/30"
+                                  class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold"
+                                  style="background:rgba(51,65,85,0.4);color:#64748b;border:1px solid rgba(71,85,105,0.3);"
                                   th:text="#{sub.status.inactive}">
                                 Inactiva
                             </span>
                         </div>
                     </div>
 
-                    <div class="flex items-baseline gap-1 mb-3">
-                        <span class="text-2xl font-bold text-slate-100"
+                    <!-- Precio -->
+                    <div class="flex items-baseline gap-1.5 mb-4">
+                        <span class="text-[1.35rem] font-bold tabular-num" style="color:#e8edf5;letter-spacing:-0.03em;"
                               th:text="${s.currency + ' ' + #numbers.formatDecimal(s.price, 1, 2)}"></span>
-                        <span class="text-xs text-slate-500"
+                        <span class="text-xs" style="color:#4a5a78;"
                               th:text="${s.billingCycle == 'MONTHLY' ? #{sub.billing.monthly} : (s.billingCycle == 'YEARLY' ? #{sub.billing.yearly} : #{sub.billing.weekly})}"></span>
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-2 text-xs">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full font-medium text-white"
-                              th:style="'background:' + ${s.category.color}"
+                    <!-- Meta: categoría + fecha -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium text-white"
+                              style="opacity:0.82;"
+                              th:style="'background:' + ${s.category.color} + ';opacity:0.82;'"
                               th:text="${s.category.icon + ' ' + s.category.name}"></span>
-                        <span class="text-slate-500">
-                            <i class="bi bi-calendar3 mr-1"></i>
+                        <span class="text-xs tabular-num" style="color:#3d4d66;">
+                            <i class="bi bi-arrow-repeat mr-1"></i>
                             <span th:text="${#temporals.format(s.renewalDate, 'dd MMM yyyy')}"></span>
                         </span>
                     </div>
                 </div>
 
-                <div class="px-5 py-3 border-t border-white/[0.05] flex items-center justify-end gap-2">
+                <!-- Acciones -->
+                <div class="px-5 py-2.5 flex items-center justify-end gap-1.5" style="border-top:1px solid rgba(255,255,255,0.04);">
                     <a th:if="${cancelUrls[s.name] != null}"
                        th:href="${cancelUrls[s.name]}"
                        target="_blank" rel="noopener noreferrer"
-                       class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-orange-400/80 hover:text-orange-300 hover:bg-orange-500/10 border border-orange-500/20 hover:border-orange-500/40 transition-all duration-200 no-underline">
+                       class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all no-underline"
+                       style="color:rgba(251,146,60,0.7);border:1px solid rgba(245,158,11,0.15);"
+                       onmouseenter="this.style.color='#fb923c';this.style.background='rgba(245,158,11,0.08)';this.style.borderColor='rgba(245,158,11,0.3)';"
+                       onmouseleave="this.style.color='rgba(251,146,60,0.7)';this.style.background='transparent';this.style.borderColor='rgba(245,158,11,0.15)';">
                         <i class="bi bi-x-circle"></i><span th:text="#{sub.action.cancel}">Cancelar</span>
                     </a>
                     <a th:href="@{/subscriptions/{id}/edit(id=${s.id})}"
-                       class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/[0.15] transition-all duration-200 no-underline">
+                       class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all no-underline"
+                       style="color:#64748b;border:1px solid rgba(255,255,255,0.07);"
+                       onmouseenter="this.style.color='#cbd5e1';this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(255,255,255,0.12)';"
+                       onmouseleave="this.style.color='#64748b';this.style.background='transparent';this.style.borderColor='rgba(255,255,255,0.07)';">
                         <i class="bi bi-pencil"></i><span th:text="#{sub.action.edit}">Editar</span>
                     </a>
                     <button type="button"
                             th:attr="onclick=|openDeleteModal(${s.id}, '[[${s.name}]]')|"
-                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-400/70 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 transition-all duration-200 cursor-pointer">
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer"
+                            style="color:rgba(248,113,113,0.6);border:1px solid rgba(239,68,68,0.15);background:transparent;"
+                            onmouseenter="this.style.color='#f87171';this.style.background='rgba(239,68,68,0.08)';this.style.borderColor='rgba(239,68,68,0.3)';"
+                            onmouseleave="this.style.color='rgba(248,113,113,0.6)';this.style.background='transparent';this.style.borderColor='rgba(239,68,68,0.15)';">
                         <i class="bi bi-trash"></i><span th:text="#{sub.action.delete}">Eliminar</span>
                     </button>
                 </div>
@@ -181,29 +203,35 @@
     <!-- Delete modal -->
     <div id="deleteModal"
          class="fixed inset-0 z-50 hidden items-center justify-center"
-         style="background:rgba(0,0,0,0.7); backdrop-filter:blur(4px);">
-        <div class="glass-card rounded-2xl p-8 w-full max-w-sm mx-4 text-center shadow-2xl"
-             style="border:1px solid rgba(239,68,68,0.3);">
-            <div class="w-16 h-16 rounded-full bg-red-500/15 border border-red-500/30 flex items-center justify-center mx-auto mb-5">
-                <i class="bi bi-trash3 text-2xl text-red-400"></i>
+         style="background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);">
+        <div class="w-full max-w-sm mx-4 text-center"
+             style="background:#0f1629;border:1px solid rgba(239,68,68,0.25);border-radius:16px;padding:2rem;box-shadow:0 24px 64px rgba(0,0,0,0.7),0 0 0 1px rgba(255,255,255,0.04);">
+            <div style="width:52px;height:52px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;">
+                <i class="bi bi-trash3" style="color:#f87171;font-size:1.25rem;"></i>
             </div>
-            <h3 class="text-lg font-bold text-slate-100 mb-2" th:text="#{sub.delete.title}">Eliminar suscripción</h3>
-            <p class="text-sm text-slate-400 mb-1">
+            <h3 class="text-base font-bold mb-2" style="color:#e8edf5;letter-spacing:-0.01em;" th:text="#{sub.delete.title}">Eliminar suscripción</h3>
+            <p class="text-sm mb-1" style="color:#64748b;">
                 <span th:text="#{sub.delete.confirm}">¿Estás seguro de que quieres eliminar</span>
-                <strong class="text-slate-200" id="modalSubName"></strong>?
+                <strong style="color:#dde4f0;" id="modalSubName"></strong>?
             </p>
-            <p class="text-xs text-red-400/70 mb-6 font-medium" th:text="#{sub.delete.irreversible}">Esta acción no se puede deshacer</p>
-            <div class="flex gap-3 justify-center">
+            <p class="text-xs mb-6 font-medium" style="color:rgba(248,113,113,0.6);" th:text="#{sub.delete.irreversible}">Esta acción no se puede deshacer</p>
+            <div class="flex gap-2.5">
                 <button onclick="closeDeleteModal()"
-                        class="flex-1 px-4 py-2 border border-white/[0.1] text-slate-300 hover:text-white hover:border-white/20 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer"
+                        class="flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer"
+                        style="border:1px solid rgba(255,255,255,0.09);color:#94a3b8;background:transparent;"
+                        onmouseenter="this.style.color='#e8edf5';this.style.borderColor='rgba(255,255,255,0.18)';"
+                        onmouseleave="this.style.color='#94a3b8';this.style.borderColor='rgba(255,255,255,0.09)';"
                         th:text="#{sub.delete.cancel}">
                     Cancelar
                 </button>
                 <form id="deleteForm" method="post" class="flex-1">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                     <button type="submit"
-                            class="w-full px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer">
-                        <i class="bi bi-trash mr-1"></i><span th:text="#{sub.delete.yes}">Sí, eliminar</span>
+                            class="w-full px-4 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer"
+                            style="background:rgba(239,68,68,0.85);color:#fff;border:none;"
+                            onmouseenter="this.style.background='rgba(239,68,68,1)';"
+                            onmouseleave="this.style.background='rgba(239,68,68,0.85)';">
+                        <i class="bi bi-trash mr-1.5"></i><span th:text="#{sub.delete.yes}">Sí, eliminar</span>
                     </button>
                 </form>
             </div>

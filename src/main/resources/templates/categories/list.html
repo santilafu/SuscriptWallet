@@ -14,18 +14,18 @@
     </div>
 
     <!-- ── Cabecera ──────────────────────────────────────────────────── -->
-    <div class="flex items-center justify-between mb-8">
+    <div class="flex items-center justify-between mb-10">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
-                <i class="bi bi-tags text-accent"></i>
+            <h1 class="text-[1.6rem] font-bold text-slate-100 leading-tight" style="letter-spacing:-0.03em;">
                 <span th:text="#{cat.title}">Categorías</span>
             </h1>
-            <p class="text-sm text-slate-500 mt-0.5"
+            <p class="text-sm mt-1" style="color:#4a5a78;"
                th:text="#{cat.count(${categories.size()})}"></p>
         </div>
         <a th:href="@{/categories/new}"
-           class="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-all duration-200 no-underline shadow-lg shadow-accent/20">
-            <i class="bi bi-plus-lg"></i><span th:text="#{cat.new}">Nueva</span>
+           class="flex items-center gap-2 px-4 py-2.5 bg-accent hover:bg-accent-hover text-white text-sm font-semibold rounded-xl transition-all no-underline"
+           style="box-shadow:0 1px 8px rgba(99,102,241,0.4),0 0 0 1px rgba(99,102,241,0.2);">
+            <i class="bi bi-plus-lg text-xs"></i><span th:text="#{cat.new}">Nueva</span>
         </a>
     </div>
 
@@ -34,35 +34,45 @@
          th:if="${!categories.isEmpty()}">
 
         <div th:each="cat : ${categories}"
-             class="glass-card rounded-xl overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/30">
+             class="glass-card rounded-xl overflow-hidden flex flex-col"
+             style="transition:transform 0.18s cubic-bezier(0.4,0,0.2,1),box-shadow 0.18s cubic-bezier(0.4,0,0.2,1);"
+             onmouseenter="this.style.transform='translateY(-2px)'"
+             onmouseleave="this.style.transform='translateY(0)'">
 
-            <!-- Borde izquierdo coloreado -->
             <div class="flex flex-col flex-1"
-                 th:style="'border-left: 4px solid ' + ${cat.color}">
+                 th:style="'border-left: 3px solid ' + ${cat.color}">
 
                 <div class="p-5 flex-1">
-                    <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4"
-                         th:style="'background:' + ${cat.color} + '22;'">
+                    <!-- Icono sin fondo redondo gigante: cuadrado pequeño -->
+                    <div class="w-9 h-9 rounded-lg flex items-center justify-center text-lg mb-4"
+                         th:style="'background:' + ${cat.color} + '1a; border:1px solid ' + ${cat.color} + '33;'">
                         <span th:text="${cat.icon.isEmpty() ? '📁' : cat.icon}"></span>
                     </div>
-                    <div class="font-bold text-slate-100 text-base mb-2" th:text="${cat.name}"></div>
-                    <div class="flex items-center gap-2">
-                        <span class="w-4 h-4 rounded flex-shrink-0"
+                    <div class="font-bold text-sm mb-2.5" style="color:#dde4f0;letter-spacing:-0.01em;" th:text="${cat.name}"></div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded flex-shrink-0"
                               th:style="'background:' + ${cat.color}"></span>
-                        <code class="text-xs text-slate-500 font-mono" th:text="${cat.color}"></code>
+                        <code class="text-xs font-mono" style="color:#3d4d66;" th:text="${cat.color}"></code>
                     </div>
                 </div>
 
                 <!-- Acciones -->
-                <div class="px-5 py-3 border-t border-white/[0.05] flex items-center gap-2">
+                <div class="px-5 py-2.5 flex items-center gap-1.5" style="border-top:1px solid rgba(255,255,255,0.04);">
                     <a th:href="@{/categories/{id}/edit(id=${cat.id})}"
-                       class="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/[0.15] transition-all duration-200 no-underline">
+                       class="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all no-underline"
+                       style="color:#64748b;border:1px solid rgba(255,255,255,0.07);"
+                       onmouseenter="this.style.color='#cbd5e1';this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(255,255,255,0.12)';"
+                       onmouseleave="this.style.color='#64748b';this.style.background='transparent';this.style.borderColor='rgba(255,255,255,0.07)';">
                         <i class="bi bi-pencil"></i><span th:text="#{cat.action.edit}">Editar</span>
                     </a>
                     <form th:action="@{/categories/{id}/delete(id=${cat.id})}" method="post"
                           th:attr="onsubmit='return confirm(\'' + #{cat.action.delete-confirm} + '\')'">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                         <button type="submit"
-                                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-400/70 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 transition-all duration-200 cursor-pointer">
+                                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer"
+                                style="color:rgba(248,113,113,0.55);border:1px solid rgba(239,68,68,0.15);background:transparent;"
+                                onmouseenter="this.style.color='#f87171';this.style.background='rgba(239,68,68,0.08)';this.style.borderColor='rgba(239,68,68,0.3)';"
+                                onmouseleave="this.style.color='rgba(248,113,113,0.55)';this.style.background='transparent';this.style.borderColor='rgba(239,68,68,0.15)';">
                             <i class="bi bi-trash"></i>
                         </button>
                     </form>
