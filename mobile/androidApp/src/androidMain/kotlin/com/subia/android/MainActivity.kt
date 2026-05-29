@@ -18,6 +18,7 @@ import com.subia.android.navigation.DashboardRoute
 import com.subia.android.navigation.LoginRoute
 import com.subia.android.ui.SubIAApp
 import com.subia.android.ui.theme.SubIATheme
+import com.subia.android.ui.theme.ThemeState
 import com.subia.android.worker.RenovacionWorker
 import com.subia.shared.viewmodel.AuthViewModel
 import org.koin.compose.viewmodel.koinViewModel
@@ -40,6 +41,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        // Cargar la preferencia de color dinámico (Material You) antes de componer el tema.
+        ThemeState.load(this)
+
         // Solicitar POST_NOTIFICATIONS en Android 13+ (API 33+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             solicitarPermisoNotificaciones.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -58,7 +62,7 @@ class MainActivity : AppCompatActivity() {
         )
 
         setContent {
-            SubIATheme {
+            SubIATheme(dynamicColor = ThemeState.dynamicColor) {
                 val authViewModel: AuthViewModel = koinViewModel()
                 val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
 

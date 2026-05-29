@@ -168,4 +168,11 @@
     <string name="monthly_label">monthly</string>
     <string name="top_5_monthly">Top 5 monthly expenses</string>
     <string name="add_subscriptions_for_stats">Add subscriptions to see statistics</string>
+    <!-- Appearance / Material You -->
+    <string name="appearance">Appearance</string>
+    <string name="dynamic_color">Dynamic color (Material You)</string>
+    <string name="dynamic_color_desc">Adapt the app colors to your wallpaper.</string>
+    <!-- Error and empty states -->
+    <string name="error_title">Something went wrong</string>
+    <string name="add_first_subscription">Add my first subscription</string>
 </resources>

@@ -168,4 +168,11 @@
     <string name="monthly_label">mensuel</string>
     <string name="top_5_monthly">Top 5 dépenses mensuelles</string>
     <string name="add_subscriptions_for_stats">Ajoutez des abonnements pour voir les statistiques</string>
+    <!-- Apparence / Material You -->
+    <string name="appearance">Apparence</string>
+    <string name="dynamic_color">Couleurs dynamiques (Material You)</string>
+    <string name="dynamic_color_desc">Adapte les couleurs de l\'application à votre fond d\'écran.</string>
+    <!-- États d\'erreur et vides -->
+    <string name="error_title">Une erreur est survenue</string>
+    <string name="add_first_subscription">Ajouter mon premier abonnement</string>
 </resources>

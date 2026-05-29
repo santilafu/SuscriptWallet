@@ -62,8 +62,8 @@ import androidx.compose.ui.unit.sp
 import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.theme.GradientIndigoEnd
 import com.subia.android.ui.theme.GradientIndigoStart
-import com.subia.android.ui.theme.Indigo400
 import com.subia.android.ui.theme.Indigo500
+import com.subia.android.ui.theme.Success
 import com.subia.shared.repository.CatalogRepository
 import com.subia.shared.viewmodel.SuscripcionesUiState
 import com.subia.shared.viewmodel.SuscripcionesViewModel
@@ -166,13 +166,24 @@ fun SuscripcionDetalleScreen(
                             }
                         }
                     )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = if (suscripcion.activa) stringResource(R.string.active) else stringResource(R.string.inactive),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (suscripcion.activa) Indigo400 else MaterialTheme.colorScheme.onSurfaceVariant,
-                        letterSpacing = 0.8.sp
-                    )
+                    Spacer(Modifier.height(8.dp))
+                    // Chip de estado con color semántico (verde = activa)
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50))
+                            .background(
+                                if (suscripcion.activa) Success.copy(alpha = 0.15f)
+                                else MaterialTheme.colorScheme.surfaceVariant
+                            )
+                            .padding(horizontal = 12.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = if (suscripcion.activa) stringResource(R.string.active) else stringResource(R.string.inactive),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (suscripcion.activa) Success else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
 
                 // Filas de información

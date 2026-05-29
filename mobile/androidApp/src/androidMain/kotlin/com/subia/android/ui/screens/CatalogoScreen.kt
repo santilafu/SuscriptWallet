@@ -53,9 +53,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.ui.res.stringResource
 import com.subia.android.R
 import com.subia.android.ui.ServiceLogo
+import com.subia.android.ui.components.ErrorState
 import com.subia.android.ui.theme.GradientIndigoEnd
 import com.subia.android.ui.theme.GradientIndigoStart
 import com.subia.android.ui.theme.Indigo400
+import com.subia.android.ui.theme.Success
 import com.subia.shared.model.CatalogItem
 import com.subia.shared.viewmodel.CatalogoUiState
 import com.subia.shared.viewmodel.CatalogoViewModel
@@ -191,13 +193,10 @@ fun CatalogoScreen(
                     }
                 }
                 is CatalogoUiState.Success -> CatalogoGrid(itemsFiltrados, onSeleccionarItem)
-                is CatalogoUiState.Error -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(state.mensaje, color = MaterialTheme.colorScheme.error)
-                        Spacer(Modifier.height(8.dp))
-                        TextButton(onClick = { viewModel.cargarCatalogo() }) { Text(stringResource(R.string.retry)) }
-                    }
-                }
+                is CatalogoUiState.Error -> ErrorState(
+                    mensaje = state.mensaje,
+                    onRetry = { viewModel.cargarCatalogo() }
+                )
                 is CatalogoUiState.SesionExpirada -> Unit
             }
         }
@@ -214,7 +213,9 @@ private fun CatalogoGrid(items: List<CatalogItem>, onSeleccionar: (CatalogItem) 
     }
     LazyVerticalGrid(
         modifier = Modifier.fillMaxSize(),
-        columns = GridCells.Fixed(3),
+        // Rejilla adaptable: ~3 columnas en teléfonos normales pero tarjetas más grandes
+        // y legibles, y más columnas en pantallas anchas, sin texto minúsculo.
+        columns = GridCells.Adaptive(minSize = 104.dp),
         contentPadding = PaddingValues(bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -254,7 +255,7 @@ private fun CatalogoItemCard(item: CatalogItem, onSeleccionar: (CatalogItem) -> 
             item.precioMensual?.let {
                 Text(
                     "%.2f €/m".format(it),
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = Indigo400,
                     textAlign = TextAlign.Center
@@ -263,9 +264,9 @@ private fun CatalogoItemCard(item: CatalogItem, onSeleccionar: (CatalogItem) -> 
             item.annualSavingsPercent()?.takeIf { it > 0 }?.let { pct ->
                 Text(
                     stringResource(R.string.annual_savings, pct),
-                    fontSize = 9.sp,
+                    style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF10B981),
+                    color = Success,
                     textAlign = TextAlign.Center
                 )
             }

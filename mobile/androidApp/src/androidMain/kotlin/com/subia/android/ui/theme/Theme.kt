@@ -1,12 +1,16 @@
 package com.subia.android.ui.theme
 
+import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
 private val DarkColors = darkColorScheme(
@@ -45,15 +49,33 @@ private val SubIAShapes = Shapes(
     large  = RoundedCornerShape(24.dp)
 )
 
-/** Tema Material 3 de SubIA — dark-first, bordes redondeados generosos. */
+/**
+ * Tema Material 3 de SubIA — dark-first, bordes redondeados generosos,
+ * tipografía Plus Jakarta Sans.
+ *
+ * @param dynamicColor si es `true` y el dispositivo es Android 12+ (S), usa la paleta
+ *   Material You derivada del fondo de pantalla del usuario. Por defecto está desactivado
+ *   para preservar la identidad índigo de la marca; se puede exponer como preferencia.
+ */
 @Composable
 fun SubIATheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
+    val colorScheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            val context = LocalContext.current
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+        darkTheme -> DarkColors
+        else      -> LightColors
+    }
+
     MaterialTheme(
-        colorScheme = if (darkTheme) DarkColors else LightColors,
+        colorScheme = colorScheme,
         shapes      = SubIAShapes,
+        typography  = SubIATypography,
         content     = content
     )
 }

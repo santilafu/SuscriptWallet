@@ -1,5 +1,10 @@
 package com.subia.android.ui
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -14,11 +19,11 @@ import com.subia.android.R
 import com.subia.android.ui.theme.GradientIndigoEnd
 import com.subia.android.ui.theme.GradientIndigoStart
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Shop
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -71,9 +77,9 @@ private data class NavItem(val route: Any, val icon: androidx.compose.ui.graphic
 
 private val bottomNavItems = listOf(
     NavItem(DashboardRoute, Icons.Default.Home, R.string.nav_home),
-    NavItem(SuscripcionesRoute, Icons.Default.List, R.string.nav_subscriptions),
+    NavItem(SuscripcionesRoute, Icons.Default.CreditCard, R.string.nav_subscriptions),
     NavItem(CategoriasRoute, Icons.Default.Category, R.string.nav_categories),
-    NavItem(CatalogoRoute, Icons.Default.Shop, R.string.nav_catalog)
+    NavItem(CatalogoRoute, Icons.Default.Apps, R.string.nav_catalog)
 )
 
 /** Composable raíz: gestiona NavHost, barra superior con logout y barra de navegación inferior. */
@@ -162,7 +168,7 @@ fun SubIAApp(
             if (showBottomBar) {
                 NavigationBar(
                     containerColor = MaterialTheme.colorScheme.surface,
-                    tonalElevation = androidx.compose.ui.unit.Dp.Unspecified
+                    tonalElevation = 3.dp
                 ) {
                     bottomNavItems.forEach { item ->
                         val label = stringResource(item.labelRes)
@@ -194,7 +200,13 @@ fun SubIAApp(
         NavHost(
             navController = navController,
             startDestination = startDestination,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(innerPadding),
+            // Transiciones sutiles: fundido + ligero desplazamiento horizontal que insinúa
+            // dirección al navegar (push) y al volver (pop), sin resultar intrusivo entre tabs.
+            enterTransition = { fadeIn(tween(220)) + slideInHorizontally(tween(220)) { it / 12 } },
+            exitTransition = { fadeOut(tween(180)) },
+            popEnterTransition = { fadeIn(tween(220)) },
+            popExitTransition = { fadeOut(tween(180)) + slideOutHorizontally(tween(220)) { it / 12 } }
         ) {
             composable<LoginRoute> {
                 LoginScreen(

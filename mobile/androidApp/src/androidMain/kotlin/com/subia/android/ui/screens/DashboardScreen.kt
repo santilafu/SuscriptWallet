@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.subia.android.ui.BannerAdView
 import com.subia.android.ui.ServiceLogo
+import com.subia.android.ui.components.ErrorState
 import com.subia.android.ui.components.GastosPorCategoriaCard
 import com.subia.android.ui.components.TopSuscripcionesChartCard
 import com.subia.android.ui.theme.GradientAmberEnd
@@ -102,13 +103,10 @@ fun DashboardScreen(
                     BannerOffline(stringResource(R.string.offline_data))
                     state.resumenCacheado?.let { DashboardContent(it, totalesPorMoneda, totalesAnualesPorMoneda, gastosPorCategoria, pruebasPorVencer, topSuscripciones, onNavigateToSuscripciones) }
                 }
-                is DashboardUiState.Error -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(state.mensaje, color = MaterialTheme.colorScheme.error)
-                        Spacer(Modifier.height(8.dp))
-                        TextButton(onClick = { viewModel.cargarEstadisticas() }) { Text(stringResource(R.string.retry)) }
-                    }
-                }
+                is DashboardUiState.Error -> ErrorState(
+                    mensaje = state.mensaje,
+                    onRetry = { viewModel.cargarEstadisticas() }
+                )
                 is DashboardUiState.SesionExpirada -> LaunchedEffect(Unit) { onSesionExpirada() }
             }
         }
@@ -329,10 +327,10 @@ private fun GradientStatCard(modifier: Modifier, icon: ImageVector, label: Strin
             .padding(16.dp)
     ) {
         Column {
-            Icon(icon, null, tint = Color.White.copy(alpha = 0.85f), modifier = Modifier.size(20.dp))
+            Icon(icon, null, tint = Color.White.copy(alpha = 0.9f), modifier = Modifier.size(20.dp))
             Spacer(Modifier.height(8.dp))
-            Text(label, color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
-            Text(value, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
+            Text(label, color = Color.White.copy(alpha = 0.92f), fontSize = 13.sp)
+            Text(value, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp)
         }
     }
 }
@@ -370,7 +368,8 @@ private fun RenovacionCard(renovacion: ProximaRenovacion) {
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    "${renovacion.diasRestantes}d",
+                    if (renovacion.diasRestantes == 1) stringResource(R.string.one_day)
+                    else stringResource(R.string.n_days, renovacion.diasRestantes),
                     style = MaterialTheme.typography.bodySmall,
                     color = diasColor,
                     fontWeight = FontWeight.SemiBold
@@ -433,6 +432,7 @@ fun BannerOffline(mensaje: String) {
             .padding(horizontal = 16.dp, vertical = 10.dp),
         Alignment.Center
     ) {
-        Text(mensaje, color = Color.White, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
+        // Texto oscuro sobre amber para cumplir contraste WCAG AA (blanco sobre amber falla).
+        Text(mensaje, color = Color(0xFF1A1200), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
     }
 }

@@ -7,9 +7,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -64,6 +66,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.subia.android.ui.BannerAdView
 import com.subia.android.ui.ServiceLogo
+import com.subia.android.ui.components.EmptyState
+import com.subia.android.ui.components.ErrorState
 import com.subia.android.ui.theme.GradientIndigoEnd
 import com.subia.android.ui.theme.GradientIndigoStart
 import com.subia.android.ui.theme.Indigo400
@@ -118,7 +122,7 @@ fun SuscripcionesScreen(
                 is SuscripcionesUiState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
                 is SuscripcionesUiState.Success -> {
                     if (state.suscripciones.isEmpty() && state.categoriaSeleccionada == null) {
-                        EmptyStateSuscripciones()
+                        EmptyStateSuscripciones(onNavigateToNueva)
                     } else {
                         ListaSuscripciones(
                             suscripciones = state.suscripciones,
@@ -139,13 +143,10 @@ fun SuscripcionesScreen(
                         onFiltrar = {}
                     )
                 }
-                is SuscripcionesUiState.Error -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(state.mensaje, color = MaterialTheme.colorScheme.error)
-                        Spacer(Modifier.height(8.dp))
-                        TextButton(onClick = { viewModel.cargar() }) { Text(stringResource(R.string.retry)) }
-                    }
-                }
+                is SuscripcionesUiState.Error -> ErrorState(
+                    mensaje = state.mensaje,
+                    onRetry = { viewModel.cargar() }
+                )
                 is SuscripcionesUiState.SesionExpirada -> LaunchedEffect(Unit) { onSesionExpirada() }
             }
         }
@@ -153,29 +154,14 @@ fun SuscripcionesScreen(
 }
 
 @Composable
-private fun EmptyStateSuscripciones() {
-    Box(Modifier.fillMaxSize(), Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                imageVector = Icons.Default.Subscriptions,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(48.dp)
-            )
-            Spacer(Modifier.height(16.dp))
-            Text(
-                stringResource(R.string.no_subscriptions),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                stringResource(R.string.tap_to_add_first),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-    }
+private fun EmptyStateSuscripciones(onNavigateToNueva: () -> Unit) {
+    EmptyState(
+        icon = Icons.Default.Subscriptions,
+        titulo = stringResource(R.string.no_subscriptions),
+        subtitulo = stringResource(R.string.tap_to_add_first),
+        actionLabel = stringResource(R.string.add_first_subscription),
+        onAction = onNavigateToNueva
+    )
 }
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalTextApi::class)
@@ -311,15 +297,16 @@ private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Un
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .height(IntrinsicSize.Min)
             .clip(RoundedCornerShape(14.dp))
             .border(1.dp, MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(14.dp))
             .clickable { onNavigateToDetalle(sub.id) }
     ) {
-        // Acento izquierdo indigo
+        // Acento izquierdo indigo — crece con el alto del contenido de la tarjeta
         Box(
             modifier = Modifier
                 .width(4.dp)
-                .height(80.dp)
+                .fillMaxHeight()
                 .background(
                     brush = Brush.verticalGradient(listOf(GradientIndigoStart, GradientIndigoEnd)),
                     shape = RoundedCornerShape(topStart = 14.dp, bottomStart = 14.dp)

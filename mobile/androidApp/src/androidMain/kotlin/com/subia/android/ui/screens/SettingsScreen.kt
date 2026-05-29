@@ -1,6 +1,7 @@
 package com.subia.android.ui.screens
 
 import android.content.Context
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
@@ -26,6 +27,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -42,6 +44,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import com.subia.android.R
+import com.subia.android.ui.theme.ThemeState
 import androidx.compose.ui.unit.dp
 import com.subia.android.util.toCsv
 import com.subia.android.worker.DEFAULT_NOTIFICATION_DAYS_BEFORE
@@ -131,6 +134,44 @@ fun SettingsScreen(onBack: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
+            // ── Apariencia (Material You, solo Android 12+) ───────────
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                Text(
+                    text = stringResource(R.string.appearance),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { ThemeState.setDynamicColor(context, !ThemeState.dynamicColor) }
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.dynamic_color),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Text(
+                            text = stringResource(R.string.dynamic_color_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = ThemeState.dynamicColor,
+                        onCheckedChange = { ThemeState.setDynamicColor(context, it) }
+                    )
+                }
+
+                Spacer(Modifier.height(24.dp))
+                HorizontalDivider()
+                Spacer(Modifier.height(24.dp))
+            }
+
             // ── Idioma ────────────────────────────────────────────────
             Text(
                 text = stringResource(R.string.language),
@@ -150,7 +191,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                             else LocaleListCompat.forLanguageTags(localeTag)
                             AppCompatDelegate.setApplicationLocales(locales)
                         }
-                        .padding(vertical = 4.dp),
+                        .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     RadioButton(
@@ -195,7 +236,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                             selectedDays = dias
                             prefs.edit().putInt(KEY_NOTIFICATION_DAYS_BEFORE, dias).apply()
                         }
-                        .padding(vertical = 4.dp),
+                        .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     RadioButton(
