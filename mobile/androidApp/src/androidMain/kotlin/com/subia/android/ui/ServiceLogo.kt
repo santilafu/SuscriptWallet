@@ -19,7 +19,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.platform.LocalContext
 import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
 
 /**
  * Muestra el logo de un servicio con fallback en cascada:
@@ -60,8 +62,19 @@ fun ServiceLogo(
         return
     }
 
+    val context = LocalContext.current
+    // El avance al siguiente fallback se hace en el listener onError de Coil
+    // (callback fuera de la fase de composición). Hacerlo dentro del slot `error`
+    // mutaría estado durante la composición → recomposición en bucle / crash.
+    val request = remember(urls, intentoActual) {
+        ImageRequest.Builder(context)
+            .data(urls[intentoActual])
+            .listener(onError = { _, _ -> intentoActual++ })
+            .build()
+    }
+
     SubcomposeAsyncImage(
-        model = urls[intentoActual],
+        model = request,
         contentDescription = nombre,
         contentScale = ContentScale.Fit,
         modifier = modifier
@@ -69,10 +82,7 @@ fun ServiceLogo(
             .clip(shape)
             .background(Color.White),
         loading = { LogoFallback(nombre, size, shape, modifier) },
-        error = {
-            intentoActual++
-            LogoFallback(nombre, size, shape, modifier)
-        }
+        error = { LogoFallback(nombre, size, shape, modifier) }
     )
 }
 

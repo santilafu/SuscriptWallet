@@ -64,7 +64,7 @@ fun TopSuscripcionesChartCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            val moneda = topSuscripciones.first().moneda
+            val moneda = topSuscripciones.firstOrNull()?.moneda ?: return@Column
             val modelProducer = remember { CartesianChartModelProducer() }
 
             LaunchedEffect(topSuscripciones) {
