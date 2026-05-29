@@ -31,4 +31,4 @@ data class CatalogItem(
     val cancelUrl: String? = null,
     val priceAnnual: BigDecimal? = null,
     val iconUrl: String? = null
-)
+) : java.io.Serializable

@@ -18,6 +18,36 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
+        <!-- Detectar suscripciones desde Gmail -->
+        <div class="glass-card rounded-xl overflow-hidden md:col-span-2">
+            <div class="px-5 py-4 border-b border-white/[0.06] flex items-center gap-2">
+                <i class="bi bi-envelope-paper text-accent"></i>
+                <span class="text-sm font-semibold text-slate-200">Detectar suscripciones desde Gmail</span>
+                <span class="ml-auto text-[0.65rem] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                      style="background:rgba(99,102,241,0.15);color:#a5b4fc;">Nuevo</span>
+            </div>
+            <div class="p-5">
+                <div th:if="${param.gmailError != null}"
+                     class="mb-4 p-3 rounded-lg text-sm"
+                     style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#fca5a5;">
+                    <span th:if="${param.gmailError[0] == 'notconfigured'}">El escaneo de Gmail todavía no está configurado en el servidor (falta el secret del OAuth client de Google).</span>
+                    <span th:if="${param.gmailError[0] == 'denied'}">No se concedió el acceso a Gmail o la sesión caducó. Vuelve a intentarlo.</span>
+                    <span th:if="${param.gmailError[0] == 'scan'}">Hubo un error al analizar el correo. Vuelve a intentarlo en unos minutos.</span>
+                </div>
+                <p class="text-sm text-slate-400 mb-4">
+                    Conecta tu cuenta de Google y analizaremos tus correos de facturación del último año para detectar
+                    a qué servicios estás suscrito.
+                    <strong class="text-slate-300">No guardamos tus correos ni tu contraseña</strong>: solo leemos el
+                    remitente para reconocer servicios conocidos y proponerte añadirlos.
+                </p>
+                <a th:href="@{/gmail/connect}"
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-all duration-200 no-underline shadow-lg shadow-accent/20">
+                    <i class="bi bi-google"></i>
+                    <span>Detectar con Gmail</span>
+                </a>
+            </div>
+        </div>
+
         <div class="glass-card rounded-xl overflow-hidden">
             <div class="px-5 py-4 border-b border-white/[0.06] flex items-center gap-2">
                 <i class="bi bi-download text-accent"></i>

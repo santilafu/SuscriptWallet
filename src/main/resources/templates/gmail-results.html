@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title>Suscripciones detectadas</title></head>
+<body>
+<div layout:fragment="content">
+
+    <!-- ── Cabecera ───────────────────────────────────────────────────── -->
+    <div class="mb-8">
+        <h1 class="text-[1.6rem] font-bold text-slate-100 leading-tight flex items-center gap-2" style="letter-spacing:-0.03em;">
+            <i class="bi bi-envelope-paper text-accent"></i>
+            <span>Suscripciones detectadas en tu correo</span>
+        </h1>
+        <p class="text-sm mt-1" style="color:#4a5a78;">
+            Encontramos estos servicios en tus correos de facturación. Revisa y añade los que quieras.
+        </p>
+    </div>
+
+    <!-- ── Sin resultados ─────────────────────────────────────────────── -->
+    <div th:if="${detected.isEmpty()}" class="glass-card rounded-xl p-16 text-center">
+        <i class="bi bi-search text-5xl block mb-4" style="color:#3d4d66;"></i>
+        <p class="text-slate-400 mb-4">No hemos reconocido ningún servicio conocido en tus correos recientes.</p>
+        <a th:href="@{/settings}"
+           class="inline-flex items-center gap-2 px-4 py-2 border border-white/[0.1] text-slate-300 hover:text-white hover:border-white/20 rounded-lg text-sm transition-all no-underline">
+            <i class="bi bi-arrow-left"></i><span>Volver a Ajustes</span>
+        </a>
+    </div>
+
+    <!-- ── Grid de detecciones ────────────────────────────────────────── -->
+    <div th:unless="${detected.isEmpty()}" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div th:each="d : ${detected}"
+             class="glass-card rounded-xl overflow-hidden flex flex-col">
+            <div class="p-5 flex-1">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center overflow-hidden"
+                         style="background:#182038;border:1px solid rgba(255,255,255,0.07);">
+                        <img th:src="'https://icon.horse/icon/' + ${d.domain}"
+                             class="w-7 h-7 object-contain" th:alt="${d.serviceName}"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <span th:text="${d.serviceName.substring(0,1).toUpperCase()}"
+                              class="text-sm font-bold w-full h-full items-center justify-center"
+                              style="color:#818cf8;display:none;"></span>
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="font-semibold text-sm truncate" style="color:#dde4f0;" th:text="${d.serviceName}"></h3>
+                        <p class="text-xs truncate" style="color:#4a5a78;" th:text="${d.senderEmail}"></p>
+                    </div>
+                </div>
+
+                <div class="flex items-baseline gap-1.5 mb-2">
+                    <span class="text-lg font-bold tabular-num" style="color:#e8edf5;"
+                          th:text="${d.catalogItem.currency + ' ' + #numbers.formatDecimal(d.catalogItem.price, 1, 2)}"></span>
+                    <span class="text-xs" style="color:#4a5a78;">/ mes aprox.</span>
+                </div>
+                <p class="text-xs" style="color:#3d4d66;">
+                    <i class="bi bi-clock-history mr-1"></i>
+                    Último correo: <span th:text="${d.lastSeen}"></span>
+                </p>
+            </div>
+
+            <!-- Añadir (reutiliza el flujo del catálogo) -->
+            <div class="px-5 py-3" style="border-top:1px solid rgba(255,255,255,0.04);">
+                <form th:if="${categoryKeyToId[d.catalogItem.categoryKey] != null}"
+                      th:action="@{/subscriptions/add-from-catalog}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" name="name"         th:value="${d.catalogItem.name}">
+                    <input type="hidden" name="description"  th:value="${d.catalogItem.description}">
+                    <input type="hidden" name="price"        th:value="${d.catalogItem.price}">
+                    <input type="hidden" name="currency"     th:value="${d.catalogItem.currency}">
+                    <input type="hidden" name="billingCycle" th:value="${d.catalogItem.billingCycle}">
+                    <input type="hidden" name="categoryId"   th:value="${categoryKeyToId[d.catalogItem.categoryKey]}">
+                    <input type="hidden" name="isTrial"      value="false">
+                    <button type="submit"
+                            class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-accent hover:bg-accent-hover text-white text-xs font-semibold rounded-lg transition-all cursor-pointer shadow-sm shadow-accent/20">
+                        <i class="bi bi-plus-lg"></i><span>Añadir a mis suscripciones</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div th:unless="${detected.isEmpty()}" class="mt-6 flex items-center gap-3">
+        <a th:href="@{/subscriptions}"
+           class="inline-flex items-center gap-2 px-4 py-2 border border-white/[0.1] text-slate-300 hover:text-white hover:border-white/20 rounded-lg text-sm transition-all no-underline">
+            <i class="bi bi-list-ul"></i><span>Ver mis suscripciones</span>
+        </a>
+        <a th:href="@{/settings}"
+           class="text-sm text-slate-500 hover:text-slate-300 no-underline">Volver a Ajustes</a>
+    </div>
+
+</div>
+</body>
+</html>
