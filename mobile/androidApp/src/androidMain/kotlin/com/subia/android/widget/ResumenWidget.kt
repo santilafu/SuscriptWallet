@@ -26,6 +26,8 @@ import androidx.glance.unit.ColorProvider
 import com.subia.android.MainActivity
 import com.subia.android.R
 import com.subia.shared.model.DashboardSummary
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 
 private val widgetJson = Json { ignoreUnknownKeys = true; isLenient = true; coerceInputValues = true }
@@ -39,7 +41,9 @@ private val Indigo = Color(0xFF4F46E5)
 class ResumenWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val resumen = leerResumen(context)
+        // Lectura de SharedPreferences + parseo JSON fuera del hilo principal para no
+        // arriesgar el timeout de Glance con resúmenes grandes.
+        val resumen = withContext(Dispatchers.IO) { leerResumen(context) }
         provideContent {
             ContenidoWidget(context, resumen)
         }

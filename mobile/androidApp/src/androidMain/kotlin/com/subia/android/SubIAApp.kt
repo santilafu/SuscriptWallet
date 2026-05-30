@@ -1,6 +1,7 @@
 package com.subia.android
 
 import android.app.Application
+import android.util.Log
 import com.google.android.gms.ads.MobileAds
 import com.subia.android.BuildConfig
 import com.subia.shared.di.androidModule
@@ -12,7 +13,13 @@ import org.koin.core.context.startKoin
 class SubIAApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        MobileAds.initialize(this) {}
+        // MobileAds es prescindible: si su init falla (Play Services, ID inválido), la app
+        // debe seguir arrancando sin anuncios en lugar de crashear.
+        try {
+            MobileAds.initialize(this) {}
+        } catch (e: Throwable) {
+            Log.w("SubIAApp", "Fallo al inicializar MobileAds; se continúa sin anuncios", e)
+        }
         startKoin {
             androidContext(this@SubIAApp)
             modules(
