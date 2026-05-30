@@ -72,13 +72,14 @@
          th:if="${!subscriptions.isEmpty()}">
 
         <div th:each="s, iterStat : ${subscriptions}"
+             th:with="catName=${s.category != null ? s.category.name : 'Sin categoría'},catColor=${s.category != null ? s.category.color : '#64748b'},catIcon=${s.category != null ? s.category.icon : '📦'}"
              th:data-name="${#strings.toLowerCase(s.name + ' ' + s.description + ' ' + s.notes)}"
-             th:data-category="${s.category.name}"
+             th:data-category="${catName}"
              class="sub-card glass-card rounded-xl overflow-hidden flex flex-col"
              th:style="'animation-delay:' + ${iterStat.index * 45} + 'ms'">
 
             <div class="flex flex-col flex-1"
-                 th:style="'border-left: 3px solid ' + ${s.category.color}">
+                 th:style="'border-left: 3px solid ' + ${catColor}">
 
                 <div class="p-5 flex-1">
                     <!-- Cabecera de la tarjeta -->
@@ -140,8 +141,8 @@
                     <div class="flex flex-wrap items-center gap-2">
                         <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium text-white"
                               style="opacity:0.82;"
-                              th:style="'background:' + ${s.category.color} + ';opacity:0.82;'"
-                              th:text="${s.category.icon + ' ' + s.category.name}"></span>
+                              th:style="'background:' + ${catColor} + ';opacity:0.82;'"
+                              th:text="${catIcon + ' ' + catName}"></span>
                         <span class="text-xs tabular-num" style="color:#3d4d66;">
                             <i class="bi bi-arrow-repeat mr-1"></i>
                             <span th:text="${#temporals.format(s.renewalDate, 'dd MMM yyyy')}"></span>

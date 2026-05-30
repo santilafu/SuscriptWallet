@@ -207,8 +207,8 @@
                         <td class="px-5 py-3.5">
                             <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium text-white"
                                   style="opacity:0.85;"
-                                  th:style="'background:' + ${s.category.color} + ';opacity:0.85;'"
-                                  th:text="${s.category.icon + ' ' + s.category.name}"></span>
+                                  th:style="'background:' + ${s.category != null ? s.category.color : '#64748b'} + ';opacity:0.85;'"
+                                  th:text="${s.category != null ? (s.category.icon + ' ' + s.category.name) : 'Sin categoría'}"></span>
                         </td>
                         <td class="px-5 py-3.5 tabular-num" style="color:#64748b;font-size:0.8125rem;"
                             th:text="${#temporals.format(s.renewalDate, 'dd MMM yyyy')}"></td>
