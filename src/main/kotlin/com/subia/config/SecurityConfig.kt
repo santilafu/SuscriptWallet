@@ -67,7 +67,7 @@ class SecurityConfig(
                     "/login", "/register", "/verify-email", "/verify-pending", "/verify-email-error",
                     "/forgot-password", "/reset-password", "/auth/google/callback",
                     "/oauth/gmail/callback",
-                    "/delete-account", "/account-deleted",
+                    "/delete-account", "/account-deleted", "/privacidad",
                     "/css/**", "/js/**", "/images/**", "/error"
                 ).permitAll()
                 // /api/** is fully handled by apiFilterChain (Order 1)
