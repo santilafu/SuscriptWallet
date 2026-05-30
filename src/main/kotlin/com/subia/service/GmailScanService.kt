@@ -187,7 +187,7 @@ class GmailScanService(
      * Casa el host del remitente contra el catálogo: coincidencia exacta, por subdominio
      * (`mail.netflix.com` → `netflix.com`) o por dominio registrable (recorta subdominios).
      */
-    private fun matchDomain(host: String, byDomain: Map<String, CatalogItem>): Map.Entry<String, CatalogItem>? {
+    internal fun matchDomain(host: String, byDomain: Map<String, CatalogItem>): Map.Entry<String, CatalogItem>? {
         byDomain[host]?.let { return mapEntry(host, it) }
         val direct = byDomain.entries.firstOrNull { (dom, _) -> host == dom || host.endsWith(".$dom") }
         if (direct != null) return direct
@@ -200,7 +200,7 @@ class GmailScanService(
         java.util.AbstractMap.SimpleEntry(key, value)
 
     /** Aproxima el dominio registrable quedándose con las dos últimas etiquetas (netflix.com). */
-    private fun registrableDomain(host: String): String {
+    internal fun registrableDomain(host: String): String {
         val parts = host.split('.')
         return if (parts.size >= 2) parts.takeLast(2).joinToString(".") else host
     }
@@ -267,7 +267,7 @@ class GmailScanService(
     }
 
     /** Extrae la dirección de un header From del tipo `Nombre <correo@dominio>` o `correo@dominio`. */
-    private fun extractEmail(from: String): String {
+    internal fun extractEmail(from: String): String {
         val lt = from.indexOf('<')
         val gt = from.indexOf('>')
         return if (lt in 0 until gt) from.substring(lt + 1, gt).trim() else from.trim()
@@ -282,7 +282,7 @@ class GmailScanService(
     // ── Extracción de precio del cuerpo ─────────────────────────────────────────
 
     /** Precio estimado a partir del cuerpo de un correo. */
-    private data class ExtractedPrice(val amount: BigDecimal, val currency: String, val cycle: BillingCycle?)
+    internal data class ExtractedPrice(val amount: BigDecimal, val currency: String, val cycle: BillingCycle?)
 
     /** Símbolo/código → moneda ISO. */
     private val currencyOf = mapOf(
@@ -298,11 +298,19 @@ class GmailScanService(
     )
 
     /**
-     * Recorre las partes del mensaje buscando texto y devuelve el primer precio plausible.
+     * Extrae el texto del mensaje y busca en él el primer precio plausible.
      * Devuelve null si no encuentra ninguno (entonces se usa el precio del catálogo).
      */
-    private fun extractPrice(msg: MessageResponse): ExtractedPrice? {
-        val text = bodyText(msg.payload).ifBlank { return null }
+    private fun extractPrice(msg: MessageResponse): ExtractedPrice? =
+        findPrice(bodyText(msg.payload))
+
+    /**
+     * Busca el primer precio plausible en un texto plano: número + símbolo/código de moneda
+     * (en cualquier orden), con el ciclo deducido del propio texto. Devuelve null si no hay
+     * ninguno, si la moneda no es reconocible o si el importe no es plausible.
+     */
+    internal fun findPrice(text: String): ExtractedPrice? {
+        if (text.isBlank()) return null
         val match = priceRegex.find(text) ?: return null
         val (symA, numA, numB, symB) = match.destructured
         val rawNum = numA.ifBlank { numB }
@@ -318,7 +326,7 @@ class GmailScanService(
         raw.replace(',', '.').toBigDecimalOrNull()
 
     /** Deduce el ciclo a partir de palabras del cuerpo; null si no es claro. */
-    private fun detectCycle(text: String): BillingCycle? {
+    internal fun detectCycle(text: String): BillingCycle? {
         val t = text.lowercase()
         return when {
             Regex("""(/\s?(año|ano|year)|anual|annual|yearly|al año|per year)""").containsMatchIn(t) -> BillingCycle.YEARLY
