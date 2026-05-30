@@ -66,6 +66,7 @@ class SecurityConfig(
                 auth.requestMatchers(
                     "/login", "/register", "/verify-email", "/verify-pending", "/verify-email-error",
                     "/forgot-password", "/reset-password", "/auth/google/callback",
+                    "/oauth/gmail/callback",
                     "/delete-account", "/account-deleted",
                     "/css/**", "/js/**", "/images/**", "/error"
                 ).permitAll()

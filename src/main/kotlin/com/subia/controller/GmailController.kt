@@ -1,5 +1,6 @@
 package com.subia.controller
 
+import com.subia.model.GmailScanResultRow
 import com.subia.model.Subscription
 import com.subia.repository.UserRepository
 import com.subia.service.CategoryService
@@ -7,6 +8,7 @@ import com.subia.service.DetectedSubscription
 import com.subia.service.GmailScanError
 import com.subia.service.GmailScanException
 import com.subia.service.GmailScanService
+import com.subia.service.GmailScanTicketService
 import com.subia.service.SubscriptionService
 import jakarta.servlet.http.HttpSession
 import org.slf4j.LoggerFactory
@@ -40,7 +42,8 @@ class GmailController(
     private val gmailScanService: GmailScanService,
     private val categoryService: CategoryService,
     private val subscriptionService: SubscriptionService,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val gmailScanTicketService: GmailScanTicketService
 ) {
     private val log = LoggerFactory.getLogger(GmailController::class.java)
     private val random = SecureRandom()
@@ -71,6 +74,10 @@ class GmailController(
         @RequestParam(required = false) error: String?,
         session: HttpSession
     ): String {
+        // Camino móvil: si el state es un ticket válido, lo gestionamos y salimos.
+        if (error == null && !code.isNullOrBlank() && !state.isNullOrBlank()) {
+            handleTicketCallback(code, state)?.let { return it }
+        }
         val expected = session.getAttribute(STATE_ATTR) as? String
         session.removeAttribute(STATE_ATTR)
         val months = (session.getAttribute(MONTHS_ATTR) as? Int) ?: GmailScanService.DEFAULT_MONTHS
@@ -161,6 +168,42 @@ class GmailController(
         // Quedan servicios sin añadir: los dejamos en sesión y volvemos a resultados para seguir.
         session.setAttribute(RESULT_ATTR, remaining)
         return "redirect:/gmail/results?added=$added"
+    }
+
+    private val androidDeepLink = "subia://gmail/done"
+
+    /**
+     * Camino del callback para la app móvil: el `state` es un ticket de un solo uso.
+     * Escanea, guarda los resultados ligados al userId del ticket y redirige al deep link.
+     * Devuelve null si el `state` no es un ticket válido (entonces se sigue el camino web).
+     */
+    private fun handleTicketCallback(code: String, state: String): String? {
+        val ticket = gmailScanTicketService.consume(state) ?: return null
+        return try {
+            val token = gmailScanService.exchangeCodeForToken(code)
+            val detected = gmailScanService.scan(token, ticket.months)
+            val rows = detected.map { d ->
+                GmailScanResultRow(
+                    scanId = ticket.id,
+                    userId = ticket.userId,
+                    serviceName = d.serviceName,
+                    description = d.catalogItem.description,
+                    domain = d.domain,
+                    senderEmail = d.senderEmail,
+                    lastSeen = d.lastSeen,
+                    price = d.effectivePrice,
+                    currency = d.effectiveCurrency,
+                    billingCycle = d.effectiveCycle,
+                    priceFromEmail = d.priceFromEmail,
+                    categoryKey = d.catalogItem.categoryKey
+                )
+            }
+            gmailScanTicketService.replaceResults(ticket.userId, rows)
+            "redirect:$androidDeepLink?status=ok"
+        } catch (ex: Exception) {
+            log.error("Escaneo Gmail (móvil) fallido: {}", ex.message, ex)
+            "redirect:$androidDeepLink?status=error"
+        }
     }
 
     private fun resolveUserId(userDetails: UserDetails): Long =
