@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <!--
-  Plantilla base — Tailwind CSS CDN + Alpine.js + dark mode permanente
+  Plantilla base — Tailwind CSS CDN + dark mode permanente.
+  Interactividad SIEMPRE en JS vanilla: el CSP no permite 'unsafe-eval', así que
+  Alpine.js (y cualquier cosa con eval/new Function) está prohibido en todo el sitio.
 -->
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
@@ -65,8 +67,6 @@
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 
@@ -88,8 +88,6 @@
             --ease-out:       cubic-bezier(0.23, 1, 0.32, 1);
             --ease-in-out:    cubic-bezier(0.77, 0, 0.175, 1);
         }
-
-        [x-cloak] { display: none !important; }
 
         /* ── Base ───────────────────────────────────────────────────────────── */
         html, body {
@@ -319,9 +317,6 @@
             text-transform: uppercase;
             color: var(--text-muted);
         }
-
-        /* Alpine.js cloak */
-        [x-cloak] { display: none !important; }
 
         /* line-clamp */
         .line-clamp-2 {

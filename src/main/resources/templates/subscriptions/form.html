@@ -16,7 +16,7 @@
     </div>
 
     <!-- ── Selector de catálogo (solo al crear) ───────────────────────── -->
-    <div class="glass-card rounded-xl mb-6 overflow-hidden"
+    <div class="enter glass-card rounded-xl mb-6 overflow-hidden" style="animation-delay:0ms"
          th:unless="${sub instanceof T(com.subia.model.Subscription) and sub.id > 0}">
         <div class="px-5 py-4 border-b border-white/[0.06] flex items-center gap-2">
             <i class="bi bi-grid-3x3-gap" style="color:#818cf8;"></i>
@@ -61,7 +61,7 @@
     <!-- ── Wizard de 3 pasos ───────────────────────────────────────────── -->
 
     <!-- Progress bar -->
-    <div class="glass-card rounded-xl px-6 py-5 mb-6">
+    <div class="enter glass-card rounded-xl px-6 py-5 mb-6" style="animation-delay:80ms">
         <div class="flex items-center">
 
             <!-- Paso 1 -->
@@ -103,7 +103,7 @@
           method="post">
         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
-        <div class="glass-card rounded-xl overflow-hidden">
+        <div class="enter glass-card rounded-xl overflow-hidden" style="animation-delay:160ms">
 
             <!-- PASO 1: Nombre, descripción, categoría -->
             <div id="wizard-step-1" class="p-6">
@@ -308,6 +308,17 @@
 
 <!-- ── JavaScript ─────────────────────────────────────────────────────── -->
 <th:block layout:fragment="scripts">
+<style>
+    /* Transición entre pasos del wizard: entrada con leve desplazamiento (ease-out). */
+    @keyframes wizardStepEnter {
+        from { opacity: 0; transform: translateX(10px); }
+        to   { opacity: 1; transform: translateX(0); }
+    }
+    .wizard-animating { animation: wizardStepEnter 0.28s cubic-bezier(0.23, 1, 0.32, 1); }
+    @media (prefers-reduced-motion: reduce) {
+        .wizard-animating { animation-duration: 0.01ms !important; }
+    }
+</style>
 <script th:inline="javascript">
 var i18n = {
     cycleName: {
@@ -332,7 +343,13 @@ var i18n = {
         if (prev) prev.style.display = 'none';
 
         var next = document.getElementById('wizard-step-' + step);
-        if (next) next.style.display = '';
+        if (next) {
+            next.style.display = '';
+            // Re-dispara la animación de entrada del paso (quitar + reflow + añadir).
+            next.classList.remove('wizard-animating');
+            void next.offsetWidth;
+            next.classList.add('wizard-animating');
+        }
 
         for (var i = 1; i <= 3; i++) {
             var dot   = document.getElementById('step-dot-' + i);

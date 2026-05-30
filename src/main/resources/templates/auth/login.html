@@ -77,6 +77,16 @@
         .link-accent:hover { color: #a5b4fc; }
         .divider-line { border-color: rgba(255,255,255,0.07); }
         .divider-text { background-color: transparent; padding: 0 0.875rem; color: #3d4d66; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.04em; }
+
+        /* Entrada escalonada (curva fuerte, ease-out). */
+        @keyframes authEnter {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .auth-enter { animation: authEnter 0.4s cubic-bezier(0.23, 1, 0.32, 1) backwards; }
+        @media (prefers-reduced-motion: reduce) {
+            .auth-enter { animation-duration: 0.01ms !important; transform: none !important; }
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center px-4">
@@ -98,7 +108,7 @@
     </div>
 
     <!-- Logo -->
-    <div class="text-center mb-8" style="position:relative;z-index:1;">
+    <div class="auth-enter text-center mb-8" style="position:relative;z-index:1;animation-delay:0ms;">
         <a href="/dashboard" class="inline-flex items-center gap-2.5 font-bold text-xl no-underline" style="color:inherit;letter-spacing:-0.02em;">
             <div style="width:36px;height:36px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);border-radius:10px;display:flex;align-items:center;justify-content:center;">
                 <i class="bi bi-credit-card-2-front" style="color:#818cf8;font-size:1rem;"></i>
@@ -109,7 +119,7 @@
     </div>
 
     <!-- Card -->
-    <div class="card p-8">
+    <div class="auth-enter card p-8" style="animation-delay:80ms;">
 
         <h1 class="text-lg font-bold mb-6 text-center" style="color:#e8edf5;letter-spacing:-0.02em;" th:text="#{login.title}">Iniciar sesión</h1>
 
@@ -177,7 +187,7 @@
              data-width="100%">
         </div>
 
-        <p class="mt-6 text-center text-sm" style="color: #94a3b8;">
+        <p class="auth-enter mt-6 text-center text-sm" style="color: #94a3b8;animation-delay:160ms;">
             <span th:text="#{login.no-account}">¿No tienes cuenta?</span>
             <a href="/register" class="link-accent" th:text="#{login.create}">Crear cuenta</a>
         </p>
