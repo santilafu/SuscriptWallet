@@ -119,7 +119,7 @@ class GmailController(
         session: HttpSession
     ): String {
         val detected = session.getAttribute(RESULT_ATTR) as? List<DetectedSubscription> ?: emptyList()
-        val indices = selected.orEmpty()
+        val indices = selected.orEmpty().toSet()
         if (detected.isEmpty() || indices.isEmpty()) {
             return "redirect:/gmail/results?added=0"
         }
@@ -127,29 +127,40 @@ class GmailController(
         val categoryKeyToId = categoryKeyToId()
 
         var added = 0
-        for (i in indices) {
-            val d = detected.getOrNull(i) ?: continue
-            val categoryId = categoryKeyToId[d.catalogItem.categoryKey] ?: continue
-            val category = categoryService.findById(categoryId)
-            subscriptionService.save(
-                Subscription(
-                    name = d.serviceName,
-                    description = d.catalogItem.description,
-                    price = d.effectivePrice,
-                    currency = d.effectiveCurrency,
-                    billingCycle = d.effectiveCycle,
-                    renewalDate = LocalDate.now().plusMonths(1),
-                    category = category,
-                    active = true,
-                    notes = ""
-                ),
-                userId
-            )
-            added++
+        // Conservamos las que NO se den de alta (no marcadas, o marcadas sin categoría compatible)
+        // para que el usuario pueda añadirlas más tarde sin reescanear.
+        val remaining = ArrayList<DetectedSubscription>()
+        for ((i, d) in detected.withIndex()) {
+            val categoryId = categoryKeyToId[d.catalogItem.categoryKey]
+            if (i in indices && categoryId != null) {
+                subscriptionService.save(
+                    Subscription(
+                        name = d.serviceName,
+                        description = d.catalogItem.description,
+                        price = d.effectivePrice,
+                        currency = d.effectiveCurrency,
+                        billingCycle = d.effectiveCycle,
+                        renewalDate = LocalDate.now().plusMonths(1),
+                        category = categoryService.findById(categoryId),
+                        active = true,
+                        notes = ""
+                    ),
+                    userId
+                )
+                added++
+            } else {
+                remaining.add(d)
+            }
         }
-        // Vaciamos los resultados para no re-añadir al recargar y volvemos a la lista.
-        session.removeAttribute(RESULT_ATTR)
-        return "redirect:/subscriptions?imported=$added"
+
+        if (remaining.isEmpty()) {
+            // No queda nada por revisar: vaciamos la sesión y vamos a la lista de suscripciones.
+            session.removeAttribute(RESULT_ATTR)
+            return "redirect:/subscriptions?imported=$added"
+        }
+        // Quedan servicios sin añadir: los dejamos en sesión y volvemos a resultados para seguir.
+        session.setAttribute(RESULT_ATTR, remaining)
+        return "redirect:/gmail/results?added=$added"
     }
 
     private fun resolveUserId(userDetails: UserDetails): Long =
