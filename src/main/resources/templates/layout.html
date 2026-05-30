@@ -191,8 +191,9 @@
             to   { opacity: 1; transform: translateY(0); }
         }
         /* `backwards`: aplica el estado inicial durante el delay (sin parpadeo) y, al
-           terminar, libera la propiedad para que el filtrado pueda animar la opacidad. */
-        .sub-card { animation: cardEnter 0.34s var(--ease-out) backwards; }
+           terminar, libera la propiedad para que el filtrado pueda animar la opacidad.
+           .stat-card = tarjeta con lift en hover; .enter = panel que solo entra. */
+        .sub-card, .stat-card, .enter { animation: cardEnter 0.34s var(--ease-out) backwards; }
 
         /* Salida al filtrar: se desvanece y encoge antes de colapsar el hueco. */
         .sub-card.is-hiding {
@@ -204,7 +205,7 @@
 
         /* Hover solo en dispositivos con puntero fino (evita falsos positivos táctiles). */
         @media (hover: hover) and (pointer: fine) {
-            .sub-card:hover {
+            .sub-card:hover, .stat-card:hover {
                 transform: translateY(-3px);
                 border-color: rgba(99,102,241,0.22) !important;
                 box-shadow:
@@ -249,11 +250,11 @@
 
         /* ── Movimiento reducido: conserva la opacidad, elimina el desplazamiento ── */
         @media (prefers-reduced-motion: reduce) {
-            .page-content, .sub-card { animation-duration: 0.01ms !important; transform: none !important; }
+            .page-content, .sub-card, .stat-card, .enter { animation-duration: 0.01ms !important; transform: none !important; }
             .sub-card.is-hiding { transform: none !important; }
             .status-dot-active  { animation: none !important; }
             @media (hover: hover) and (pointer: fine) {
-                .sub-card:hover { transform: none !important; }
+                .sub-card:hover, .stat-card:hover { transform: none !important; }
             }
         }
 

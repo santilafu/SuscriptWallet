@@ -79,7 +79,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
 
         <!-- Gasto mensual -->
-        <div class="glass-card rounded-xl p-5 flex items-start gap-4">
+        <div class="stat-card glass-card rounded-xl p-5 flex items-start gap-4" style="animation-delay:0ms">
             <div style="width:38px;height:38px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
                 <i class="bi bi-calendar-month text-sm" style="color:#818cf8;"></i>
             </div>
@@ -91,7 +91,7 @@
         </div>
 
         <!-- Gasto anual -->
-        <div class="glass-card rounded-xl p-5 flex items-start gap-4">
+        <div class="stat-card glass-card rounded-xl p-5 flex items-start gap-4" style="animation-delay:60ms">
             <div style="width:38px;height:38px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
                 <i class="bi bi-calendar-check text-sm" style="color:#4ade80;"></i>
             </div>
@@ -103,7 +103,7 @@
         </div>
 
         <!-- Próximas renovaciones -->
-        <div class="glass-card rounded-xl p-5 flex items-start gap-4">
+        <div class="stat-card glass-card rounded-xl p-5 flex items-start gap-4" style="animation-delay:120ms">
             <div style="width:38px;height:38px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
                 <i class="bi bi-clock-history text-sm" style="color:#fbbf24;"></i>
             </div>
@@ -115,7 +115,7 @@
         </div>
 
         <!-- Alertas -->
-        <div class="glass-card rounded-xl p-5 flex items-start gap-4">
+        <div class="stat-card glass-card rounded-xl p-5 flex items-start gap-4" style="animation-delay:180ms">
             <div style="width:38px;height:38px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
                 <i class="bi bi-bell text-sm" style="color:#f87171;"></i>
             </div>
@@ -131,7 +131,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-5 gap-5">
 
         <!-- Gráfico de dona: gasto por categoría -->
-        <div class="lg:col-span-2 glass-card rounded-xl overflow-hidden">
+        <div class="enter lg:col-span-2 glass-card rounded-xl overflow-hidden" style="animation-delay:240ms">
             <div class="px-5 py-3.5 flex items-center gap-2" style="border-bottom:1px solid rgba(255,255,255,0.05);">
                 <i class="bi bi-pie-chart text-xs" style="color:#818cf8;"></i>
                 <span class="text-xs font-semibold tracking-wide text-slate-300" style="letter-spacing:0.02em;" th:text="#{dashboard.chart.category}">Gasto por categoría</span>
@@ -167,7 +167,7 @@
         </div>
 
         <!-- Tabla de próximas renovaciones -->
-        <div class="lg:col-span-3 glass-card rounded-xl overflow-hidden">
+        <div class="enter lg:col-span-3 glass-card rounded-xl overflow-hidden" style="animation-delay:300ms">
             <div class="px-5 py-3.5 flex items-center gap-2" style="border-bottom:1px solid rgba(255,255,255,0.05);">
                 <i class="bi bi-calendar-event text-xs" style="color:#818cf8;"></i>
                 <span class="text-xs font-semibold tracking-wide text-slate-300" style="letter-spacing:0.02em;" th:text="#{dashboard.table.title}">Próximas renovaciones (30 días)</span>
@@ -231,7 +231,7 @@
 
     <!-- ── Top 5 gastos mensuales (gráfico de barras) ───────────────── -->
     <div th:if="${!dashboard.topSubscriptions.isEmpty()}" class="mt-5">
-        <div class="glass-card rounded-xl overflow-hidden">
+        <div class="enter glass-card rounded-xl overflow-hidden" style="animation-delay:360ms">
             <div class="px-5 py-3.5 flex items-center gap-2" style="border-bottom:1px solid rgba(255,255,255,0.05);">
                 <i class="bi bi-bar-chart text-xs" style="color:#818cf8;"></i>
                 <span class="text-xs font-semibold tracking-wide text-slate-300" style="letter-spacing:0.02em;" th:text="#{dashboard.chart.top5}">Top 5 gastos mensuales</span>
@@ -251,6 +251,8 @@
 <script th:inline="javascript">
 /*<![CDATA[*/
 var currencySym = /*[[${dashboard.currencySymbol}]]*/ '€';
+var reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+var chartAnim = reduceMotion ? false : { duration: 700, easing: 'easeOutQuart' };
 
 (function () {
     'use strict';
@@ -283,6 +285,7 @@ var currencySym = /*[[${dashboard.currencySymbol}]]*/ '€';
         },
         options: {
             responsive: true,
+            animation: chartAnim,
             cutout: '72%',
             plugins: {
                 legend: { display: false },
@@ -337,6 +340,7 @@ var currencySym = /*[[${dashboard.currencySymbol}]]*/ '€';
         },
         options: {
             responsive: true,
+            animation: chartAnim,
             indexAxis: 'y',
             plugins: {
                 legend: { display: false },
