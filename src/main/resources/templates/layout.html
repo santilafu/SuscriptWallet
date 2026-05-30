@@ -86,7 +86,12 @@
             --text-muted:     #64748b;
             --text-secondary: #94a3b8;
             --easing-smooth:  cubic-bezier(0.4, 0, 0.2, 1);
+            /* Curvas fuertes (más "punch" que las CSS por defecto) */
+            --ease-out:       cubic-bezier(0.23, 1, 0.32, 1);
+            --ease-in-out:    cubic-bezier(0.77, 0, 0.175, 1);
         }
+
+        [x-cloak] { display: none !important; }
 
         /* ── Base ───────────────────────────────────────────────────────────── */
         html, body {
@@ -178,6 +183,78 @@
         }
         .page-content {
             animation: fadeInUp 0.22s cubic-bezier(0.4, 0, 0.2, 1) both;
+        }
+
+        /* ── Lista de suscripciones: entrada escalonada (stagger) ────────────── */
+        @keyframes cardEnter {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        /* `backwards`: aplica el estado inicial durante el delay (sin parpadeo) y, al
+           terminar, libera la propiedad para que el filtrado pueda animar la opacidad. */
+        .sub-card { animation: cardEnter 0.34s var(--ease-out) backwards; }
+
+        /* Salida al filtrar: se desvanece y encoge antes de colapsar el hueco. */
+        .sub-card.is-hiding {
+            opacity: 0;
+            transform: scale(0.97);
+            transition: opacity 0.14s var(--ease-out), transform 0.14s var(--ease-out);
+            pointer-events: none;
+        }
+
+        /* Hover solo en dispositivos con puntero fino (evita falsos positivos táctiles). */
+        @media (hover: hover) and (pointer: fine) {
+            .sub-card:hover {
+                transform: translateY(-3px);
+                border-color: rgba(99,102,241,0.22) !important;
+                box-shadow:
+                    0 1px 0 0 rgba(255,255,255,0.07),
+                    0 14px 42px rgba(0,0,0,0.6),
+                    0 0 0 1px rgba(99,102,241,0.12),
+                    inset 0 1px 0 rgba(255,255,255,0.06) !important;
+            }
+        }
+
+        /* ── Indicador "Activa": pulso lento de baja frecuencia ──────────────── */
+        @keyframes statusPulse {
+            0%, 100% { transform: scale(1);   opacity: 1; }
+            50%      { transform: scale(1.6); opacity: 0.45; }
+        }
+        .status-dot-active { animation: statusPulse 2.6s var(--easing-smooth) infinite; }
+
+        /* ── Pills de filtro (estado por clase, no por estilos inline en JS) ──── */
+        .filter-pill {
+            border-color: rgba(255,255,255,0.08);
+            background: transparent;
+            color: #64748b;
+            transition: color 0.15s ease, background-color 0.15s ease,
+                        border-color 0.15s ease, transform 0.1s var(--ease-out);
+        }
+        .filter-pill:active { transform: scale(0.96); }
+        .filter-pill.active {
+            border-color: rgba(99,102,241,0.5) !important;
+            background: rgba(99,102,241,0.12) !important;
+            color: #a5b4fc !important;
+        }
+
+        /* ── Botones de acción de tarjeta (hover por CSS + feedback al pulsar) ── */
+        .card-action {
+            transition: color 0.15s ease, background-color 0.15s ease,
+                        border-color 0.15s ease, transform 0.1s var(--ease-out);
+        }
+        .card-action:active { transform: scale(0.97); }
+        .card-action.edit:hover   { color:#cbd5e1; background:rgba(255,255,255,0.05); border-color:rgba(255,255,255,0.12); }
+        .card-action.cancel:hover { color:#fb923c; background:rgba(245,158,11,0.08); border-color:rgba(245,158,11,0.3); }
+        .card-action.delete:hover { color:#f87171; background:rgba(239,68,68,0.08); border-color:rgba(239,68,68,0.3); }
+
+        /* ── Movimiento reducido: conserva la opacidad, elimina el desplazamiento ── */
+        @media (prefers-reduced-motion: reduce) {
+            .page-content, .sub-card { animation-duration: 0.01ms !important; transform: none !important; }
+            .sub-card.is-hiding { transform: none !important; }
+            .status-dot-active  { animation: none !important; }
+            @media (hover: hover) and (pointer: fine) {
+                .sub-card:hover { transform: none !important; }
+            }
         }
 
         /* ── Scrollbar refinada ──────────────────────────────────────────────── */
