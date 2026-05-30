@@ -2,6 +2,7 @@ package com.subia.exception
 
 import com.subia.dto.api.ApiError
 import com.subia.dto.api.ApiResponse
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.security.authentication.BadCredentialsException
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.*
 
 @RestControllerAdvice
 class ApiExceptionHandler {
+
+    private val log = LoggerFactory.getLogger(ApiExceptionHandler::class.java)
 
     @ExceptionHandler(NoSuchElementException::class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -49,6 +52,9 @@ class ApiExceptionHandler {
 
     @ExceptionHandler(Exception::class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    fun handleGeneric(ex: Exception): ApiResponse<Nothing> =
-        ApiResponse(error = ApiError("INTERNAL_ERROR", "Error interno del servidor"))
+    fun handleGeneric(ex: Exception): ApiResponse<Nothing> {
+        // Registramos el stacktrace completo: sin esto, los 500 de la API eran invisibles en los logs.
+        log.error("Error no controlado en un endpoint /api: {}", ex.message, ex)
+        return ApiResponse(error = ApiError("INTERNAL_ERROR", "Error interno del servidor"))
+    }
 }

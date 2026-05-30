@@ -95,11 +95,21 @@ class ApiSubscriptionController(
         subscriptionService.delete(id, userId)
     }
 
-    private fun Subscription.toDto() = SubscriptionDto(
-        id = id, name = name, description = description, price = price,
-        currency = currency, billingCycle = billingCycle.name, renewalDate = renewalDate,
-        active = active, notes = notes, categoryId = category.id, categoryName = category.name,
-        categoryColor = category.color, categoryIcon = category.icon,
-        isTrial = isTrial, trialEndsAt = trialEndsAt?.toString()
-    )
+    private fun Subscription.toDto(): SubscriptionDto {
+        // Hibernate puede dejar `category` a null si la fila quedó huérfana (categoría borrada).
+        // Kotlin la declara no-nula, pero en runtime puede serlo: la tratamos defensivamente
+        // para que una sola suscripción mal enlazada no reviente toda la lista con un 500.
+        @Suppress("SENSELESS_COMPARISON")
+        val cat: com.subia.model.Category? = category
+        return SubscriptionDto(
+            id = id, name = name, description = description, price = price,
+            currency = currency, billingCycle = billingCycle.name, renewalDate = renewalDate,
+            active = active, notes = notes,
+            categoryId = cat?.id ?: 0L,
+            categoryName = cat?.name ?: "Sin categoría",
+            categoryColor = cat?.color ?: "#64748b",
+            categoryIcon = cat?.icon ?: "📦",
+            isTrial = isTrial, trialEndsAt = trialEndsAt?.toString()
+        )
+    }
 }
