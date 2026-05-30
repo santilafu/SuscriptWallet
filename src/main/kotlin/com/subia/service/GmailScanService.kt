@@ -136,10 +136,11 @@ class GmailScanService(
      */
     fun scan(accessToken: String, months: Int = DEFAULT_MONTHS): List<DetectedSubscription> {
         val window = months.coerceIn(1, MAX_MONTHS)
-        val byDomain: Map<String, CatalogItem> = catalogService.getAllItems()
+        // Conservamos TODOS los planes (tiers) de cada dominio para luego elegir el que mejor
+        // encaje con el precio detectado en el correo (ver chooseBestPlan).
+        val byDomain: Map<String, List<CatalogItem>> = catalogService.getAllItems()
             .filter { !it.domain.isNullOrBlank() }
             .groupBy { it.domain!!.lowercase() }
-            .mapValues { (_, items) -> items.first() }
 
         val query = "newer_than:${window}m (subscription OR receipt OR invoice OR payment OR renewal OR " +
             "billing OR \"your plan\" OR factura OR recibo OR suscripción OR suscripcion OR pago OR " +
@@ -168,15 +169,17 @@ class GmailScanService(
 
             // Paso 2: SOLO en los correos reconocidos descargamos el cuerpo para estimar el precio.
             val price = fetchMessage(accessToken, ref.id, full = true)?.let { extractPrice(it) }
+            // Entre los planes del servicio, elegimos el que mejor encaja con el precio detectado.
+            val chosen = chooseBestPlan(match.value, price?.amount)
             detected[match.key] = DetectedSubscription(
-                serviceName = match.value.name,
+                serviceName = chosen.name,
                 domain = match.key,
                 senderEmail = email,
                 lastSeen = epochMillisToDate(meta.internalDate),
-                catalogItem = match.value,
+                catalogItem = chosen,
                 emailPrice = price?.amount,
                 emailCurrency = price?.currency,
-                emailCycle = price?.cycle
+                emailCycle = price?.cycle ?: inferCycleFromPlan(chosen, price?.amount)
             )
         }
         log.info("Escaneo Gmail ({}m): {} correos leídos, {} servicios detectados", window, processed, detected.size)
@@ -186,8 +189,12 @@ class GmailScanService(
     /**
      * Casa el host del remitente contra el catálogo: coincidencia exacta, por subdominio
      * (`mail.netflix.com` → `netflix.com`) o por dominio registrable (recorta subdominios).
+     * Devuelve el dominio que casó junto con TODOS sus planes (tiers).
      */
-    internal fun matchDomain(host: String, byDomain: Map<String, CatalogItem>): Map.Entry<String, CatalogItem>? {
+    internal fun matchDomain(
+        host: String,
+        byDomain: Map<String, List<CatalogItem>>
+    ): Map.Entry<String, List<CatalogItem>>? {
         byDomain[host]?.let { return mapEntry(host, it) }
         val direct = byDomain.entries.firstOrNull { (dom, _) -> host == dom || host.endsWith(".$dom") }
         if (direct != null) return direct
@@ -196,8 +203,44 @@ class GmailScanService(
         return byDomain[registrable]?.let { mapEntry(registrable, it) }
     }
 
-    private fun mapEntry(key: String, value: CatalogItem): Map.Entry<String, CatalogItem> =
+    private fun mapEntry(key: String, value: List<CatalogItem>): Map.Entry<String, List<CatalogItem>> =
         java.util.AbstractMap.SimpleEntry(key, value)
+
+    /**
+     * Elige, entre los planes (tiers) de un mismo servicio, el que mejor encaja con el precio
+     * detectado en el correo. Compara el importe con el precio mensual y, si existe, el anual de
+     * cada plan, y se queda con el de menor diferencia relativa. Si no hay precio detectado o solo
+     * hay un plan, devuelve el primero (orden del catálogo).
+     */
+    internal fun chooseBestPlan(candidates: List<CatalogItem>, detected: BigDecimal?): CatalogItem {
+        if (candidates.size == 1 || detected == null || detected <= BigDecimal.ZERO) {
+            return candidates.first()
+        }
+        return candidates.minByOrNull { c ->
+            listOfNotNull(c.price, c.priceAnnual)
+                .filter { it > BigDecimal.ZERO }
+                .minOfOrNull { relativeDiff(it, detected) }
+                ?: Double.MAX_VALUE
+        } ?: candidates.first()
+    }
+
+    /** Diferencia relativa |a−b|/b, para comparar precios de forma independiente de la escala. */
+    private fun relativeDiff(a: BigDecimal, b: BigDecimal): Double {
+        val base = b.toDouble()
+        return if (base > 0) (a - b).abs().toDouble() / base else Double.MAX_VALUE
+    }
+
+    /**
+     * Si el correo no indicó la periodicidad pero el importe detectado encaja mejor con el precio
+     * anual del plan que con el mensual, asume cobro anual. Devuelve null en cualquier otro caso
+     * (entonces se usa el ciclo del propio plan del catálogo).
+     */
+    internal fun inferCycleFromPlan(plan: CatalogItem, amount: BigDecimal?): BillingCycle? {
+        if (amount == null || amount <= BigDecimal.ZERO) return null
+        val annual = plan.priceAnnual?.takeIf { it > BigDecimal.ZERO } ?: return null
+        val monthly = plan.price.takeIf { it > BigDecimal.ZERO } ?: return BillingCycle.YEARLY
+        return if (relativeDiff(annual, amount) < relativeDiff(monthly, amount)) BillingCycle.YEARLY else null
+    }
 
     /** Aproxima el dominio registrable quedándose con las dos últimas etiquetas (netflix.com). */
     internal fun registrableDomain(host: String): String {

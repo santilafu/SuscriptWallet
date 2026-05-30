@@ -34,6 +34,17 @@ class GmailScanServiceTest {
         domain = domain
     )
 
+    private fun plan(name: String, price: String, annual: String? = null) = CatalogItem(
+        name = name,
+        price = BigDecimal(price),
+        currency = "EUR",
+        billingCycle = BillingCycle.MONTHLY,
+        description = "",
+        categoryKey = "streaming",
+        domain = "netflix.com",
+        priceAnnual = annual?.let { BigDecimal(it) }
+    )
+
     // ── extractEmail ────────────────────────────────────────────────────────
     @Test
     fun `extractEmail saca la direccion de un From con nombre`() {
@@ -56,15 +67,63 @@ class GmailScanServiceTest {
     // ── matchDomain ─────────────────────────────────────────────────────────
     @Test
     fun `matchDomain casa por dominio exacto y por subdominio`() {
-        val byDomain = mapOf("netflix.com" to item("Netflix", "netflix.com"))
-        assertEquals("Netflix", service.matchDomain("netflix.com", byDomain)?.value?.name)
-        assertEquals("Netflix", service.matchDomain("email.account.netflix.com", byDomain)?.value?.name)
+        val byDomain = mapOf("netflix.com" to listOf(item("Netflix", "netflix.com")))
+        assertEquals("Netflix", service.matchDomain("netflix.com", byDomain)?.value?.first()?.name)
+        assertEquals("Netflix", service.matchDomain("email.account.netflix.com", byDomain)?.value?.first()?.name)
     }
 
     @Test
     fun `matchDomain devuelve null si el remitente no esta en el catalogo`() {
-        val byDomain = mapOf("netflix.com" to item("Netflix", "netflix.com"))
+        val byDomain = mapOf("netflix.com" to listOf(item("Netflix", "netflix.com")))
         assertNull(service.matchDomain("desconocido.com", byDomain))
+    }
+
+    // ── chooseBestPlan ──────────────────────────────────────────────────────
+    @Test
+    fun `chooseBestPlan elige el tier mas cercano al precio detectado`() {
+        val planes = listOf(
+            plan("Netflix Básico", "6.99"),
+            plan("Netflix Estándar", "13.99"),
+            plan("Netflix Premium", "19.99")
+        )
+        assertEquals("Netflix Estándar", service.chooseBestPlan(planes, BigDecimal("13.99")).name)
+        assertEquals("Netflix Premium", service.chooseBestPlan(planes, BigDecimal("18.50")).name)
+        assertEquals("Netflix Básico", service.chooseBestPlan(planes, BigDecimal("7.20")).name)
+    }
+
+    @Test
+    fun `chooseBestPlan usa el primer plan si no hay precio detectado`() {
+        val planes = listOf(plan("Netflix Básico", "6.99"), plan("Netflix Premium", "19.99"))
+        assertEquals("Netflix Básico", service.chooseBestPlan(planes, null).name)
+    }
+
+    @Test
+    fun `chooseBestPlan compara tambien contra el precio anual`() {
+        val planes = listOf(
+            plan("Mensual", "9.99", annual = "99.99"),
+            plan("Otro", "4.99")
+        )
+        // El importe detectado coincide con el precio anual del primer plan.
+        assertEquals("Mensual", service.chooseBestPlan(planes, BigDecimal("99.99")).name)
+    }
+
+    // ── inferCycleFromPlan ──────────────────────────────────────────────────
+    @Test
+    fun `inferCycleFromPlan asume anual cuando el importe encaja con el precio anual`() {
+        val p = plan("Plan", "9.99", annual = "99.99")
+        assertEquals(BillingCycle.YEARLY, service.inferCycleFromPlan(p, BigDecimal("99.99")))
+    }
+
+    @Test
+    fun `inferCycleFromPlan no asume nada cuando el importe es el mensual`() {
+        val p = plan("Plan", "9.99", annual = "99.99")
+        assertNull(service.inferCycleFromPlan(p, BigDecimal("9.99")))
+    }
+
+    @Test
+    fun `inferCycleFromPlan no asume nada si el plan no tiene precio anual`() {
+        val p = plan("Plan", "9.99")
+        assertNull(service.inferCycleFromPlan(p, BigDecimal("9.99")))
     }
 
     // ── findPrice ───────────────────────────────────────────────────────────
