@@ -13,3 +13,4 @@ import kotlinx.serialization.Serializable
 @Serializable object SettingsRoute
 @Serializable object ResumenAnualRoute
 @Serializable object OnboardingRoute
+@Serializable object GmailScanRoute

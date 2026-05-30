@@ -1,6 +1,7 @@
 package com.subia.android
 
 import android.Manifest
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.compose.setContent
@@ -21,6 +22,7 @@ import com.subia.android.ui.theme.SubIATheme
 import com.subia.android.ui.theme.ThemeState
 import com.subia.android.worker.RenovacionWorker
 import com.subia.shared.viewmodel.AuthViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.koin.compose.viewmodel.koinViewModel
 import java.util.concurrent.TimeUnit
 
@@ -37,9 +39,13 @@ class MainActivity : AppCompatActivity() {
             // No se requiere acción en caso de denegación: degradación elegante.
         }
 
+    /** Estado del deep link de vuelta del consentimiento de Gmail: "ok"/"error", o null. */
+    private val gmailReturnStatus = MutableStateFlow<String?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        handleGmailDeepLink(intent)
 
         // Cargar la preferencia de color dinámico (Material You) antes de componer el tema.
         ThemeState.load(this)
@@ -78,13 +84,30 @@ class MainActivity : AppCompatActivity() {
 
                 val navController = rememberNavController()
                 val startDestination = if (isLoggedIn) DashboardRoute else LoginRoute
+                val gmailStatus by gmailReturnStatus.collectAsState()
 
                 SubIAApp(
                     navController = navController,
                     startDestination = startDestination,
-                    authViewModel = authViewModel
+                    authViewModel = authViewModel,
+                    gmailReturnStatus = gmailStatus,
+                    onGmailReturnConsumed = { gmailReturnStatus.value = null }
                 )
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleGmailDeepLink(intent)
+    }
+
+    /** Captura el deep link subia://gmail/done?status=... y publica el resultado para la UI. */
+    private fun handleGmailDeepLink(intent: Intent?) {
+        val uri = intent?.data ?: return
+        if (uri.scheme == "subia" && uri.host == "gmail") {
+            gmailReturnStatus.value = uri.getQueryParameter("status") ?: "ok"
         }
     }
 }
