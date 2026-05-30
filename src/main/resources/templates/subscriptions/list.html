@@ -34,6 +34,13 @@
         </a>
     </div>
 
+    <div th:if="${param.imported != null and param.imported[0] != '0'}"
+         class="mb-6 p-3 rounded-lg text-sm flex items-center gap-2"
+         style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);color:#86efac;">
+        <i class="bi bi-check-circle"></i>
+        <span>Añadimos <span th:text="${param.imported[0]}">0</span> suscripciones detectadas en tu Gmail.</span>
+    </div>
+
     <div class="glass-card rounded-xl p-4 mb-6">
         <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
             <div class="relative flex-shrink-0 w-full sm:w-72">

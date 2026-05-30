@@ -32,19 +32,35 @@
                      style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#fca5a5;">
                     <span th:if="${param.gmailError[0] == 'notconfigured'}">El escaneo de Gmail todavía no está configurado en el servidor (falta el secret del OAuth client de Google).</span>
                     <span th:if="${param.gmailError[0] == 'denied'}">No se concedió el acceso a Gmail o la sesión caducó. Vuelve a intentarlo.</span>
+                    <span th:if="${param.gmailError[0] == 'scope'}">No concediste el permiso de lectura de Gmail. Hace falta marcar la casilla de acceso al correo para poder detectar suscripciones.</span>
+                    <span th:if="${param.gmailError[0] == 'token'}">No pudimos validar tu sesión con Google. Vuelve a intentarlo.</span>
+                    <span th:if="${param.gmailError[0] == 'rate'}">Google limitó temporalmente las peticiones. Espera un par de minutos y vuelve a intentarlo.</span>
                     <span th:if="${param.gmailError[0] == 'scan'}">Hubo un error al analizar el correo. Vuelve a intentarlo en unos minutos.</span>
                 </div>
                 <p class="text-sm text-slate-400 mb-4">
-                    Conecta tu cuenta de Google y analizaremos tus correos de facturación del último año para detectar
-                    a qué servicios estás suscrito.
-                    <strong class="text-slate-300">No guardamos tus correos ni tu contraseña</strong>: solo leemos el
-                    remitente para reconocer servicios conocidos y proponerte añadirlos.
+                    Conecta tu cuenta de Google y analizaremos tus correos de facturación para detectar
+                    a qué servicios estás suscrito y estimar cuánto pagas.
+                    <strong class="text-slate-300">No guardamos tus correos ni tu contraseña</strong>: leemos el
+                    remitente para reconocer servicios conocidos y, solo en esos correos, buscamos el importe
+                    para sugerirte el precio. Nada de eso se almacena: solo te proponemos los servicios para que decidas.
                 </p>
-                <a th:href="@{/gmail/connect}"
-                   class="inline-flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-all duration-200 no-underline shadow-lg shadow-accent/20">
-                    <i class="bi bi-google"></i>
-                    <span>Detectar con Gmail</span>
-                </a>
+                <form th:action="@{/gmail/connect}" method="get" class="flex items-end gap-3 flex-wrap">
+                    <div>
+                        <label for="gmailMonths" class="block text-xs text-slate-500 mb-1">Analizar los últimos</label>
+                        <select id="gmailMonths" name="months"
+                                class="bg-[#0f1626] border border-white/[0.1] text-slate-200 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-accent">
+                            <option value="3">3 meses</option>
+                            <option value="6">6 meses</option>
+                            <option value="12" selected>12 meses</option>
+                            <option value="24">24 meses</option>
+                        </select>
+                    </div>
+                    <button type="submit"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-lg shadow-accent/20 cursor-pointer">
+                        <i class="bi bi-google"></i>
+                        <span>Detectar con Gmail</span>
+                    </button>
+                </form>
             </div>
         </div>
 
