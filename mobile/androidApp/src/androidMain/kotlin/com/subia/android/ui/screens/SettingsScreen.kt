@@ -70,7 +70,7 @@ private val csvJson = Json { ignoreUnknownKeys = true; isLenient = true; coerceI
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit) {
+fun SettingsScreen(onBack: () -> Unit, onDetectGmail: () -> Unit = {}) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences(PREFS_NAME_SETTINGS, Context.MODE_PRIVATE) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -287,6 +287,28 @@ fun SettingsScreen(onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(stringResource(R.string.export_to_csv))
+            }
+
+            Spacer(Modifier.height(24.dp))
+            HorizontalDivider()
+            Spacer(Modifier.height(24.dp))
+
+            // ── Detección automática por Gmail ────────────────────────
+            Text(
+                text = stringResource(R.string.gmail_detect_section),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.gmail_detect_desc),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(12.dp))
+            Button(onClick = onDetectGmail, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.gmail_detect_button))
             }
         }
     }

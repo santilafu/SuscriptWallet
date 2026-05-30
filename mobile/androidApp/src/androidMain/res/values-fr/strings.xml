@@ -199,4 +199,12 @@
     <string name="widget_monthly_label">Dépensé ce mois</string>
     <string name="widget_next">Prochain : %1$s · %2$d jours</string>
     <string name="widget_no_data">Ouvrez l\'app pour commencer</string>
+    <!-- Détection Gmail -->
+    <string name="gmail_detect_section">Détection automatique</string>
+    <string name="gmail_detect_desc">Détectez vos abonnements en lisant votre Gmail, sans rien saisir.</string>
+    <string name="gmail_detect_button">Détecter les abonnements avec Gmail</string>
+    <string name="onb4_title">Détectez vos abonnements</string>
+    <string name="onb4_desc">Connectez votre Gmail et nous les ajoutons pour vous, sans rien saisir.</string>
+    <string name="onb4_action">Détecter avec Gmail</string>
+    <string name="onb4_skip">Pas maintenant</string>
 </resources>

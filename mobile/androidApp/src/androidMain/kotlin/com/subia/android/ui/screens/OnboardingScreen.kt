@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.MarkEmailRead
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material3.Button
@@ -47,11 +48,12 @@ private data class OnbPagina(val icon: ImageVector, val titleRes: Int, val descR
  * a la app. Ataca la retención del primer día.
  */
 @Composable
-fun OnboardingScreen(onFinish: () -> Unit) {
+fun OnboardingScreen(onFinish: () -> Unit, onDetectGmail: () -> Unit = {}) {
     val paginas = listOf(
         OnbPagina(Icons.Default.Apps, R.string.onb1_title, R.string.onb1_desc),
         OnbPagina(Icons.Default.QueryStats, R.string.onb2_title, R.string.onb2_desc),
-        OnbPagina(Icons.Default.NotificationsActive, R.string.onb3_title, R.string.onb3_desc)
+        OnbPagina(Icons.Default.NotificationsActive, R.string.onb3_title, R.string.onb3_desc),
+        OnbPagina(Icons.Default.MarkEmailRead, R.string.onb4_title, R.string.onb4_desc)
     )
     val pagerState = rememberPagerState(pageCount = { paginas.size })
     val scope = rememberCoroutineScope()
@@ -125,18 +127,27 @@ fun OnboardingScreen(onFinish: () -> Unit) {
             }
         }
 
-        Button(
-            onClick = {
-                if (esUltima) onFinish()
-                else scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
-            },
-            modifier = Modifier.fillMaxWidth().height(52.dp),
-            shape = RoundedCornerShape(14.dp)
-        ) {
-            Text(
-                text = if (esUltima) stringResource(R.string.onb_start) else stringResource(R.string.onb_next),
-                fontWeight = FontWeight.SemiBold
-            )
+        if (esUltima) {
+            // Última página: ofrece la detección por Gmail o continuar sin ella.
+            Button(
+                onClick = onDetectGmail,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Text(text = stringResource(R.string.onb4_action), fontWeight = FontWeight.SemiBold)
+            }
+            Spacer(Modifier.height(8.dp))
+            TextButton(onClick = onFinish, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.onb4_skip))
+            }
+        } else {
+            Button(
+                onClick = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } },
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Text(text = stringResource(R.string.onb_next), fontWeight = FontWeight.SemiBold)
+            }
         }
     }
 }

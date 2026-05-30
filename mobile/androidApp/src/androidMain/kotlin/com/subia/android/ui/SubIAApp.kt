@@ -58,6 +58,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import com.subia.android.navigation.CategoriasRoute
 import com.subia.android.navigation.DashboardRoute
+import com.subia.android.navigation.GmailScanRoute
 import com.subia.android.navigation.LoginRoute
 import com.subia.android.navigation.OnboardingRoute
 import com.subia.android.navigation.ResumenAnualRoute
@@ -68,6 +69,7 @@ import com.subia.android.navigation.SuscripcionesRoute
 import com.subia.android.ui.screens.CatalogoScreen
 import com.subia.android.ui.screens.CategoriasScreen
 import com.subia.android.ui.screens.DashboardScreen
+import com.subia.android.ui.screens.GmailScanScreen
 import com.subia.android.ui.screens.LoginScreen
 import com.subia.android.ui.screens.OnboardingScreen
 import com.subia.android.ui.screens.ResumenAnualScreen
@@ -77,6 +79,8 @@ import com.subia.android.ui.screens.SuscripcionDetalleScreen
 import com.subia.android.ui.screens.SuscripcionFormScreen
 import com.subia.android.ui.screens.SuscripcionesScreen
 import com.subia.shared.viewmodel.AuthViewModel
+import com.subia.shared.viewmodel.GmailScanViewModel
+import org.koin.compose.viewmodel.koinViewModel
 
 private data class NavItem(val route: Any, val icon: androidx.compose.ui.graphics.vector.ImageVector, val labelRes: Int)
 
@@ -93,7 +97,9 @@ private val bottomNavItems = listOf(
 fun SubIAApp(
     navController: NavHostController,
     startDestination: Any,
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    gmailReturnStatus: String? = null,
+    onGmailReturnConsumed: () -> Unit = {}
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
@@ -270,18 +276,45 @@ fun SubIAApp(
             }
             composable<CategoriasRoute> { CategoriasScreen() }
             composable<SettingsRoute> {
-                SettingsScreen(onBack = { navController.popBackStack() })
+                SettingsScreen(
+                    onBack = { navController.popBackStack() },
+                    onDetectGmail = { navController.navigate(GmailScanRoute) }
+                )
             }
             composable<ResumenAnualRoute> {
                 ResumenAnualScreen(onBack = { navController.popBackStack() })
             }
             composable<OnboardingRoute> {
-                OnboardingScreen(onFinish = {
-                    OnboardingPrefs.setCompleted(context)
-                    navController.navigate(DashboardRoute) {
-                        popUpTo(OnboardingRoute) { inclusive = true }
+                OnboardingScreen(
+                    onFinish = {
+                        OnboardingPrefs.setCompleted(context)
+                        navController.navigate(DashboardRoute) {
+                            popUpTo(OnboardingRoute) { inclusive = true }
+                        }
+                    },
+                    onDetectGmail = {
+                        OnboardingPrefs.setCompleted(context)
+                        // Dejamos Dashboard como raíz y abrimos la detección encima.
+                        navController.navigate(DashboardRoute) {
+                            popUpTo(OnboardingRoute) { inclusive = true }
+                        }
+                        navController.navigate(GmailScanRoute)
                     }
-                })
+                )
+            }
+            composable<GmailScanRoute> {
+                val gmailVm: GmailScanViewModel = koinViewModel()
+                GmailScanScreen(
+                    viewModel = gmailVm,
+                    returnStatus = gmailReturnStatus,
+                    onReturnConsumed = onGmailReturnConsumed,
+                    onDone = {
+                        navController.navigate(SuscripcionesRoute) {
+                            popUpTo(DashboardRoute)
+                        }
+                    },
+                    onBack = { navController.popBackStack() }
+                )
             }
             composable<CatalogoRoute> {
                 CatalogoScreen(

@@ -100,6 +100,8 @@ kotlin {
             // Widget de pantalla de inicio (Jetpack Glance)
             implementation("androidx.glance:glance-appwidget:1.1.1")
             implementation("androidx.glance:glance-material3:1.1.1")
+            // Chrome Custom Tabs para el consentimiento OAuth de Gmail
+            implementation("androidx.browser:browser:1.8.0")
         }
     }
 }

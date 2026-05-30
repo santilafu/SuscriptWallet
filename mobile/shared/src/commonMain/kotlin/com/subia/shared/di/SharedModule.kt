@@ -6,11 +6,14 @@ import com.subia.shared.repository.AuthRepository
 import com.subia.shared.repository.CatalogRepository
 import com.subia.shared.repository.CategoryRepository
 import com.subia.shared.repository.DashboardRepository
+import com.subia.shared.repository.GmailScanRepository
+import com.subia.shared.repository.GmailScanRepositoryImpl
 import com.subia.shared.repository.SubscriptionRepository
 import com.subia.shared.viewmodel.AuthViewModel
 import com.subia.shared.viewmodel.CatalogoViewModel
 import com.subia.shared.viewmodel.CategoriasViewModel
 import com.subia.shared.viewmodel.DashboardViewModel
+import com.subia.shared.viewmodel.GmailScanViewModel
 import com.subia.shared.viewmodel.SuscripcionFormViewModel
 import com.subia.shared.viewmodel.SuscripcionesViewModel
 import org.koin.core.module.dsl.viewModel
@@ -34,6 +37,7 @@ fun sharedModule(apiBaseUrl: String, isDebug: Boolean = false) = module {
     single { SubscriptionRepository(get()) }
     single { CategoryRepository(get()) }
     single { CatalogRepository(get()) }
+    single<GmailScanRepository> { GmailScanRepositoryImpl(get()) }
 
     // ViewModels
     viewModel { AuthViewModel(get()) }
@@ -42,4 +46,5 @@ fun sharedModule(apiBaseUrl: String, isDebug: Boolean = false) = module {
     viewModel { SuscripcionFormViewModel(get(), get(), get()) }
     viewModel { CategoriasViewModel(get()) }
     viewModel { CatalogoViewModel(get(), get()) }
+    viewModel { GmailScanViewModel(get()) }
 }
