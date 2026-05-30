@@ -30,6 +30,16 @@
             transition: background-color 0.15s;
         }
         .btn-accent:hover { background-color: #4f46e5; color: #fff; }
+
+        /* Entrada escalonada (curva fuerte, ease-out). */
+        @keyframes authEnter {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .auth-enter { animation: authEnter 0.45s cubic-bezier(0.23, 1, 0.32, 1) backwards; }
+        @media (prefers-reduced-motion: reduce) {
+            .auth-enter { animation-duration: 0.01ms !important; transform: none !important; }
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center px-4">
@@ -51,7 +61,7 @@
     </div>
 
     <!-- Logo -->
-    <div class="text-center mb-8">
+    <div class="auth-enter text-center mb-8" style="animation-delay:0ms;">
         <a href="/login" class="inline-flex items-center gap-2 font-bold text-2xl no-underline" style="color:inherit;">
             <i class="bi bi-credit-card-2-front text-3xl" style="color:#818cf8;"></i>
             <span translate="no" style="color:#818cf8;">SusCript</span><span translate="no" style="color:#f1f5f9;">Wallet</span>
@@ -60,7 +70,7 @@
     </div>
 
     <!-- Card -->
-    <div class="card p-8 text-center">
+    <div class="auth-enter card p-8 text-center" style="animation-delay:80ms;">
 
         <div class="flex justify-center mb-4">
             <div class="w-16 h-16 rounded-full flex items-center justify-center" style="background:rgba(34,197,94,0.2);">

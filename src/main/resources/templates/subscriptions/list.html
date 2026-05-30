@@ -155,7 +155,7 @@
                     <button type="button"
                             th:data-id="${s.id}"
                             th:data-name="${s.name}"
-                            onclick="openDeleteModal(this.dataset.id, this.dataset.name)"
+                            onclick="openDelete(this.dataset.id, this.dataset.name)"
                             class="card-action delete flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer"
                             style="color:rgba(248,113,113,0.6);border:1px solid rgba(239,68,68,0.15);background:transparent;">
                         <i class="bi bi-trash"></i><span th:text="#{sub.action.delete}">Eliminar</span>
@@ -193,11 +193,11 @@
         </a>
     </div>
 
-    <!-- Modal de borrado (JS vanilla: el CSP del sitio no permite 'unsafe-eval', que Alpine necesita) -->
-    <div id="deleteModal"
-         class="fixed inset-0 z-50 hidden items-center justify-center"
-         style="background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);">
-        <div class="w-full max-w-sm mx-4 text-center"
+    <!-- Modal de borrado (vanilla: fade del overlay + escala de la caja desde su centro) -->
+    <div id="deleteModal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center" hidden
+         style="background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);"
+         onclick="if (event.target === this) closeDelete()">
+        <div class="modal-box w-full max-w-sm mx-4 text-center"
              style="background:#0f1629;border:1px solid rgba(239,68,68,0.25);border-radius:16px;padding:2rem;box-shadow:0 24px 64px rgba(0,0,0,0.7),0 0 0 1px rgba(255,255,255,0.04);">
             <h3 class="text-base font-bold mb-2 flex items-center justify-center gap-2" style="color:#e8edf5;letter-spacing:-0.01em;">
                 <i class="bi bi-trash3 text-sm" style="color:#f87171;"></i>
@@ -205,11 +205,11 @@
             </h3>
             <p class="text-sm mb-1" style="color:#64748b;">
                 <span th:text="#{sub.delete.confirm}">¿Estás seguro de que quieres eliminar</span>
-                <strong style="color:#dde4f0;" id="modalSubName"></strong>?
+                <strong style="color:#dde4f0;" id="deleteName"></strong>?
             </p>
             <p class="text-xs mb-6 font-medium" style="color:rgba(248,113,113,0.6);" th:text="#{sub.delete.irreversible}">Esta acción no se puede deshacer</p>
             <div class="flex gap-2.5">
-                <button type="button" onclick="closeDeleteModal()"
+                <button type="button" onclick="closeDelete()"
                         class="card-action flex-1 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer"
                         style="border:1px solid rgba(255,255,255,0.09);color:#94a3b8;background:transparent;"
                         onmouseenter="this.style.color='#e8edf5';this.style.borderColor='rgba(255,255,255,0.18)';"
@@ -217,7 +217,7 @@
                         th:text="#{sub.delete.cancel}">
                     Cancelar
                 </button>
-                <form id="deleteForm" method="post" class="flex-1">
+                <form method="post" class="flex-1" id="deleteForm" th:action="@{/subscriptions/0/delete}">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                     <button type="submit"
                             class="card-action w-full px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer"
@@ -234,6 +234,30 @@
 </div>
 
 <th:block layout:fragment="scripts">
+<style>
+    /* Modal de borrado — entrada/salida en vanilla (sin Alpine, por el CSP).
+       Overlay: fade ease-out. Caja: escala 0.95→1 desde su centro (es modal).
+       La salida es más rápida que la entrada (el sistema responde al instante). */
+    .modal-overlay {
+        opacity: 0;
+        transition: opacity 0.2s var(--ease-out, cubic-bezier(0.23,1,0.32,1));
+    }
+    .modal-overlay.is-open { opacity: 1; }
+    .modal-overlay .modal-box {
+        opacity: 0;
+        transform: scale(0.95);
+        transform-origin: center;
+        transition: opacity 0.2s var(--ease-out, cubic-bezier(0.23,1,0.32,1)),
+                    transform 0.2s var(--ease-out, cubic-bezier(0.23,1,0.32,1));
+    }
+    .modal-overlay.is-open .modal-box { opacity: 1; transform: scale(1); }
+    .modal-overlay.is-closing { transition-duration: 0.15s; }
+    .modal-overlay.is-closing .modal-box { transition-duration: 0.15s; }
+    @media (prefers-reduced-motion: reduce) {
+        .modal-overlay, .modal-overlay .modal-box { transition-duration: 0.01ms !important; }
+        .modal-overlay .modal-box { transform: none !important; }
+    }
+</style>
 <script th:inline="none">
 (function () {
     'use strict';
@@ -300,28 +324,38 @@
 
     if (searchInput) searchInput.addEventListener('input', applyFilters);
 
-    // ── Modal de borrado (vanilla, sin eval → compatible con el CSP) ──────────
-    var deleteModal = document.getElementById('deleteModal');
-    var modalSubName = document.getElementById('modalSubName');
-    var deleteForm = document.getElementById('deleteForm');
+    // ── Modal de borrado (vanilla) ──────────────────────────────────────
+    const modal     = document.getElementById('deleteModal');
+    const modalName = document.getElementById('deleteName');
+    const modalForm = document.getElementById('deleteForm');
+    let closeTimer  = null;
 
-    window.openDeleteModal = function (id, name) {
-        if (modalSubName) modalSubName.textContent = name;
-        if (deleteForm) deleteForm.action = '/subscriptions/' + id + '/delete';
-        if (deleteModal) { deleteModal.classList.remove('hidden'); deleteModal.classList.add('flex'); }
+    window.openDelete = function (id, name) {
+        if (!modal) return;
+        if (closeTimer) { window.clearTimeout(closeTimer); closeTimer = null; }
+        if (modalName) modalName.textContent = name;
+        // Sustituye el id placeholder respetando el context-path generado por Thymeleaf.
+        if (modalForm) modalForm.action = modalForm.action.replace(/\/subscriptions\/\d+\/delete/, '/subscriptions/' + id + '/delete');
+        modal.hidden = false;
+        modal.classList.remove('is-closing');
+        // Fuerza un reflow para que la transición de entrada arranque desde el estado inicial.
+        void modal.offsetWidth;
+        modal.classList.add('is-open');
     };
 
-    window.closeDeleteModal = function () {
-        if (deleteModal) { deleteModal.classList.add('hidden'); deleteModal.classList.remove('flex'); }
+    window.closeDelete = function () {
+        if (!modal || modal.hidden) return;
+        modal.classList.remove('is-open');
+        modal.classList.add('is-closing');
+        closeTimer = window.setTimeout(function () {
+            modal.hidden = true;
+            modal.classList.remove('is-closing');
+            closeTimer = null;
+        }, 150);
     };
 
-    if (deleteModal) {
-        deleteModal.addEventListener('click', function (e) {
-            if (e.target === deleteModal) closeDeleteModal();
-        });
-    }
     document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeDeleteModal();
+        if (e.key === 'Escape' && modal && !modal.hidden) closeDelete();
     });
 }());
 </script>
