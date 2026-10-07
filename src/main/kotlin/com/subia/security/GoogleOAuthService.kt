@@ -27,11 +27,25 @@ class GoogleOAuthService(
         val googleIdToken = verifier.verify(idToken)
             ?: throw InvalidGoogleTokenException("Token de Google inválido o expirado")
 
-        val issuer = googleIdToken.payload.issuer
+        return validatePayload(googleIdToken.payload)
+    }
+
+    /**
+     * Comprobaciones sobre el payload ya verificado criptográficamente.
+     * Se separa de [verifyAndGetPayload] para poder testearlo sin red.
+     *
+     * Exigimos `email_verified == true`: [com.subia.service.UserService.findOrCreateByGoogle]
+     * vincula el googleId a una cuenta existente solo por coincidencia de email, así que un
+     * email sin verificar permitiría entrar en la cuenta de otro usuario.
+     */
+    internal fun validatePayload(payload: GoogleIdToken.Payload): GoogleIdToken.Payload {
+        val issuer = payload.issuer
         if (issuer != "accounts.google.com" && issuer != "https://accounts.google.com") {
             throw InvalidGoogleTokenException("Emisor del token de Google no válido: $issuer")
         }
-
-        return googleIdToken.payload
+        if (payload.emailVerified != true) {
+            throw InvalidGoogleTokenException("El email de la cuenta de Google no está verificado")
+        }
+        return payload
     }
 }

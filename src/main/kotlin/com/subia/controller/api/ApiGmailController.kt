@@ -12,6 +12,7 @@ import com.subia.service.CategoryService
 import com.subia.service.GmailScanService
 import com.subia.service.GmailScanTicketService
 import com.subia.service.SubscriptionService
+import com.subia.service.nextRenewalDate
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
@@ -22,7 +23,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
-import java.time.LocalDate
 
 /**
  * API REST del escaneo de Gmail para la app móvil. Reutiliza la lógica de [GmailScanService];
@@ -61,16 +61,20 @@ class ApiGmailController(
         return ApiResponse(data = gmailScanTicketService.resultsFor(userId).map { it.toDto() })
     }
 
-    /** Da de alta las detecciones marcadas y las purga. */
+    /**
+     * Da de alta las detecciones marcadas y purga solo las que se han insertado.
+     * Las que no tienen categoría mapeable se conservan (cuentan como `skipped`) en vez de
+     * perderse en silencio.
+     */
     @PostMapping("/scan/add")
     fun add(
         @AuthenticationPrincipal jwt: Jwt,
         @RequestBody req: GmailAddRequestDto
     ): ApiResponse<GmailAddResultDto> {
         val userId = resolveUserId(jwt)
-        val rows = gmailScanTicketService.consumeResults(userId, req.ids)
+        val rows = gmailScanTicketService.findResults(userId, req.ids)
         val keyToId = categoryKeyToId()
-        var added = 0
+        val addedIds = ArrayList<Long>()
         for (r in rows) {
             val categoryId = keyToId[r.categoryKey] ?: continue
             subscriptionService.save(
@@ -80,16 +84,17 @@ class ApiGmailController(
                     price = r.price,
                     currency = r.currency,
                     billingCycle = r.billingCycle,
-                    renewalDate = LocalDate.now().plusMonths(1),
+                    renewalDate = nextRenewalDate(r.lastSeen, r.billingCycle),
                     category = categoryService.findById(categoryId),
                     active = true,
                     notes = ""
                 ),
                 userId
             )
-            added++
+            addedIds.add(r.id)
         }
-        return ApiResponse(data = GmailAddResultDto(added = added))
+        gmailScanTicketService.deleteResults(userId, addedIds)
+        return ApiResponse(data = GmailAddResultDto(added = addedIds.size, skipped = rows.size - addedIds.size))
     }
 
     /** Mapea la categoryKey del catálogo al id real de la categoría (mismo criterio que GmailController). */

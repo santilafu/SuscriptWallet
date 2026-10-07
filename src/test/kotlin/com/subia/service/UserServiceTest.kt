@@ -32,6 +32,8 @@ class UserServiceTest {
     private lateinit var subscriptionRepository: com.subia.repository.SubscriptionRepository
     private lateinit var refreshTokenRepository: com.subia.repository.RefreshTokenRepository
     private lateinit var securityEventRepository: com.subia.repository.SecurityEventRepository
+    private lateinit var gmailScanResultRepository: com.subia.repository.GmailScanResultRepository
+    private lateinit var gmailScanTicketRepository: com.subia.repository.GmailScanTicketRepository
 
     @BeforeEach
     fun setUp() {
@@ -40,8 +42,26 @@ class UserServiceTest {
         subscriptionRepository = mockk(relaxed = true)
         refreshTokenRepository = mockk(relaxed = true)
         securityEventRepository = mockk(relaxed = true)
+        gmailScanResultRepository = mockk(relaxed = true)
+        gmailScanTicketRepository = mockk(relaxed = true)
         emailService = mockk(relaxed = true)
-        userService = UserService(userRepository, passwordResetTokenRepository, subscriptionRepository, refreshTokenRepository, securityEventRepository, emailService)
+        userService = UserService(
+            userRepository, passwordResetTokenRepository, subscriptionRepository, refreshTokenRepository,
+            securityEventRepository, gmailScanResultRepository, gmailScanTicketRepository, emailService
+        )
+    }
+
+    @Test
+    fun `deleteAccount purga tambien los tickets y resultados de Gmail del usuario`() {
+        every { userRepository.findById(1L) } returns java.util.Optional.of(baseUser())
+        every { userRepository.deleteById(1L) } returns Unit
+        every { passwordResetTokenRepository.deleteByUserId(1L) } returns Unit
+
+        userService.deleteAccount(1L)
+
+        verify(exactly = 1) { gmailScanResultRepository.deleteByUserId(1L) }
+        verify(exactly = 1) { gmailScanTicketRepository.deleteByUserId(1L) }
+        verify(exactly = 1) { userRepository.deleteById(1L) }
     }
 
     @Test

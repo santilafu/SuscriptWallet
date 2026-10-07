@@ -2,6 +2,8 @@ package com.subia.controller
 
 import com.subia.model.Category
 import com.subia.service.CategoryService
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.*
@@ -21,10 +23,14 @@ class CategoryController(private val categoryService: CategoryService) {
     /**
      * Muestra la lista de todas las categorías.
      * GET /categories
+     *
+     * Las categorías son globales: solo el admin puede crearlas, editarlas o borrarlas
+     * (lo impone [com.subia.config.SecurityConfig]); `isAdmin` sirve para ocultar esos botones al resto.
      */
     @GetMapping
-    fun list(model: Model): String {
+    fun list(@AuthenticationPrincipal principal: UserDetails?, model: Model): String {
         model.addAttribute("categories", categoryService.findAll())
+        model.addAttribute("isAdmin", principal?.authorities?.any { it.authority == "ROLE_ADMIN" } == true)
         return "categories/list"
     }
 

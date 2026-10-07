@@ -5,6 +5,8 @@ import com.subia.exception.WeakPasswordException
 import com.subia.model.PasswordResetToken
 import com.subia.model.User
 import com.subia.model.UserRole
+import com.subia.repository.GmailScanResultRepository
+import com.subia.repository.GmailScanTicketRepository
 import com.subia.repository.PasswordResetTokenRepository
 import com.subia.repository.RefreshTokenRepository
 import com.subia.repository.SecurityEventRepository
@@ -26,6 +28,8 @@ class UserService(
     private val subscriptionRepository: SubscriptionRepository,
     private val refreshTokenRepository: RefreshTokenRepository,
     private val securityEventRepository: SecurityEventRepository,
+    private val gmailScanResultRepository: GmailScanResultRepository,
+    private val gmailScanTicketRepository: GmailScanTicketRepository,
     private val emailService: EmailService
 ) {
     private val log = LoggerFactory.getLogger(UserService::class.java)
@@ -189,6 +193,9 @@ class UserService(
         passwordResetTokenRepository.deleteByUserId(userId)
         // Eliminar security events
         securityEventRepository.deleteByUserId(userId)
+        // Eliminar resultados y tickets del escaneo de Gmail (contienen remitente, servicio y precio)
+        gmailScanResultRepository.deleteByUserId(userId)
+        gmailScanTicketRepository.deleteByUserId(userId)
         // Eliminar usuario
         userRepository.deleteById(userId)
         log.info("Cuenta eliminada para usuario ID: {}", userId)

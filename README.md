@@ -1,7 +1,7 @@
 # Suscript Wallet — Gestor de suscripciones
 
 ![Version](https://img.shields.io/badge/versión-3.2.0-6366f1?style=flat-square)
-![Android](https://img.shields.io/badge/Android-2.13.0-3ddc84?style=flat-square&logo=android&label=App)
+![Android](https://img.shields.io/badge/Android-2.16.1-3ddc84?style=flat-square&logo=android&label=App)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-3ddc84?style=flat-square&logo=android)
 ![Stack](https://img.shields.io/badge/Spring%20Boot-3.3.5-6db33f?style=flat-square&logo=springboot)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.1.20-7f52ff?style=flat-square&logo=kotlin)
@@ -109,7 +109,7 @@ Los errores de autenticación se devuelven en JSON estándar: `{ "data": null, "
 | Base de datos | PostgreSQL 17.9 (Aiven managed cloud) · PostgreSQL 16 (Docker, desarrollo local) |
 | Migraciones | Flyway |
 | Internacionalización | Spring MessageSource + CookieLocaleResolver (ES / EN / FR) |
-| Frontend | Thymeleaf + Tailwind CSS CDN + Alpine.js CDN + Chart.js 4 |
+| Frontend | Thymeleaf + Tailwind CSS CDN + JS vanilla (sin Alpine: lo bloquea la CSP) + Chart.js 4 |
 | Tipografía | Inter (Google Fonts) |
 | Build | Gradle (Kotlin DSL) |
 
@@ -300,7 +300,7 @@ Los precios están definidos en `CatalogService.kt` y son de **marzo 2026**. Par
 
 - **Multi-usuario real**: cada usuario solo accede a sus propios datos (IDOR prevention en capa de repositorio).
 - **Contraseñas**: BCrypt cost 12 (mayor coste computacional para atacantes que el estándar cost 10).
-- **Lockout exponencial**: 5 intentos fallidos → bloqueo con tiempo creciente (5 min → 15 → 60 → 1440).
+- **Lockout exponencial**: al 4.º intento fallido se bloquea la cuenta con tiempo creciente (5 min → 10 → 20 → 40 … hasta 1440).
 - **Anti-enumeración**: los errores de login/registro nunca revelan si un email existe.
 - **Refresh token rotation**: cada uso del refresh token emite uno nuevo. Si se detecta reutilización de un token ya revocado, se revoca toda la familia de sesión.
 - **Rate limiting**: 10 req/min por IP en endpoints de autenticación (separado del límite global de 100/min).

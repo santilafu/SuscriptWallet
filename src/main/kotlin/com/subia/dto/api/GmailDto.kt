@@ -22,5 +22,5 @@ data class GmailDetectedDto(
 /** Petición de alta: ids de las detecciones que el usuario marcó. */
 data class GmailAddRequestDto(val ids: List<Long>)
 
-/** Resultado del alta. */
-data class GmailAddResultDto(val added: Int)
+/** Resultado del alta: `skipped` = detecciones pedidas que se conservan por no tener categoría mapeable. */
+data class GmailAddResultDto(val added: Int, val skipped: Int = 0)

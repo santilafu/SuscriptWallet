@@ -150,7 +150,11 @@ class AuthWebController(
             context.authentication = auth
             SecurityContextHolder.setContext(context)
 
+            // Anti session fixation: `sessionFixation().newSession()` del SecurityConfig solo
+            // actúa en el formLogin; aquí poblamos la sesión a mano, así que rotamos el id
+            // antes de guardar el contexto para que una sesión pre-autenticación no sirva.
             val session = request.getSession(true)
+            request.changeSessionId()
             session.setAttribute(
                 HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
                 context

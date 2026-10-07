@@ -22,7 +22,7 @@
             <p class="text-sm mt-1" style="color:#4a5a78;"
                th:text="#{cat.count(${categories.size()})}"></p>
         </div>
-        <a th:href="@{/categories/new}"
+        <a th:href="@{/categories/new}" th:if="${isAdmin}"
            class="flex items-center gap-2 px-4 py-2.5 bg-accent hover:bg-accent-hover text-white text-sm font-semibold rounded-xl transition-all no-underline"
            style="box-shadow:0 1px 8px rgba(99,102,241,0.4),0 0 0 1px rgba(99,102,241,0.2);">
             <i class="bi bi-plus-lg text-xs"></i><span th:text="#{cat.new}">Nueva</span>
@@ -54,8 +54,8 @@
                     </div>
                 </div>
 
-                <!-- Acciones -->
-                <div class="px-5 py-2.5 flex items-center gap-1.5" style="border-top:1px solid rgba(255,255,255,0.04);">
+                <!-- Acciones (solo admin: las categorías son globales) -->
+                <div th:if="${isAdmin}" class="px-5 py-2.5 flex items-center gap-1.5" style="border-top:1px solid rgba(255,255,255,0.04);">
                     <a th:href="@{/categories/{id}/edit(id=${cat.id})}"
                        class="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all no-underline"
                        style="color:#64748b;border:1px solid rgba(255,255,255,0.07);"
@@ -84,7 +84,7 @@
          class="glass-card rounded-xl p-16 text-center">
         <i class="bi bi-tags text-5xl text-slate-600 block mb-4"></i>
         <p class="text-slate-400 mb-4" th:text="#{cat.empty}">No hay ninguna categoría todavía</p>
-        <a th:href="@{/categories/new}"
+        <a th:href="@{/categories/new}" th:if="${isAdmin}"
            class="inline-flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-all duration-200 no-underline">
             <i class="bi bi-plus-lg"></i><span th:text="#{cat.empty.add}">Crear la primera</span>
         </a>

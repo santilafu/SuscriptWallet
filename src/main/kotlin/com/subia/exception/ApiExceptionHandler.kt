@@ -1,17 +1,29 @@
 package com.subia.exception
 
+import com.subia.controller.AuthController
+import com.subia.controller.CatalogController
 import com.subia.dto.api.ApiError
 import com.subia.dto.api.ApiResponse
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.oauth2.jwt.JwtException
 import org.springframework.validation.FieldError
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.server.ResponseStatusException
 
-@RestControllerAdvice
+/**
+ * Manejo de errores en JSON solo para la API REST: el paquete `controller.api` más los dos
+ * @RestController que viven fuera de él ([AuthController], [CatalogController]). Los
+ * @Controller web quedan fuera y siguen con la página de error estándar de Spring Boot.
+ */
+@RestControllerAdvice(
+    basePackages = ["com.subia.controller.api"],
+    assignableTypes = [AuthController::class, CatalogController::class]
+)
 class ApiExceptionHandler {
 
     private val log = LoggerFactory.getLogger(ApiExceptionHandler::class.java)
@@ -44,6 +56,17 @@ class ApiExceptionHandler {
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     fun handleBadCredentials(ex: BadCredentialsException): ApiResponse<Nothing> =
         ApiResponse(error = ApiError("UNAUTHORIZED", ex.message ?: "Credenciales inválidas"))
+
+    /**
+     * Respeta el status y el motivo de las ResponseStatusException lanzadas por los controladores
+     * (p. ej. 401 "Usuario no encontrado"); antes caían en el handler genérico como 500.
+     */
+    @ExceptionHandler(ResponseStatusException::class)
+    fun handleResponseStatus(ex: ResponseStatusException): ResponseEntity<ApiResponse<Nothing>> {
+        val status = HttpStatus.resolve(ex.statusCode.value()) ?: HttpStatus.INTERNAL_SERVER_ERROR
+        return ResponseEntity.status(ex.statusCode)
+            .body(ApiResponse(error = ApiError(status.name, ex.reason ?: status.reasonPhrase)))
+    }
 
     @ExceptionHandler(JwtException::class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)

@@ -87,7 +87,9 @@ class TokenServiceTest {
 
         every { refreshTokenRepository.findByToken("active-token") } returns active
         every { refreshTokenRepository.save(capture(savedSlot)) } answers { savedSlot.last() }
-        every { jwtService.generateAccessToken("user@example.com") } returns "new-access-token"
+        every { userService.findByEmail("user@example.com") } returns
+            com.subia.model.User(id = 1L, email = "user@example.com", passwordHash = "x", emailVerified = true, role = com.subia.model.UserRole.USER)
+        every { jwtService.generateAccessToken("user@example.com", com.subia.model.UserRole.USER) } returns "new-access-token"
 
         val result = tokenService.refresh("active-token")
 

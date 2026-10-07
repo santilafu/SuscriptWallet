@@ -10,6 +10,7 @@ import com.subia.service.GmailScanException
 import com.subia.service.GmailScanService
 import com.subia.service.GmailScanTicketService
 import com.subia.service.SubscriptionService
+import com.subia.service.nextRenewalDate
 import jakarta.servlet.http.HttpSession
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
@@ -22,7 +23,6 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.server.ResponseStatusException
 import java.security.SecureRandom
-import java.time.LocalDate
 import java.util.Base64
 
 /**
@@ -147,7 +147,7 @@ class GmailController(
                         price = d.effectivePrice,
                         currency = d.effectiveCurrency,
                         billingCycle = d.effectiveCycle,
-                        renewalDate = LocalDate.now().plusMonths(1),
+                        renewalDate = nextRenewalDate(d.lastSeen, d.effectiveCycle),
                         category = categoryService.findById(categoryId),
                         active = true,
                         notes = ""

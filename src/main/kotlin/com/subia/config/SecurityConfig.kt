@@ -3,6 +3,7 @@ package com.subia.config
 import com.subia.security.AuthRateLimitFilter
 import com.subia.security.CustomAccessDeniedHandler
 import com.subia.security.CustomAuthEntryPoint
+import com.subia.security.JwtService
 import com.subia.security.RateLimitFilter
 import com.subia.security.UserDetailsServiceImpl
 import org.springframework.beans.factory.annotation.Value
@@ -13,9 +14,13 @@ import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.web.cors.CorsConfiguration
@@ -47,9 +52,18 @@ class SecurityConfig(
                 auth.requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/refresh", "/api/auth/logout", "/api/auth/google").permitAll()
                 auth.requestMatchers(HttpMethod.GET, "/api/catalog", "/api/catalog/**").permitAll()
                 auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                // Las categorías son globales (compartidas por todos los usuarios): solo el admin las muta (A-02)
+                auth.requestMatchers(HttpMethod.POST, "/api/categories/**").hasRole("ADMIN")
+                auth.requestMatchers(HttpMethod.PUT, "/api/categories/**").hasRole("ADMIN")
+                auth.requestMatchers(HttpMethod.DELETE, "/api/categories/**").hasRole("ADMIN")
                 auth.anyRequest().authenticated()
             }
-            .oauth2ResourceServer { oauth2 -> oauth2.jwt { it.decoder(jwtDecoder) } }
+            .oauth2ResourceServer { oauth2 ->
+                oauth2.jwt {
+                    it.decoder(jwtDecoder)
+                    it.jwtAuthenticationConverter(jwtAuthenticationConverter())
+                }
+            }
             .exceptionHandling { ex ->
                 ex.authenticationEntryPoint(authEntryPoint)
                 ex.accessDeniedHandler(accessDeniedHandler)
@@ -70,6 +84,11 @@ class SecurityConfig(
                     "/delete-account", "/account-deleted", "/privacidad",
                     "/css/**", "/js/**", "/images/**", "/error"
                 ).permitAll()
+                // El POST de borrado de cuenta necesita principal; sin sesión devolvía 500 (B-05)
+                auth.requestMatchers(HttpMethod.POST, "/delete-account").authenticated()
+                // Crear/editar/borrar categorías (globales) solo para el admin; la lista sigue abierta (A-02)
+                auth.requestMatchers(HttpMethod.GET, "/categories/new", "/categories/*/edit").hasRole("ADMIN")
+                auth.requestMatchers(HttpMethod.POST, "/categories", "/categories/*", "/categories/*/delete").hasRole("ADMIN")
                 // /api/** is fully handled by apiFilterChain (Order 1)
                 auth.requestMatchers("/api/**").denyAll()
                 auth.anyRequest().authenticated()
@@ -109,6 +128,19 @@ class SecurityConfig(
             .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter::class.java)
         return http.build()
     }
+
+    /**
+     * Convierte el claim `role` del access token en la autoridad ROLE_<rol>, igual que hace
+     * [UserDetailsServiceImpl] en el chain web. Tokens sin claim (anteriores) no tienen rol.
+     */
+    private fun jwtAuthenticationConverter(): JwtAuthenticationConverter =
+        JwtAuthenticationConverter().apply {
+            setJwtGrantedAuthoritiesConverter { jwt: Jwt ->
+                val role = jwt.getClaimAsString(JwtService.ROLE_CLAIM)
+                if (role.isNullOrBlank()) emptyList<GrantedAuthority>()
+                else listOf(SimpleGrantedAuthority("ROLE_$role"))
+            }
+        }
 
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {

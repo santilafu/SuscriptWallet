@@ -32,7 +32,10 @@ class UserServiceRegistrationTest {
         refreshTokenRepository = mockk(relaxed = true)
         securityEventRepository = mockk(relaxed = true)
         emailService = mockk(relaxed = true)
-        userService = UserService(userRepository, passwordResetTokenRepository, subscriptionRepository, refreshTokenRepository, securityEventRepository, emailService)
+        userService = UserService(
+            userRepository, passwordResetTokenRepository, subscriptionRepository, refreshTokenRepository,
+            securityEventRepository, mockk(relaxed = true), mockk(relaxed = true), emailService
+        )
     }
 
     @Test

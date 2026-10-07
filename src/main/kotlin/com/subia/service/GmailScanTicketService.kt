@@ -32,13 +32,15 @@ class GmailScanTicketService(
     /**
      * Valida y consume el ticket: devuelve el ticket si es válido (existe, no usado, no expirado)
      * marcándolo como usado; en cualquier otro caso devuelve null.
+     *
+     * El marcado es un único UPDATE condicional (ver [GmailScanTicketRepository.markUsedIfValid]):
+     * si dos callbacks llegan a la vez con el mismo `state`, solo uno afecta a la fila.
      */
     @Transactional
     fun consume(ticketId: String): GmailScanTicket? {
-        val ticket = ticketRepo.findById(ticketId).orElse(null) ?: return null
-        if (ticket.used || ticket.expiresAt.isBefore(OffsetDateTime.now())) return null
-        ticketRepo.save(ticket.copy(used = true))
-        return ticket
+        val updated = ticketRepo.markUsedIfValid(ticketId, OffsetDateTime.now())
+        if (updated != 1) return null
+        return ticketRepo.findById(ticketId).orElse(null)
     }
 
     /** Reemplaza los resultados del usuario por el nuevo lote del escaneo. */
@@ -50,10 +52,13 @@ class GmailScanTicketService(
 
     fun resultsFor(userId: Long): List<GmailScanResultRow> = resultRepo.findByUserId(userId)
 
+    /** Resultados del usuario entre los ids pedidos (ignora ids ajenos o inexistentes). */
+    fun findResults(userId: Long, ids: List<Long>): List<GmailScanResultRow> =
+        if (ids.isEmpty()) emptyList() else resultRepo.findByIdInAndUserId(ids, userId)
+
+    /** Purga los resultados indicados; se llama solo con los que ya se han dado de alta. */
     @Transactional
-    fun consumeResults(userId: Long, ids: List<Long>): List<GmailScanResultRow> {
-        val rows = resultRepo.findByIdInAndUserId(ids, userId)
-        if (rows.isNotEmpty()) resultRepo.deleteByIdInAndUserId(rows.map { it.id }, userId)
-        return rows
+    fun deleteResults(userId: Long, ids: List<Long>) {
+        if (ids.isNotEmpty()) resultRepo.deleteByIdInAndUserId(ids, userId)
     }
 }

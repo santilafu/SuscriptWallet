@@ -42,3 +42,10 @@ src/main/resources/aiven-ca.crt
 # Android keystore (nunca subir a git)
 *.jks
 *.keystore
+
+# Gradle wrapper: el jar debe ir versionado aunque se ignoren los *.jar (M-16)
+!gradle/wrapper/gradle-wrapper.jar
+
+# Ficheros de bloqueo de Office y configuración local de Claude (B-10)
+~$*
+.claude/settings.local.json

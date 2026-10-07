@@ -87,7 +87,9 @@ class TokenService(
     fun issueTokenPairForEmail(email: String): TokenPair = issueTokenPair(email)
 
     private fun issueTokenPair(email: String, familyId: UUID = UUID.randomUUID()): TokenPair {
-        val accessToken = jwtService.generateAccessToken(email)
+        // El rol viaja en el JWT para que /api/** pueda exigir ROLE_ADMIN (categorías globales).
+        val role = userService.findByEmail(email)?.role
+        val accessToken = jwtService.generateAccessToken(email, role)
         val rawRefreshToken = UUID.randomUUID().toString()
         val now = OffsetDateTime.now()
 

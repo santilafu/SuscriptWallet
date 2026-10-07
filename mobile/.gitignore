@@ -7,3 +7,6 @@ iosApp/build/
 *.xcworkspace/
 .DS_Store
 *.hprof
+
+# Gradle wrapper: el jar debe ir versionado (lo excluye el *.jar del .gitignore raíz)
+!gradle/wrapper/gradle-wrapper.jar

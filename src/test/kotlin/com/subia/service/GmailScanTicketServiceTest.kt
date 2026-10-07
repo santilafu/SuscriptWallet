@@ -6,6 +6,7 @@ import com.subia.repository.GmailScanTicketRepository
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
@@ -31,35 +32,39 @@ class GmailScanTicketServiceTest {
     }
 
     @Test
-    fun `consume devuelve el ticket valido y lo marca usado`() {
-        val t = GmailScanTicket("abc", 7L, 12, OffsetDateTime.now().plusMinutes(5), used = false)
+    fun `consume marca el ticket usado con un UPDATE condicional y lo devuelve`() {
+        val t = GmailScanTicket("abc", 7L, 12, OffsetDateTime.now().plusMinutes(5), used = true)
+        every { ticketRepo.markUsedIfValid("abc", any()) } returns 1
         every { ticketRepo.findById("abc") } returns Optional.of(t)
-        val saved = slot<GmailScanTicket>()
-        every { ticketRepo.save(capture(saved)) } answers { saved.captured }
 
         val result = service.consume("abc")
 
         assertEquals(7L, result?.userId)
-        assertEquals(true, saved.captured.used)
+        assertEquals(12, result?.months)
+        verify(exactly = 1) { ticketRepo.markUsedIfValid("abc", any()) }
+        verify(exactly = 0) { ticketRepo.save(any()) }
     }
 
     @Test
-    fun `consume devuelve null si el ticket ya fue usado`() {
-        val t = GmailScanTicket("abc", 7L, 12, OffsetDateTime.now().plusMinutes(5), used = true)
-        every { ticketRepo.findById("abc") } returns Optional.of(t)
+    fun `consume devuelve null si el UPDATE no afecta a ninguna fila (usado, expirado o inexistente)`() {
+        every { ticketRepo.markUsedIfValid("abc", any()) } returns 0
+
         assertNull(service.consume("abc"))
+        verify(exactly = 0) { ticketRepo.findById(any()) }
     }
 
     @Test
-    fun `consume devuelve null si el ticket expiro`() {
-        val t = GmailScanTicket("abc", 7L, 12, OffsetDateTime.now().minusMinutes(1), used = false)
-        every { ticketRepo.findById("abc") } returns Optional.of(t)
-        assertNull(service.consume("abc"))
+    fun `findResults no consulta el repositorio con una lista vacia`() {
+        assertEquals(emptyList<Any>(), service.findResults(7L, emptyList()))
+        verify(exactly = 0) { resultRepo.findByIdInAndUserId(any(), any()) }
     }
 
     @Test
-    fun `consume devuelve null si el ticket no existe`() {
-        every { ticketRepo.findById("nope") } returns Optional.empty()
-        assertNull(service.consume("nope"))
+    fun `deleteResults solo borra cuando hay ids`() {
+        service.deleteResults(7L, emptyList())
+        verify(exactly = 0) { resultRepo.deleteByIdInAndUserId(any(), any()) }
+
+        service.deleteResults(7L, listOf(1L, 2L))
+        verify(exactly = 1) { resultRepo.deleteByIdInAndUserId(listOf(1L, 2L), 7L) }
     }
 }
