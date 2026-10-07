@@ -17,20 +17,24 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -41,20 +45,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.ExperimentalTextApi
-import com.subia.android.R
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.subia.android.ui.theme.GradientIndigoEnd
-import com.subia.android.ui.theme.GradientIndigoStart
+import com.subia.android.R
+import com.subia.android.ui.components.ErrorState
 import com.subia.android.ui.theme.Indigo500
 import com.subia.shared.model.Category
 import com.subia.shared.viewmodel.CategoriasUiState
@@ -62,9 +58,16 @@ import com.subia.shared.viewmodel.CategoriasViewModel
 import com.subia.shared.viewmodel.CrearCategoriaUiState
 import org.koin.compose.viewmodel.koinViewModel
 
-@OptIn(ExperimentalTextApi::class)
+/**
+ * Lista de categorías del usuario con alta rápida. Ya no es una pestaña: se abre desde
+ * Ajustes → Categorías, por eso lleva su propia TopAppBar con flecha de vuelta.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CategoriasScreen(viewModel: CategoriasViewModel = koinViewModel()) {
+fun CategoriasScreen(
+    onBack: () -> Unit,
+    viewModel: CategoriasViewModel = koinViewModel()
+) {
     val uiState by viewModel.uiState.collectAsState()
     val crearState by viewModel.crearState.collectAsState()
     var mostrarFormulario by remember { mutableStateOf(false) }
@@ -80,6 +83,16 @@ fun CategoriasScreen(viewModel: CategoriasViewModel = koinViewModel()) {
     }
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.categories_title)) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                    }
+                }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { if (!crearDeshabilitado) mostrarFormulario = true },
@@ -101,13 +114,12 @@ fun CategoriasScreen(viewModel: CategoriasViewModel = koinViewModel()) {
                 BannerOffline(stringResource(R.string.offline_no_create))
                 CategoriasList(state.categorias, Modifier)
             }
-            is CategoriasUiState.Error -> Box(Modifier.fillMaxSize().padding(innerPadding), Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(state.mensaje, color = MaterialTheme.colorScheme.error)
-                    Spacer(Modifier.height(8.dp))
-                    TextButton(onClick = { viewModel.cargarCategorias() }) { Text(stringResource(R.string.retry)) }
-                }
-            }
+            // Mismo componente de error que el resto de pantallas (C-02).
+            is CategoriasUiState.Error -> ErrorState(
+                mensaje = state.mensaje,
+                onRetry = { viewModel.cargarCategorias() },
+                modifier = Modifier.padding(innerPadding)
+            )
             is CategoriasUiState.SesionExpirada -> Unit
         }
     }
@@ -145,42 +157,21 @@ fun CategoriasScreen(viewModel: CategoriasViewModel = koinViewModel()) {
     }
 }
 
-@OptIn(ExperimentalTextApi::class)
 @Composable
 private fun CategoriasList(categorias: List<Category>, modifier: Modifier) {
-    val gradientBrush = Brush.linearGradient(
-        colors = listOf(GradientIndigoStart, GradientIndigoEnd, Color(0xFFA78BFA)),
-        start = Offset(0f, 0f),
-        end = Offset(Float.POSITIVE_INFINITY, 0f)
-    )
-
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item {
-            Text(
-                text = buildAnnotatedString {
-                    withStyle(
-                        SpanStyle(
-                            brush = gradientBrush,
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 34.sp
-                        )
-                    ) {
-                        append(stringResource(R.string.categories_title))
-                    }
-                }
-            )
-            Spacer(Modifier.height(4.dp))
+            // La TopAppBar ya dice "Categorías": aquí solo un subtítulo informativo.
             Text(
                 text = stringResource(R.string.organize_expenses),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                letterSpacing = 0.8.sp
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(4.dp))
         }
         items(categorias) { cat ->
             CategoriaCard(cat)

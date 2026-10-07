@@ -23,15 +23,15 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.EuroSymbol
 import androidx.compose.material.icons.filled.Subscriptions
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.material.icons.outlined.EventAvailable
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,29 +42,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.ExperimentalTextApi
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontWeight
-import com.subia.android.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.subia.android.R
 import com.subia.android.ui.BannerAdView
 import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.components.ErrorState
 import com.subia.android.ui.components.GastosPorCategoriaCard
 import com.subia.android.ui.components.TopSuscripcionesChartCard
-import com.subia.android.ui.theme.GradientAmberEnd
-import com.subia.android.ui.theme.GradientAmberStart
+import com.subia.android.ui.components.formatearImporte
 import com.subia.android.ui.theme.GradientIndigoDeepEnd
 import com.subia.android.ui.theme.GradientIndigoDeepStart
-import com.subia.android.ui.theme.GradientIndigoEnd
-import com.subia.android.ui.theme.GradientIndigoStart
 import com.subia.android.ui.theme.GradientTealDeepEnd
 import com.subia.android.ui.theme.GradientTealDeepStart
 import com.subia.android.ui.theme.Warning
@@ -82,6 +73,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun DashboardScreen(
     onNavigateToSuscripciones: () -> Unit = {},
+    onNavigateToResumenAnual: () -> Unit = {},
     onSesionExpirada: () -> Unit = {},
     viewModel: DashboardViewModel = koinViewModel()
 ) {
@@ -103,10 +95,10 @@ fun DashboardScreen(
                 is DashboardUiState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                     CircularProgressIndicator()
                 }
-                is DashboardUiState.Success -> DashboardContent(state.resumen, totalesPorMoneda, totalesAnualesPorMoneda, gastosPorCategoria, pruebasPorVencer, topSuscripciones, onNavigateToSuscripciones)
+                is DashboardUiState.Success -> DashboardContent(state.resumen, totalesPorMoneda, totalesAnualesPorMoneda, gastosPorCategoria, pruebasPorVencer, topSuscripciones, onNavigateToSuscripciones, onNavigateToResumenAnual)
                 is DashboardUiState.Offline -> Column {
                     BannerOffline(stringResource(R.string.offline_data))
-                    state.resumenCacheado?.let { DashboardContent(it, totalesPorMoneda, totalesAnualesPorMoneda, gastosPorCategoria, pruebasPorVencer, topSuscripciones, onNavigateToSuscripciones) }
+                    state.resumenCacheado?.let { DashboardContent(it, totalesPorMoneda, totalesAnualesPorMoneda, gastosPorCategoria, pruebasPorVencer, topSuscripciones, onNavigateToSuscripciones, onNavigateToResumenAnual) }
                 }
                 is DashboardUiState.Error -> ErrorState(
                     mensaje = state.mensaje,
@@ -119,39 +111,6 @@ fun DashboardScreen(
     }
 }
 
-@OptIn(ExperimentalTextApi::class)
-@Composable
-private fun WalletHeader() {
-    val gradientBrush = Brush.linearGradient(
-        colors = listOf(GradientIndigoStart, GradientIndigoEnd, Color(0xFFA78BFA)),
-        start = Offset(0f, 0f),
-        end = Offset(Float.POSITIVE_INFINITY, 0f)
-    )
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = buildAnnotatedString {
-                withStyle(SpanStyle(brush = gradientBrush, fontWeight = FontWeight.ExtraBold, fontSize = 42.sp)) {
-                    append("Wallet")
-                }
-            },
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = stringResource(R.string.wallet_subtitle),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            letterSpacing = 1.5.sp
-        )
-    }
-}
-
 @Composable
 private fun DashboardContent(
     resumen: DashboardSummary,
@@ -160,7 +119,8 @@ private fun DashboardContent(
     gastosPorCategoria: Map<String, Double> = emptyMap(),
     pruebasPorVencer: List<com.subia.shared.model.ProximaRenovacion> = emptyList(),
     topSuscripciones: List<TopSuscripcion> = emptyList(),
-    onNavigateToSuscripciones: () -> Unit = {}
+    onNavigateToSuscripciones: () -> Unit = {},
+    onNavigateToResumenAnual: () -> Unit = {}
 ) {
     // Gradientes "profundos" (tonos 600/700): el texto blanco al 100 % cumple 4,5:1 encima.
     val gradientsMensual = listOf(
@@ -174,15 +134,18 @@ private fun DashboardContent(
         Brush.linearGradient(listOf(GradientTealDeepStart, GradientTealDeepEnd))
     )
 
+    // Cifra para la tarjeta "Tu año": el total anual ya calculado por el ViewModel (divisa
+    // principal) o, si aún no hay desglose, el gasto anual del resumen del servidor.
+    val totalAnualTexto = totalesAnualesPorMoneda.entries.firstOrNull()
+        ?.let { formatearImporte(it.value, it.key, decimales = 0) }
+        ?: resumen.gastoAnual.takeIf { it > 0 }?.let { formatearImporte(it, "EUR", decimales = 0) }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item {
-            WalletHeader()
-        }
-
+        // El primer elemento es el gasto mensual: lo más importante, arriba (D-01).
         item {
             if (totalesPorMoneda.isEmpty()) {
                 // Sin datos detallados: mostrar tarjetas del resumen del servidor
@@ -296,22 +259,19 @@ private fun DashboardContent(
             }
         }
 
+        // Sección "Próximas renovaciones": el título se mantiene siempre y, si no hay
+        // ninguna, un estado vacío compacto dentro de la sección (D-09).
+        item {
+            Text(
+                stringResource(R.string.upcoming_renewals),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
         if (resumen.renovacionesProximas.isNotEmpty()) {
-            item {
-                Text(
-                    stringResource(R.string.upcoming_renewals),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
             items(resumen.renovacionesProximas) { RenovacionCard(it) }
         } else {
-            item {
-                Text(
-                    stringResource(R.string.no_upcoming_renewals),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            item { SinRenovacionesCard() }
         }
 
         item {
@@ -320,6 +280,11 @@ private fun DashboardContent(
 
         item {
             TopSuscripcionesChartCard(topSuscripciones = topSuscripciones)
+        }
+
+        // Última tarjeta: acceso al resumen anual compartible (R-02).
+        item {
+            TuAnioCard(totalAnualTexto = totalAnualTexto, onVerResumen = onNavigateToResumenAnual)
         }
     }
 }
@@ -337,6 +302,95 @@ private fun GradientStatCard(modifier: Modifier, icon: ImageVector, label: Strin
             Spacer(Modifier.height(8.dp))
             Text(label, color = Color.White, fontSize = 13.sp)
             Text(value, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp)
+        }
+    }
+}
+
+/** Estado vacío compacto de la sección de renovaciones: misma tarjeta que una renovación, sin datos. */
+@Composable
+private fun SinRenovacionesCard() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(14.dp)),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Outlined.EventAvailable,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(Modifier.width(12.dp))
+            Text(
+                stringResource(R.string.no_upcoming_renewals),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+/**
+ * Tarjeta "Tu año en suscripciones": cifra anual (si ya está calculada) y CTA al resumen
+ * compartible. Sin gradiente: el único gradiente del Dashboard es [GradientStatCard].
+ */
+@Composable
+private fun TuAnioCard(totalAnualTexto: String?, onVerResumen: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.CalendarToday,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(22.dp)
+                )
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    stringResource(R.string.resumen_anual_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            if (totalAnualTexto != null) {
+                Column {
+                    Text(
+                        stringResource(R.string.resumen_anual_total_label),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        totalAnualTexto,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+            Text(
+                stringResource(R.string.year_card_desc),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            FilledTonalButton(
+                onClick = onVerResumen,
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                Text(stringResource(R.string.year_card_cta))
+                Spacer(Modifier.width(8.dp))
+                Icon(Icons.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
+            }
         }
     }
 }

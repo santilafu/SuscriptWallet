@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Icono adaptativo: fondo sólido + ilustración original del escudo (sin texto) centrada en la
+     zona segura de 66 dp + silueta monocroma para iconos temáticos (Android 13+).
+     Los PNG se regeneran con scratchpad/extract_shield.py + compose_icons.py a partir de
+     drawable/ic_app_logo.png (ver nota en engram "SubIA / iconos launcher"). -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@mipmap/ic_launcher_background" />
+    <background android:drawable="@color/ic_launcher_background" />
     <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+    <monochrome android:drawable="@drawable/ic_launcher_monochrome" />
 </adaptive-icon>

@@ -5,9 +5,7 @@
     <!-- Navigation -->
     <string name="nav_home">Home</string>
     <string name="nav_subscriptions">Subscriptions</string>
-    <string name="nav_categories">Categories</string>
     <string name="nav_catalog">Catalog</string>
-    <string name="more_options">More options</string>
     <string name="settings">Settings</string>
     <string name="logout">Log out</string>
     <string name="back">Back</string>
@@ -29,7 +27,6 @@
     <string name="google_error">Google Sign-In error: %1$s</string>
 
     <!-- Dashboard -->
-    <string name="wallet_subtitle">✦  your subscriptions under control  ✦</string>
     <string name="monthly">Monthly</string>
     <string name="yearly">Yearly</string>
     <string name="weekly">Weekly</string>
@@ -39,6 +36,8 @@
     <string name="view_subscriptions">View subscriptions</string>
     <string name="upcoming_renewals">Upcoming renewals</string>
     <string name="no_upcoming_renewals">No upcoming renewals</string>
+    <string name="year_card_desc">See what your subscriptions add up to in a year and share it.</string>
+    <string name="year_card_cta">View summary</string>
     <string name="offline_data">Showing cached data — offline</string>
     <string name="offline_catalog">Cached catalog — offline</string>
     <string name="retry">Retry</string>
@@ -49,10 +48,14 @@
     <string name="add">Add</string>
     <string name="no_subscriptions">No subscriptions</string>
     <string name="tap_to_add_first">Tap + to add your first one</string>
-    <string name="my_subscriptions">My subscriptions</string>
     <string name="all_filter">All</string>
     <string name="no_subscriptions_in_category">No subscriptions in this category</string>
     <string name="renews_on">Renews: %1$s</string>
+    <plurals name="subs_active_count">
+        <item quantity="one">%d active</item>
+        <item quantity="other">%d active</item>
+    </plurals>
+    <string name="subs_monthly_total">%1$s/month</string>
     <string name="trial_badge">Trial · %1$dd</string>
 
     <!-- Subscription form -->
@@ -115,10 +118,14 @@
     <string name="data_section">Data</string>
     <string name="export_subscriptions">Export subscriptions</string>
     <string name="export_description">Download all your subscriptions in CSV format.</string>
-    <string name="export_to_csv">Export to CSV</string>
     <string name="export_success">Exported to %1$s</string>
     <string name="export_error">Export failed</string>
     <string name="file_open_error">Could not open the file</string>
+    <string name="account_section">Account</string>
+    <string name="logout_confirm_title">Log out?</string>
+    <string name="logout_confirm_text">You will need to sign in again to see your subscriptions.</string>
+    <string name="privacy_policy">Privacy policy</string>
+    <string name="app_version">Version %1$s</string>
 
     <!-- Categories -->
     <string name="new_category">New category</string>
@@ -129,7 +136,6 @@
     <string name="create">Create</string>
 
     <!-- Catalog -->
-    <string name="catalog_title">Catalog</string>
     <string name="services_available">%1$d services available</string>
     <string name="services_available_loading">320+ services available</string>
     <string name="search_service">Search service…</string>
@@ -177,7 +183,6 @@
     <string name="add_first_subscription">Add my first subscription</string>
     <!-- Shareable yearly summary -->
     <string name="resumen_anual_title">Your year in subscriptions</string>
-    <string name="resumen_anual_subtitle">This is what your subscriptions add up to</string>
     <string name="resumen_anual_total_label">Yearly spend</string>
     <string name="resumen_anual_subs">%d active subscriptions</string>
     <string name="resumen_anual_top_service">Your priciest service</string>
@@ -202,7 +207,6 @@
     <!-- Gmail detection -->
     <string name="gmail_detect_section">Automatic detection</string>
     <string name="gmail_detect_desc">Detect your subscriptions by reading your Gmail — no typing.</string>
-    <string name="gmail_detect_button">Detect subscriptions with Gmail</string>
     <string name="onb4_title">Detect your subscriptions</string>
     <string name="onb4_desc">Connect your Gmail and we\'ll add them for you, no typing.</string>
     <string name="onb4_action">Detect with Gmail</string>

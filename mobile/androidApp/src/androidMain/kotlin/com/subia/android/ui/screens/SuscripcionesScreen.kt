@@ -51,25 +51,19 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.ExperimentalTextApi
 import com.subia.android.R
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.subia.android.ui.BannerAdView
 import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.components.EmptyState
 import com.subia.android.ui.components.ErrorState
-import com.subia.android.ui.theme.GradientIndigoEnd
-import com.subia.android.ui.theme.GradientIndigoStart
+import com.subia.android.ui.components.formatearImporte
 import com.subia.android.ui.theme.Indigo500
 import com.subia.android.ui.theme.urgent
 import com.subia.shared.model.Category
@@ -164,7 +158,7 @@ private fun EmptyStateSuscripciones(onNavigateToNueva: () -> Unit) {
     )
 }
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalTextApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ListaSuscripciones(
     suscripciones: List<Subscription>,
@@ -173,11 +167,20 @@ private fun ListaSuscripciones(
     onNavigateToDetalle: (Long) -> Unit,
     onFiltrar: (Long?) -> Unit
 ) {
-    val gradientBrush = Brush.linearGradient(
-        colors = listOf(GradientIndigoStart, GradientIndigoEnd, Color(0xFFA78BFA)),
-        start = Offset(0f, 0f),
-        end = Offset(Float.POSITIVE_INFINITY, 0f)
-    )
+    // La TopAppBar ya dice "Suscripciones": en vez de repetir el título con un badge, un
+    // subtítulo con significado: "7 activas · 47,96 €/mes" (S-05). El gasto mensual se
+    // normaliza igual que en DashboardViewModel (anual / 12) y se agrupa por divisa.
+    val activas = suscripciones.filter { it.activa }
+    val totalesMensuales = activas
+        .groupBy { it.moneda }
+        .mapValues { (_, subs) -> subs.sumOf { if (it.periodoFacturacion == "YEARLY") it.precio / 12.0 else it.precio } }
+        .entries
+        .sortedBy { entry -> when (entry.key) { "EUR" -> "0"; "USD" -> "1"; else -> "2${entry.key}" } }
+    val resumenActivas = pluralStringResource(R.plurals.subs_active_count, activas.size, activas.size)
+    val resumenLista = if (totalesMensuales.isEmpty()) resumenActivas else {
+        val totalTexto = totalesMensuales.joinToString(" + ") { formatearImporte(it.value, it.key) }
+        resumenActivas + " · " + stringResource(R.string.subs_monthly_total, totalTexto)
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -185,41 +188,14 @@ private fun ListaSuscripciones(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item {
-            Row(
+            Text(
+                text = resumenLista,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = buildAnnotatedString {
-                        withStyle(
-                            SpanStyle(
-                                brush = gradientBrush,
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 28.sp
-                            )
-                        ) {
-                            append(stringResource(R.string.my_subscriptions))
-                        }
-                    }
-                )
-                // Badge con el conteo
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Indigo500)
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = "${suscripciones.size}",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
-                    )
-                }
-            }
+                    .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 4.dp)
+            )
         }
 
         stickyHeader {
@@ -304,13 +280,13 @@ private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Un
             .border(1.dp, MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(14.dp))
             .clickable { onNavigateToDetalle(sub.id) }
     ) {
-        // Acento izquierdo indigo — crece con el alto del contenido de la tarjeta
+        // Acento izquierdo discreto (outlineVariant, sin gradiente) — crece con el alto de la tarjeta
         Box(
             modifier = Modifier
                 .width(4.dp)
                 .fillMaxHeight()
                 .background(
-                    brush = Brush.verticalGradient(listOf(GradientIndigoStart, GradientIndigoEnd)),
+                    color = MaterialTheme.colorScheme.outlineVariant,
                     shape = RoundedCornerShape(topStart = 14.dp, bottomStart = 14.dp)
                 )
         )

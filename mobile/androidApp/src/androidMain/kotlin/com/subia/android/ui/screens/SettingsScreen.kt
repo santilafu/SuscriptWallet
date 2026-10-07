@@ -1,13 +1,12 @@
 package com.subia.android.ui.screens
 
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,14 +15,24 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.FileDownload
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
@@ -31,6 +40,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,16 +49,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.core.os.LocaleListCompat
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
+import androidx.core.os.LocaleListCompat
+import com.subia.android.BuildConfig
 import com.subia.android.R
 import com.subia.android.ui.theme.ThemeState
-import androidx.compose.ui.unit.dp
+import com.subia.android.util.openCustomTab
 import com.subia.android.util.toCsv
 import com.subia.android.worker.DEFAULT_NOTIFICATION_DAYS_BEFORE
 import com.subia.android.worker.KEY_NOTIFICATION_DAYS_BEFORE
@@ -61,6 +76,7 @@ import java.io.OutputStreamWriter
 
 private const val PREFS_NAME_SETTINGS = "subia_cache"
 private const val KEY_SUBSCRIPTIONS = "subscriptions"
+private const val PRIVACY_POLICY_URL = "https://suscriptwallet.onrender.com/privacidad"
 
 private val reminderOptions = listOf(1, 3, 7, 14)
 private val languageOptions = listOf(
@@ -71,13 +87,24 @@ private val languageOptions = listOf(
 )
 private val csvJson = Json { ignoreUnknownKeys = true; isLenient = true; coerceInputValues = true }
 
+/**
+ * Ajustes de la app. Las acciones de navegación (Categorías, Gmail) y las de un solo toque
+ * (Exportar) van como `ListItem` con chevron; "Cerrar sesión" pide confirmación porque
+ * descarta la sesión sin aviso previo.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit, onDetectGmail: () -> Unit = {}) {
+fun SettingsScreen(
+    onBack: () -> Unit,
+    onNavigateToCategorias: () -> Unit = {},
+    onDetectGmail: () -> Unit = {},
+    onLogout: () -> Unit = {}
+) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences(PREFS_NAME_SETTINGS, Context.MODE_PRIVATE) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    var mostrarDialogoLogout by remember { mutableStateOf(false) }
 
     var selectedDays by remember {
         mutableIntStateOf(prefs.getInt(KEY_NOTIFICATION_DAYS_BEFORE, DEFAULT_NOTIFICATION_DAYS_BEFORE))
@@ -135,179 +162,196 @@ fun SettingsScreen(onBack: () -> Unit, onDetectGmail: () -> Unit = {}) {
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .padding(vertical = 8.dp)
         ) {
             // ── Apariencia (Material You, solo Android 12+) ───────────
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                Text(
-                    text = stringResource(R.string.appearance),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary
+                SeccionTitulo(stringResource(R.string.appearance))
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.dynamic_color)) },
+                    supportingContent = { Text(stringResource(R.string.dynamic_color_desc)) },
+                    trailingContent = {
+                        Switch(
+                            checked = ThemeState.dynamicColor,
+                            onCheckedChange = { ThemeState.setDynamicColor(context, it) }
+                        )
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    modifier = Modifier.clickable { ThemeState.setDynamicColor(context, !ThemeState.dynamicColor) }
                 )
-                Spacer(Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { ThemeState.setDynamicColor(context, !ThemeState.dynamicColor) }
-                        .padding(vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.dynamic_color),
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                        Text(
-                            text = stringResource(R.string.dynamic_color_desc),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Switch(
-                        checked = ThemeState.dynamicColor,
-                        onCheckedChange = { ThemeState.setDynamicColor(context, it) }
-                    )
-                }
-
-                Spacer(Modifier.height(24.dp))
-                HorizontalDivider()
-                Spacer(Modifier.height(24.dp))
+                SeparadorSeccion()
             }
 
             // ── Idioma ────────────────────────────────────────────────
-            Text(
-                text = stringResource(R.string.language),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(Modifier.height(8.dp))
-
+            SeccionTitulo(stringResource(R.string.language))
             // Fila `selectable` con rol RadioButton y radio sin onClick: un único nodo
             // enfocable por fila y el grupo se anuncia como tal en TalkBack.
             Column(Modifier.selectableGroup()) {
                 languageOptions.forEach { (localeTag, labelRes) ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .selectable(
-                                selected = selectedLocale == localeTag,
-                                role = Role.RadioButton
-                            ) {
-                                selectedLocale = localeTag
-                                val locales = if (localeTag.isEmpty()) LocaleListCompat.getEmptyLocaleList()
-                                else LocaleListCompat.forLanguageTags(localeTag)
-                                AppCompatDelegate.setApplicationLocales(locales)
-                            }
-                            .padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    FilaRadio(
+                        selected = selectedLocale == localeTag,
+                        label = stringResource(labelRes)
                     ) {
-                        RadioButton(selected = selectedLocale == localeTag, onClick = null)
-                        Text(
-                            text = stringResource(labelRes),
-                            style = MaterialTheme.typography.bodyLarge
-                        )
+                        selectedLocale = localeTag
+                        val locales = if (localeTag.isEmpty()) LocaleListCompat.getEmptyLocaleList()
+                        else LocaleListCompat.forLanguageTags(localeTag)
+                        AppCompatDelegate.setApplicationLocales(locales)
                     }
                 }
             }
-
-            Spacer(Modifier.height(24.dp))
-            HorizontalDivider()
-            Spacer(Modifier.height(24.dp))
+            SeparadorSeccion()
 
             // ── Notificaciones ────────────────────────────────────────
-            Text(
-                text = stringResource(R.string.notifications),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(Modifier.height(8.dp))
+            SeccionTitulo(stringResource(R.string.notifications))
             Text(
                 text = stringResource(R.string.notify_before_renewal),
-                style = MaterialTheme.typography.bodyLarge
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
-            Spacer(Modifier.height(8.dp))
-
             Column(Modifier.selectableGroup()) {
                 reminderOptions.forEach { dias ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .selectable(selected = selectedDays == dias, role = Role.RadioButton) {
-                                selectedDays = dias
-                                prefs.edit().putInt(KEY_NOTIFICATION_DAYS_BEFORE, dias).apply()
-                            }
-                            .padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    FilaRadio(
+                        selected = selectedDays == dias,
+                        label = if (dias == 1) stringResource(R.string.one_day) else stringResource(R.string.n_days, dias)
                     ) {
-                        RadioButton(selected = selectedDays == dias, onClick = null)
-                        Text(
-                            text = if (dias == 1) stringResource(R.string.one_day) else stringResource(R.string.n_days, dias),
-                            style = MaterialTheme.typography.bodyLarge
-                        )
+                        selectedDays = dias
+                        prefs.edit().putInt(KEY_NOTIFICATION_DAYS_BEFORE, dias).apply()
                     }
                 }
             }
-
-            Spacer(Modifier.height(8.dp))
             Text(
                 text = stringResource(R.string.also_applies_to_trials),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+            SeparadorSeccion()
+
+            // ── Datos ─────────────────────────────────────────────────
+            SeccionTitulo(stringResource(R.string.data_section))
+            FilaNavegacion(
+                icon = Icons.Outlined.Category,
+                titulo = stringResource(R.string.categories_title),
+                descripcion = stringResource(R.string.organize_expenses),
+                onClick = onNavigateToCategorias
+            )
+            FilaNavegacion(
+                icon = Icons.Outlined.FileDownload,
+                titulo = stringResource(R.string.export_subscriptions),
+                descripcion = stringResource(R.string.export_description),
+                onClick = { exportLauncher.launch("subia_suscripciones.csv") }
+            )
+            FilaNavegacion(
+                icon = Icons.Outlined.Email,
+                titulo = stringResource(R.string.gmail_detect_section),
+                descripcion = stringResource(R.string.gmail_detect_desc),
+                onClick = onDetectGmail
+            )
+            SeparadorSeccion()
+
+            // ── Cuenta ────────────────────────────────────────────────
+            SeccionTitulo(stringResource(R.string.account_section))
+            ListItem(
+                headlineContent = {
+                    Text(stringResource(R.string.logout), color = MaterialTheme.colorScheme.error)
+                },
+                leadingContent = {
+                    Icon(Icons.AutoMirrored.Outlined.Logout, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier.clickable { mostrarDialogoLogout = true }
             )
 
+            // ── Pie: versión y política de privacidad ─────────────────
             Spacer(Modifier.height(24.dp))
-            HorizontalDivider()
-            Spacer(Modifier.height(24.dp))
-
-            Text(
-                text = stringResource(R.string.data_section),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = stringResource(R.string.export_subscriptions),
-                style = MaterialTheme.typography.bodyLarge
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = stringResource(R.string.export_description),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(Modifier.height(12.dp))
-            Button(
-                onClick = { exportLauncher.launch("subia_suscripciones.csv") },
-                modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(stringResource(R.string.export_to_csv))
-            }
-
-            Spacer(Modifier.height(24.dp))
-            HorizontalDivider()
-            Spacer(Modifier.height(24.dp))
-
-            // ── Detección automática por Gmail ────────────────────────
-            Text(
-                text = stringResource(R.string.gmail_detect_section),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = stringResource(R.string.gmail_detect_desc),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(Modifier.height(12.dp))
-            Button(onClick = onDetectGmail, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.gmail_detect_button))
+                TextButton(onClick = { abrirPoliticaPrivacidad(context) }) {
+                    Text(stringResource(R.string.privacy_policy))
+                }
+                Text(
+                    text = stringResource(R.string.app_version, "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
+    }
+
+    if (mostrarDialogoLogout) {
+        AlertDialog(
+            onDismissRequest = { mostrarDialogoLogout = false },
+            title = { Text(stringResource(R.string.logout_confirm_title)) },
+            text = { Text(stringResource(R.string.logout_confirm_text)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        mostrarDialogoLogout = false
+                        onLogout()
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) { Text(stringResource(R.string.logout)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarDialogoLogout = false }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
+    }
+}
+
+/** Abre la política de privacidad en Custom Tab; si no hay navegador compatible, Intent genérico. */
+private fun abrirPoliticaPrivacidad(context: Context) {
+    runCatching { openCustomTab(context, PRIVACY_POLICY_URL) }
+        .onFailure {
+            runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, PRIVACY_POLICY_URL.toUri())) }
+        }
+}
+
+/** Título de sección al estilo de los Ajustes de Material: pequeño y en color secundario. */
+@Composable
+private fun SeccionTitulo(texto: String) {
+    Text(
+        text = texto,
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp)
+    )
+}
+
+@Composable
+private fun SeparadorSeccion() {
+    Spacer(Modifier.height(8.dp))
+    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+}
+
+/** Fila de navegación: icono + título + descripción + chevron. */
+@Composable
+private fun FilaNavegacion(icon: ImageVector, titulo: String, descripcion: String, onClick: () -> Unit) {
+    ListItem(
+        headlineContent = { Text(titulo) },
+        supportingContent = { Text(descripcion) },
+        leadingContent = { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+        trailingContent = {
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        modifier = Modifier.clickable(onClick = onClick)
+    )
+}
+
+@Composable
+private fun FilaRadio(selected: Boolean, label: String, onSelect: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RadioButton(selected = selected, onClick = null)
+        Text(text = label, style = MaterialTheme.typography.bodyLarge)
     }
 }

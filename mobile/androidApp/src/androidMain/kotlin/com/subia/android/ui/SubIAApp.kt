@@ -6,26 +6,11 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.ExperimentalTextApi
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.sp
-import com.subia.android.R
-import com.subia.android.ui.theme.GradientIndigoEnd
-import com.subia.android.ui.theme.GradientIndigoStart
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
-import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,11 +26,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
@@ -53,9 +36,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.toRoute
+import com.subia.android.R
 import com.subia.android.navigation.CatalogoRoute
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import com.subia.android.navigation.CategoriasRoute
 import com.subia.android.navigation.DashboardRoute
 import com.subia.android.navigation.GmailScanRoute
@@ -74,25 +56,30 @@ import com.subia.android.ui.screens.LoginScreen
 import com.subia.android.ui.screens.OnboardingScreen
 import com.subia.android.ui.screens.ResumenAnualScreen
 import com.subia.android.ui.screens.SettingsScreen
-import com.subia.android.util.OnboardingPrefs
 import com.subia.android.ui.screens.SuscripcionDetalleScreen
 import com.subia.android.ui.screens.SuscripcionFormScreen
 import com.subia.android.ui.screens.SuscripcionesScreen
+import com.subia.android.util.OnboardingPrefs
 import com.subia.shared.viewmodel.AuthViewModel
 import com.subia.shared.viewmodel.GmailScanViewModel
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.koin.compose.viewmodel.koinViewModel
 
-private data class NavItem(val route: Any, val icon: androidx.compose.ui.graphics.vector.ImageVector, val labelRes: Int)
+private data class NavItem(val route: Any, val icon: ImageVector, val labelRes: Int)
 
+/**
+ * Tres pestañas: Inicio · Suscripciones · Catálogo. Categorías vive en Ajustes (es una lista
+ * de gestión, no un destino de uso diario) y Ajustes se abre desde la TopAppBar.
+ */
 private val bottomNavItems = listOf(
     NavItem(DashboardRoute, Icons.Default.Home, R.string.nav_home),
     NavItem(SuscripcionesRoute, Icons.Default.CreditCard, R.string.nav_subscriptions),
-    NavItem(CategoriasRoute, Icons.Default.Category, R.string.nav_categories),
     NavItem(CatalogoRoute, Icons.Default.Apps, R.string.nav_catalog)
 )
 
-/** Composable raíz: gestiona NavHost, barra superior con logout y barra de navegación inferior. */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalTextApi::class)
+/** Composable raíz: gestiona NavHost, barra superior con el título de la sección y barra inferior. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SubIAApp(
     navController: NavHostController,
@@ -115,76 +102,39 @@ fun SubIAApp(
         }
     }
 
-    val showBottomBar = currentDestination?.let { dest ->
-        bottomNavItems.any { item -> dest.hasRoute(item.route::class) }
-    } ?: false
-
-    val gradientBrush = Brush.linearGradient(
-        colors = listOf(GradientIndigoStart, GradientIndigoEnd, Color(0xFFA78BFA)),
-        start = Offset(0f, 0f),
-        end = Offset(Float.POSITIVE_INFINITY, 0f)
-    )
-
-    var showMenu by remember { mutableStateOf(false) }
+    // Pestaña activa (null fuera de las tres pestañas → sin barras del shell).
+    val seccionActual = currentDestination?.let { dest ->
+        bottomNavItems.firstOrNull { item -> dest.hasRoute(item.route::class) }
+    }
 
     Scaffold(
         topBar = {
-            if (showBottomBar) {
+            if (seccionActual != null) {
                 TopAppBar(
                     title = {
+                        // La TopAppBar dice dónde estás; la marca solo vive en Login y en la
+                        // tarjeta compartible del resumen anual.
                         Text(
-                            text = buildAnnotatedString {
-                                withStyle(
-                                    SpanStyle(
-                                        brush = gradientBrush,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        fontSize = 20.sp
-                                    )
-                                ) {
-                                    append("SuscriptWallet")
-                                }
-                            }
+                            text = stringResource(seccionActual.labelRes),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.surface
                     ),
                     actions = {
-                        IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.more_options))
-                        }
-                        DropdownMenu(
-                            expanded = showMenu,
-                            onDismissRequest = { showMenu = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.resumen_anual_title)) },
-                                onClick = {
-                                    navController.navigate(ResumenAnualRoute)
-                                    showMenu = false
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.settings)) },
-                                onClick = {
-                                    navController.navigate(SettingsRoute)
-                                    showMenu = false
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.logout)) },
-                                onClick = {
-                                    authViewModel.logout()
-                                    showMenu = false
-                                }
-                            )
+                        IconButton(onClick = {
+                            navController.navigate(SettingsRoute) { launchSingleTop = true }
+                        }) {
+                            Icon(Icons.Outlined.Settings, contentDescription = stringResource(R.string.settings))
                         }
                     }
                 )
             }
         },
         bottomBar = {
-            if (showBottomBar) {
+            if (seccionActual != null) {
                 NavigationBar(
                     containerColor = MaterialTheme.colorScheme.surface,
                     tonalElevation = 3.dp
@@ -248,6 +198,7 @@ fun SubIAApp(
                             popUpTo(DashboardRoute) { saveState = true }
                         }
                     },
+                    onNavigateToResumenAnual = { navController.navigate(ResumenAnualRoute) },
                     onSesionExpirada = { authViewModel.logout() }
                 )
             }
@@ -274,11 +225,15 @@ fun SubIAApp(
                     navController = navController
                 )
             }
-            composable<CategoriasRoute> { CategoriasScreen() }
+            composable<CategoriasRoute> {
+                CategoriasScreen(onBack = { navController.popBackStack() })
+            }
             composable<SettingsRoute> {
                 SettingsScreen(
                     onBack = { navController.popBackStack() },
-                    onDetectGmail = { navController.navigate(GmailScanRoute) }
+                    onNavigateToCategorias = { navController.navigate(CategoriasRoute) },
+                    onDetectGmail = { navController.navigate(GmailScanRoute) },
+                    onLogout = { authViewModel.logout() }
                 )
             }
             composable<ResumenAnualRoute> {

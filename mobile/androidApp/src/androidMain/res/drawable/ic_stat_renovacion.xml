@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icono de estado (barra de notificaciones): blanco sobre transparente, 24 dp.
+     Silueta trazada automáticamente de la ilustración original del escudo (ic_app_logo.png)
+     con scratchpad/compose_icons.py. Relleno even-odd: la cerradura queda recortada. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M13.28,21.55L10.72,21.55L9.21,20.83L8.03,20.04L5.94,18.17L5.77,17.22L4.82,16.16L4.32,14.99L4.32,12.59L4.43,12.25L4.32,11.36L4.37,4.88L4.91,4.57L7.31,4.18L7.92,3.68L10.77,2.45L13.23,2.45L15.85,3.56L16.69,4.18L19.32,4.63L19.68,4.99L19.68,11.36L19.57,11.69L19.68,14.99L19.51,15.55L19.07,16.33L18.23,17.22L18.12,18.06L17.64,18.65L15.58,20.32L13.28,21.55ZM11.72,12.23L11.83,12.17L11.92,12.10L12.01,12.02L12.08,11.92L12.14,11.82L12.19,11.70L12.21,11.59L12.23,11.47L12.22,11.35L12.20,11.23L12.16,11.11L12.11,11.01L12.04,10.91L11.96,10.82L11.87,10.74L11.76,10.68L11.65,10.63L11.54,10.59L11.42,10.58L11.30,10.58L11.18,10.59L11.06,10.63L10.95,10.68L10.85,10.74L10.76,10.82L10.68,10.91L10.61,11.01L10.55,11.11L10.52,11.23L10.49,11.35L10.49,11.47L10.50,11.59L10.53,11.70L10.57,11.82L10.63,11.92L10.71,12.02L10.79,12.10L10.89,12.17L10.99,12.23L10.82,14.04L11.90,14.04Z" />
+</vector>

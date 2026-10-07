@@ -123,7 +123,7 @@ class RenovacionWorker(
 
         val importe = "%.2f".format(suscripcion.precio)
         val notificacion = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.drawable.ic_stat_renovacion)
             .setContentTitle(context.getString(R.string.notif_renewal_title, suscripcion.nombre))
             .setContentText(
                 context.getString(R.string.notif_renewal_text, suscripcion.nombre, fechaFormateada, importe, suscripcion.moneda)
@@ -159,7 +159,7 @@ class RenovacionWorker(
 
         val importe = "%.2f".format(suscripcion.precio)
         val notificacion = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.drawable.ic_stat_renovacion)
             .setContentTitle(context.getString(R.string.notif_trial_title, suscripcion.nombre))
             .setContentText(
                 context.getString(R.string.notif_trial_text, suscripcion.nombre, fechaFormateada, importe, suscripcion.moneda)

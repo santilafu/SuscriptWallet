@@ -92,6 +92,8 @@ kotlin {
             implementation(libs.coil.compose)
             implementation(libs.vico.compose.m3)
             implementation(libs.androidx.work.runtime.ktx)
+            // Splash screen de Android 12+ con compat para APIs anteriores (sin flash de fondo)
+            implementation(libs.androidx.core.splashscreen)
             implementation("com.google.android.gms:play-services-ads:23.6.0")
             implementation("androidx.credentials:credentials:1.3.0")
             implementation("androidx.credentials:credentials-play-services-auth:1.3.0")

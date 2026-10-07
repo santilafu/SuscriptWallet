@@ -47,21 +47,12 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.res.stringResource
 import com.subia.android.R
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.ExperimentalTextApi
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.subia.android.ui.ServiceLogo
-import com.subia.android.ui.theme.GradientIndigoEnd
-import com.subia.android.ui.theme.GradientIndigoStart
 import com.subia.android.ui.theme.Indigo500
 import com.subia.android.ui.theme.success
 import com.subia.android.ui.theme.urgent
@@ -72,7 +63,7 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Pantalla de detalle de una suscripción con opciones de editar y eliminar. */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalTextApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SuscripcionDetalleScreen(
     suscripcionId: Long,
@@ -112,7 +103,7 @@ fun SuscripcionDetalleScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(suscripcion?.nombre ?: stringResource(R.string.detail)) },
+                title = { Text(stringResource(R.string.detail)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
@@ -133,57 +124,40 @@ fun SuscripcionDetalleScreen(
                     .padding(innerPadding)
                     .verticalScroll(rememberScrollState())
             ) {
-                // Cabecera con logo y nombre
-                Column(
+                // Cabecera: logo + nombre, sin gradientes. El logo del servicio pone el color (T-06).
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(
-                            brush = Brush.verticalGradient(
-                                listOf(
-                                    MaterialTheme.colorScheme.surface,
-                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                                )
-                            )
-                        )
-                        .padding(vertical = 28.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .padding(horizontal = 20.dp, vertical = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    ServiceLogo(nombre = suscripcion.nombre, size = 72.dp, contentDescription = null)
-                    Spacer(Modifier.height(14.dp))
-                    Text(
-                        text = buildAnnotatedString {
-                            withStyle(
-                                SpanStyle(
-                                    brush = Brush.linearGradient(
-                                        colors = listOf(GradientIndigoStart, GradientIndigoEnd, Color(0xFFA78BFA)),
-                                        start = Offset(0f, 0f),
-                                        end = Offset(Float.POSITIVE_INFINITY, 0f)
-                                    ),
-                                    fontWeight = FontWeight.ExtraBold,
-                                    fontSize = 24.sp
-                                )
-                            ) {
-                                append(suscripcion.nombre)
-                            }
-                        }
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    // Chip de estado con color semántico (verde = activa)
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(50))
-                            .background(
-                                if (suscripcion.activa) MaterialTheme.colorScheme.success.copy(alpha = 0.15f)
-                                else MaterialTheme.colorScheme.surfaceVariant
-                            )
-                            .padding(horizontal = 12.dp, vertical = 4.dp)
-                    ) {
+                    ServiceLogo(nombre = suscripcion.nombre, size = 56.dp, contentDescription = null)
+                    Spacer(Modifier.width(16.dp))
+                    Column(Modifier.weight(1f)) {
                         Text(
-                            text = if (suscripcion.activa) stringResource(R.string.active) else stringResource(R.string.inactive),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if (suscripcion.activa) MaterialTheme.colorScheme.success else MaterialTheme.colorScheme.onSurfaceVariant
+                            text = suscripcion.nombre,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
                         )
+                        Spacer(Modifier.height(6.dp))
+                        // Chip de estado con color semántico (verde = activa)
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .background(
+                                    if (suscripcion.activa) MaterialTheme.colorScheme.success.copy(alpha = 0.15f)
+                                    else MaterialTheme.colorScheme.surfaceVariant
+                                )
+                                .padding(horizontal = 12.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = if (suscripcion.activa) stringResource(R.string.active) else stringResource(R.string.inactive),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (suscripcion.activa) MaterialTheme.colorScheme.success else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
 

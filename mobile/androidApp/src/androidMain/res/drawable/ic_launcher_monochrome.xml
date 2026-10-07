@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Capa monochrome del icono adaptativo (iconos temáticos, Android 13+).
+     Silueta trazada automáticamente de la ilustración original del escudo (ic_app_logo.png)
+     con scratchpad/compose_icons.py. Relleno even-odd: la cerradura queda recortada. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M57.90,83.01L50.10,83.01L45.52,80.81L41.95,78.43L35.59,72.75L35.08,69.86L32.20,66.64L30.67,63.08L30.67,55.78L31.01,54.76L30.67,52.05L30.84,32.37L32.45,31.44L39.75,30.25L41.62,28.72L50.27,24.99L57.73,24.99L65.71,28.38L68.25,30.25L76.22,31.61L77.33,32.71L77.33,52.05L76.99,53.07L77.33,63.08L76.82,64.77L75.46,67.15L72.92,69.86L72.58,72.41L71.14,74.19L64.86,79.28L57.90,83.01ZM53.16,54.70L53.48,54.53L53.77,54.31L54.03,54.05L54.25,53.76L54.43,53.44L54.56,53.10L54.65,52.74L54.68,52.38L54.67,52.01L54.60,51.65L54.49,51.31L54.32,50.98L54.12,50.68L53.87,50.41L53.59,50.17L53.28,49.98L52.95,49.83L52.59,49.73L52.23,49.68L51.87,49.68L51.50,49.73L51.15,49.83L50.82,49.98L50.51,50.17L50.23,50.41L49.98,50.68L49.77,50.98L49.61,51.31L49.50,51.65L49.43,52.01L49.41,52.38L49.45,52.74L49.53,53.10L49.67,53.44L49.85,53.76L50.07,54.05L50.33,54.31L50.62,54.53L50.94,54.70L50.41,60.19L53.68,60.19Z" />
+</vector>

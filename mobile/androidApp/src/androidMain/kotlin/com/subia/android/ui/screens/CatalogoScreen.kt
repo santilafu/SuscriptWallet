@@ -37,16 +37,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.ExperimentalTextApi
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.width
@@ -54,8 +48,6 @@ import androidx.compose.ui.res.stringResource
 import com.subia.android.R
 import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.components.ErrorState
-import com.subia.android.ui.theme.GradientIndigoEnd
-import com.subia.android.ui.theme.GradientIndigoStart
 import com.subia.android.ui.theme.success
 import com.subia.shared.model.CatalogItem
 import com.subia.shared.viewmodel.CatalogoUiState
@@ -83,7 +75,7 @@ private fun nombreCategoria(key: String): String = when (key) {
     else          -> key.replaceFirstChar { it.uppercaseChar() }
 }
 
-@OptIn(ExperimentalTextApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CatalogoScreen(
     onSeleccionarItem: (CatalogItem) -> Unit,
@@ -95,34 +87,19 @@ fun CatalogoScreen(
     val categorias by viewModel.categorias.collectAsState()
     val categoriaFiltro by viewModel.categoriaFiltro.collectAsState()
 
-    val gradientBrush = Brush.linearGradient(
-        colors = listOf(GradientIndigoStart, GradientIndigoEnd, Color(0xFFA78BFA)),
-        start = Offset(0f, 0f),
-        end = Offset(Float.POSITIVE_INFINITY, 0f)
-    )
-
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(8.dp))
 
-        // Cabecera
-        Text(
-            text = buildAnnotatedString {
-                withStyle(SpanStyle(brush = gradientBrush, fontWeight = FontWeight.ExtraBold, fontSize = 34.sp)) {
-                    append(stringResource(R.string.catalog_title))
-                }
-            }
-        )
-        Spacer(Modifier.height(4.dp))
+        // La TopAppBar ya dice "Catálogo": aquí solo el contador de servicios como subtítulo.
         Text(
             text = if (itemsFiltrados.isEmpty() && uiState is CatalogoUiState.Loading)
                 stringResource(R.string.services_available_loading)
             else
                 stringResource(R.string.services_available, itemsFiltrados.size),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            letterSpacing = 0.8.sp
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
 
         // Campo de búsqueda
         TextField(

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fondo sólido del icono adaptativo: teal profundo tomado de la propia ilustración del
+         escudo (coherente con la marca del usuario y con más contraste que el índigo de la app). -->
+    <color name="ic_launcher_background">#0B3B4C</color>
+    <!-- Fondo del splash: coincide con BackgroundLight (zinc-50) del tema Compose. -->
+    <color name="splash_background">#FAFAFA</color>
+</resources>

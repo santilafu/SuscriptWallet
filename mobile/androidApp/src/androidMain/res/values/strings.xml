@@ -5,9 +5,7 @@
     <!-- Navigation -->
     <string name="nav_home">Inicio</string>
     <string name="nav_subscriptions">Suscripciones</string>
-    <string name="nav_categories">Categorías</string>
     <string name="nav_catalog">Catálogo</string>
-    <string name="more_options">Más opciones</string>
     <string name="settings">Ajustes</string>
     <string name="logout">Cerrar sesión</string>
     <string name="back">Volver</string>
@@ -29,7 +27,6 @@
     <string name="google_error">Error de Google Sign-In: %1$s</string>
 
     <!-- Dashboard -->
-    <string name="wallet_subtitle">✦  tus suscripciones bajo control  ✦</string>
     <string name="monthly">Mensual</string>
     <string name="yearly">Anual</string>
     <string name="weekly">Semanal</string>
@@ -39,6 +36,8 @@
     <string name="view_subscriptions">Ver suscripciones</string>
     <string name="upcoming_renewals">Próximas renovaciones</string>
     <string name="no_upcoming_renewals">No tienes renovaciones próximas</string>
+    <string name="year_card_desc">Descubre cuánto suman tus suscripciones en un año y compártelo.</string>
+    <string name="year_card_cta">Ver resumen</string>
     <string name="offline_data">Mostrando datos guardados — sin conexión</string>
     <string name="offline_catalog">Catálogo guardado — sin conexión</string>
     <string name="retry">Reintentar</string>
@@ -49,10 +48,14 @@
     <string name="add">Añadir</string>
     <string name="no_subscriptions">Sin suscripciones</string>
     <string name="tap_to_add_first">Toca + para añadir la primera</string>
-    <string name="my_subscriptions">Mis suscripciones</string>
     <string name="all_filter">Todas</string>
     <string name="no_subscriptions_in_category">No hay suscripciones en esta categoría</string>
     <string name="renews_on">Renueva: %1$s</string>
+    <plurals name="subs_active_count">
+        <item quantity="one">%d activa</item>
+        <item quantity="other">%d activas</item>
+    </plurals>
+    <string name="subs_monthly_total">%1$s/mes</string>
     <string name="trial_badge">Prueba · %1$dd</string>
 
     <!-- Subscription form -->
@@ -115,10 +118,14 @@
     <string name="data_section">Datos</string>
     <string name="export_subscriptions">Exportar suscripciones</string>
     <string name="export_description">Descarga todas tus suscripciones en formato CSV.</string>
-    <string name="export_to_csv">Exportar a CSV</string>
     <string name="export_success">Exportado a %1$s</string>
     <string name="export_error">Error al exportar</string>
     <string name="file_open_error">No se pudo abrir el fichero</string>
+    <string name="account_section">Cuenta</string>
+    <string name="logout_confirm_title">¿Cerrar sesión?</string>
+    <string name="logout_confirm_text">Tendrás que volver a iniciar sesión para ver tus suscripciones.</string>
+    <string name="privacy_policy">Política de privacidad</string>
+    <string name="app_version">Versión %1$s</string>
 
     <!-- Categories -->
     <string name="new_category">Nueva categoría</string>
@@ -129,7 +136,6 @@
     <string name="create">Crear</string>
 
     <!-- Catalog -->
-    <string name="catalog_title">Catálogo</string>
     <string name="services_available">%1$d servicios disponibles</string>
     <string name="services_available_loading">320+ servicios disponibles</string>
     <string name="search_service">Buscar servicio…</string>
@@ -177,7 +183,6 @@
     <string name="add_first_subscription">Añadir mi primera suscripción</string>
     <!-- Resumen anual compartible -->
     <string name="resumen_anual_title">Tu año en suscripciones</string>
-    <string name="resumen_anual_subtitle">Esto es lo que suman tus suscripciones</string>
     <string name="resumen_anual_total_label">Gasto anual</string>
     <string name="resumen_anual_subs">%d suscripciones activas</string>
     <string name="resumen_anual_top_service">Tu servicio más caro</string>
@@ -202,7 +207,6 @@
     <!-- Detección por Gmail -->
     <string name="gmail_detect_section">Detección automática</string>
     <string name="gmail_detect_desc">Detecta tus suscripciones leyendo tu Gmail, sin escribir nada a mano.</string>
-    <string name="gmail_detect_button">Detectar suscripciones con Gmail</string>
     <string name="onb4_title">Detecta tus suscripciones</string>
     <string name="onb4_desc">Conecta tu Gmail y las añadimos por ti, sin escribir nada.</string>
     <string name="onb4_action">Detectar con Gmail</string>

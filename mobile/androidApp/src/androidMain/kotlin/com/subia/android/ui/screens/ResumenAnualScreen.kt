@@ -85,6 +85,25 @@ fun ResumenAnualScreen(
     val marca = stringResource(R.string.resumen_anual_brand)
     val tituloSelector = stringResource(R.string.resumen_anual_share)
 
+    // Una sola acción de compartir, reutilizada por el icono de la TopAppBar y el botón del cuerpo.
+    val compartir: () -> Unit = {
+        compartirResumenAnual(
+            context = context,
+            datos = ResumenCompartible(
+                titulo = titulo,
+                totalLabel = totalLabel,
+                totalValor = totalValor,
+                subsTexto = subsTexto,
+                servicioLabel = servicioLabel,
+                servicioValor = servicioTop,
+                categoriaLabel = categoriaLabel,
+                categoriaValor = categoriaTop,
+                marca = marca
+            ),
+            tituloSelector = tituloSelector
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -92,6 +111,13 @@ fun ResumenAnualScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                    }
+                },
+                actions = {
+                    if (hayDatos) {
+                        IconButton(onClick = compartir) {
+                            Icon(Icons.Default.Share, contentDescription = tituloSelector)
+                        }
                     }
                 }
             )
@@ -130,23 +156,7 @@ fun ResumenAnualScreen(
 
             Spacer(Modifier.height(24.dp))
             Button(
-                onClick = {
-                    compartirResumenAnual(
-                        context = context,
-                        datos = ResumenCompartible(
-                            titulo = titulo,
-                            totalLabel = totalLabel,
-                            totalValor = totalValor,
-                            subsTexto = subsTexto,
-                            servicioLabel = servicioLabel,
-                            servicioValor = servicioTop,
-                            categoriaLabel = categoriaLabel,
-                            categoriaValor = categoriaTop,
-                            marca = marca
-                        ),
-                        tituloSelector = tituloSelector
-                    )
-                },
+                onClick = compartir,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(14.dp)
             ) {

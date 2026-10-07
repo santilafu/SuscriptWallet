@@ -5,9 +5,7 @@
     <!-- Navigation -->
     <string name="nav_home">Accueil</string>
     <string name="nav_subscriptions">Abonnements</string>
-    <string name="nav_categories">Catégories</string>
     <string name="nav_catalog">Catalogue</string>
-    <string name="more_options">Plus d\'options</string>
     <string name="settings">Paramètres</string>
     <string name="logout">Déconnexion</string>
     <string name="back">Retour</string>
@@ -29,7 +27,6 @@
     <string name="google_error">Erreur Google Sign-In : %1$s</string>
 
     <!-- Dashboard -->
-    <string name="wallet_subtitle">✦  vos abonnements sous contrôle  ✦</string>
     <string name="monthly">Mensuel</string>
     <string name="yearly">Annuel</string>
     <string name="weekly">Hebdomadaire</string>
@@ -39,6 +36,8 @@
     <string name="view_subscriptions">Voir les abonnements</string>
     <string name="upcoming_renewals">Prochains renouvellements</string>
     <string name="no_upcoming_renewals">Aucun renouvellement à venir</string>
+    <string name="year_card_desc">Découvrez le total annuel de vos abonnements et partagez-le.</string>
+    <string name="year_card_cta">Voir le résumé</string>
     <string name="offline_data">Données en cache — hors ligne</string>
     <string name="offline_catalog">Catalogue en cache — hors ligne</string>
     <string name="retry">Réessayer</string>
@@ -49,10 +48,14 @@
     <string name="add">Ajouter</string>
     <string name="no_subscriptions">Aucun abonnement</string>
     <string name="tap_to_add_first">Appuyez sur + pour ajouter le premier</string>
-    <string name="my_subscriptions">Mes abonnements</string>
     <string name="all_filter">Tous</string>
     <string name="no_subscriptions_in_category">Aucun abonnement dans cette catégorie</string>
     <string name="renews_on">Renouvelle : %1$s</string>
+    <plurals name="subs_active_count">
+        <item quantity="one">%d actif</item>
+        <item quantity="other">%d actifs</item>
+    </plurals>
+    <string name="subs_monthly_total">%1$s/mois</string>
     <string name="trial_badge">Essai · %1$dj</string>
 
     <!-- Subscription form -->
@@ -115,10 +118,14 @@
     <string name="data_section">Données</string>
     <string name="export_subscriptions">Exporter les abonnements</string>
     <string name="export_description">Téléchargez tous vos abonnements au format CSV.</string>
-    <string name="export_to_csv">Exporter en CSV</string>
     <string name="export_success">Exporté vers %1$s</string>
     <string name="export_error">Erreur d\'exportation</string>
     <string name="file_open_error">Impossible d\'ouvrir le fichier</string>
+    <string name="account_section">Compte</string>
+    <string name="logout_confirm_title">Se déconnecter ?</string>
+    <string name="logout_confirm_text">Vous devrez vous reconnecter pour voir vos abonnements.</string>
+    <string name="privacy_policy">Politique de confidentialité</string>
+    <string name="app_version">Version %1$s</string>
 
     <!-- Categories -->
     <string name="new_category">Nouvelle catégorie</string>
@@ -129,7 +136,6 @@
     <string name="create">Créer</string>
 
     <!-- Catalog -->
-    <string name="catalog_title">Catalogue</string>
     <string name="services_available">%1$d services disponibles</string>
     <string name="services_available_loading">320+ services disponibles</string>
     <string name="search_service">Rechercher un service…</string>
@@ -177,7 +183,6 @@
     <string name="add_first_subscription">Ajouter mon premier abonnement</string>
     <!-- Résumé annuel partageable -->
     <string name="resumen_anual_title">Votre année en abonnements</string>
-    <string name="resumen_anual_subtitle">Voici le total de vos abonnements</string>
     <string name="resumen_anual_total_label">Dépense annuelle</string>
     <string name="resumen_anual_subs">%d abonnements actifs</string>
     <string name="resumen_anual_top_service">Votre service le plus cher</string>
@@ -202,7 +207,6 @@
     <!-- Détection Gmail -->
     <string name="gmail_detect_section">Détection automatique</string>
     <string name="gmail_detect_desc">Détectez vos abonnements en lisant votre Gmail, sans rien saisir.</string>
-    <string name="gmail_detect_button">Détecter les abonnements avec Gmail</string>
     <string name="onb4_title">Détectez vos abonnements</string>
     <string name="onb4_desc">Connectez votre Gmail et nous les ajoutons pour vous, sans rien saisir.</string>
     <string name="onb4_action">Détecter avec Gmail</string>
