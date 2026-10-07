@@ -70,8 +70,8 @@ import com.subia.android.ui.components.EmptyState
 import com.subia.android.ui.components.ErrorState
 import com.subia.android.ui.theme.GradientIndigoEnd
 import com.subia.android.ui.theme.GradientIndigoStart
-import com.subia.android.ui.theme.Indigo400
 import com.subia.android.ui.theme.Indigo500
+import com.subia.android.ui.theme.urgent
 import com.subia.shared.model.Category
 import com.subia.shared.model.Subscription
 import com.subia.shared.viewmodel.SuscripcionesUiState
@@ -286,10 +286,12 @@ private fun ListaSuscripciones(
 @Composable
 private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Unit, modifier: Modifier = Modifier) {
     // Calcula días restantes de prueba si procede
-    val diasPrueba: Int? = if (sub.esPrueba && !sub.fechaFinPrueba.isNullOrBlank()) {
+    // Una fecha nula o mal formada (p. ej. creada desde la web) no debe tirar la lista.
+    val fechaFinPrueba = sub.fechaFinPrueba
+    val diasPrueba: Int? = if (sub.esPrueba && !fechaFinPrueba.isNullOrBlank()) {
         runCatching {
             val hoy = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-            hoy.daysUntil(LocalDate.parse(sub.fechaFinPrueba!!))
+            hoy.daysUntil(LocalDate.parse(fechaFinPrueba))
         }.getOrNull()
     } else null
 
@@ -323,7 +325,7 @@ private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Un
                     .padding(horizontal = 14.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                ServiceLogo(nombre = sub.nombre, size = 44.dp)
+                ServiceLogo(nombre = sub.nombre, size = 44.dp, contentDescription = null)
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
                     Text(sub.nombre, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -339,14 +341,14 @@ private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Un
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("%.2f €".format(sub.precio), fontWeight = FontWeight.Bold, color = Indigo400)
+                    Text("%.2f €".format(sub.precio), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
                 }
             }
 
             // Badge de prueba gratuita
             if (diasPrueba != null) {
-                val badgeColor = if (diasPrueba <= 3) MaterialTheme.colorScheme.error else Color(0xFFF97316)
+                val badgeColor = if (diasPrueba <= 3) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.urgent
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)

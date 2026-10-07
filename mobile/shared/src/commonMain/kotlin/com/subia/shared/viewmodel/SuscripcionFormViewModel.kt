@@ -21,11 +21,30 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 
+/**
+ * Error tipado del formulario. El ViewModel no conoce idiomas: cada plataforma
+ * traduce el caso a su recurso localizado (en Android, `R.string`).
+ */
+sealed interface FormError {
+    /** El nombre del servicio está vacío. */
+    data object NombreVacio : FormError
+    /** El importe no es un número o no es mayor que cero. */
+    data object PrecioInvalido : FormError
+    /** No se ha elegido fecha de renovación. */
+    data object FechaRenovacionVacia : FormError
+    /** No se ha elegido categoría. */
+    data object CategoriaNoSeleccionada : FormError
+    /** Fallo de red al guardar. */
+    data object SinConexion : FormError
+    /** Cualquier otro fallo del servidor al guardar. */
+    data object GuardadoFallido : FormError
+}
+
 sealed interface FormUiState {
     data object Idle : FormUiState
     data object Loading : FormUiState
     data object Success : FormUiState
-    data class Error(val mensaje: String) : FormUiState
+    data class Error(val error: FormError) : FormUiState
 }
 
 /**
@@ -183,25 +202,11 @@ class SuscripcionFormViewModel(
 
     /** Envía el formulario. Si [esEdicion] es true realiza PUT, si no POST. */
     fun enviar(esEdicion: Boolean, id: Long? = null) {
-        val precioDouble = precio.value.replace(",", ".").toDoubleOrNull()
+        val precioDouble = parsearPrecio(precio.value)
 
-        when {
-            nombre.value.isBlank() -> {
-                _uiState.value = FormUiState.Error("El nombre del servicio es obligatorio")
-                return
-            }
-            precioDouble == null || precioDouble <= 0 -> {
-                _uiState.value = FormUiState.Error("Introduce un importe válido mayor que cero")
-                return
-            }
-            fechaRenovacion.value.isBlank() -> {
-                _uiState.value = FormUiState.Error("La fecha de renovación es obligatoria")
-                return
-            }
-            categoriaId.value == null || categoriaId.value == 0L -> {
-                _uiState.value = FormUiState.Error("Selecciona una categoría")
-                return
-            }
+        validar(nombre.value, precio.value, fechaRenovacion.value, categoriaId.value)?.let { error ->
+            _uiState.value = FormUiState.Error(error)
+            return
         }
 
         val request = NuevaSuscripcionRequest(
@@ -226,15 +231,35 @@ class SuscripcionFormViewModel(
             }
             result
                 .onSuccess { _uiState.value = FormUiState.Success }
-                .onFailure { error ->
-                    val mensaje = when (error) {
-                        is NetworkException -> "Sin conexión. No es posible guardar cambios sin conexión"
-                        else -> "No se ha podido guardar la suscripción. Inténtalo de nuevo"
-                    }
-                    _uiState.value = FormUiState.Error(mensaje)
-                }
+                .onFailure { error -> _uiState.value = FormUiState.Error(mapearErrorGuardado(error)) }
         }
     }
 
     fun resetState() { _uiState.value = FormUiState.Idle }
+
+    companion object {
+        /** Convierte el texto del importe a número aceptando coma o punto decimal. */
+        fun parsearPrecio(texto: String): Double? = texto.replace(",", ".").toDoubleOrNull()
+
+        /**
+         * Validación pura del formulario. Devuelve el primer [FormError] encontrado
+         * (en el orden visual de los campos) o `null` si todo es válido.
+         */
+        fun validar(nombre: String, precio: String, fechaRenovacion: String, categoriaId: Long?): FormError? {
+            val precioDouble = parsearPrecio(precio)
+            return when {
+                nombre.isBlank() -> FormError.NombreVacio
+                precioDouble == null || precioDouble <= 0 -> FormError.PrecioInvalido
+                fechaRenovacion.isBlank() -> FormError.FechaRenovacionVacia
+                categoriaId == null || categoriaId == 0L -> FormError.CategoriaNoSeleccionada
+                else -> null
+            }
+        }
+
+        /** Traduce la excepción del repositorio al error tipado que entiende la UI. */
+        fun mapearErrorGuardado(error: Throwable): FormError = when (error) {
+            is NetworkException -> FormError.SinConexion
+            else -> FormError.GuardadoFallido
+        }
+    }
 }

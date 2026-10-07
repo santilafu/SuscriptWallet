@@ -19,7 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -67,10 +67,10 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.subia.android.ui.theme.GradientIndigoEnd
 import com.subia.android.ui.theme.GradientIndigoStart
-import com.subia.android.ui.theme.Indigo400
 import com.subia.android.ui.theme.Indigo500
 import com.subia.shared.model.BillingCycle
 import com.subia.shared.model.CatalogItem
+import com.subia.shared.viewmodel.FormError
 import com.subia.shared.viewmodel.FormUiState
 import kotlinx.serialization.json.Json
 import com.subia.shared.viewmodel.SuscripcionFormViewModel
@@ -159,7 +159,7 @@ fun SuscripcionFormScreen(
                 title = { Text(if (suscripcionId != null) stringResource(R.string.edit_subscription) else stringResource(R.string.new_subscription)) },
                 navigationIcon = {
                     IconButton(onClick = onSuccess) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -203,14 +203,14 @@ fun SuscripcionFormScreen(
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = null,
-                                tint = Indigo400
+                                tint = MaterialTheme.colorScheme.primary
                             )
                             Column {
                                 Text(
                                     text = stringResource(R.string.choose_from_catalog),
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = Indigo400
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
                                     text = stringResource(R.string.auto_fill_fields),
@@ -222,7 +222,7 @@ fun SuscripcionFormScreen(
                         Icon(
                             imageVector = if (selectorExpandido) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                             contentDescription = if (selectorExpandido) stringResource(R.string.collapse) else stringResource(R.string.expand),
-                            tint = Indigo400
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -525,7 +525,7 @@ fun SuscripcionFormScreen(
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandedCategoriaForm) },
                     modifier = Modifier.fillMaxWidth().menuAnchor(),
                     enabled = !isLoading,
-                    isError = uiState is FormUiState.Error && (uiState as FormUiState.Error).mensaje == "Selecciona una categoría"
+                    isError = (uiState as? FormUiState.Error)?.error == FormError.CategoriaNoSeleccionada
                 )
                 ExposedDropdownMenu(
                     expanded = expandedCategoriaForm,
@@ -557,7 +557,7 @@ fun SuscripcionFormScreen(
 
             if (uiState is FormUiState.Error) {
                 Text(
-                    text = (uiState as FormUiState.Error).mensaje,
+                    text = stringResource((uiState as FormUiState.Error).error.stringRes()),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -600,4 +600,14 @@ private fun SeccionFormulario(titulo: String) {
             color = MaterialTheme.colorScheme.surfaceVariant
         )
     }
+}
+
+/** Traduce el error tipado del ViewModel (sin textos) al recurso localizado. */
+private fun FormError.stringRes(): Int = when (this) {
+    FormError.NombreVacio -> R.string.form_error_name_required
+    FormError.PrecioInvalido -> R.string.form_error_invalid_amount
+    FormError.FechaRenovacionVacia -> R.string.form_error_renewal_date_required
+    FormError.CategoriaNoSeleccionada -> R.string.form_error_category_required
+    FormError.SinConexion -> R.string.form_error_offline
+    FormError.GuardadoFallido -> R.string.form_error_save_failed
 }

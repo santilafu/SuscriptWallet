@@ -66,6 +66,7 @@ import com.subia.android.auth.GoogleSignInHelper
 import com.subia.android.auth.GoogleSignInResult
 import com.subia.android.ui.theme.GradientIndigoEnd
 import com.subia.android.ui.theme.GradientIndigoStart
+import com.subia.shared.viewmodel.AuthError
 import com.subia.shared.viewmodel.AuthUiState
 import com.subia.shared.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
@@ -170,7 +171,7 @@ fun LoginScreen(
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Text(
-                                text = (uiState as AuthUiState.Error).mensaje,
+                                text = authErrorText((uiState as AuthUiState.Error).error),
                                 color = Color(0xFFF87171),
                                 style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier
@@ -391,4 +392,16 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(48.dp))
         }
     }
+}
+
+/** Traduce el error tipado del ViewModel al texto localizado que ve el usuario. */
+@Composable
+private fun authErrorText(error: AuthError): String = when (error) {
+    AuthError.CredencialesVacias -> stringResource(R.string.auth_error_empty_credentials)
+    AuthError.CredencialesIncorrectas -> stringResource(R.string.auth_error_bad_credentials)
+    AuthError.TokenGoogleVacio -> stringResource(R.string.auth_error_google_token_empty)
+    AuthError.GoogleNoVerificado -> stringResource(R.string.auth_error_google_not_verified)
+    AuthError.SinConexion -> stringResource(R.string.auth_error_offline)
+    is AuthError.Desconocido -> stringResource(R.string.auth_error_generic)
+    is AuthError.Mensaje -> error.texto
 }

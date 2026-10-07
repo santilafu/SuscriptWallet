@@ -6,6 +6,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,7 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -41,6 +43,7 @@ import androidx.core.os.LocaleListCompat
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import com.subia.android.R
@@ -120,7 +123,7 @@ fun SettingsScreen(onBack: () -> Unit, onDetectGmail: () -> Unit = {}) {
                 title = { Text(stringResource(R.string.settings)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -181,32 +184,31 @@ fun SettingsScreen(onBack: () -> Unit, onDetectGmail: () -> Unit = {}) {
             )
             Spacer(Modifier.height(8.dp))
 
-            languageOptions.forEach { (localeTag, labelRes) ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            selectedLocale = localeTag
-                            val locales = if (localeTag.isEmpty()) LocaleListCompat.getEmptyLocaleList()
-                            else LocaleListCompat.forLanguageTags(localeTag)
-                            AppCompatDelegate.setApplicationLocales(locales)
-                        }
-                        .padding(vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = selectedLocale == localeTag,
-                        onClick = {
-                            selectedLocale = localeTag
-                            val locales = if (localeTag.isEmpty()) LocaleListCompat.getEmptyLocaleList()
-                            else LocaleListCompat.forLanguageTags(localeTag)
-                            AppCompatDelegate.setApplicationLocales(locales)
-                        }
-                    )
-                    Text(
-                        text = stringResource(labelRes),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+            // Fila `selectable` con rol RadioButton y radio sin onClick: un único nodo
+            // enfocable por fila y el grupo se anuncia como tal en TalkBack.
+            Column(Modifier.selectableGroup()) {
+                languageOptions.forEach { (localeTag, labelRes) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = selectedLocale == localeTag,
+                                role = Role.RadioButton
+                            ) {
+                                selectedLocale = localeTag
+                                val locales = if (localeTag.isEmpty()) LocaleListCompat.getEmptyLocaleList()
+                                else LocaleListCompat.forLanguageTags(localeTag)
+                                AppCompatDelegate.setApplicationLocales(locales)
+                            }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(selected = selectedLocale == localeTag, onClick = null)
+                        Text(
+                            text = stringResource(labelRes),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
                 }
             }
 
@@ -228,28 +230,24 @@ fun SettingsScreen(onBack: () -> Unit, onDetectGmail: () -> Unit = {}) {
             )
             Spacer(Modifier.height(8.dp))
 
-            reminderOptions.forEach { dias ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            selectedDays = dias
-                            prefs.edit().putInt(KEY_NOTIFICATION_DAYS_BEFORE, dias).apply()
-                        }
-                        .padding(vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = selectedDays == dias,
-                        onClick = {
-                            selectedDays = dias
-                            prefs.edit().putInt(KEY_NOTIFICATION_DAYS_BEFORE, dias).apply()
-                        }
-                    )
-                    Text(
-                        text = if (dias == 1) stringResource(R.string.one_day) else stringResource(R.string.n_days, dias),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+            Column(Modifier.selectableGroup()) {
+                reminderOptions.forEach { dias ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(selected = selectedDays == dias, role = Role.RadioButton) {
+                                selectedDays = dias
+                                prefs.edit().putInt(KEY_NOTIFICATION_DAYS_BEFORE, dias).apply()
+                            }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(selected = selectedDays == dias, onClick = null)
+                        Text(
+                            text = if (dias == 1) stringResource(R.string.one_day) else stringResource(R.string.n_days, dias),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
                 }
             }
 

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Configuración de red de producción: solo HTTPS.
+    El tráfico en claro (http://10.0.2.2:8081 del emulador) se habilita únicamente en
+    builds de depuración mediante el fichero homónimo de src/androidDebug/res/xml,
+    que sustituye a este en esa variante.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

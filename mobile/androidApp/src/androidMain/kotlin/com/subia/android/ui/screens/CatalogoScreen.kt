@@ -56,8 +56,7 @@ import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.components.ErrorState
 import com.subia.android.ui.theme.GradientIndigoEnd
 import com.subia.android.ui.theme.GradientIndigoStart
-import com.subia.android.ui.theme.Indigo400
-import com.subia.android.ui.theme.Success
+import com.subia.android.ui.theme.success
 import com.subia.shared.model.CatalogItem
 import com.subia.shared.viewmodel.CatalogoUiState
 import com.subia.shared.viewmodel.CatalogoViewModel
@@ -130,7 +129,7 @@ fun CatalogoScreen(
             value = busqueda,
             onValueChange = { viewModel.busqueda.value = it },
             placeholder = { Text(stringResource(R.string.search_service)) },
-            leadingIcon = { Icon(Icons.Default.Search, null, tint = Indigo400) },
+            leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.primary) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             shape = RoundedCornerShape(20.dp),
@@ -140,7 +139,7 @@ fun CatalogoScreen(
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
                 disabledIndicatorColor = Color.Transparent,
-                focusedLeadingIconColor = Indigo400,
+                focusedLeadingIconColor = MaterialTheme.colorScheme.primary,
                 unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
             )
         )
@@ -160,8 +159,8 @@ fun CatalogoScreen(
                     onClick = { viewModel.categoriaFiltro.value = null },
                     label = { Text(stringResource(R.string.all_categories), fontSize = 12.sp) },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = Indigo400,
-                        selectedLabelColor = Color.White
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                     )
                 )
                 // Chips por categoría
@@ -173,8 +172,8 @@ fun CatalogoScreen(
                         },
                         label = { Text(nombreCategoria(key), fontSize = 12.sp) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Indigo400,
-                            selectedLabelColor = Color.White
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                         )
                     )
                 }
@@ -243,7 +242,7 @@ private fun CatalogoItemCard(item: CatalogItem, onSeleccionar: (CatalogItem) -> 
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            ServiceLogo(nombre = item.nombre, size = 44.dp, domain = item.domain, iconUrl = item.iconUrl)
+            ServiceLogo(nombre = item.nombre, size = 44.dp, domain = item.domain, iconUrl = item.iconUrl, contentDescription = null)
             Text(
                 item.nombre,
                 style = MaterialTheme.typography.labelMedium,
@@ -257,7 +256,7 @@ private fun CatalogoItemCard(item: CatalogItem, onSeleccionar: (CatalogItem) -> 
                     "%.2f €/m".format(it),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = Indigo400,
+                    color = MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.Center
                 )
             }
@@ -266,7 +265,7 @@ private fun CatalogoItemCard(item: CatalogItem, onSeleccionar: (CatalogItem) -> 
                     stringResource(R.string.annual_savings, pct),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Success,
+                    color = MaterialTheme.colorScheme.success,
                     textAlign = TextAlign.Center
                 )
             }

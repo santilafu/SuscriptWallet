@@ -36,7 +36,9 @@ fun ServiceLogo(
     modifier: Modifier = Modifier,
     size: Dp = 48.dp,
     domain: String? = null,
-    iconUrl: String? = null
+    iconUrl: String? = null,
+    /** Pasar `null` cuando ya hay un Text con el nombre al lado (TalkBack no lo repite). */
+    contentDescription: String? = null
 ) {
     val resolvedDomain = domain?.takeIf { it.isNotBlank() } ?: getLogoDomain(nombre)
     val shape = RoundedCornerShape(12.dp)
@@ -75,7 +77,7 @@ fun ServiceLogo(
 
     SubcomposeAsyncImage(
         model = request,
-        contentDescription = nombre,
+        contentDescription = contentDescription,
         contentScale = ContentScale.Fit,
         modifier = modifier
             .size(size)

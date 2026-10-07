@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -23,8 +24,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.subia.android.R
 import com.subia.android.util.openCustomTab
 import com.subia.shared.viewmodel.GmailScanUiState
 import com.subia.shared.viewmodel.GmailScanViewModel
@@ -71,33 +76,55 @@ fun GmailScanScreen(
     Column(Modifier.fillMaxSize().padding(24.dp)) {
         when (val s = state) {
             is GmailScanUiState.Idle -> {
-                Text("Detecta tus suscripciones", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Text(
+                    stringResource(R.string.gmail_scan_title),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
                 Spacer(Modifier.height(12.dp))
-                Text("Conecta tu Gmail y buscaremos recibos de suscripciones para que no tengas que añadirlas a mano. Solo leemos; no guardamos tus correos.")
+                Text(stringResource(R.string.gmail_scan_intro))
                 Spacer(Modifier.height(24.dp))
                 Button(onClick = { viewModel.startScan() }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Conectar con Gmail")
+                    Text(stringResource(R.string.gmail_scan_connect))
                 }
             }
             is GmailScanUiState.LaunchConsent,
-            is GmailScanUiState.AwaitingReturn -> CenterProgress("Esperando la autorización…") {
-                TextButton(onClick = { viewModel.onReturnedFromConsent("ok") }) { Text("Ya autoricé") }
+            is GmailScanUiState.AwaitingReturn -> CenterProgress(stringResource(R.string.gmail_scan_waiting)) {
+                TextButton(onClick = { viewModel.onReturnedFromConsent("ok") }) {
+                    Text(stringResource(R.string.gmail_scan_already_authorized))
+                }
             }
-            is GmailScanUiState.LoadingResults -> CenterProgress("Buscando suscripciones…")
+            is GmailScanUiState.LoadingResults -> CenterProgress(stringResource(R.string.gmail_scan_searching))
             is GmailScanUiState.Results -> {
-                Text("Hemos encontrado ${s.items.size}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(
+                    pluralStringResource(R.plurals.gmail_scan_found, s.items.size, s.items.size),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
                 Spacer(Modifier.height(12.dp))
                 LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
                     items(s.items, key = { it.id }) { item ->
+                        val checked = item.id in selected
+                        // Fila `toggleable` con rol Checkbox y casilla sin callback: un único nodo
+                        // enfocable por fila, con el estado marcado/no marcado anunciado por TalkBack.
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .toggleable(value = checked, role = Role.Checkbox) { viewModel.toggle(item.id) }
+                                .padding(vertical = 6.dp)
                         ) {
-                            Checkbox(checked = item.id in selected, onCheckedChange = { viewModel.toggle(item.id) })
+                            Checkbox(checked = checked, onCheckedChange = null)
                             Column(Modifier.padding(start = 8.dp)) {
                                 Text(item.serviceName, style = MaterialTheme.typography.titleMedium)
                                 Text(
-                                    "${item.price} ${item.currency} · ${cycleLabel(item.billingCycle)} · visto ${item.lastSeen}",
+                                    stringResource(
+                                        R.string.gmail_scan_item_meta,
+                                        "%.2f".format(item.price),
+                                        item.currency,
+                                        cycleLabel(item.billingCycle),
+                                        item.lastSeen
+                                    ),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -111,23 +138,25 @@ fun GmailScanScreen(
                     enabled = selected.isNotEmpty(),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Añadir ${selected.size} seleccionadas")
+                    Text(pluralStringResource(R.plurals.gmail_scan_add_selected, selected.size, selected.size))
                 }
             }
-            is GmailScanUiState.Empty -> CenterMessage("No encontramos suscripciones en tu correo.", onBack)
-            is GmailScanUiState.Adding -> CenterProgress("Añadiendo…")
-            is GmailScanUiState.Done -> CenterProgress("Listo")
+            is GmailScanUiState.Empty -> CenterMessage(stringResource(R.string.gmail_scan_empty), onBack)
+            is GmailScanUiState.Adding -> CenterProgress(stringResource(R.string.gmail_scan_adding))
+            is GmailScanUiState.Done -> CenterProgress(stringResource(R.string.gmail_scan_done))
             is GmailScanUiState.Error -> CenterMessage(s.message, onBack) {
-                Button(onClick = { viewModel.startScan() }) { Text("Reintentar") }
+                Button(onClick = { viewModel.startScan() }) { Text(stringResource(R.string.retry)) }
             }
         }
     }
 }
 
-private fun cycleLabel(cycle: String) = when (cycle) {
-    "YEARLY" -> "anual"
-    "WEEKLY" -> "semanal"
-    else -> "mensual"
+/** Etiqueta localizada del ciclo de facturación que llega del backend (YEARLY/WEEKLY/MONTHLY). */
+@Composable
+private fun cycleLabel(cycle: String): String = when (cycle) {
+    "YEARLY" -> stringResource(R.string.cycle_yearly)
+    "WEEKLY" -> stringResource(R.string.cycle_weekly)
+    else -> stringResource(R.string.cycle_monthly)
 }
 
 @Composable
@@ -160,6 +189,6 @@ private fun CenterMessage(text: String, onBack: () -> Unit, extra: @Composable (
             extra()
             Spacer(Modifier.height(8.dp))
         }
-        TextButton(onClick = onBack) { Text("Volver") }
+        TextButton(onClick = onBack) { Text(stringResource(R.string.back)) }
     }
 }

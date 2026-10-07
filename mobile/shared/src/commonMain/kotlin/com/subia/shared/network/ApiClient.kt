@@ -9,6 +9,7 @@ import com.subia.shared.storage.TokenStorageProvider
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
@@ -61,6 +62,13 @@ class ApiClient(
     @PublishedApi
     internal val client = HttpClient(httpEngine ?: createHttpEngine()) {
         install(ContentNegotiation) { json(jsonConfig) }
+        // Sin timeouts una petición puede quedarse colgada para siempre (spinner eterno con
+        // Render "dormido" o al escanear Gmail). Los fallos llegan como excepción → NetworkException.
+        install(HttpTimeout) {
+            requestTimeoutMillis = 30_000
+            connectTimeoutMillis = 10_000
+            socketTimeoutMillis = 30_000
+        }
         install(Logging) {
             level = if (isDebug) LogLevel.INFO else LogLevel.NONE
             logger = object : Logger { override fun log(message: String) = println(message) }

@@ -61,11 +61,16 @@ import com.subia.android.ui.components.GastosPorCategoriaCard
 import com.subia.android.ui.components.TopSuscripcionesChartCard
 import com.subia.android.ui.theme.GradientAmberEnd
 import com.subia.android.ui.theme.GradientAmberStart
+import com.subia.android.ui.theme.GradientIndigoDeepEnd
+import com.subia.android.ui.theme.GradientIndigoDeepStart
 import com.subia.android.ui.theme.GradientIndigoEnd
 import com.subia.android.ui.theme.GradientIndigoStart
-import com.subia.android.ui.theme.GradientTealEnd
-import com.subia.android.ui.theme.GradientTealStart
+import com.subia.android.ui.theme.GradientTealDeepEnd
+import com.subia.android.ui.theme.GradientTealDeepStart
 import com.subia.android.ui.theme.Warning
+import com.subia.android.ui.theme.success
+import com.subia.android.ui.theme.urgent
+import com.subia.android.ui.theme.warning
 import com.subia.shared.model.DashboardSummary
 import com.subia.shared.model.ProximaRenovacion
 import com.subia.shared.viewmodel.DashboardUiState
@@ -157,15 +162,16 @@ private fun DashboardContent(
     topSuscripciones: List<TopSuscripcion> = emptyList(),
     onNavigateToSuscripciones: () -> Unit = {}
 ) {
+    // Gradientes "profundos" (tonos 600/700): el texto blanco al 100 % cumple 4,5:1 encima.
     val gradientsMensual = listOf(
-        Brush.linearGradient(listOf(GradientIndigoStart, GradientIndigoEnd)),
-        Brush.linearGradient(listOf(GradientIndigoStart, GradientIndigoEnd)),
-        Brush.linearGradient(listOf(GradientIndigoStart, GradientIndigoEnd))
+        Brush.linearGradient(listOf(GradientIndigoDeepStart, GradientIndigoDeepEnd)),
+        Brush.linearGradient(listOf(GradientIndigoDeepStart, GradientIndigoDeepEnd)),
+        Brush.linearGradient(listOf(GradientIndigoDeepStart, GradientIndigoDeepEnd))
     )
     val gradientsAnual = listOf(
-        Brush.linearGradient(listOf(GradientTealStart, GradientTealEnd)),
-        Brush.linearGradient(listOf(GradientTealStart, GradientTealEnd)),
-        Brush.linearGradient(listOf(GradientTealStart, GradientTealEnd))
+        Brush.linearGradient(listOf(GradientTealDeepStart, GradientTealDeepEnd)),
+        Brush.linearGradient(listOf(GradientTealDeepStart, GradientTealDeepEnd)),
+        Brush.linearGradient(listOf(GradientTealDeepStart, GradientTealDeepEnd))
     )
 
     LazyColumn(
@@ -258,7 +264,7 @@ private fun DashboardContent(
                     Icon(
                         Icons.Default.Subscriptions,
                         null,
-                        tint = Warning,
+                        tint = MaterialTheme.colorScheme.warning,
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(Modifier.width(12.dp))
@@ -271,7 +277,7 @@ private fun DashboardContent(
                         "${resumen.totalSuscripciones}",
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 22.sp,
-                        color = Warning
+                        color = MaterialTheme.colorScheme.warning
                     )
                     Spacer(Modifier.width(8.dp))
                     Icon(
@@ -327,9 +333,9 @@ private fun GradientStatCard(modifier: Modifier, icon: ImageVector, label: Strin
             .padding(16.dp)
     ) {
         Column {
-            Icon(icon, null, tint = Color.White.copy(alpha = 0.9f), modifier = Modifier.size(20.dp))
+            Icon(icon, null, tint = Color.White, modifier = Modifier.size(20.dp))
             Spacer(Modifier.height(8.dp))
-            Text(label, color = Color.White.copy(alpha = 0.92f), fontSize = 13.sp)
+            Text(label, color = Color.White, fontSize = 13.sp)
             Text(value, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp)
         }
     }
@@ -339,8 +345,8 @@ private fun GradientStatCard(modifier: Modifier, icon: ImageVector, label: Strin
 private fun RenovacionCard(renovacion: ProximaRenovacion) {
     val diasColor = when {
         renovacion.diasRestantes <= 3 -> MaterialTheme.colorScheme.error
-        renovacion.diasRestantes <= 7 -> Warning
-        else -> Color(0xFF22C55E)
+        renovacion.diasRestantes <= 7 -> MaterialTheme.colorScheme.warning
+        else -> MaterialTheme.colorScheme.success
     }
     Card(
         modifier = Modifier
@@ -351,7 +357,7 @@ private fun RenovacionCard(renovacion: ProximaRenovacion) {
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            ServiceLogo(nombre = renovacion.nombre, size = 40.dp)
+            ServiceLogo(nombre = renovacion.nombre, size = 40.dp, contentDescription = null)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(renovacion.nombre, fontWeight = FontWeight.SemiBold, maxLines = 1)
@@ -381,7 +387,7 @@ private fun RenovacionCard(renovacion: ProximaRenovacion) {
 
 @Composable
 private fun PruebasPorVencerCard(pruebas: List<com.subia.shared.model.ProximaRenovacion>) {
-    val naranja = Color(0xFFF97316)
+    val naranja = MaterialTheme.colorScheme.urgent
     Card(
         modifier = Modifier
             .fillMaxWidth()

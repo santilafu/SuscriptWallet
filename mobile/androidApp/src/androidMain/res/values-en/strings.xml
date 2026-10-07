@@ -22,7 +22,7 @@
     <string name="login_button">Sign in</string>
     <string name="or_divider">or</string>
     <string name="continue_with_google">Continue with Google</string>
-    <string name="no_account">Don\'t have an account? </string>
+    <string name="no_account">"Don\'t have an account? "</string>
     <string name="create_account">Create account</string>
     <string name="google_no_accounts">No Google accounts found on this device. Add one in Settings > Accounts and try again.</string>
     <string name="google_not_configured">Google Sign-In is not configured in this build.</string>
@@ -207,4 +207,49 @@
     <string name="onb4_desc">Connect your Gmail and we\'ll add them for you, no typing.</string>
     <string name="onb4_action">Detect with Gmail</string>
     <string name="onb4_skip">Not now</string>
+    <!-- Login errors (AuthError mapping) -->
+    <string name="auth_error_empty_credentials">Email and password are required</string>
+    <string name="auth_error_bad_credentials">Incorrect email or password</string>
+    <string name="auth_error_google_token_empty">No Google token was received</string>
+    <string name="auth_error_google_not_verified">Your Google account could not be verified</string>
+    <string name="auth_error_offline">No connection. Check your network and try again</string>
+    <string name="auth_error_generic">Could not sign in. Please try again</string>
+    <!-- Form errors (FormError mapping) -->
+    <string name="form_error_name_required">The service name is required</string>
+    <string name="form_error_invalid_amount">Enter a valid amount greater than zero</string>
+    <string name="form_error_renewal_date_required">The renewal date is required</string>
+    <string name="form_error_category_required">Select a category</string>
+    <string name="form_error_offline">No connection. Changes can\'t be saved while offline</string>
+    <string name="form_error_save_failed">The subscription could not be saved. Please try again</string>
+    <!-- Gmail detection screen -->
+    <string name="gmail_scan_title">Detect your subscriptions</string>
+    <string name="gmail_scan_intro">Connect your Gmail and we\'ll look for subscription receipts so you don\'t have to add them by hand. We only read; we never store your emails.</string>
+    <string name="gmail_scan_connect">Connect with Gmail</string>
+    <string name="gmail_scan_waiting">Waiting for authorization…</string>
+    <string name="gmail_scan_already_authorized">I\'ve authorized it</string>
+    <string name="gmail_scan_searching">Looking for subscriptions…</string>
+    <plurals name="gmail_scan_found">
+        <item quantity="one">We found %d subscription</item>
+        <item quantity="other">We found %d subscriptions</item>
+    </plurals>
+    <string name="gmail_scan_item_meta">%1$s %2$s · %3$s · seen %4$s</string>
+    <plurals name="gmail_scan_add_selected">
+        <item quantity="one">Add %d selected</item>
+        <item quantity="other">Add %d selected</item>
+    </plurals>
+    <string name="gmail_scan_empty">We couldn\'t find any subscriptions in your inbox.</string>
+    <string name="gmail_scan_adding">Adding…</string>
+    <string name="gmail_scan_done">Done</string>
+    <string name="cycle_monthly">monthly</string>
+    <string name="cycle_yearly">yearly</string>
+    <string name="cycle_weekly">weekly</string>
+    <!-- Renewal notifications (RenovacionWorker) -->
+    <string name="notif_channel_name">Subscription renewals</string>
+    <string name="notif_channel_desc">Alerts about subscriptions about to renew</string>
+    <string name="notif_renewal_title">Upcoming renewal: %1$s</string>
+    <string name="notif_renewal_text">%1$s renews on %2$s for %3$s %4$s</string>
+    <string name="notif_renewal_big">Your %1$s subscription renews on %2$s. Amount: %3$s %4$s</string>
+    <string name="notif_trial_title">Trial ending: %1$s</string>
+    <string name="notif_trial_text">Your free trial of %1$s ends on %2$s. After that you\'ll be charged %3$s %4$s/month</string>
+    <string name="notif_trial_big">Your free trial of %1$s ends on %2$s. If you don\'t cancel, you\'ll be charged %3$s %4$s per month.</string>
 </resources>

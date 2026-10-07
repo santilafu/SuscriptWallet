@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Configuración de red SOLO para builds de depuración: permite HTTP en claro hacia el
+    backend local (API_BASE_URL por defecto http://10.0.2.2:8081) y confía en certificados
+    instalados por el usuario (proxies de depuración). En release se usa la versión de
+    src/androidMain, que prohíbe el tráfico en claro.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

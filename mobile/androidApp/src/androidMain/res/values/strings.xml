@@ -22,7 +22,7 @@
     <string name="login_button">Entrar</string>
     <string name="or_divider">o</string>
     <string name="continue_with_google">Continuar con Google</string>
-    <string name="no_account">¿No tienes cuenta? </string>
+    <string name="no_account">"¿No tienes cuenta? "</string>
     <string name="create_account">Crear cuenta</string>
     <string name="google_no_accounts">No hay cuentas de Google en este dispositivo. Añade una en Ajustes > Cuentas e inténtalo de nuevo.</string>
     <string name="google_not_configured">Google Sign-In no está configurado en este build.</string>
@@ -207,4 +207,49 @@
     <string name="onb4_desc">Conecta tu Gmail y las añadimos por ti, sin escribir nada.</string>
     <string name="onb4_action">Detectar con Gmail</string>
     <string name="onb4_skip">Ahora no</string>
+    <!-- Errores de login (mapeo de AuthError del ViewModel) -->
+    <string name="auth_error_empty_credentials">El correo electrónico y la contraseña son obligatorios</string>
+    <string name="auth_error_bad_credentials">Correo electrónico o contraseña incorrectos</string>
+    <string name="auth_error_google_token_empty">No se recibió el token de Google</string>
+    <string name="auth_error_google_not_verified">No se pudo verificar la cuenta de Google</string>
+    <string name="auth_error_offline">Sin conexión. Comprueba tu red e inténtalo de nuevo</string>
+    <string name="auth_error_generic">No se pudo iniciar sesión. Inténtalo de nuevo</string>
+    <!-- Errores del formulario (mapeo de FormError del ViewModel) -->
+    <string name="form_error_name_required">El nombre del servicio es obligatorio</string>
+    <string name="form_error_invalid_amount">Introduce un importe válido mayor que cero</string>
+    <string name="form_error_renewal_date_required">La fecha de renovación es obligatoria</string>
+    <string name="form_error_category_required">Selecciona una categoría</string>
+    <string name="form_error_offline">Sin conexión. No es posible guardar cambios sin conexión</string>
+    <string name="form_error_save_failed">No se ha podido guardar la suscripción. Inténtalo de nuevo</string>
+    <!-- Pantalla de detección por Gmail -->
+    <string name="gmail_scan_title">Detecta tus suscripciones</string>
+    <string name="gmail_scan_intro">Conecta tu Gmail y buscaremos recibos de suscripciones para que no tengas que añadirlas a mano. Solo leemos; no guardamos tus correos.</string>
+    <string name="gmail_scan_connect">Conectar con Gmail</string>
+    <string name="gmail_scan_waiting">Esperando la autorización…</string>
+    <string name="gmail_scan_already_authorized">Ya autoricé</string>
+    <string name="gmail_scan_searching">Buscando suscripciones…</string>
+    <plurals name="gmail_scan_found">
+        <item quantity="one">Hemos encontrado %d suscripción</item>
+        <item quantity="other">Hemos encontrado %d suscripciones</item>
+    </plurals>
+    <string name="gmail_scan_item_meta">%1$s %2$s · %3$s · visto %4$s</string>
+    <plurals name="gmail_scan_add_selected">
+        <item quantity="one">Añadir %d seleccionada</item>
+        <item quantity="other">Añadir %d seleccionadas</item>
+    </plurals>
+    <string name="gmail_scan_empty">No encontramos suscripciones en tu correo.</string>
+    <string name="gmail_scan_adding">Añadiendo…</string>
+    <string name="gmail_scan_done">Listo</string>
+    <string name="cycle_monthly">mensual</string>
+    <string name="cycle_yearly">anual</string>
+    <string name="cycle_weekly">semanal</string>
+    <!-- Notificaciones de renovación (RenovacionWorker) -->
+    <string name="notif_channel_name">Renovaciones de suscripciones</string>
+    <string name="notif_channel_desc">Alertas sobre suscripciones próximas a renovarse</string>
+    <string name="notif_renewal_title">Renovación próxima: %1$s</string>
+    <string name="notif_renewal_text">%1$s se renueva el %2$s por %3$s %4$s</string>
+    <string name="notif_renewal_big">Tu suscripción a %1$s se renueva el %2$s. Importe: %3$s %4$s</string>
+    <string name="notif_trial_title">Prueba por vencer: %1$s</string>
+    <string name="notif_trial_text">Tu prueba gratuita de %1$s vence el %2$s. Después se cobrará %3$s %4$s/mes</string>
+    <string name="notif_trial_big">Tu período de prueba gratuita de %1$s vence el %2$s. Si no cancelas, se te cobrará %3$s %4$s al mes.</string>
 </resources>

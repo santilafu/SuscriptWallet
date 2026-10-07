@@ -37,8 +37,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.subia.android.R
-import com.subia.android.ui.theme.GradientIndigoEnd
-import com.subia.android.ui.theme.GradientIndigoStart
+import com.subia.android.ui.theme.GradientIndigoDeepEnd
+import com.subia.android.ui.theme.GradientIndigoDeepStart
 import com.subia.android.util.ResumenCompartible
 import com.subia.android.util.compartirResumenAnual
 import com.subia.shared.viewmodel.DashboardUiState
@@ -174,20 +174,21 @@ private fun TarjetaResumen(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
-            .background(Brush.linearGradient(listOf(GradientIndigoStart, GradientIndigoEnd, Color(0xFFA78BFA))))
+            // Gradiente 600 + texto blanco al 100 %: la tarjeta se comparte como imagen y debe leerse en cualquier feed.
+            .background(Brush.linearGradient(listOf(GradientIndigoDeepStart, GradientIndigoDeepEnd)))
             .padding(28.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = titulo.uppercase(),
-            color = Color.White.copy(alpha = 0.85f),
+            color = Color.White,
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
             letterSpacing = 1.5.sp,
             textAlign = TextAlign.Center
         )
         Spacer(Modifier.height(20.dp))
-        Text(text = totalLabel, color = Color.White.copy(alpha = 0.85f), fontSize = 14.sp)
+        Text(text = totalLabel, color = Color.White, fontSize = 14.sp)
         Spacer(Modifier.height(4.dp))
         Text(
             text = totalValor,
@@ -199,7 +200,7 @@ private fun TarjetaResumen(
         Spacer(Modifier.height(4.dp))
         Text(
             text = subsTexto,
-            color = Color.White.copy(alpha = 0.92f),
+            color = Color.White,
             fontSize = 15.sp,
             fontWeight = FontWeight.Medium
         )
@@ -216,7 +217,7 @@ private fun TarjetaResumen(
         Spacer(Modifier.height(28.dp))
         Text(
             text = marca,
-            color = Color.White.copy(alpha = 0.8f),
+            color = Color.White,
             fontSize = 12.sp,
             fontWeight = FontWeight.SemiBold,
             letterSpacing = 0.5.sp
@@ -234,7 +235,7 @@ private fun FilaResumen(label: String, valor: String) {
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(label, color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp)
+        Text(label, color = Color.White, fontSize = 12.sp)
         Spacer(Modifier.height(2.dp))
         Text(valor, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
     }

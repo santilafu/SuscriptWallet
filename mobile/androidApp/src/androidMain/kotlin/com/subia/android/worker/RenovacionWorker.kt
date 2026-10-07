@@ -11,6 +11,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.subia.android.R
 import com.subia.shared.model.Subscription
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
@@ -91,10 +92,10 @@ class RenovacionWorker(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val canal = NotificationChannel(
                 CHANNEL_ID,
-                "Renovaciones de suscripciones",
+                context.getString(R.string.notif_channel_name),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Alertas sobre suscripciones próximas a renovarse"
+                description = context.getString(R.string.notif_channel_desc)
             }
             val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(canal)
@@ -120,19 +121,17 @@ class RenovacionWorker(
             "%02d/%02d/%04d".format(localDate.dayOfMonth, localDate.monthNumber, localDate.year)
         }.getOrElse { suscripcion.fechaRenovacion }
 
+        val importe = "%.2f".format(suscripcion.precio)
         val notificacion = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("Renovación próxima: ${suscripcion.nombre}")
+            .setContentTitle(context.getString(R.string.notif_renewal_title, suscripcion.nombre))
             .setContentText(
-                "${suscripcion.nombre} se renueva el $fechaFormateada " +
-                "por ${"%.2f".format(suscripcion.precio)} ${suscripcion.moneda}"
+                context.getString(R.string.notif_renewal_text, suscripcion.nombre, fechaFormateada, importe, suscripcion.moneda)
             )
             .setStyle(
-                NotificationCompat.BigTextStyle()
-                    .bigText(
-                        "Tu suscripción a ${suscripcion.nombre} se renueva el $fechaFormateada. " +
-                        "Importe: ${"%.2f".format(suscripcion.precio)} ${suscripcion.moneda}"
-                    )
+                NotificationCompat.BigTextStyle().bigText(
+                    context.getString(R.string.notif_renewal_big, suscripcion.nombre, fechaFormateada, importe, suscripcion.moneda)
+                )
             )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
@@ -158,19 +157,17 @@ class RenovacionWorker(
             "%02d/%02d/%04d".format(localDate.dayOfMonth, localDate.monthNumber, localDate.year)
         }.getOrElse { suscripcion.fechaFinPrueba ?: "" }
 
+        val importe = "%.2f".format(suscripcion.precio)
         val notificacion = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("Prueba por vencer: ${suscripcion.nombre}")
+            .setContentTitle(context.getString(R.string.notif_trial_title, suscripcion.nombre))
             .setContentText(
-                "Tu prueba gratuita de ${suscripcion.nombre} vence el $fechaFormateada. " +
-                "Después se cobrará ${"%.2f".format(suscripcion.precio)} ${suscripcion.moneda}/mes"
+                context.getString(R.string.notif_trial_text, suscripcion.nombre, fechaFormateada, importe, suscripcion.moneda)
             )
             .setStyle(
-                NotificationCompat.BigTextStyle()
-                    .bigText(
-                        "Tu período de prueba gratuita de ${suscripcion.nombre} vence el $fechaFormateada. " +
-                        "Si no cancelas, se te cobrará ${"%.2f".format(suscripcion.precio)} ${suscripcion.moneda} al mes."
-                    )
+                NotificationCompat.BigTextStyle().bigText(
+                    context.getString(R.string.notif_trial_big, suscripcion.nombre, fechaFormateada, importe, suscripcion.moneda)
+                )
             )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)

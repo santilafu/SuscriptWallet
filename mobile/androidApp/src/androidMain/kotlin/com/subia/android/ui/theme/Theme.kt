@@ -3,6 +3,7 @@ package com.subia.android.ui.theme
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
@@ -10,6 +11,7 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
@@ -42,6 +44,22 @@ private val LightColors = lightColorScheme(
     outline            = Surface800,
     error              = Error
 )
+
+// ── Colores semánticos según tema ─────────────────────────────────────────────
+// En oscuro se mantienen los tonos 500 de siempre; en claro se usan los tonos 700
+// para que el texto y los chips cumplan 4,5:1 sobre blanco / zinc-50.
+
+/** Verde semántico (activa, ahorro). */
+val ColorScheme.success: Color
+    @Composable get() = if (isSystemInDarkTheme()) Success else SuccessOnLight
+
+/** Ámbar semántico (contador, renovación en ≤7 días). */
+val ColorScheme.warning: Color
+    @Composable get() = if (isSystemInDarkTheme()) Warning else WarningOnLight
+
+/** Naranja semántico (pruebas por vencer, ir a cancelar). */
+val ColorScheme.urgent: Color
+    @Composable get() = if (isSystemInDarkTheme()) Urgent else UrgentOnLight
 
 private val SubIAShapes = Shapes(
     small  = RoundedCornerShape(8.dp),

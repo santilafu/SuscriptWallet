@@ -16,7 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -63,7 +63,8 @@ import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.theme.GradientIndigoEnd
 import com.subia.android.ui.theme.GradientIndigoStart
 import com.subia.android.ui.theme.Indigo500
-import com.subia.android.ui.theme.Success
+import com.subia.android.ui.theme.success
+import com.subia.android.ui.theme.urgent
 import com.subia.shared.repository.CatalogRepository
 import com.subia.shared.viewmodel.SuscripcionesUiState
 import com.subia.shared.viewmodel.SuscripcionesViewModel
@@ -114,7 +115,7 @@ fun SuscripcionDetalleScreen(
                 title = { Text(suscripcion?.nombre ?: stringResource(R.string.detail)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -147,7 +148,7 @@ fun SuscripcionDetalleScreen(
                         .padding(vertical = 28.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    ServiceLogo(nombre = suscripcion.nombre, size = 72.dp)
+                    ServiceLogo(nombre = suscripcion.nombre, size = 72.dp, contentDescription = null)
                     Spacer(Modifier.height(14.dp))
                     Text(
                         text = buildAnnotatedString {
@@ -172,7 +173,7 @@ fun SuscripcionDetalleScreen(
                         modifier = Modifier
                             .clip(RoundedCornerShape(50))
                             .background(
-                                if (suscripcion.activa) Success.copy(alpha = 0.15f)
+                                if (suscripcion.activa) MaterialTheme.colorScheme.success.copy(alpha = 0.15f)
                                 else MaterialTheme.colorScheme.surfaceVariant
                             )
                             .padding(horizontal = 12.dp, vertical = 4.dp)
@@ -181,7 +182,7 @@ fun SuscripcionDetalleScreen(
                             text = if (suscripcion.activa) stringResource(R.string.active) else stringResource(R.string.inactive),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = if (suscripcion.activa) Success else MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (suscripcion.activa) MaterialTheme.colorScheme.success else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -237,11 +238,11 @@ fun SuscripcionDetalleScreen(
                                 modifier = Modifier.fillMaxWidth().height(52.dp),
                                 shape = RoundedCornerShape(14.dp),
                                 colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = Color(0xFFF97316)
+                                    contentColor = MaterialTheme.colorScheme.urgent
                                 ),
                                 border = androidx.compose.foundation.BorderStroke(
                                     1.dp,
-                                    Color(0xFFF97316).copy(alpha = 0.6f)
+                                    MaterialTheme.colorScheme.urgent.copy(alpha = 0.6f)
                                 )
                             ) {
                                 Icon(Icons.Default.Cancel, contentDescription = null, modifier = Modifier.size(18.dp))

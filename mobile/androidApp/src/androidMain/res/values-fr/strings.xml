@@ -22,7 +22,7 @@
     <string name="login_button">Connexion</string>
     <string name="or_divider">ou</string>
     <string name="continue_with_google">Continuer avec Google</string>
-    <string name="no_account">Pas de compte ? </string>
+    <string name="no_account">"Pas de compte ? "</string>
     <string name="create_account">Créer un compte</string>
     <string name="google_no_accounts">Aucun compte Google sur cet appareil. Ajoutez-en un dans Paramètres > Comptes et réessayez.</string>
     <string name="google_not_configured">Google Sign-In n\'est pas configuré dans cette version.</string>
@@ -207,4 +207,49 @@
     <string name="onb4_desc">Connectez votre Gmail et nous les ajoutons pour vous, sans rien saisir.</string>
     <string name="onb4_action">Détecter avec Gmail</string>
     <string name="onb4_skip">Pas maintenant</string>
+    <!-- Erreurs de connexion (mapping AuthError) -->
+    <string name="auth_error_empty_credentials">L\'e-mail et le mot de passe sont obligatoires</string>
+    <string name="auth_error_bad_credentials">E-mail ou mot de passe incorrect</string>
+    <string name="auth_error_google_token_empty">Aucun jeton Google n\'a été reçu</string>
+    <string name="auth_error_google_not_verified">Impossible de vérifier votre compte Google</string>
+    <string name="auth_error_offline">Pas de connexion. Vérifiez votre réseau et réessayez</string>
+    <string name="auth_error_generic">Impossible de se connecter. Réessayez</string>
+    <!-- Erreurs du formulaire (mapping FormError) -->
+    <string name="form_error_name_required">Le nom du service est obligatoire</string>
+    <string name="form_error_invalid_amount">Saisissez un montant valide supérieur à zéro</string>
+    <string name="form_error_renewal_date_required">La date de renouvellement est obligatoire</string>
+    <string name="form_error_category_required">Sélectionnez une catégorie</string>
+    <string name="form_error_offline">Pas de connexion. Impossible d\'enregistrer les modifications hors ligne</string>
+    <string name="form_error_save_failed">L\'abonnement n\'a pas pu être enregistré. Réessayez</string>
+    <!-- Écran de détection Gmail -->
+    <string name="gmail_scan_title">Détectez vos abonnements</string>
+    <string name="gmail_scan_intro">Connectez votre Gmail et nous chercherons les reçus d\'abonnements pour que vous n\'ayez pas à les saisir. Nous lisons seulement ; nous ne conservons pas vos e-mails.</string>
+    <string name="gmail_scan_connect">Connecter Gmail</string>
+    <string name="gmail_scan_waiting">En attente de l\'autorisation…</string>
+    <string name="gmail_scan_already_authorized">J\'ai autorisé</string>
+    <string name="gmail_scan_searching">Recherche des abonnements…</string>
+    <plurals name="gmail_scan_found">
+        <item quantity="one">Nous avons trouvé %d abonnement</item>
+        <item quantity="other">Nous avons trouvé %d abonnements</item>
+    </plurals>
+    <string name="gmail_scan_item_meta">%1$s %2$s · %3$s · vu le %4$s</string>
+    <plurals name="gmail_scan_add_selected">
+        <item quantity="one">Ajouter %d sélectionné</item>
+        <item quantity="other">Ajouter %d sélectionnés</item>
+    </plurals>
+    <string name="gmail_scan_empty">Aucun abonnement trouvé dans votre messagerie.</string>
+    <string name="gmail_scan_adding">Ajout en cours…</string>
+    <string name="gmail_scan_done">Terminé</string>
+    <string name="cycle_monthly">mensuel</string>
+    <string name="cycle_yearly">annuel</string>
+    <string name="cycle_weekly">hebdomadaire</string>
+    <!-- Notifications de renouvellement (RenovacionWorker) -->
+    <string name="notif_channel_name">Renouvellements d\'abonnements</string>
+    <string name="notif_channel_desc">Alertes sur les abonnements sur le point d\'être renouvelés</string>
+    <string name="notif_renewal_title">Renouvellement proche : %1$s</string>
+    <string name="notif_renewal_text">%1$s se renouvelle le %2$s pour %3$s %4$s</string>
+    <string name="notif_renewal_big">Votre abonnement à %1$s se renouvelle le %2$s. Montant : %3$s %4$s</string>
+    <string name="notif_trial_title">Essai bientôt terminé : %1$s</string>
+    <string name="notif_trial_text">Votre essai gratuit de %1$s se termine le %2$s. Ensuite, %3$s %4$s/mois seront facturés</string>
+    <string name="notif_trial_big">Votre période d\'essai gratuit de %1$s se termine le %2$s. Si vous n\'annulez pas, %3$s %4$s par mois vous seront facturés.</string>
 </resources>
