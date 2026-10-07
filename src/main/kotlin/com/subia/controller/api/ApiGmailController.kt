@@ -8,6 +8,7 @@ import com.subia.dto.api.GmailScanTicketDto
 import com.subia.model.GmailScanResultRow
 import com.subia.model.Subscription
 import com.subia.repository.UserRepository
+import com.subia.service.CategoryMappingService
 import com.subia.service.CategoryService
 import com.subia.service.GmailScanService
 import com.subia.service.GmailScanTicketService
@@ -36,6 +37,7 @@ class ApiGmailController(
     private val gmailScanTicketService: GmailScanTicketService,
     private val subscriptionService: SubscriptionService,
     private val categoryService: CategoryService,
+    private val categoryMappingService: CategoryMappingService,
     private val userRepository: UserRepository
 ) {
     private fun resolveUserId(jwt: Jwt): Long =
@@ -97,29 +99,8 @@ class ApiGmailController(
         return ApiResponse(data = GmailAddResultDto(added = addedIds.size, skipped = rows.size - addedIds.size))
     }
 
-    /** Mapea la categoryKey del catálogo al id real de la categoría (mismo criterio que GmailController). */
-    private fun categoryKeyToId(): Map<String, Long> =
-        categoryService.findAll().mapNotNull { cat ->
-            val key = when (cat.name) {
-                "IA" -> "ia"
-                "Streaming" -> "streaming"
-                "Música" -> "musica"
-                "Software" -> "software"
-                "Cloud" -> "cloud"
-                "Gaming" -> "gaming"
-                "Seguridad" -> "seguridad"
-                "Noticias y Lectura" -> "noticias"
-                "Salud y Deporte" -> "salud"
-                "Desarrollo" -> "desarrollo"
-                "Prueba gratuita" -> "prueba"
-                "Finanzas" -> "finanzas"
-                "Educación" -> "educacion"
-                "Creatividad y foto" -> "creatividad"
-                "Citas y social" -> "citas"
-                else -> null
-            }
-            if (key != null) key to cat.id else null
-        }.toMap()
+    /** Mapea la categoryKey del catálogo al id real de la categoría (ver CategoryMappingService, B-01). */
+    private fun categoryKeyToId(): Map<String, Long> = categoryMappingService.categoryKeyToId()
 
     private fun GmailScanResultRow.toDto() = GmailDetectedDto(
         id = id, serviceName = serviceName, description = description, domain = domain,

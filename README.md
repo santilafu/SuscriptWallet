@@ -22,7 +22,8 @@
 | 📈 **Top 5 gastos mensuales** — bar chart en el Dashboard | ✅ | ✅ |
 | 🔍 **Búsqueda en tiempo real** de suscripciones | ✅ | ✅ |
 | 🏷️ **Filtro por categoría** — chips interactivos | ✅ | ✅ |
-| 📋 **Catálogo integrado** — 320+ servicios, prerellena el formulario automáticamente | ✅ | ✅ |
+| 📋 **Catálogo integrado** — 400+ servicios, prerellena el formulario automáticamente | ✅ | ✅ |
+| 🧾 **Recibos recurrentes** — luz, gas, agua, telecos, seguros, alarma, transporte… con importe orientativo (`variablePrice`) | ✅ | ✅ |
 | 🌐 **Catálogo browser** — busca y añade servicios con un clic desde /catalog-browser | ✅ | ✅ |
 | 🖼️ **Logos de servicios** (Spotify, Netflix, ChatGPT…) | ✅ | ✅ |
 | ⚙️ **Pantalla de Ajustes** — exportación de datos e info de cuenta | ✅ | ✅ |
@@ -293,6 +294,12 @@ Los precios están definidos en `CatalogService.kt` y son de **marzo 2026**. Par
 | 🏃 Salud | Strava, Whoop, Garmin, MyFitnessPal, Calm, Headspace, Apple Fitness+, Peloton, Freeletics... |
 | 🛠️ Desarrollo | GitHub, GitLab, Vercel, Railway, Sentry, JetBrains, Datadog, Linear, Postman, Fly.io... |
 | 🆓 Prueba gratuita | ChatGPT Plus, Claude Pro, NordVPN, Spotify, YouTube Premium, Duolingo, Headspace y más... |
+| 🏠 Hogar y suministros | Iberdrola, Endesa, Naturgy, Repsol, Holaluz, Octopus, Canal de Isabel II, Aigües de Barcelona, Securitas Direct, comunidad de propietarios... |
+| 📡 Telecomunicaciones | Movistar, Vodafone, Orange, Digi, MásMóvil, Yoigo, Pepephone, Lowi, O2, Simyo, Finetwork, Jazztel, Euskaltel... |
+| 🛡️ Seguros | Mapfre, AXA, Allianz, Mutua Madrileña, Línea Directa, Génesis, Reale, Generali, Sanitas, Adeslas, DKV, Asisa, Barkibu... |
+| 🚌 Transporte | Abono Transporte Madrid, T-usual (ATM), Bicimad, Bicing, Uber One, Bip&Drive, parking... |
+
+Los recibos recurrentes (luz, gas, agua, telecos, seguros, cuota de autónomo, colegio…) llevan `variablePrice = true`: su precio es un **importe orientativo** que la web marca como tal y que el usuario ajusta al añadirlo.
 
 ---
 

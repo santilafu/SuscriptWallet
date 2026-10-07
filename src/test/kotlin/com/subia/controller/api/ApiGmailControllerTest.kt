@@ -8,6 +8,7 @@ import com.subia.model.Subscription
 import com.subia.model.User
 import com.subia.model.UserRole
 import com.subia.repository.UserRepository
+import com.subia.service.CategoryMappingService
 import com.subia.service.CategoryService
 import com.subia.service.GmailScanService
 import com.subia.service.GmailScanTicketService
@@ -29,8 +30,11 @@ class ApiGmailControllerTest {
     private val subscriptionService = mockk<SubscriptionService>(relaxed = true)
     private val categoryService = mockk<CategoryService>(relaxed = true)
     private val userRepository = mockk<UserRepository>()
+    // El mapeo nombre→clave es real (CategoryMappingService) sobre el CategoryService mockeado,
+    // así los stubs de findAll() siguen alimentando el mapeo igual que antes de unificarlo (B-01).
     private val controller = ApiGmailController(
-        gmailScanService, ticketService, subscriptionService, categoryService, userRepository
+        gmailScanService, ticketService, subscriptionService, categoryService,
+        CategoryMappingService(categoryService), userRepository
     )
 
     private fun jwt(email: String) = mockk<Jwt> { every { subject } returns email }

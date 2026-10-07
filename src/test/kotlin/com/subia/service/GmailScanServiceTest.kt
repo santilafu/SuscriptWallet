@@ -189,4 +189,91 @@ class GmailScanServiceTest {
     fun `findPrice devuelve null para texto vacio`() {
         assertNull(service.findPrice("   "))
     }
+
+    // ── Recibos recurrentes: alias de remitente ─────────────────────────────
+    private fun bill(name: String, domain: String, key: String, price: String, cycle: BillingCycle = BillingCycle.MONTHLY) =
+        CatalogItem(
+            name = name, price = BigDecimal(price), currency = "EUR", billingCycle = cycle,
+            description = "", categoryKey = key, domain = domain, variablePrice = true
+        )
+
+    private val billsByDomain = mapOf(
+        "iberdrola.es" to listOf(bill("Iberdrola", "iberdrola.es", "hogar", "70.00")),
+        "endesa.com" to listOf(bill("Endesa", "endesa.com", "hogar", "70.00")),
+        "movistar.es" to listOf(bill("Movistar", "movistar.es", "telecos", "60.00")),
+        "mapfre.es" to listOf(bill("Mapfre", "mapfre.es", "seguros", "450.00", BillingCycle.YEARLY)),
+        "sanitas.es" to listOf(bill("Sanitas", "sanitas.es", "seguros", "60.00")),
+        "securitasdirect.es" to listOf(bill("Securitas Direct", "securitasdirect.es", "hogar", "45.00"))
+    )
+
+    @Test
+    fun `matchDomain casa un remitente que factura desde un dominio alias (telefonica → movistar)`() {
+        val match = service.matchDomain("telefonica.com", billsByDomain)
+        assertEquals("movistar.es", match?.key)
+        assertEquals("Movistar", match?.value?.first()?.name)
+    }
+
+    @Test
+    fun `matchDomain casa un subdominio de un alias (comunicaciones endesaclientes)`() {
+        assertEquals("Endesa", service.matchDomain("comunicaciones.endesaclientes.com", billsByDomain)?.value?.first()?.name)
+        assertEquals("Securitas Direct", service.matchDomain("info.verisure.es", billsByDomain)?.value?.first()?.name)
+    }
+
+    // ── Recibos recurrentes: detección por asunto ───────────────────────────
+    @Test
+    fun `matchSubject reconoce una factura de luz por la marca del asunto`() {
+        val match = service.matchSubject("Tu factura de Iberdrola de marzo ya está disponible", billsByDomain)
+        assertEquals("iberdrola.es", match?.key)
+    }
+
+    @Test
+    fun `matchSubject reconoce recibos de seguros y de telecos`() {
+        assertEquals("mapfre.es", service.matchSubject("Recibo de tu póliza MAPFRE", billsByDomain)?.key)
+        assertEquals("sanitas.es", service.matchSubject("Sanitas: cobro de tu cuota mensual", billsByDomain)?.key)
+        assertEquals("movistar.es", service.matchSubject("Factura Movistar: ya puedes consultarla", billsByDomain)?.key)
+    }
+
+    @Test
+    fun `matchSubject ignora newsletters aunque mencionen la marca`() {
+        assertNull(service.matchSubject("Novedades Movistar: descubre las ofertas de fibra", billsByDomain))
+        assertNull(service.matchSubject("", billsByDomain))
+    }
+
+    @Test
+    fun `matchSubject devuelve null si la marca no esta en el catalogo cargado`() {
+        // Vodafone es una marca conocida pero no está en este mapa de prueba.
+        assertNull(service.matchSubject("Tu factura Vodafone de abril", billsByDomain))
+    }
+
+    // ── Recibos recurrentes: seguro anual pagado fraccionado ────────────────
+    @Test
+    fun `inferCycleFromPlan asume mensual si el importe encaja con la prima anual dividida en 12`() {
+        val mapfre = billsByDomain.getValue("mapfre.es").first() // 450 €/año → 37,50 €/mes
+        assertEquals(BillingCycle.MONTHLY, service.inferCycleFromPlan(mapfre, BigDecimal("38.10")))
+    }
+
+    @Test
+    fun `inferCycleFromPlan mantiene el ciclo anual si el importe es la prima completa`() {
+        val mapfre = billsByDomain.getValue("mapfre.es").first()
+        assertNull(service.inferCycleFromPlan(mapfre, BigDecimal("445.00")))
+    }
+
+    // ── Recibos recurrentes: importe en el cuerpo ───────────────────────────
+    @Test
+    fun `findPrice extrae el importe de una factura de luz tipica`() {
+        val body = "Hola. Ya tienes disponible tu factura de electricidad. " +
+            "Periodo de facturación: 01/03/2026 - 31/03/2026. Importe total: 63,21 € " +
+            "Se cargará en tu cuenta el 10/04/2026."
+        val p = service.findPrice(body)
+        assertEquals(BigDecimal("63.21"), p?.amount)
+        assertEquals("EUR", p?.currency)
+        assertNull(p?.cycle)
+    }
+
+    @Test
+    fun `findPrice extrae prima anual de un recibo de seguro`() {
+        val p = service.findPrice("Te recordamos que la prima anual de tu póliza de hogar es de 412,30 EUR.")
+        assertEquals(BigDecimal("412.30"), p?.amount)
+        assertEquals(BillingCycle.YEARLY, p?.cycle)
+    }
 }

@@ -3,6 +3,7 @@ package com.subia.controller
 import com.subia.model.GmailScanResultRow
 import com.subia.model.Subscription
 import com.subia.repository.UserRepository
+import com.subia.service.CategoryMappingService
 import com.subia.service.CategoryService
 import com.subia.service.DetectedSubscription
 import com.subia.service.GmailScanError
@@ -41,6 +42,7 @@ import java.util.Base64
 class GmailController(
     private val gmailScanService: GmailScanService,
     private val categoryService: CategoryService,
+    private val categoryMappingService: CategoryMappingService,
     private val subscriptionService: SubscriptionService,
     private val userRepository: UserRepository,
     private val gmailScanTicketService: GmailScanTicketService
@@ -216,29 +218,8 @@ class GmailController(
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
     }
 
-    /** Mapea la clave de categoría del catálogo al ID de la entidad JPA (mismo criterio que CatalogBrowserController). */
-    private fun categoryKeyToId(): Map<String, Long> =
-        categoryService.findAll().mapNotNull { cat ->
-            val key = when (cat.name) {
-                "IA"                 -> "ia"
-                "Streaming"          -> "streaming"
-                "Música"             -> "musica"
-                "Software"           -> "software"
-                "Cloud"              -> "cloud"
-                "Gaming"             -> "gaming"
-                "Seguridad"          -> "seguridad"
-                "Noticias y Lectura" -> "noticias"
-                "Salud y Deporte"    -> "salud"
-                "Desarrollo"         -> "desarrollo"
-                "Prueba gratuita"    -> "prueba"
-                "Finanzas"           -> "finanzas"
-                "Educación"          -> "educacion"
-                "Creatividad y foto" -> "creatividad"
-                "Citas y social"     -> "citas"
-                else                 -> null
-            }
-            if (key != null) key to cat.id else null
-        }.toMap()
+    /** Mapea la clave de categoría del catálogo al ID de la entidad JPA (ver CategoryMappingService, B-01). */
+    private fun categoryKeyToId(): Map<String, Long> = categoryMappingService.categoryKeyToId()
 
     companion object {
         private const val STATE_ATTR = "gmailOauthState"

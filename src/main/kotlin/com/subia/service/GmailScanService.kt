@@ -12,6 +12,7 @@ import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientResponseException
 import org.springframework.web.util.UriComponentsBuilder
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -66,7 +67,7 @@ class GmailScanException(val reason: GmailScanError, cause: Throwable? = null) :
  * Privacidad por diseño:
  * - Flujo OAuth puntual (`access_type=online`): NO se solicita ni se guarda refresh token.
  * - El access token se usa en memoria durante el escaneo y se descarta.
- * - Se leen las cabeceras `From`/`Date` de los correos de facturación y, SOLO para los
+ * - Se leen las cabeceras `From`/`Date`/`Subject` de los correos de facturación y, SOLO para los
  *   remitentes que coinciden con un servicio conocido, su cuerpo, con el único fin de
  *   estimar el precio real. Nada de eso se persiste: solo se proponen al usuario los
  *   servicios reconocidos con su precio estimado.
@@ -144,7 +145,7 @@ class GmailScanService(
 
         val query = "newer_than:${window}m (subscription OR receipt OR invoice OR payment OR renewal OR " +
             "billing OR \"your plan\" OR factura OR recibo OR suscripción OR suscripcion OR pago OR " +
-            "cobro OR renovación OR renovacion OR \"tu plan\")"
+            "cobro OR renovación OR renovacion OR \"tu plan\" OR póliza OR poliza OR prima)"
 
         val refs = collectMessageRefs(accessToken, query)
 
@@ -156,13 +157,16 @@ class GmailScanService(
             val meta = fetchMessage(accessToken, ref.id, full = false) ?: continue
             processed++
 
-            val from = meta.payload?.headers
-                ?.firstOrNull { it.name.equals("From", ignoreCase = true) }?.value ?: continue
+            val headers = meta.payload?.headers.orEmpty()
+            val from = headers.firstOrNull { it.name.equals("From", ignoreCase = true) }?.value ?: continue
+            val subject = headers.firstOrNull { it.name.equals("Subject", ignoreCase = true) }?.value ?: ""
             val email = extractEmail(from)
             val host = email.substringAfter('@', "").lowercase()
             if (host.isBlank()) continue
 
-            val match = matchDomain(host, byDomain) ?: continue
+            // Primero por dominio del remitente; si no casa (facturas enviadas desde plataformas de
+            // terceros), por la marca que aparece en el asunto de un correo de facturación.
+            val match = matchDomain(host, byDomain) ?: matchSubject(subject, byDomain) ?: continue
             // Conservamos solo el primer (más reciente) correo por servicio: la lista de Gmail
             // viene ordenada de más nuevo a más antiguo.
             if (detected.containsKey(match.key)) continue
@@ -198,9 +202,29 @@ class GmailScanService(
         byDomain[host]?.let { return mapEntry(host, it) }
         val direct = byDomain.entries.firstOrNull { (dom, _) -> host == dom || host.endsWith(".$dom") }
         if (direct != null) return direct
+        // Remitentes que facturan desde un dominio distinto al comercial (telefonica.com → movistar.es).
+        val alias = SENDER_DOMAIN_ALIASES.entries
+            .firstOrNull { (from, _) -> host == from || host.endsWith(".$from") }?.value
+        if (alias != null) byDomain[alias]?.let { return mapEntry(alias, it) }
         // último recurso: el dominio registrable aproximado (dos últimas etiquetas)
         val registrable = registrableDomain(host)
         return byDomain[registrable]?.let { mapEntry(registrable, it) }
+    }
+
+    /**
+     * Reconoce un recibo recurrente por la marca que aparece en el asunto cuando el remitente no
+     * está en el catálogo (suministros, telecos y aseguradoras suelen enviar desde plataformas de
+     * terceros). Para evitar newsletters, el asunto tiene que parecer un correo de facturación
+     * ("factura", "recibo", "póliza"…). Devuelve el dominio del catálogo con todos sus planes.
+     */
+    internal fun matchSubject(
+        subject: String,
+        byDomain: Map<String, List<CatalogItem>>
+    ): Map.Entry<String, List<CatalogItem>>? {
+        if (subject.isBlank() || !BILLING_SUBJECT_REGEX.containsMatchIn(subject)) return null
+        val domain = SUBJECT_BRAND_PATTERNS.firstOrNull { (regex, _) -> regex.containsMatchIn(subject) }?.second
+            ?: return null
+        return byDomain[domain]?.let { mapEntry(domain, it) }
     }
 
     private fun mapEntry(key: String, value: List<CatalogItem>): Map.Entry<String, List<CatalogItem>> =
@@ -237,6 +261,13 @@ class GmailScanService(
      */
     internal fun inferCycleFromPlan(plan: CatalogItem, amount: BigDecimal?): BillingCycle? {
         if (amount == null || amount <= BigDecimal.ZERO) return null
+        // Seguros y recibos anuales: si el importe encaja mejor con 1/12 de la prima que con la
+        // prima completa, el usuario paga fraccionado mes a mes.
+        if (plan.billingCycle == BillingCycle.YEARLY && plan.priceAnnual == null) {
+            val yearly = plan.price.takeIf { it > BigDecimal.ZERO } ?: return null
+            val monthlyShare = yearly.divide(BigDecimal(12), 2, RoundingMode.HALF_UP)
+            return if (relativeDiff(monthlyShare, amount) < relativeDiff(yearly, amount)) BillingCycle.MONTHLY else null
+        }
         val annual = plan.priceAnnual?.takeIf { it > BigDecimal.ZERO } ?: return null
         val monthly = plan.price.takeIf { it > BigDecimal.ZERO } ?: return BillingCycle.YEARLY
         return if (relativeDiff(annual, amount) < relativeDiff(monthly, amount)) BillingCycle.YEARLY else null
@@ -281,7 +312,7 @@ class GmailScanService(
     private fun fetchMessage(accessToken: String, id: String, full: Boolean): MessageResponse? =
         try {
             val format = if (full) "format=full"
-                         else "format=metadata&metadataHeaders=From&metadataHeaders=Date"
+                         else "format=metadata&metadataHeaders=From&metadataHeaders=Date&metadataHeaders=Subject"
             rest.get()
                 .uri("https://gmail.googleapis.com/gmail/v1/users/me/messages/$id?$format")
                 .header("Authorization", "Bearer $accessToken")
@@ -450,5 +481,59 @@ class GmailScanService(
         private val MAX_PLAUSIBLE_PRICE = BigDecimal("10000")
         /** Tope de caracteres de cuerpo a inspeccionar por correo. */
         private const val MAX_BODY_CHARS = 20_000
+
+        /**
+         * Dominio desde el que factura el remitente → dominio comercial del catálogo.
+         * Solo hace falta cuando no es un subdominio del comercial (eso ya lo cubre [matchDomain]).
+         */
+        internal val SENDER_DOMAIN_ALIASES: Map<String, String> = mapOf(
+            // Luz y gas
+            "endesaclientes.com"   to "endesa.com",
+            "iberdrola.com"        to "iberdrola.es",
+            "naturgy.com"          to "naturgy.es",
+            "holaluz.es"           to "holaluz.com",
+            "repsol.com"           to "repsol.es",
+            // Telecos
+            "telefonica.com"       to "movistar.es",
+            "movistar.com"         to "movistar.es",
+            "vodafone.com"         to "vodafone.es",
+            "orange.com"           to "orange.es",
+            "digi.es"              to "digimobil.es",
+            "masmovil.com"         to "masmovil.es",
+            // Seguros
+            "mapfre.com"           to "mapfre.es",
+            "mutuamadrilena.es"    to "mutua.es",
+            "lineadirecta.es"      to "lineadirecta.com",
+            "sanitas.com"          to "sanitas.es",
+            "segurcaixaadeslas.es" to "adeslas.es",
+            "axa.com"              to "axa.es",
+            "allianz.com"          to "allianz.es",
+            // Alarmas
+            "securitasdirect.com"  to "securitasdirect.es",
+            "verisure.es"          to "securitasdirect.es"
+        )
+
+        /** El asunto tiene que parecer un correo de facturación para fiarnos de la marca que contenga. */
+        private val BILLING_SUBJECT_REGEX = Regex(
+            """\b(factura|recibo|cobro|pago|p[oó]liza|prima|renovaci[oó]n|invoice|receipt)\b""",
+            RegexOption.IGNORE_CASE
+        )
+
+        /** Marca en el asunto → dominio del catálogo (solo recibos recurrentes habituales en España). */
+        internal val SUBJECT_BRAND_PATTERNS: List<Pair<Regex, String>> = listOf(
+            Regex("""\biberdrola\b""", RegexOption.IGNORE_CASE)          to "iberdrola.es",
+            Regex("""\bendesa\b""", RegexOption.IGNORE_CASE)             to "endesa.com",
+            Regex("""\bnaturgy\b""", RegexOption.IGNORE_CASE)            to "naturgy.es",
+            Regex("""\bmovistar\b""", RegexOption.IGNORE_CASE)           to "movistar.es",
+            Regex("""\bvodafone\b""", RegexOption.IGNORE_CASE)           to "vodafone.es",
+            Regex("""\borange\b""", RegexOption.IGNORE_CASE)             to "orange.es",
+            Regex("""\bdigi\b""", RegexOption.IGNORE_CASE)               to "digimobil.es",
+            Regex("""\bmapfre\b""", RegexOption.IGNORE_CASE)             to "mapfre.es",
+            Regex("""\bmutua madrile[ñn]a\b""", RegexOption.IGNORE_CASE) to "mutua.es",
+            Regex("""\bl[ií]nea directa\b""", RegexOption.IGNORE_CASE)   to "lineadirecta.com",
+            Regex("""\bsanitas\b""", RegexOption.IGNORE_CASE)            to "sanitas.es",
+            Regex("""\badeslas\b""", RegexOption.IGNORE_CASE)            to "adeslas.es",
+            Regex("""\bsecuritas direct\b""", RegexOption.IGNORE_CASE)   to "securitasdirect.es"
+        )
     }
 }

@@ -71,6 +71,25 @@
                 <button type="button" class="filter-pill px-3 py-1 rounded-full text-xs font-medium border cursor-pointer"
                         data-cat="desarrollo" onclick="setCatalogCat(this, 'desarrollo')"
                         th:text="'💻 ' + #{catalog.chip.desarrollo}">💻 Desarrollo</button>
+                <button type="button" class="filter-pill px-3 py-1 rounded-full text-xs font-medium border cursor-pointer"
+                        data-cat="finanzas" onclick="setCatalogCat(this, 'finanzas')"
+                        th:text="'💰 ' + #{catalog.chip.finanzas}">💰 Finanzas</button>
+                <button type="button" class="filter-pill px-3 py-1 rounded-full text-xs font-medium border cursor-pointer"
+                        data-cat="educacion" onclick="setCatalogCat(this, 'educacion')"
+                        th:text="'🎓 ' + #{catalog.chip.educacion}">🎓 Educación</button>
+                <!-- Recibos recurrentes (V13): suministros, telecos, seguros y transporte -->
+                <button type="button" class="filter-pill px-3 py-1 rounded-full text-xs font-medium border cursor-pointer"
+                        data-cat="hogar" onclick="setCatalogCat(this, 'hogar')"
+                        th:text="'🏠 ' + #{catalog.chip.hogar}">🏠 Hogar y suministros</button>
+                <button type="button" class="filter-pill px-3 py-1 rounded-full text-xs font-medium border cursor-pointer"
+                        data-cat="telecos" onclick="setCatalogCat(this, 'telecos')"
+                        th:text="'📡 ' + #{catalog.chip.telecos}">📡 Telecos</button>
+                <button type="button" class="filter-pill px-3 py-1 rounded-full text-xs font-medium border cursor-pointer"
+                        data-cat="seguros" onclick="setCatalogCat(this, 'seguros')"
+                        th:text="'🛡️ ' + #{catalog.chip.seguros}">🛡️ Seguros</button>
+                <button type="button" class="filter-pill px-3 py-1 rounded-full text-xs font-medium border cursor-pointer"
+                        data-cat="transporte" onclick="setCatalogCat(this, 'transporte')"
+                        th:text="'🚌 ' + #{catalog.chip.transporte}">🚌 Transporte</button>
                 <button type="button" class="filter-pill filter-pill-trial px-3 py-1 rounded-full text-xs font-medium border cursor-pointer"
                         data-cat="prueba" onclick="setCatalogCat(this, 'prueba')"
                         th:text="'🆓 ' + #{catalog.chip.prueba}">🆓 Pruebas gratuitas</button>
@@ -82,7 +101,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="catalogGrid">
 
         <div th:each="item, iterStat : ${allItems}"
-             th:attr="data-name=${#strings.toLowerCase(item.name)},data-cat=${item.categoryKey}"
+             th:attr="data-name=${#strings.toLowerCase(item.name)},data-cat=${item.categoryKey},data-variable=${item.variablePrice}"
              class="catalog-card sub-card glass-card rounded-xl overflow-hidden flex flex-col"
              th:style="'animation-delay:' + ${(iterStat.index % 24) * 35} + 'ms'">
 
@@ -119,8 +138,9 @@
                     </div>
                 </div>
 
-                <!-- Precio -->
-                <div class="flex items-baseline gap-1 mb-4">
+                <!-- Precio (con "≈" y etiqueta "orientativo" cuando el importe depende del consumo/póliza) -->
+                <div class="flex items-baseline gap-1 mb-4 flex-wrap">
+                    <span th:if="${item.variablePrice}" class="text-sm text-slate-500" aria-hidden="true">≈</span>
                     <span class="text-xl font-bold text-slate-100"
                           th:text="'€' + ${#numbers.formatDecimal(item.price, 1, 2)}"></span>
                     <th:block th:switch="${item.billingCycle.name()}">
@@ -128,6 +148,12 @@
                         <span th:case="'YEARLY'" class="text-xs text-slate-500" th:text="#{sub.billing.yearly}">/año</span>
                         <span th:case="'WEEKLY'" class="text-xs text-slate-500" th:text="#{sub.billing.weekly}">/sem.</span>
                     </th:block>
+                    <span th:if="${item.variablePrice}"
+                          th:text="#{catalog.variable}"
+                          th:title="#{catalog.variable.hint}"
+                          class="variable-badge inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border border-sky-500/30 bg-sky-500/10 text-sky-300 ml-1">
+                        importe orientativo
+                    </span>
                 </div>
 
                 <!-- Spacer -->
@@ -194,6 +220,11 @@
 
 <th:block layout:fragment="scripts">
 <style>
+    /* Badge "importe orientativo": entra con un fundido suave junto al precio. */
+    .variable-badge { animation: variable-in 320ms ease-out both; }
+    @keyframes variable-in { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .variable-badge { animation: none; } }
+
     /* Chip "pruebas gratuitas": acento naranja en lugar del indigo por defecto. */
     .filter-pill-trial.active {
         border-color: rgba(249,115,22,0.5) !important;

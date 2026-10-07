@@ -421,8 +421,9 @@ var i18n = {
                 items.forEach(function (item) {
                     var opt = document.createElement('option');
                     opt.value = JSON.stringify(item);
+                    // "≈" delante del precio cuando es un importe orientativo (luz, gas, seguros…).
                     opt.textContent = item.name
-                        + '  ·  ' + item.price.toFixed(2) + ' ' + item.currency
+                        + '  ·  ' + (item.variablePrice ? '≈ ' : '') + item.price.toFixed(2) + ' ' + item.currency
                         + ' / ' + cycleName(item.billingCycle);
                     svcSelect.appendChild(opt);
                 });

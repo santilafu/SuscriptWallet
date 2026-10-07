@@ -36,8 +36,10 @@ Recibe un aviso 1, 3, 7 o 14 días antes de cada renovación. Y un aviso especia
 que acabe una prueba gratis, para cancelar a tiempo si no te interesa.
 
 ▸ AÑADE TUS SUSCRIPCIONES EN SEGUNDOS
-Más de 320 servicios listos con su precio real en euros: streaming, música, IA, gaming,
+Más de 400 servicios listos con su precio real en euros: streaming, música, IA, gaming,
 software, cloud y más. Eliges el servicio y se rellena solo.
+Y no solo suscripciones: controla también tus recibos recurrentes (luz, gas, agua,
+seguros, fibra y móvil, alarma, abono transporte) para saber qué te viene cada mes.
 
 ▸ TODO ORGANIZADO Y CLARO
 Categorías, fechas de renovación, periodos de prueba, notas. Diseño limpio en modo oscuro

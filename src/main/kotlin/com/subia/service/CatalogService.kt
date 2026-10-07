@@ -13,9 +13,13 @@ import java.math.BigDecimal
  * El catálogo es estático y vive en memoria; no se persiste en base de datos.
  * Para actualizar un precio, edita el valor en la lista correspondiente dentro de [catalog].
  *
- * Claves de categoría disponibles:
+ * Claves de categoría disponibles (ver [CategoryMappingService.NAME_TO_KEY]):
  *   "ia", "streaming", "musica", "software", "cloud", "gaming", "seguridad",
- *   "noticias", "salud", "desarrollo", "finanzas", "educacion", "creatividad", "citas"
+ *   "noticias", "salud", "desarrollo", "finanzas", "educacion", "creatividad", "citas",
+ *   "hogar", "telecos", "seguros", "transporte"
+ *
+ * Recibos recurrentes (luz, gas, agua, telecos, seguros…): el precio es un importe
+ * orientativo y el item lleva `variablePrice = true` para que la UI lo indique.
  */
 @Service
 class CatalogService {
@@ -361,7 +365,11 @@ class CatalogService {
             CatalogItem("Money Manager Pro",       BigDecimal("4.99"),   "EUR", BillingCycle.MONTHLY, "Registro de ingresos y gastos con gráficos y balance detallado",                "finanzas", domain = "moneymanager.com", cancelUrl = "https://moneymanager.com/account"),
             CatalogItem("Tricount Premium",        BigDecimal("1.99"),   "EUR", BillingCycle.MONTHLY, "Divide los gastos de grupo en viajes y salidas sin complicaciones",              "finanzas", domain = "tricount.com",     cancelUrl = "https://www.tricount.com/settings"),
             CatalogItem("Robinhood Gold",          BigDecimal("5.99"),   "EUR", BillingCycle.MONTHLY, "Inversiones y trading con tasas reducidas y cuenta margen",                     "finanzas", domain = "robinhood.com",    cancelUrl = "https://robinhood.com/settings/gold"),
-            CatalogItem("Revolut Ultra",           BigDecimal("45.00"),  "EUR", BillingCycle.MONTHLY, "Plan Revolut máximo — seguro Revolut, concierge 24h y cashback top",            "finanzas", domain = "revolut.com",      cancelUrl = "https://app.revolut.com/subscription")
+            CatalogItem("Revolut Ultra",           BigDecimal("45.00"),  "EUR", BillingCycle.MONTHLY, "Plan Revolut máximo — seguro Revolut, concierge 24h y cashback top",            "finanzas", domain = "revolut.com",      cancelUrl = "https://app.revolut.com/subscription"),
+            // Recibos recurrentes (V13)
+            CatalogItem("Comisión de mantenimiento bancaria",BigDecimal("5.00"),   "EUR", BillingCycle.MONTHLY, "Comisión mensual de cuenta corriente — importe orientativo",                                                 "finanzas", variablePrice = true),
+            CatalogItem("Cuota anual de tarjeta de crédito",BigDecimal("36.00"),  "EUR", BillingCycle.YEARLY,  "Cuota anual de tarjeta de crédito — importe orientativo según entidad",                                      "finanzas", variablePrice = true),
+            CatalogItem("Cuota de autónomo (RETA)",BigDecimal("230.00"), "EUR", BillingCycle.MONTHLY, "Cuota mensual de autónomo a la Seguridad Social — tramo según ingresos reales",                              "finanzas", domain = "seg-social.es", cancelUrl = "https://portal.seg-social.gob.es/", variablePrice = true)
         ),
 
         // ── Educación y cursos ───────────────────────────────────────────────────
@@ -385,7 +393,11 @@ class CatalogService {
             CatalogItem("Duolingo Super",          BigDecimal("8.49"),   "EUR", BillingCycle.MONTHLY, "Duolingo sin anuncios, vidas ilimitadas y racha reparadora",                     "educacion", 14, "duolingo.com",       "https://www.duolingo.com/settings/super", priceAnnual = BigDecimal("87.96")),
             CatalogItem("Lingoda Sprint",          BigDecimal("99.00"),  "EUR", BillingCycle.MONTHLY, "Clases de idiomas en vivo con profesores nativos — sprints con reembolso",       "educacion", domain = "lingoda.com",      cancelUrl = "https://learn.lingoda.com/profile/subscription"),
             CatalogItem("italki Credits",          BigDecimal("20.00"),  "EUR", BillingCycle.MONTHLY, "Clases con profesores de idiomas de todo el mundo a tu ritmo",                   "educacion", domain = "italki.com",       cancelUrl = "https://www.italki.com/settings"),
-            CatalogItem("Pimsleur Premium",        BigDecimal("19.99"),  "EUR", BillingCycle.MONTHLY, "Método de idiomas basado en audio — aprende escuchando sin leer",                "educacion", 7,  "pimsleur.com",       "https://www.pimsleur.com/account")
+            CatalogItem("Pimsleur Premium",        BigDecimal("19.99"),  "EUR", BillingCycle.MONTHLY, "Método de idiomas basado en audio — aprende escuchando sin leer",                "educacion", 7,  "pimsleur.com",       "https://www.pimsleur.com/account"),
+            // Recibos recurrentes (V13)
+            CatalogItem("Cuota de colegio",       BigDecimal("350.00"), "EUR", BillingCycle.MONTHLY, "Mensualidad de colegio concertado o privado — importe orientativo",                                          "educacion", variablePrice = true),
+            CatalogItem("Matrícula universitaria",BigDecimal("1200.00"),"EUR", BillingCycle.YEARLY,  "Matrícula anual de universidad pública — importe orientativo, admite pago fraccionado",                      "educacion", variablePrice = true),
+            CatalogItem("Academia",               BigDecimal("90.00"),  "EUR", BillingCycle.MONTHLY, "Academia de idiomas, oposiciones o refuerzo — cuota mensual orientativa",                                    "educacion", variablePrice = true)
         ),
 
         // ── Creatividad y foto ───────────────────────────────────────────────────
@@ -427,33 +439,104 @@ class CatalogService {
             CatalogItem("Pairs Premium",           BigDecimal("29.99"),  "EUR", BillingCycle.MONTHLY, "App de citas asiática popular con verificación de identidad",                   "citas", domain = "pairs.lv",       cancelUrl = "https://pairs.lv/settings"),
             CatalogItem("Hinge Preferred",         BigDecimal("19.99"),  "EUR", BillingCycle.MONTHLY, "Modo preferente de Hinge con más filtros y visibilidad extra",                   "citas", domain = "hinge.co",       cancelUrl = "https://hingeapp.zendesk.com/hc/en-us/articles/360007194833"),
             CatalogItem("MiuMeet Premium",         BigDecimal("14.99"),  "EUR", BillingCycle.MONTHLY, "App de citas en tiempo real con mapa de personas cercanas",                     "citas", domain = "miumeet.com",    cancelUrl = "https://www.miumeet.com/settings")
+        ),
+
+        // ── Hogar y suministros (luz, gas, agua, alarmas) — importes orientativos ──
+        "hogar" to listOf(
+            CatalogItem("Iberdrola",              BigDecimal("70.00"),  "EUR", BillingCycle.MONTHLY, "Luz y gas — factura mensual según consumo (importe orientativo)",                                            "hogar", domain = "iberdrola.es", cancelUrl = "https://www.iberdrola.es/clientes", variablePrice = true),
+            CatalogItem("Endesa",                 BigDecimal("70.00"),  "EUR", BillingCycle.MONTHLY, "Luz y gas — factura mensual según consumo (importe orientativo)",                                            "hogar", domain = "endesa.com", cancelUrl = "https://www.endesa.com/es/clientes", variablePrice = true),
+            CatalogItem("Naturgy",                BigDecimal("65.00"),  "EUR", BillingCycle.MONTHLY, "Gas y luz — factura mensual según consumo (importe orientativo)",                                            "hogar", domain = "naturgy.es", cancelUrl = "https://www.naturgy.es/hogar", variablePrice = true),
+            CatalogItem("Repsol Luz y Gas",       BigDecimal("65.00"),  "EUR", BillingCycle.MONTHLY, "Luz y gas de Repsol — factura mensual según consumo (importe orientativo)",                                  "hogar", domain = "repsol.es", cancelUrl = "https://www.repsol.es/particulares/", variablePrice = true),
+            CatalogItem("TotalEnergies",          BigDecimal("65.00"),  "EUR", BillingCycle.MONTHLY, "Luz y gas — factura mensual según consumo (importe orientativo)",                                            "hogar", domain = "totalenergies.es", cancelUrl = "https://www.totalenergies.es/es/hogares", variablePrice = true),
+            CatalogItem("Holaluz",                BigDecimal("60.00"),  "EUR", BillingCycle.MONTHLY, "Luz 100 % renovable — factura mensual según consumo (importe orientativo)",                                  "hogar", domain = "holaluz.com", cancelUrl = "https://www.holaluz.com/", variablePrice = true),
+            CatalogItem("Octopus Energy",         BigDecimal("60.00"),  "EUR", BillingCycle.MONTHLY, "Luz y gas — factura mensual según consumo (importe orientativo)",                                            "hogar", domain = "octopusenergy.es", cancelUrl = "https://octopusenergy.es/", variablePrice = true),
+            CatalogItem("EDP",                    BigDecimal("65.00"),  "EUR", BillingCycle.MONTHLY, "Luz y gas — factura mensual según consumo (importe orientativo)",                                            "hogar", domain = "edpenergia.es", cancelUrl = "https://www.edpenergia.es/es/hogares/", variablePrice = true),
+            CatalogItem("Plenitude",              BigDecimal("60.00"),  "EUR", BillingCycle.MONTHLY, "Luz y gas (Eni Plenitude) — factura mensual según consumo (importe orientativo)",                            "hogar", domain = "eniplenitude.com", cancelUrl = "https://eniplenitude.com/es", variablePrice = true),
+            CatalogItem("Factor Energía",         BigDecimal("60.00"),  "EUR", BillingCycle.MONTHLY, "Luz y gas — factura mensual según consumo (importe orientativo)",                                            "hogar", domain = "factorenergia.com", cancelUrl = "https://www.factorenergia.com/", variablePrice = true),
+            CatalogItem("Audax Renovables",       BigDecimal("60.00"),  "EUR", BillingCycle.MONTHLY, "Luz y gas — factura mensual según consumo (importe orientativo)",                                            "hogar", domain = "audaxrenovables.com", cancelUrl = "https://www.audaxrenovables.com/", variablePrice = true),
+            CatalogItem("Gana Energía",           BigDecimal("55.00"),  "EUR", BillingCycle.MONTHLY, "Luz y gas — factura mensual según consumo (importe orientativo)",                                            "hogar", domain = "ganaenergia.com", cancelUrl = "https://ganaenergia.com/", variablePrice = true),
+            CatalogItem("Canal de Isabel II",     BigDecimal("25.00"),  "EUR", BillingCycle.MONTHLY, "Agua en la Comunidad de Madrid — factura bimestral, equivalente mensual orientativo",                        "hogar", domain = "canaldeisabelsegunda.es", cancelUrl = "https://oficinavirtual.canaldeisabelsegunda.es/", variablePrice = true),
+            CatalogItem("Aigües de Barcelona",    BigDecimal("30.00"),  "EUR", BillingCycle.MONTHLY, "Agua en el área de Barcelona — factura bimestral, equivalente mensual orientativo",                          "hogar", domain = "aiguesdebarcelona.cat", cancelUrl = "https://www.aiguesdebarcelona.cat/", variablePrice = true),
+            CatalogItem("Emasesa",                BigDecimal("25.00"),  "EUR", BillingCycle.MONTHLY, "Agua en Sevilla — factura bimestral, equivalente mensual orientativo",                                       "hogar", domain = "emasesa.com", cancelUrl = "https://www.emasesa.com/", variablePrice = true),
+            CatalogItem("Global Omnium (Aguas de Valencia)",BigDecimal("25.00"),  "EUR", BillingCycle.MONTHLY, "Agua en Valencia — factura bimestral, equivalente mensual orientativo",                                      "hogar", domain = "globalomnium.com", cancelUrl = "https://www.globalomnium.com/", variablePrice = true),
+            CatalogItem("Emaya",                  BigDecimal("25.00"),  "EUR", BillingCycle.MONTHLY, "Agua en Palma — factura bimestral, equivalente mensual orientativo",                                         "hogar", domain = "emaya.es", cancelUrl = "https://www.emaya.es/", variablePrice = true),
+            CatalogItem("Aqualia",                BigDecimal("25.00"),  "EUR", BillingCycle.MONTHLY, "Agua en más de 1.000 municipios — factura periódica, equivalente mensual orientativo",                       "hogar", domain = "aqualia.com", cancelUrl = "https://www.aqualia.com/", variablePrice = true),
+            CatalogItem("Hidralia",               BigDecimal("25.00"),  "EUR", BillingCycle.MONTHLY, "Agua en Andalucía — factura periódica, equivalente mensual orientativo",                                     "hogar", domain = "hidralia-sa.es", cancelUrl = "https://www.hidralia-sa.es/", variablePrice = true),
+            CatalogItem("Securitas Direct",       BigDecimal("45.00"),  "EUR", BillingCycle.MONTHLY, "Alarma para el hogar con conexión a central receptora — cuota mensual",                                      "hogar", domain = "securitasdirect.es", cancelUrl = "https://www.securitasdirect.es/"),
+            CatalogItem("Prosegur Alarmas",       BigDecimal("40.00"),  "EUR", BillingCycle.MONTHLY, "Alarma Movistar Prosegur para el hogar — cuota mensual",                                                     "hogar", domain = "prosegur.es", cancelUrl = "https://www.movistarprosegur.es/"),
+            CatalogItem("ADT Alarmas",            BigDecimal("35.00"),  "EUR", BillingCycle.MONTHLY, "Alarma ADT para el hogar — cuota mensual",                                                                   "hogar", domain = "adt.es", cancelUrl = "https://www.adt.es/"),
+            CatalogItem("Tyco Alarmas",           BigDecimal("35.00"),  "EUR", BillingCycle.MONTHLY, "Alarma Tyco para el hogar o negocio — cuota mensual",                                                        "hogar", domain = "tyco.es", cancelUrl = "https://www.tyco.es/"),
+            CatalogItem("Comunidad de propietarios",BigDecimal("80.00"),  "EUR", BillingCycle.MONTHLY, "Cuota mensual de la comunidad de vecinos (derramas aparte) — importe orientativo",                           "hogar", variablePrice = true)
+        ),
+
+        // ── Telecomunicaciones (fibra y móvil) — importes orientativos ──────────
+        "telecos" to listOf(
+            CatalogItem("Movistar",               BigDecimal("60.00"),  "EUR", BillingCycle.MONTHLY, "Fibra + móvil (miMovistar) — factura mensual con consumos extra (importe orientativo)",                      "telecos", domain = "movistar.es", cancelUrl = "https://www.movistar.es/particulares/atencion-cliente/", variablePrice = true),
+            CatalogItem("Vodafone",               BigDecimal("50.00"),  "EUR", BillingCycle.MONTHLY, "Fibra + móvil — factura mensual con consumos extra (importe orientativo)",                                   "telecos", domain = "vodafone.es", cancelUrl = "https://www.vodafone.es/c/particulares/es/ayuda/", variablePrice = true),
+            CatalogItem("Orange",                 BigDecimal("45.00"),  "EUR", BillingCycle.MONTHLY, "Fibra + móvil — factura mensual con consumos extra (importe orientativo)",                                   "telecos", domain = "orange.es", cancelUrl = "https://www.orange.es/ayuda", variablePrice = true),
+            CatalogItem("Digi",                   BigDecimal("25.00"),  "EUR", BillingCycle.MONTHLY, "Fibra y móvil low-cost — factura mensual (importe orientativo)",                                             "telecos", domain = "digimobil.es", cancelUrl = "https://www.digimobil.es/", variablePrice = true),
+            CatalogItem("MásMóvil",               BigDecimal("35.00"),  "EUR", BillingCycle.MONTHLY, "Fibra + móvil — factura mensual (importe orientativo)",                                                      "telecos", domain = "masmovil.es", cancelUrl = "https://www.masmovil.es/", variablePrice = true),
+            CatalogItem("Yoigo",                  BigDecimal("40.00"),  "EUR", BillingCycle.MONTHLY, "Fibra + móvil — factura mensual (importe orientativo)",                                                      "telecos", domain = "yoigo.com", cancelUrl = "https://www.yoigo.com/", variablePrice = true),
+            CatalogItem("Pepephone",              BigDecimal("30.00"),  "EUR", BillingCycle.MONTHLY, "Fibra + móvil — factura mensual (importe orientativo)",                                                      "telecos", domain = "pepephone.com", cancelUrl = "https://www.pepephone.com/", variablePrice = true),
+            CatalogItem("Lowi",                   BigDecimal("25.00"),  "EUR", BillingCycle.MONTHLY, "Fibra + móvil (Vodafone) — factura mensual (importe orientativo)",                                           "telecos", domain = "lowi.es", cancelUrl = "https://www.lowi.es/", variablePrice = true),
+            CatalogItem("O2",                     BigDecimal("35.00"),  "EUR", BillingCycle.MONTHLY, "Fibra + móvil (Telefónica) — factura mensual (importe orientativo)",                                         "telecos", domain = "o2online.es", cancelUrl = "https://o2online.es/", variablePrice = true),
+            CatalogItem("Simyo",                  BigDecimal("15.00"),  "EUR", BillingCycle.MONTHLY, "Móvil y fibra low-cost (Orange) — factura mensual (importe orientativo)",                                    "telecos", domain = "simyo.es", cancelUrl = "https://www.simyo.es/", variablePrice = true),
+            CatalogItem("Finetwork",              BigDecimal("25.00"),  "EUR", BillingCycle.MONTHLY, "Fibra + móvil — factura mensual (importe orientativo)",                                                      "telecos", domain = "finetwork.com", cancelUrl = "https://www.finetwork.com/", variablePrice = true),
+            CatalogItem("Jazztel",                BigDecimal("40.00"),  "EUR", BillingCycle.MONTHLY, "Fibra + móvil (Orange) — factura mensual (importe orientativo)",                                             "telecos", domain = "jazztel.com", cancelUrl = "https://www.jazztel.com/", variablePrice = true),
+            CatalogItem("Euskaltel",              BigDecimal("45.00"),  "EUR", BillingCycle.MONTHLY, "Fibra + móvil + TV — factura mensual (importe orientativo)",                                                 "telecos", domain = "euskaltel.com", cancelUrl = "https://www.euskaltel.com/", variablePrice = true),
+            CatalogItem("Avatel",                 BigDecimal("30.00"),  "EUR", BillingCycle.MONTHLY, "Fibra + móvil — factura mensual (importe orientativo)",                                                      "telecos", domain = "avatel.es", cancelUrl = "https://www.avatel.es/", variablePrice = true),
+            CatalogItem("Adamo",                  BigDecimal("35.00"),  "EUR", BillingCycle.MONTHLY, "Fibra + móvil — factura mensual (importe orientativo)",                                                      "telecos", domain = "adamo.es", cancelUrl = "https://www.adamo.es/", variablePrice = true)
+        ),
+
+        // ── Seguros — prima anual orientativa (admite fraccionado) o cuota mensual ──
+        "seguros" to listOf(
+            CatalogItem("Mapfre",                 BigDecimal("450.00"), "EUR", BillingCycle.YEARLY,  "Seguro de coche, hogar, vida o salud — prima anual orientativa, admite pago fraccionado",                    "seguros", domain = "mapfre.es", cancelUrl = "https://www.mapfre.es/", variablePrice = true),
+            CatalogItem("AXA",                    BigDecimal("420.00"), "EUR", BillingCycle.YEARLY,  "Seguro de coche, hogar, vida o salud — prima anual orientativa, admite pago fraccionado",                    "seguros", domain = "axa.es", cancelUrl = "https://www.axa.es/", variablePrice = true),
+            CatalogItem("Allianz",                BigDecimal("430.00"), "EUR", BillingCycle.YEARLY,  "Seguro de coche, hogar, vida o salud — prima anual orientativa, admite pago fraccionado",                    "seguros", domain = "allianz.es", cancelUrl = "https://www.allianz.es/", variablePrice = true),
+            CatalogItem("Mutua Madrileña",        BigDecimal("400.00"), "EUR", BillingCycle.YEARLY,  "Seguro de coche, moto, hogar o salud — prima anual orientativa, admite pago fraccionado",                    "seguros", domain = "mutua.es", cancelUrl = "https://www.mutua.es/", variablePrice = true),
+            CatalogItem("Línea Directa",          BigDecimal("350.00"), "EUR", BillingCycle.YEARLY,  "Seguro de coche, moto u hogar — prima anual orientativa, admite pago fraccionado",                           "seguros", domain = "lineadirecta.com", cancelUrl = "https://www.lineadirecta.com/", variablePrice = true),
+            CatalogItem("Génesis",                BigDecimal("330.00"), "EUR", BillingCycle.YEARLY,  "Seguro de coche, moto u hogar — prima anual orientativa, admite pago fraccionado",                           "seguros", domain = "genesis.es", cancelUrl = "https://www.genesis.es/", variablePrice = true),
+            CatalogItem("Pelayo",                 BigDecimal("380.00"), "EUR", BillingCycle.YEARLY,  "Seguro de coche, hogar, vida o salud — prima anual orientativa, admite pago fraccionado",                    "seguros", domain = "pelayo.com", cancelUrl = "https://www.pelayo.com/", variablePrice = true),
+            CatalogItem("Reale",                  BigDecimal("400.00"), "EUR", BillingCycle.YEARLY,  "Seguro de coche, hogar, vida o salud — prima anual orientativa, admite pago fraccionado",                    "seguros", domain = "reale.es", cancelUrl = "https://www.reale.es/", variablePrice = true),
+            CatalogItem("Generali",               BigDecimal("420.00"), "EUR", BillingCycle.YEARLY,  "Seguro de coche, hogar, vida o salud — prima anual orientativa, admite pago fraccionado",                    "seguros", domain = "generali.es", cancelUrl = "https://www.generali.es/", variablePrice = true),
+            CatalogItem("Zurich",                 BigDecimal("430.00"), "EUR", BillingCycle.YEARLY,  "Seguro de coche, hogar, vida o salud — prima anual orientativa, admite pago fraccionado",                    "seguros", domain = "zurich.es", cancelUrl = "https://www.zurich.es/", variablePrice = true),
+            CatalogItem("Caser",                  BigDecimal("400.00"), "EUR", BillingCycle.YEARLY,  "Seguro de coche, hogar, vida o salud — prima anual orientativa, admite pago fraccionado",                    "seguros", domain = "caser.es", cancelUrl = "https://www.caser.es/", variablePrice = true),
+            CatalogItem("Catalana Occidente",     BigDecimal("420.00"), "EUR", BillingCycle.YEARLY,  "Seguro de coche, hogar, vida o salud — prima anual orientativa, admite pago fraccionado",                    "seguros", domain = "catalanaoccidente.com", cancelUrl = "https://www.catalanaoccidente.com/", variablePrice = true),
+            CatalogItem("Ocaso",                  BigDecimal("300.00"), "EUR", BillingCycle.YEARLY,  "Seguro de decesos u hogar — prima anual orientativa, admite pago fraccionado",                               "seguros", domain = "ocaso.es", cancelUrl = "https://www.ocaso.es/", variablePrice = true),
+            CatalogItem("Santalucía",             BigDecimal("300.00"), "EUR", BillingCycle.YEARLY,  "Seguro de decesos, hogar o vida — prima anual orientativa, admite pago fraccionado",                         "seguros", domain = "santalucia.es", cancelUrl = "https://www.santalucia.es/", variablePrice = true),
+            CatalogItem("Fiatc",                  BigDecimal("380.00"), "EUR", BillingCycle.YEARLY,  "Seguro de coche, hogar, vida o salud — prima anual orientativa, admite pago fraccionado",                    "seguros", domain = "fiatc.es", cancelUrl = "https://www.fiatc.es/", variablePrice = true),
+            CatalogItem("Verti",                  BigDecimal("320.00"), "EUR", BillingCycle.YEARLY,  "Seguro de coche o moto — prima anual orientativa, admite pago fraccionado",                                  "seguros", domain = "verti.es", cancelUrl = "https://www.verti.es/", variablePrice = true),
+            CatalogItem("Qualitas Auto",          BigDecimal("340.00"), "EUR", BillingCycle.YEARLY,  "Seguro de coche o moto — prima anual orientativa, admite pago fraccionado",                                  "seguros", domain = "qualitasauto.com", cancelUrl = "https://www.qualitasauto.com/", variablePrice = true),
+            CatalogItem("Balumba",                BigDecimal("300.00"), "EUR", BillingCycle.YEARLY,  "Seguro de coche o moto — prima anual orientativa, admite pago fraccionado",                                  "seguros", domain = "balumba.es", cancelUrl = "https://www.balumba.es/", variablePrice = true),
+            CatalogItem("Sanitas",                BigDecimal("60.00"),  "EUR", BillingCycle.MONTHLY, "Seguro de salud — cuota mensual según póliza (importe orientativo)",                                         "seguros", domain = "sanitas.es", cancelUrl = "https://www.sanitas.es/", variablePrice = true),
+            CatalogItem("Adeslas",                BigDecimal("55.00"),  "EUR", BillingCycle.MONTHLY, "Seguro de salud (SegurCaixa Adeslas) — cuota mensual según póliza (importe orientativo)",                    "seguros", domain = "adeslas.es", cancelUrl = "https://www.adeslas.es/", variablePrice = true),
+            CatalogItem("DKV",                    BigDecimal("55.00"),  "EUR", BillingCycle.MONTHLY, "Seguro de salud — cuota mensual según póliza (importe orientativo)",                                         "seguros", domain = "dkv.es", cancelUrl = "https://dkv.es/", variablePrice = true),
+            CatalogItem("Asisa",                  BigDecimal("50.00"),  "EUR", BillingCycle.MONTHLY, "Seguro de salud — cuota mensual según póliza (importe orientativo)",                                         "seguros", domain = "asisa.es", cancelUrl = "https://www.asisa.es/", variablePrice = true),
+            CatalogItem("Cosalud",                BigDecimal("45.00"),  "EUR", BillingCycle.MONTHLY, "Seguro de salud — cuota mensual según póliza (importe orientativo)",                                         "seguros", domain = "cosalud.com", cancelUrl = "https://www.cosalud.com/", variablePrice = true),
+            CatalogItem("Barkibu",                BigDecimal("25.00"),  "EUR", BillingCycle.MONTHLY, "Seguro de mascotas — cuota mensual según raza y edad (importe orientativo)",                                 "seguros", domain = "barkibu.com", cancelUrl = "https://www.barkibu.com/", variablePrice = true),
+            CatalogItem("Santévet",               BigDecimal("30.00"),  "EUR", BillingCycle.MONTHLY, "Seguro de mascotas — cuota mensual según raza y edad (importe orientativo)",                                 "seguros", domain = "santevet.es", cancelUrl = "https://www.santevet.es/", variablePrice = true)
+        ),
+
+        // ── Transporte (abonos, bici pública, peajes, parking) ──────────────────
+        "transporte" to listOf(
+            CatalogItem("Abono Transporte Madrid (CRTM)",BigDecimal("40.00"),  "EUR", BillingCycle.MONTHLY, "Abono mensual de transporte público de Madrid — importe según zona y perfil",                                "transporte", domain = "crtm.es", cancelUrl = "https://www.crtm.es/", variablePrice = true),
+            CatalogItem("T-usual / T-mobilitat (ATM Barcelona)",BigDecimal("22.00"),  "EUR", BillingCycle.MONTHLY, "Abono mensual de transporte del área de Barcelona — importe según zona",                                     "transporte", domain = "atm.cat", cancelUrl = "https://www.atm.cat/", variablePrice = true),
+            CatalogItem("Bicimad",                BigDecimal("25.00"),  "EUR", BillingCycle.YEARLY,  "Abono anual de bicicleta pública de Madrid",                                                                 "transporte", domain = "bicimad.com", cancelUrl = "https://www.bicimad.com/"),
+            CatalogItem("Bicing",                 BigDecimal("50.00"),  "EUR", BillingCycle.YEARLY,  "Abono anual de bicicleta pública de Barcelona",                                                              "transporte", domain = "bicing.barcelona", cancelUrl = "https://www.bicing.barcelona/"),
+            CatalogItem("Uber One",               BigDecimal("4.99"),   "EUR", BillingCycle.MONTHLY, "Uber One — descuentos en viajes y envíos sin gastos en Uber Eats",                                           "transporte", domain = "uber.com", cancelUrl = "https://www.uber.com/es/es/u/uber-one/"),
+            CatalogItem("Bip&Drive (Via-T)",      BigDecimal("1.45"),   "EUR", BillingCycle.MONTHLY, "Cuota mensual del dispositivo Via-T para peajes — los peajes se cobran aparte",                              "transporte", domain = "bipdrive.com", cancelUrl = "https://www.bipdrive.com/", variablePrice = true),
+            CatalogItem("Pagatelia (Via-T)",      BigDecimal("1.50"),   "EUR", BillingCycle.MONTHLY, "Cuota mensual del dispositivo Via-T para peajes — los peajes se cobran aparte",                              "transporte", domain = "pagatelia.com", cancelUrl = "https://www.pagatelia.com/", variablePrice = true),
+            CatalogItem("Parking / garaje",       BigDecimal("90.00"),  "EUR", BillingCycle.MONTHLY, "Plaza de garaje en alquiler o abono mensual de parking — importe orientativo",                               "transporte", variablePrice = true)
         )
     )
 
     /**
      * Devuelve los servicios del catálogo que corresponden al nombre de una categoría.
-     * La coincidencia es flexible: compara el nombre (en minúsculas) con palabras clave.
+     * El nombre se traduce a clave con [CategoryMappingService.keyFor] (único punto de verdad).
      * Si no hay coincidencia, devuelve todos los servicios ordenados por nombre.
      */
     fun getItemsForCategory(categoryName: String): List<CatalogItem> {
-        val key = when (categoryName.trim()) {
-            "IA"                 -> "ia"
-            "Streaming"          -> "streaming"
-            "Música"             -> "musica"
-            "Software"           -> "software"
-            "Cloud"              -> "cloud"
-            "Gaming"             -> "gaming"
-            "Seguridad"          -> "seguridad"
-            "Noticias y Lectura" -> "noticias"
-            "Salud y Deporte"    -> "salud"
-            "Desarrollo"         -> "desarrollo"
-            "Prueba gratuita"    -> "prueba"
-            "Finanzas"           -> "finanzas"
-            "Educación"          -> "educacion"
-            "Creatividad y foto" -> "creatividad"
-            "Citas y social"     -> "citas"
-            else                 -> null
-        }
+        val key = CategoryMappingService.keyFor(categoryName)
         return (if (key != null) catalog[key] else null) ?: catalog.values.flatten().sortedBy { it.name }
     }
 

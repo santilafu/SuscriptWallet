@@ -13,11 +13,15 @@ import java.math.BigDecimal
  * @property currency   Código ISO 4217 de la moneda (EUR, USD…).
  * @property billingCycle Periodicidad de cobro: MONTHLY, YEARLY o WEEKLY.
  * @property description Descripción breve del plan o tier.
- * @property categoryKey Clave interna que agrupa los servicios por tipo.
- *                       Valores posibles: "ia", "streaming", "software", "cloud".
+ * @property categoryKey Clave interna que agrupa los servicios por tipo (ver
+ *                       [com.subia.service.CategoryMappingService.NAME_TO_KEY]): "ia", "streaming",
+ *                       "hogar", "seguros", "telecos", "transporte"…
  *                       Se usa para filtrar el catálogo cuando el usuario selecciona una categoría.
  * @property priceAnnual Precio anual del servicio (si ofrece plan anual). null si no aplica.
  * @property iconUrl     URL directa al icono/logo del servicio. null si se usa el fallback por dominio.
+ * @property variablePrice true cuando el importe depende del consumo o de la póliza (luz, gas, agua,
+ *                       telecos con consumo, seguros…). En ese caso [price] es solo un importe
+ *                       orientativo y la UI debe indicarlo. false para suscripciones de precio fijo.
  */
 data class CatalogItem(
     val name: String,
@@ -30,5 +34,6 @@ data class CatalogItem(
     val domain: String? = null,
     val cancelUrl: String? = null,
     val priceAnnual: BigDecimal? = null,
-    val iconUrl: String? = null
+    val iconUrl: String? = null,
+    val variablePrice: Boolean = false
 ) : java.io.Serializable
