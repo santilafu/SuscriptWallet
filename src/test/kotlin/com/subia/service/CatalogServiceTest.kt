@@ -29,8 +29,8 @@ class CatalogServiceTest {
     @Test
     fun `los nombres son unicos y los dominios van en minusculas sin esquema`() {
         val all = service.getAllItems()
-        // Un mismo servicio puede vivir en varias categorías ("Prueba gratuita" repite Netflix, Spotify…;
-        // Duolingo está en software y educación), así que la unicidad se comprueba por (nombre, categoría).
+        // Un mismo servicio puede vivir en varias categorías ("Prueba gratuita" repite Netflix, Spotify…),
+        // así que la unicidad se comprueba por (nombre, categoría).
         val dupes = all.groupBy { it.name to it.categoryKey }.filterValues { it.size > 1 }.keys
         assertTrue(dupes.isEmpty(), "nombres duplicados: $dupes")
         all.mapNotNull { it.domain }.forEach { d ->
