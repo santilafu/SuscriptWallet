@@ -20,7 +20,7 @@
         </div>
         <a th:href="@{/subscriptions/new}"
            class="flex items-center gap-2 px-4 py-2.5 bg-accent hover:bg-accent-hover text-white text-sm font-semibold rounded-xl transition-all duration-200 no-underline"
-           style="box-shadow:0 1px 8px rgba(99,102,241,0.4),0 0 0 1px rgba(99,102,241,0.2);">
+           style="box-shadow:0 1px 8px rgba(124,58,237,0.4),0 0 0 1px rgba(124,58,237,0.2);">
             <i class="bi bi-plus-lg text-xs"></i><span th:text="#{dashboard.new}">Nueva suscripción</span>
         </a>
     </div>
@@ -34,7 +34,7 @@
            th:href="@{/dashboard(currency=${c})}"
            class="px-3 py-1 rounded-full text-xs font-semibold no-underline transition-all"
            th:styleappend="${c == dashboard.selectedCurrency}
-               ? 'background:rgba(99,102,241,0.15);color:#a5b4fc;border:1px solid rgba(99,102,241,0.5);'
+               ? 'background:rgba(124,58,237,0.15);color:#c4b5fd;border:1px solid rgba(124,58,237,0.5);'
                : 'background:transparent;color:#64748b;border:1px solid rgba(255,255,255,0.08);'"
            th:text="${c + (currencySymbols.containsKey(c) ? ' ' + currencySymbols.get(c) : '')}">EUR €</a>
     </div>
@@ -80,8 +80,8 @@
 
         <!-- Gasto mensual -->
         <div class="stat-card glass-card rounded-xl p-5 flex items-start gap-4" style="animation-delay:0ms">
-            <div style="width:38px;height:38px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
-                <i class="bi bi-calendar-month text-sm" style="color:#818cf8;"></i>
+            <div style="width:38px;height:38px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
+                <i class="bi bi-calendar-month text-sm" style="color:#a78bfa;"></i>
             </div>
             <div class="min-w-0">
                 <p class="text-[0.65rem] font-semibold uppercase tracking-[0.08em] mb-1.5" style="color:#4a5a78;" th:text="#{dashboard.stat.monthly}">Gasto mensual</p>
@@ -133,7 +133,7 @@
         <!-- Gráfico de dona: gasto por categoría -->
         <div class="enter lg:col-span-2 glass-card rounded-xl overflow-hidden" style="animation-delay:240ms">
             <div class="px-5 py-3.5 flex items-center gap-2" style="border-bottom:1px solid rgba(255,255,255,0.05);">
-                <i class="bi bi-pie-chart text-xs" style="color:#818cf8;"></i>
+                <i class="bi bi-pie-chart text-xs" style="color:#a78bfa;"></i>
                 <span class="text-xs font-semibold tracking-wide text-slate-300" style="letter-spacing:0.02em;" th:text="#{dashboard.chart.category}">Gasto por categoría</span>
             </div>
             <div class="p-5">
@@ -169,7 +169,7 @@
         <!-- Tabla de próximas renovaciones -->
         <div class="enter lg:col-span-3 glass-card rounded-xl overflow-hidden" style="animation-delay:300ms">
             <div class="px-5 py-3.5 flex items-center gap-2" style="border-bottom:1px solid rgba(255,255,255,0.05);">
-                <i class="bi bi-calendar-event text-xs" style="color:#818cf8;"></i>
+                <i class="bi bi-calendar-event text-xs" style="color:#a78bfa;"></i>
                 <span class="text-xs font-semibold tracking-wide text-slate-300" style="letter-spacing:0.02em;" th:text="#{dashboard.table.title}">Próximas renovaciones (30 días)</span>
             </div>
             <div class="overflow-x-auto">
@@ -198,7 +198,7 @@
                                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                     <span th:text="${s.name.substring(0,1).toUpperCase()}"
                                           class="text-xs font-bold w-full h-full items-center justify-center"
-                                          style="color:#818cf8;font-size:10px;"
+                                          style="color:#a78bfa;font-size:10px;"
                                           th:style="${serviceDomains[s.name] != null} ? 'display:none;' : 'display:flex;'"></span>
                                 </div>
                                 <span class="font-medium" style="color:#dde4f0;" th:text="${s.name}"></span>
@@ -233,7 +233,7 @@
     <div th:if="${!dashboard.topSubscriptions.isEmpty()}" class="mt-5">
         <div class="enter glass-card rounded-xl overflow-hidden" style="animation-delay:360ms">
             <div class="px-5 py-3.5 flex items-center gap-2" style="border-bottom:1px solid rgba(255,255,255,0.05);">
-                <i class="bi bi-bar-chart text-xs" style="color:#818cf8;"></i>
+                <i class="bi bi-bar-chart text-xs" style="color:#a78bfa;"></i>
                 <span class="text-xs font-semibold tracking-wide text-slate-300" style="letter-spacing:0.02em;" th:text="#{dashboard.chart.top5}">Top 5 gastos mensuales</span>
             </div>
             <div class="p-5">
@@ -317,7 +317,7 @@ var chartAnim = reduceMotion ? false : { duration: 700, easing: 'easeOutQuart' }
     const names   = [];
     const amounts = [];
     const colors  = [];
-    const palette = ['rgba(99,102,241,0.85)','rgba(34,197,94,0.75)','rgba(245,158,11,0.75)','rgba(239,68,68,0.75)','rgba(6,182,212,0.75)'];
+    const palette = ['rgba(124,58,237,0.85)','rgba(34,197,94,0.75)','rgba(245,158,11,0.75)','rgba(239,68,68,0.75)','rgba(6,182,212,0.75)'];
 
     /*[# th:each="s, i : ${dashboard.topSubscriptions}"]*/
     names.push(/*[[${s.name}]]*/ '');

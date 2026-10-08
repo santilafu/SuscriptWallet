@@ -101,12 +101,11 @@ fun sufijoPeriodo(ciclo: String): String = when (ciclo) {
     else -> stringResource(R.string.period_month)
 }
 
-/**
- * "12,99 €/mes" o "450 €/año" para celdas estrechas: los importes redondos de tres cifras
- * van sin decimales para que la etiqueta quepa en la tarjeta del catálogo.
- */
+/** Importe para celdas estrechas: los importes redondos van sin decimales ("30 €", "450 €"). */
+fun formatearImporteCorto(valor: Double, moneda: String): String =
+    formatearImporte(valor, moneda, if (valor % 1.0 == 0.0) 0 else 2)
+
+/** "12,99 €/mes" o "450 €/año" para celdas estrechas (ver [formatearImporteCorto]). */
 @Composable
-fun importeConPeriodo(valor: Double, moneda: String, ciclo: String): String {
-    val decimales = if (valor >= 100 && valor % 1.0 == 0.0) 0 else 2
-    return formatearImporte(valor, moneda, decimales) + "/" + sufijoPeriodo(ciclo)
-}
+fun importeConPeriodo(valor: Double, moneda: String, ciclo: String): String =
+    formatearImporteCorto(valor, moneda) + "/" + sufijoPeriodo(ciclo)

@@ -11,6 +11,7 @@ const val BANNER_AD_UNIT_ID = "ca-app-pub-7118293142933206/2170612811"
 
 @Composable
 fun BannerAdView(modifier: Modifier = Modifier) {
+    if (com.subia.android.BuildConfig.DEMO) return // build de capturas para Play: sin anuncios
     AndroidView(
         modifier = modifier,
         factory = { context ->

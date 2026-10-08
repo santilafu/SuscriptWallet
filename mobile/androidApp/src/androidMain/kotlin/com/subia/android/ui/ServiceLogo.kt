@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.platform.LocalContext
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
+import com.subia.android.ui.theme.Violet600
 
 /**
  * Muestra el logo de un servicio con fallback en cascada:
@@ -115,7 +116,7 @@ private fun LogoFallback(
 
 private fun colorForLetter(c: Char): Color {
     val colors = listOf(
-        Color(0xFF6366F1), Color(0xFF8B5CF6), Color(0xFFEC4899),
+        Violet600, Color(0xFF8B5CF6), Color(0xFFEC4899),
         Color(0xFF14B8A6), Color(0xFFF59E0B), Color(0xFF10B981),
         Color(0xFFEF4444), Color(0xFF3B82F6), Color(0xFFF97316)
     )

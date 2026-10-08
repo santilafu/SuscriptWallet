@@ -43,15 +43,15 @@
                         elevated: '#182038',
                         hover:    '#1e2a47',
                         accent: {
-                            DEFAULT: '#6366f1',
-                            hover:   '#4f46e5',
-                            muted:   '#818cf8'
+                            DEFAULT: '#7c3aed',
+                            hover:   '#6d28d9',
+                            muted:   '#a78bfa'
                         }
                     },
                     boxShadow: {
                         'card':      '0 1px 0 0 rgba(255,255,255,0.04), 0 4px 16px rgba(0,0,0,0.5)',
                         'card-hover':'0 1px 0 0 rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.6)',
-                        'accent-glow':'0 0 0 1px rgba(99,102,241,0.4), 0 4px 20px rgba(99,102,241,0.2)'
+                        'accent-glow':'0 0 0 1px rgba(124,58,237,0.4), 0 4px 20px rgba(124,58,237,0.2)'
                     },
                     borderRadius: {
                         'xl2': '1rem',
@@ -73,9 +73,9 @@
     <style>
         /* ── Variables CSS ───────────────────────────────────────────────────── */
         :root {
-            --accent:         #6366f1;
-            --accent-hover:   #4f46e5;
-            --accent-light:   #818cf8;
+            --accent:         #7c3aed;
+            --accent-hover:   #6d28d9;
+            --accent-light:   #a78bfa;
             --surface:        #0f1629;
             --elevated:       #182038;
             --base:           #08091a;
@@ -105,20 +105,20 @@
         .bg-accent   { background-color: var(--accent) !important; }
         .hover\:bg-accent-hover:hover { background-color: var(--accent-hover) !important; }
 
-        .bg-accent\/10  { background-color: rgba(99,102,241,0.10) !important; }
-        .bg-accent\/15  { background-color: rgba(99,102,241,0.15) !important; }
-        .bg-accent\/20  { background-color: rgba(99,102,241,0.20) !important; }
+        .bg-accent\/10  { background-color: rgba(124,58,237,0.10) !important; }
+        .bg-accent\/15  { background-color: rgba(124,58,237,0.15) !important; }
+        .bg-accent\/20  { background-color: rgba(124,58,237,0.20) !important; }
 
         .text-accent { color: var(--accent-light) !important; }
         .hover\:text-accent\/80:hover { color: rgba(129,140,248,0.8) !important; }
 
         .border-accent      { border-color: var(--accent) !important; }
-        .border-accent\/60  { border-color: rgba(99,102,241,0.60) !important; }
-        .border-accent\/40  { border-color: rgba(99,102,241,0.40) !important; }
-        .hover\:border-accent\/40:hover { border-color: rgba(99,102,241,0.40) !important; }
+        .border-accent\/60  { border-color: rgba(124,58,237,0.60) !important; }
+        .border-accent\/40  { border-color: rgba(124,58,237,0.40) !important; }
+        .hover\:border-accent\/40:hover { border-color: rgba(124,58,237,0.40) !important; }
 
-        .focus\:border-accent\/60:focus { border-color: rgba(99,102,241,0.60) !important; }
-        .focus\:ring-accent\/30:focus   { box-shadow: 0 0 0 3px rgba(99,102,241,0.25) !important; }
+        .focus\:border-accent\/60:focus { border-color: rgba(124,58,237,0.60) !important; }
+        .focus\:ring-accent\/30:focus   { box-shadow: 0 0 0 3px rgba(124,58,237,0.25) !important; }
 
         /* ── Campos de formulario ────────────────────────────────────────────── */
         input:not([type=checkbox]):not([type=radio]):not([type=color]),
@@ -139,7 +139,7 @@
         input:focus:not([type=checkbox]):not([type=radio]),
         select:focus, textarea:focus {
             border-color: var(--accent) !important;
-            box-shadow: 0 0 0 3px rgba(99,102,241,0.22) !important;
+            box-shadow: 0 0 0 3px rgba(124,58,237,0.22) !important;
             outline: none !important;
         }
         input[type=date]::-webkit-calendar-picker-indicator {
@@ -203,11 +203,11 @@
         @media (hover: hover) and (pointer: fine) {
             .sub-card:hover, .stat-card:hover {
                 transform: translateY(-3px);
-                border-color: rgba(99,102,241,0.22) !important;
+                border-color: rgba(124,58,237,0.22) !important;
                 box-shadow:
                     0 1px 0 0 rgba(255,255,255,0.07),
                     0 14px 42px rgba(0,0,0,0.6),
-                    0 0 0 1px rgba(99,102,241,0.12),
+                    0 0 0 1px rgba(124,58,237,0.12),
                     inset 0 1px 0 rgba(255,255,255,0.06) !important;
             }
         }
@@ -229,9 +229,9 @@
         }
         .filter-pill:active { transform: scale(0.96); }
         .filter-pill.active {
-            border-color: rgba(99,102,241,0.5) !important;
-            background: rgba(99,102,241,0.12) !important;
-            color: #a5b4fc !important;
+            border-color: rgba(124,58,237,0.5) !important;
+            background: rgba(124,58,237,0.12) !important;
+            color: #c4b5fd !important;
         }
 
         /* ── Botones de acción de tarjeta (hover por CSS + feedback al pulsar) ── */
@@ -258,17 +258,17 @@
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb {
-            background: rgba(99,102,241,0.2);
+            background: rgba(124,58,237,0.2);
             border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: rgba(99,102,241,0.35);
+            background: rgba(124,58,237,0.35);
         }
 
         /* ── Botones accent ──────────────────────────────────────────────────── */
         a.bg-accent, button.bg-accent {
             color: #fff !important;
-            box-shadow: 0 1px 8px rgba(99,102,241,0.35);
+            box-shadow: 0 1px 8px rgba(124,58,237,0.35);
             transition: background-color 0.15s var(--easing-smooth),
                         box-shadow 0.15s var(--easing-smooth),
                         transform 0.1s var(--easing-smooth) !important;
@@ -276,7 +276,7 @@
         a.bg-accent:hover, button.bg-accent:hover,
         a.hover\:bg-accent-hover:hover, button.hover\:bg-accent-hover:hover {
             background-color: var(--accent-hover) !important;
-            box-shadow: 0 2px 12px rgba(99,102,241,0.5) !important;
+            box-shadow: 0 2px 12px rgba(124,58,237,0.5) !important;
             color: #fff !important;
         }
         a.bg-accent:active, button.bg-accent:active {
@@ -343,10 +343,8 @@
             <!-- Logo -->
             <a th:href="@{/dashboard}"
                class="flex items-center gap-2.5 font-bold text-base tracking-tight no-underline group" style="color:inherit;">
-                <div style="width:28px;height:28px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);border-radius:8px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;">
-                    <i class="bi bi-credit-card-2-front text-sm" style="color:#818cf8;"></i>
-                </div>
-                <span translate="no" style="color:#818cf8;letter-spacing:-0.01em;">SusCript</span><span translate="no" style="color:#e8edf5;letter-spacing:-0.01em;">Wallet</span>
+                <img th:src="@{/favicon-192x192.png}" src="/favicon-192x192.png" alt="" width="28" height="28" style="border-radius:8px;display:block;">
+                <span translate="no" style="color:#a78bfa;letter-spacing:-0.01em;">SusCript</span><span translate="no" style="color:#e8edf5;letter-spacing:-0.01em;">Wallet</span>
             </a>
 
             <!-- Nav links -->
@@ -356,7 +354,7 @@
                    th:classappend="${currentPath == '/dashboard'}
                        ? ' bg-accent/10'
                        : ' text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'"
-                   th:style="${currentPath == '/dashboard'} ? 'color:#818cf8;' : ''">
+                   th:style="${currentPath == '/dashboard'} ? 'color:#a78bfa;' : ''">
                     <i class="bi bi-speedometer2 text-xs"></i>
                     <span th:text="#{nav.dashboard}">Dashboard</span>
                 </a>
@@ -365,7 +363,7 @@
                    th:classappend="${currentPath != null and currentPath.startsWith('/subscriptions')}
                        ? ' bg-accent/10'
                        : ' text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'"
-                   th:style="${currentPath != null and currentPath.startsWith('/subscriptions')} ? 'color:#818cf8;' : ''">
+                   th:style="${currentPath != null and currentPath.startsWith('/subscriptions')} ? 'color:#a78bfa;' : ''">
                     <i class="bi bi-list-ul text-xs"></i>
                     <span th:text="#{nav.subscriptions}">Suscripciones</span>
                 </a>
@@ -374,7 +372,7 @@
                    th:classappend="${currentPath != null and currentPath.startsWith('/categories')}
                        ? ' bg-accent/10'
                        : ' text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'"
-                   th:style="${currentPath != null and currentPath.startsWith('/categories')} ? 'color:#818cf8;' : ''">
+                   th:style="${currentPath != null and currentPath.startsWith('/categories')} ? 'color:#a78bfa;' : ''">
                     <i class="bi bi-tags text-xs"></i>
                     <span th:text="#{nav.categories}">Categorías</span>
                 </a>
@@ -383,7 +381,7 @@
                    th:classappend="${currentPath != null and currentPath.startsWith('/catalog-browser')}
                        ? ' bg-accent/10'
                        : ' text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'"
-                   th:style="${currentPath != null and currentPath.startsWith('/catalog-browser')} ? 'color:#818cf8;' : ''">
+                   th:style="${currentPath != null and currentPath.startsWith('/catalog-browser')} ? 'color:#a78bfa;' : ''">
                     <i class="bi bi-grid-3x3-gap text-xs"></i>
                     <span th:text="#{nav.catalog}">Catálogo</span>
                 </a>
@@ -392,7 +390,7 @@
                    th:classappend="${currentPath != null and currentPath.startsWith('/settings')}
                        ? ' bg-accent/10'
                        : ' text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'"
-                   th:style="${currentPath != null and currentPath.startsWith('/settings')} ? 'color:#818cf8;' : ''">
+                   th:style="${currentPath != null and currentPath.startsWith('/settings')} ? 'color:#a78bfa;' : ''">
                     <i class="bi bi-gear text-xs"></i>
                     <span th:text="#{nav.settings}">Ajustes</span>
                 </a>
@@ -404,16 +402,16 @@
                 <div class="flex items-center gap-0.5 px-1.5 py-1 rounded-lg" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);">
                     <a th:href="@{''(lang='es')}"
                        class="px-1.5 py-0.5 rounded text-xs font-semibold no-underline tracking-wide transition-all"
-                       th:classappend="${#locale.language == 'es'} ? 'text-indigo-300' : 'text-slate-600 hover:text-slate-300'"
-                       th:styleappend="${#locale.language == 'es'} ? 'background:rgba(99,102,241,0.18);' : ''">ES</a>
+                       th:classappend="${#locale.language == 'es'} ? 'text-violet-300' : 'text-slate-600 hover:text-slate-300'"
+                       th:styleappend="${#locale.language == 'es'} ? 'background:rgba(124,58,237,0.18);' : ''">ES</a>
                     <a th:href="@{''(lang='en')}"
                        class="px-1.5 py-0.5 rounded text-xs font-semibold no-underline tracking-wide transition-all"
-                       th:classappend="${#locale.language == 'en'} ? 'text-indigo-300' : 'text-slate-600 hover:text-slate-300'"
-                       th:styleappend="${#locale.language == 'en'} ? 'background:rgba(99,102,241,0.18);' : ''">EN</a>
+                       th:classappend="${#locale.language == 'en'} ? 'text-violet-300' : 'text-slate-600 hover:text-slate-300'"
+                       th:styleappend="${#locale.language == 'en'} ? 'background:rgba(124,58,237,0.18);' : ''">EN</a>
                     <a th:href="@{''(lang='fr')}"
                        class="px-1.5 py-0.5 rounded text-xs font-semibold no-underline tracking-wide transition-all"
-                       th:classappend="${#locale.language == 'fr'} ? 'text-indigo-300' : 'text-slate-600 hover:text-slate-300'"
-                       th:styleappend="${#locale.language == 'fr'} ? 'background:rgba(99,102,241,0.18);' : ''">FR</a>
+                       th:classappend="${#locale.language == 'fr'} ? 'text-violet-300' : 'text-slate-600 hover:text-slate-300'"
+                       th:styleappend="${#locale.language == 'fr'} ? 'background:rgba(124,58,237,0.18);' : ''">FR</a>
                 </div>
 
                 <a th:href="@{/delete-account}"

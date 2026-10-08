@@ -58,8 +58,9 @@ import androidx.compose.ui.unit.sp
 import com.subia.android.R
 import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.components.formatearImporte
-import com.subia.android.ui.theme.GradientIndigoDeepEnd
-import com.subia.android.ui.theme.GradientIndigoDeepStart
+import com.subia.android.ui.theme.GradientBrandDeepEnd
+import com.subia.android.ui.theme.GradientBrandDeepMid
+import com.subia.android.ui.theme.GradientBrandDeepStart
 import com.subia.android.util.NotificacionesPermiso
 import kotlinx.coroutines.launch
 
@@ -269,7 +270,7 @@ private fun PaginaGasto(activa: Boolean, animar: Boolean) {
             else cifra.snapTo(GASTO_EJEMPLO_MES.toFloat())
         }
     }
-    val gradiente = remember { Brush.linearGradient(listOf(GradientIndigoDeepStart, GradientIndigoDeepEnd)) }
+    val gradiente = remember { Brush.linearGradient(listOf(GradientBrandDeepStart, GradientBrandDeepMid, GradientBrandDeepEnd)) }
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(

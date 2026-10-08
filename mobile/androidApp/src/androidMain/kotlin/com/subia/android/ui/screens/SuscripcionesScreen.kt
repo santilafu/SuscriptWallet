@@ -71,11 +71,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.subia.android.R
+import com.subia.android.util.Funciones
 import com.subia.android.ui.BannerAdView
 import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.components.ErrorState
 import com.subia.android.ui.components.formatearImporte
-import com.subia.android.ui.theme.Indigo500
+import com.subia.android.ui.theme.Violet600
 import com.subia.android.ui.theme.urgent
 import com.subia.android.util.fechaIsoLegible
 import com.subia.android.util.proximaRenovacionIso
@@ -167,7 +168,7 @@ fun SuscripcionesScreen(
             if (hayFilas) {
                 FloatingActionButton(
                     onClick = { onNavigateToNueva(null) },
-                    containerColor = Indigo500,
+                    containerColor = Violet600,
                     elevation = FloatingActionButtonDefaults.elevation(4.dp)
                 ) {
                     Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add), tint = Color.White)
@@ -283,11 +284,13 @@ private fun EmptyStateSuscripciones(onAnadir: (String?) -> Unit, onDetectGmail: 
             Spacer(Modifier.width(8.dp))
             Text(stringResource(R.string.empty_add_other), fontWeight = FontWeight.SemiBold)
         }
-        Spacer(Modifier.height(4.dp))
-        TextButton(onClick = onDetectGmail, modifier = Modifier.fillMaxWidth()) {
-            Icon(Icons.Outlined.Email, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.detect_with_gmail))
+        if (Funciones.GMAIL) {
+            Spacer(Modifier.height(4.dp))
+            TextButton(onClick = onDetectGmail, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Outlined.Email, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.detect_with_gmail))
+            }
         }
     }
 }
@@ -347,7 +350,7 @@ private fun ListaSuscripciones(
                             onClick = { onFiltrar(null) },
                             label = { Text(stringResource(R.string.all_filter)) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Indigo500,
+                                selectedContainerColor = Violet600,
                                 selectedLabelColor = Color.White
                             )
                         )
@@ -361,7 +364,7 @@ private fun ListaSuscripciones(
                             },
                             label = { Text(cat.nombre) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Indigo500,
+                                selectedContainerColor = Violet600,
                                 selectedLabelColor = Color.White
                             )
                         )

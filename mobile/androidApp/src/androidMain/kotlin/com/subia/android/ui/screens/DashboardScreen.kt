@@ -62,8 +62,9 @@ import com.subia.android.ui.components.formatearImporte
 import com.subia.android.ui.components.nombreMesLargo
 import com.subia.android.ui.components.tabular
 import com.subia.android.ui.components.textoDiasRelativo
-import com.subia.android.ui.theme.GradientIndigoDeepEnd
-import com.subia.android.ui.theme.GradientIndigoDeepStart
+import com.subia.android.ui.theme.GradientBrandDeepEnd
+import com.subia.android.ui.theme.GradientBrandDeepMid
+import com.subia.android.ui.theme.GradientBrandDeepStart
 import com.subia.android.ui.theme.Warning
 import com.subia.android.ui.theme.urgent
 import com.subia.android.widget.actualizarWidgetResumen
@@ -264,7 +265,7 @@ private fun HeroGastoMensual(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(Brush.linearGradient(listOf(GradientIndigoDeepStart, GradientIndigoDeepEnd)))
+            .background(Brush.linearGradient(listOf(GradientBrandDeepStart, GradientBrandDeepMid, GradientBrandDeepEnd)))
             .padding(horizontal = 20.dp, vertical = 18.dp)
             .semantics(mergeDescendants = true) {
                 contentDescription = "$etiqueta $moneda: $importe, $anualTexto"

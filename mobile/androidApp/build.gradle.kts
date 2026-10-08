@@ -12,7 +12,10 @@ val localProps = Properties().apply {
     val f = rootProject.file("local.properties")
     if (f.exists()) load(f.inputStream())
 }
-val apiBaseUrl: String = localProps.getProperty("API_BASE_URL", "http://10.0.2.2:8081")
+// `-Psubia.demo=true` (solo para capturas de Play): backend local, sin anuncios y otro
+// applicationId para poder instalarla junto a la app real.
+val demo: Boolean = providers.gradleProperty("subia.demo").orNull == "true"
+val apiBaseUrl: String = if (demo) "http://10.0.2.2:8081" else localProps.getProperty("API_BASE_URL", "http://10.0.2.2:8081")
 val googleWebClientId: String = localProps.getProperty("SUBIA_GOOGLE_WEB_CLIENT_ID", "")
 val keystorePath: String = localProps.getProperty("KEYSTORE_PATH", "")
 val keystorePass: String = localProps.getProperty("KEYSTORE_PASSWORD", "")
@@ -27,10 +30,12 @@ android {
         applicationId = "com.subia.android"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 29
-        versionName = "2.17.1"
+        versionCode = 30
+        versionName = "2.17.2"
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
         buildConfigField("String", "SUBIA_GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
+        buildConfigField("boolean", "DEMO", demo.toString())
+        if (demo) applicationIdSuffix = ".demo"
     }
 
     signingConfigs {

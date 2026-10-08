@@ -19,7 +19,7 @@
     <div class="enter glass-card rounded-xl mb-6 overflow-hidden" style="animation-delay:0ms"
          th:unless="${sub instanceof T(com.subia.model.Subscription) and sub.id > 0}">
         <div class="px-5 py-4 border-b border-white/[0.06] flex items-center gap-2">
-            <i class="bi bi-grid-3x3-gap" style="color:#818cf8;"></i>
+            <i class="bi bi-grid-3x3-gap" style="color:#a78bfa;"></i>
             <span class="text-sm font-semibold text-slate-200" th:text="#{form.catalog.title}">Elegir del catálogo</span>
             <span class="text-xs text-slate-500 ml-1" th:text="#{form.catalog.optional}">— opcional, rellena el formulario automáticamente</span>
         </div>
@@ -51,7 +51,7 @@
                 <!-- Botón Aplicar -->
                 <button type="button" id="btnApplyCatalog" disabled
                         class="flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex-shrink-0"
-                        style="background-color:#6366f1;">
+                        style="background-color:#7c3aed;">
                     <i class="bi bi-arrow-down-circle"></i><span th:text="#{form.catalog.apply}">Aplicar</span>
                 </button>
             </div>
@@ -68,8 +68,8 @@
             <div class="flex flex-col items-center" style="flex:0 0 auto;">
                 <div id="step-dot-1"
                      class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold transition-all"
-                     style="background:#6366f1;color:#fff;box-shadow:0 0 0 3px rgba(99,102,241,0.2);transition:all 0.2s cubic-bezier(0.4,0,0.2,1);">1</div>
-                <span id="step-label-1" class="text-xs mt-1.5 font-semibold" style="color:#818cf8;letter-spacing:0.01em;" th:text="#{form.step.service}">Servicio</span>
+                     style="background:#7c3aed;color:#fff;box-shadow:0 0 0 3px rgba(124,58,237,0.2);transition:all 0.2s cubic-bezier(0.4,0,0.2,1);">1</div>
+                <span id="step-label-1" class="text-xs mt-1.5 font-semibold" style="color:#a78bfa;letter-spacing:0.01em;" th:text="#{form.step.service}">Servicio</span>
             </div>
 
             <!-- Línea 1-2 -->
@@ -109,7 +109,7 @@
             <div id="wizard-step-1" class="p-6">
                 <h2 class="text-base font-semibold text-slate-200 mb-5 flex items-center gap-2">
                     <span class="w-6 h-6 rounded-full text-xs flex items-center justify-center font-bold"
-                          style="background:rgba(99,102,241,0.2); color:#818cf8;">1</span>
+                          style="background:rgba(124,58,237,0.2); color:#a78bfa;">1</span>
                     <span th:text="#{form.step1.title}">Información del servicio</span>
                 </h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -151,7 +151,7 @@
                 <div class="flex justify-end mt-6">
                     <button type="button" onclick="wizardGoTo(2)"
                             class="flex items-center gap-2 px-5 py-2.5 text-white text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer"
-                            style="background-color:#6366f1;">
+                            style="background-color:#7c3aed;">
                         <span th:text="#{form.btn.next}">Siguiente</span> <i class="bi bi-arrow-right"></i>
                     </button>
                 </div>
@@ -161,7 +161,7 @@
             <div id="wizard-step-2" class="p-6" style="display:none;">
                 <h2 class="text-base font-semibold text-slate-200 mb-5 flex items-center gap-2">
                     <span class="w-6 h-6 rounded-full text-xs flex items-center justify-center font-bold"
-                          style="background:rgba(99,102,241,0.2); color:#818cf8;">2</span>
+                          style="background:rgba(124,58,237,0.2); color:#a78bfa;">2</span>
                     <span th:text="#{form.step2.title}">Precio y facturación</span>
                 </h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -214,7 +214,7 @@
                     </button>
                     <button type="button" onclick="wizardGoTo(3)"
                             class="flex items-center gap-2 px-5 py-2.5 text-white text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer"
-                            style="background-color:#6366f1;">
+                            style="background-color:#7c3aed;">
                         <span th:text="#{form.btn.next}">Siguiente</span> <i class="bi bi-arrow-right"></i>
                     </button>
                 </div>
@@ -224,7 +224,7 @@
             <div id="wizard-step-3" class="p-6" style="display:none;">
                 <h2 class="text-base font-semibold text-slate-200 mb-5 flex items-center gap-2">
                     <span class="w-6 h-6 rounded-full text-xs flex items-center justify-center font-bold"
-                          style="background:rgba(99,102,241,0.2); color:#818cf8;">3</span>
+                          style="background:rgba(124,58,237,0.2); color:#a78bfa;">3</span>
                     <span th:text="#{form.step3.title}">Detalles adicionales</span>
                 </h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -294,7 +294,7 @@
                         </a>
                         <button type="submit"
                                 class="flex items-center gap-2 px-5 py-2.5 text-white text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer"
-                                style="background-color:#6366f1;">
+                                style="background-color:#7c3aed;">
                             <i class="bi bi-floppy"></i><span th:text="#{form.btn.save}">Guardar</span>
                         </button>
                     </div>
@@ -357,11 +357,11 @@ var i18n = {
             if (!dot || !label) continue;
 
             if (i <= step) {
-                dot.style.background   = '#6366f1';
+                dot.style.background   = '#7c3aed';
                 dot.style.color        = '#fff';
                 dot.style.border       = 'none';
-                dot.style.boxShadow    = '0 0 0 3px rgba(99,102,241,0.2)';
-                label.style.color      = '#818cf8';
+                dot.style.boxShadow    = '0 0 0 3px rgba(124,58,237,0.2)';
+                label.style.color      = '#a78bfa';
             } else {
                 dot.style.background   = 'rgba(255,255,255,0.06)';
                 dot.style.color        = '#3d4d66';
@@ -373,8 +373,8 @@ var i18n = {
 
         var line1 = document.getElementById('step-line-1');
         var line2 = document.getElementById('step-line-2');
-        if (line1) line1.style.background = step >= 2 ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.07)';
-        if (line2) line2.style.background = step >= 3 ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.07)';
+        if (line1) line1.style.background = step >= 2 ? 'rgba(124,58,237,0.5)' : 'rgba(255,255,255,0.07)';
+        if (line2) line2.style.background = step >= 3 ? 'rgba(124,58,237,0.5)' : 'rgba(255,255,255,0.07)';
 
         currentStep = step;
     };

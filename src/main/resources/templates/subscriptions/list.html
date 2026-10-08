@@ -17,7 +17,7 @@
         </div>
         <a th:href="@{/subscriptions/new}"
            class="flex items-center gap-2 px-4 py-2.5 bg-accent hover:bg-accent-hover text-white text-sm font-semibold rounded-xl no-underline"
-           style="box-shadow:0 1px 8px rgba(99,102,241,0.4),0 0 0 1px rgba(99,102,241,0.2);">
+           style="box-shadow:0 1px 8px rgba(124,58,237,0.4),0 0 0 1px rgba(124,58,237,0.2);">
             <i class="bi bi-plus-lg text-xs"></i><span th:text="#{sub.new}">Nueva suscripción</span>
         </a>
     </div>
@@ -82,7 +82,7 @@
                                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                 <span th:text="${s.name.substring(0,1).toUpperCase()}"
                                       class="text-xs font-bold w-full h-full items-center justify-center"
-                                      style="color:#818cf8;"
+                                      style="color:#a78bfa;"
                                       th:style="${serviceDomains[s.name] != null} ? 'display:none;' : 'display:flex;'"></span>
                             </div>
                             <div class="min-w-0">
@@ -182,8 +182,8 @@
     <div th:if="${subscriptions.isEmpty()}"
          class="glass-card rounded-xl px-8 py-16 text-center">
         <div class="inline-flex items-center justify-center w-11 h-11 rounded-xl mb-4"
-             style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);">
-            <i class="bi bi-arrow-repeat text-lg" style="color:#818cf8;"></i>
+             style="background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.2);">
+            <i class="bi bi-arrow-repeat text-lg" style="color:#a78bfa;"></i>
         </div>
         <p class="text-slate-200 text-base font-semibold mb-1" th:text="#{sub.empty.none}">Todavía no tienes ninguna suscripción</p>
         <p class="text-sm mb-6" style="color:#4a5a78;">Empieza añadiendo la primera para llevar el control de tus gastos.</p>

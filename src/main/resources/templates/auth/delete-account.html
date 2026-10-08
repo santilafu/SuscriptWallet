@@ -17,14 +17,14 @@
         <div class="flex items-center justify-center gap-1 mb-4">
             <i class="bi bi-globe2 text-gray-500 text-xs mr-1"></i>
             <a href="?lang=es" class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
-               th:classappend="${#locale.language == 'es'} ? 'text-indigo-300' : 'text-gray-500 hover:text-gray-200'"
-               th:styleappend="${#locale.language == 'es'} ? 'background:rgba(99,102,241,0.2);' : ''">ES</a>
+               th:classappend="${#locale.language == 'es'} ? 'text-violet-300' : 'text-gray-500 hover:text-gray-200'"
+               th:styleappend="${#locale.language == 'es'} ? 'background:rgba(124,58,237,0.2);' : ''">ES</a>
             <a href="?lang=en" class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
-               th:classappend="${#locale.language == 'en'} ? 'text-indigo-300' : 'text-gray-500 hover:text-gray-200'"
-               th:styleappend="${#locale.language == 'en'} ? 'background:rgba(99,102,241,0.2);' : ''">EN</a>
+               th:classappend="${#locale.language == 'en'} ? 'text-violet-300' : 'text-gray-500 hover:text-gray-200'"
+               th:styleappend="${#locale.language == 'en'} ? 'background:rgba(124,58,237,0.2);' : ''">EN</a>
             <a href="?lang=fr" class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
-               th:classappend="${#locale.language == 'fr'} ? 'text-indigo-300' : 'text-gray-500 hover:text-gray-200'"
-               th:styleappend="${#locale.language == 'fr'} ? 'background:rgba(99,102,241,0.2);' : ''">FR</a>
+               th:classappend="${#locale.language == 'fr'} ? 'text-violet-300' : 'text-gray-500 hover:text-gray-200'"
+               th:styleappend="${#locale.language == 'fr'} ? 'background:rgba(124,58,237,0.2);' : ''">FR</a>
         </div>
 
         <!-- Cabecera -->
@@ -88,7 +88,7 @@
         </div>
 
         <div th:unless="${loggedIn}" class="text-center mt-4">
-            <a href="/login" class="inline-block bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-8 rounded-xl transition-colors"
+            <a href="/login" class="inline-block bg-violet-600 hover:bg-violet-500 text-white font-semibold py-3 px-8 rounded-xl transition-colors"
                th:text="#{delete.login-first}">
                 Iniciar sesión para eliminar mi cuenta
             </a>

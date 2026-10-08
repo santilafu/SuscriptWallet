@@ -39,8 +39,9 @@ import androidx.compose.ui.unit.sp
 import com.subia.android.R
 import com.subia.android.ui.components.formatearImporte
 import com.subia.android.ui.components.tabular
-import com.subia.android.ui.theme.GradientIndigoDeepEnd
-import com.subia.android.ui.theme.GradientIndigoDeepStart
+import com.subia.android.ui.theme.GradientBrandDeepEnd
+import com.subia.android.ui.theme.GradientBrandDeepMid
+import com.subia.android.ui.theme.GradientBrandDeepStart
 import com.subia.android.util.ResumenCompartible
 import com.subia.android.util.compartirResumenAnual
 import com.subia.shared.viewmodel.DashboardViewModel
@@ -187,7 +188,7 @@ private fun TarjetaResumen(
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
             // Gradiente 600 + texto blanco al 100 %: la tarjeta se comparte como imagen y debe leerse en cualquier feed.
-            .background(Brush.linearGradient(listOf(GradientIndigoDeepStart, GradientIndigoDeepEnd)))
+            .background(Brush.linearGradient(listOf(GradientBrandDeepStart, GradientBrandDeepMid, GradientBrandDeepEnd)))
             .padding(28.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

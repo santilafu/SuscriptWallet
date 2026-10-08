@@ -2,19 +2,27 @@ package com.subia.android.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// ── Paleta base SubIA — dark-first fintech 2025 ──────────────────────────────
+// ── Paleta base SubIA — dark-first, alineada con el logo 2026 ─────────────────
+// El logo es un degradado rosa → violeta → azul con monedas ámbar: el violeta es el
+// acento primario y el degradado completo se reserva para las tarjetas destacadas.
 
-// Fondos
-val BackgroundDark  = Color(0xFF09090B)   // zinc-950 — fondo principal
-val Surface900      = Color(0xFF18181B)   // zinc-900 — superficies / tarjetas
-val Surface800      = Color(0xFF27272A)   // zinc-800 — bordes sutiles / dividers
-val Surface700      = Color(0xFF3F3F46)   // zinc-700 — outline
+// Fondos: neutros con un punto de violeta para que no choquen con el logo
+val BackgroundDark  = Color(0xFF0B0A12)   // fondo principal
+val Surface900      = Color(0xFF17151F)   // superficies / tarjetas
+val Surface800      = Color(0xFF262330)   // bordes sutiles / dividers
+val Surface700      = Color(0xFF3D3949)   // outline
 
-// Acento índigo
-val Indigo500       = Color(0xFF6366F1)   // indigo-500 — acento primario (light mode)
-val Indigo400       = Color(0xFF818CF8)   // indigo-400 — acento primario (dark mode)
-val Indigo700       = Color(0xFF4338CA)   // indigo-700 — contenedor primario dark
-val Indigo200       = Color(0xFFC7D2FE)   // indigo-200 — on-primary container dark
+// Acento violeta (el color dominante del logo)
+val Violet600       = Color(0xFF7C3AED)   // violet-600 — primario en claro (5,7:1 sobre blanco)
+val Violet400       = Color(0xFFA78BFA)   // violet-400 — primario en oscuro
+val Violet800       = Color(0xFF5B21B6)   // violet-800 — contenedor primario dark
+val Violet200       = Color(0xFFDDD6FE)   // violet-200 — on-primary container dark
+
+// Acentos secundarios del logo
+val Pink600         = Color(0xFFDB2777)   // pink-600 — secundario en claro
+val Pink400         = Color(0xFFF472B6)   // pink-400 — secundario en oscuro
+val Sky600          = Color(0xFF0284C7)   // sky-600 — terciario en claro
+val Sky400          = Color(0xFF38BDF8)   // sky-400 — terciario en oscuro
 
 // Semánticos (modo oscuro). Sobre blanco no llegan a 4,5:1 → usar las variantes *OnLight
 // en claro a través de MaterialTheme.colorScheme.success / warning / urgent (Theme.kt).
@@ -33,14 +41,16 @@ val TextPrimary     = Color(0xFFFAFAFA)   // zinc-50
 val TextSecondary   = Color(0xFFA1A1AA)   // zinc-400
 
 // Fondo light mode
-val BackgroundLight = Color(0xFFFAFAFA)
+val BackgroundLight = Color(0xFFFAF9FD)   // blanco con un toque violeta
 val SurfaceLight    = Color(0xFFFFFFFF)
-val SurfaceVariantLight = Color(0xFFF4F4F5)  // zinc-100
+val SurfaceVariantLight = Color(0xFFF3F1F8)
 
 // ── Gradientes — pares de colores con nombre canónico ─────────────────────────
 
-val GradientIndigoStart = Color(0xFF6366F1)   // indigo-500
-val GradientIndigoEnd   = Color(0xFF8B5CF6)   // violet-500
+// Degradado de marca (el del logo): rosa → violeta → azul
+val GradientBrandStart  = Color(0xFFEC4899)   // pink-500
+val GradientBrandMid    = Color(0xFF8B5CF6)   // violet-500
+val GradientBrandEnd    = Color(0xFF3B82F6)   // blue-500
 
 val GradientTealStart   = Color(0xFF0D9488)   // teal-600
 val GradientTealEnd     = Color(0xFF0891B2)   // cyan-600
@@ -49,8 +59,9 @@ val GradientAmberStart  = Color(0xFFD97706)   // amber-600
 val GradientAmberEnd    = Color(0xFFDC2626)   // red-600
 
 // Gradientes "profundos" para tarjetas con texto blanco encima (≥4,5:1 con blanco al 100 %)
-val GradientIndigoDeepStart = Color(0xFF4F46E5)   // indigo-600
-val GradientIndigoDeepEnd   = Color(0xFF7C3AED)   // violet-600
+val GradientBrandDeepStart  = Color(0xFFDB2777)   // pink-600   (4,6:1 con blanco)
+val GradientBrandDeepMid    = Color(0xFF7C3AED)   // violet-600 (5,7:1)
+val GradientBrandDeepEnd    = Color(0xFF2563EB)   // blue-600   (5,2:1)
 
 val GradientTealDeepStart   = Color(0xFF0F766E)   // teal-700
 val GradientTealDeepEnd     = Color(0xFF0E7490)   // cyan-700

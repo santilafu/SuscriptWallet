@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Fondo del splash en modo oscuro: coincide con BackgroundDark (zinc-950) del tema Compose. -->
-    <color name="splash_background">#09090B</color>
+    <color name="splash_background">#0B0A12</color>
 </resources>

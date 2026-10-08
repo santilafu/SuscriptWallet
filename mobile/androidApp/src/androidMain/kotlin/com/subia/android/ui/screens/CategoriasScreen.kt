@@ -52,7 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.subia.android.R
 import com.subia.android.ui.components.ErrorState
-import com.subia.android.ui.theme.Indigo500
+import com.subia.android.ui.theme.Violet600
 import com.subia.shared.model.Category
 import com.subia.shared.viewmodel.CategoriasUiState
 import com.subia.shared.viewmodel.CategoriasViewModel
@@ -97,7 +97,7 @@ fun CategoriasScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { if (!crearDeshabilitado) mostrarFormulario = true },
-                containerColor = Indigo500,
+                containerColor = Violet600,
                 elevation = FloatingActionButtonDefaults.elevation(4.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.new_category), tint = Color.White)

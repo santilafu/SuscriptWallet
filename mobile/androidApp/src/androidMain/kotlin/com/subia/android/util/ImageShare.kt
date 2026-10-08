@@ -50,7 +50,7 @@ private fun generarBitmap(d: ResumenCompartible): Bitmap {
     val bg = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         shader = LinearGradient(
             0f, 0f, w.toFloat(), h.toFloat(),
-            intArrayOf(0xFF6366F1.toInt(), 0xFF8B5CF6.toInt(), 0xFFA78BFA.toInt()),
+            intArrayOf(0xFFDB2777.toInt(), 0xFF7C3AED.toInt(), 0xFF2563EB.toInt()),
             null, Shader.TileMode.CLAMP
         )
     }

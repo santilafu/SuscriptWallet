@@ -48,7 +48,7 @@
                             <input type="text" id="colorText"
                                    th:value="${category.color}"
                                    pattern="#[0-9a-fA-F]{6}"
-                                   placeholder="#6366f1"
+                                   placeholder="#7c3aed"
                                    readonly
                                    class="flex-1 px-3 py-2.5 bg-elevated border border-white/[0.08] rounded-lg text-sm text-slate-300 font-mono focus:outline-none cursor-default"/>
                         </div>
@@ -83,17 +83,17 @@
         <div class="w-full max-w-xs">
             <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3" th:text="#{cat.form.preview}">Preview</p>
             <div class="enter glass-card rounded-xl overflow-hidden" id="previewCard" style="animation-delay:90ms">
-                <div class="flex flex-col" id="previewBorder" style="border-left: 4px solid #6366f1;">
+                <div class="flex flex-col" id="previewBorder" style="border-left: 4px solid #7c3aed;">
                     <div class="p-5">
                         <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4"
-                             id="previewIconBg" style="background: rgba(99,102,241,0.13);">
+                             id="previewIconBg" style="background: rgba(124,58,237,0.13);">
                             <span id="previewIcon">📁</span>
                         </div>
                         <div class="font-bold text-slate-100 text-base mb-2" id="previewName">Nombre</div>
                         <div class="flex items-center gap-2">
                             <span class="w-4 h-4 rounded flex-shrink-0" id="previewSwatch"
-                                  style="background: #6366f1;"></span>
-                            <code class="text-xs text-slate-500 font-mono" id="previewHex">#6366f1</code>
+                                  style="background: #7c3aed;"></span>
+                            <code class="text-xs text-slate-500 font-mono" id="previewHex">#7c3aed</code>
                         </div>
                     </div>
                 </div>
@@ -114,7 +114,7 @@
         const previewHex     = document.getElementById('previewHex');
 
         function updatePreview() {
-            const color = colorPicker.value || '#6366f1';
+            const color = colorPicker.value || '#7c3aed';
             const name  = nameInput.value.trim() || 'Nombre';
             const icon  = iconInput.value.trim() || '📁';
 

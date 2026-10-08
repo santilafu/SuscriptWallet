@@ -82,7 +82,7 @@ import com.subia.android.R
 import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.components.formatearImporte
 import com.subia.android.ui.components.importeConPeriodo
-import com.subia.android.ui.theme.Indigo500
+import com.subia.android.ui.theme.Violet600
 import com.subia.android.util.NotificacionesPermiso
 import com.subia.android.util.fechaIsoLegible
 import com.subia.shared.model.CatalogItem
@@ -569,7 +569,7 @@ fun SuscripcionFormScreen(
                     },
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Indigo500, contentColor = Color.White),
+                    colors = ButtonDefaults.buttonColors(containerColor = Violet600, contentColor = Color.White),
                     enabled = puedeGuardar && !camposBloqueados
                 ) {
                     if (isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White)

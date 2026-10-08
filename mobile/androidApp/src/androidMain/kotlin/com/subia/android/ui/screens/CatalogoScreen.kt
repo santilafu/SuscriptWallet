@@ -35,6 +35,12 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,7 +55,8 @@ import com.subia.android.R
 import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.components.ErrorState
 import com.subia.android.ui.components.formatearImporte
-import com.subia.android.ui.components.importeConPeriodo
+import com.subia.android.ui.components.formatearImporteCorto
+import com.subia.android.ui.components.sufijoPeriodo
 import com.subia.android.ui.theme.success
 import com.subia.shared.model.CatalogItem
 import com.subia.shared.viewmodel.CatalogoUiState
@@ -239,17 +246,12 @@ private fun CatalogoItemCard(item: CatalogItem, onSeleccionar: (CatalogItem) -> 
             )
             item.precioMensual?.let {
                 // Recibos de importe variable (luz, teléfono, seguro): "≈" y la etiqueta debajo,
-                // para que nadie lea 70 € como la tarifa exacta.
-                // `price` es el precio del ciclo del servicio: un seguro anual es "450 €/año", no "/mes".
-                val importe = importeConPeriodo(it, item.moneda, item.periodoFacturacion)
-                Text(
-                    if (item.variablePrice) stringResource(R.string.price_approx_prefix, importe) else importe,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    textAlign = TextAlign.Center,
-                    // Dos líneas como red: en pantallas estrechas parte por "/" en vez de cortar.
-                    maxLines = 2
+                // para que nadie lea 70 € como la tarifa exacta. `price` es el precio del ciclo
+                // del servicio: un seguro anual es "450 €/año", no "/mes".
+                PrecioCatalogo(
+                    importe = formatearImporteCorto(it, item.moneda),
+                    periodo = "/" + sufijoPeriodo(item.periodoFacturacion),
+                    aproximado = item.variablePrice
                 )
                 if (item.variablePrice) {
                     Text(
@@ -272,4 +274,30 @@ private fun CatalogoItemCard(item: CatalogItem, onSeleccionar: (CatalogItem) -> 
             }
         }
     }
+}
+
+/**
+ * "≈ 30 €/mes" en una sola línea: el importe manda y el periodo va más pequeño. Si aun así
+ * no cabe en la tarjeta (importes largos, fuentes grandes) se reduce el tamaño en vez de partir
+ * la línea por la barra o cortar el texto.
+ */
+@Composable
+private fun PrecioCatalogo(importe: String, periodo: String, aproximado: Boolean) {
+    val base = MaterialTheme.typography.titleSmall
+    var escala by remember(importe, periodo) { mutableFloatStateOf(1f) }
+    val texto = buildAnnotatedString {
+        if (aproximado) append("≈ ")
+        append(importe)
+        withStyle(SpanStyle(fontSize = base.fontSize * 0.78f, fontWeight = FontWeight.SemiBold)) { append(periodo) }
+    }
+    Text(
+        texto,
+        style = base.copy(fontSize = base.fontSize * escala),
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.primary,
+        textAlign = TextAlign.Center,
+        maxLines = 1,
+        softWrap = false,
+        onTextLayout = { if (it.hasVisualOverflow && escala > 0.7f) escala -= 0.08f }
+    )
 }

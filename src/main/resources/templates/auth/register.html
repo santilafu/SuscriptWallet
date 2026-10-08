@@ -16,12 +16,12 @@
         .card { background-color: #111827; border: 1px solid rgba(255,255,255,0.08); border-radius: 1rem; }
         .input-field { background-color: #1a2235; border: 1px solid rgba(255,255,255,0.12); color: #f1f5f9; border-radius: 0.5rem; padding: 0.625rem 0.75rem; font-size: 0.875rem; width: 100%; box-sizing: border-box; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
         .input-field::placeholder { color: #64748b; }
-        .input-field:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
-        .btn-primary { background-color: #6366f1; color: #fff; border: none; border-radius: 0.5rem; padding: 0.625rem 1rem; font-size: 0.875rem; font-weight: 500; width: 100%; cursor: pointer; transition: background-color 0.15s; }
-        .btn-primary:hover { background-color: #4f46e5; }
+        .input-field:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.2); }
+        .btn-primary { background-color: #7c3aed; color: #fff; border: none; border-radius: 0.5rem; padding: 0.625rem 1rem; font-size: 0.875rem; font-weight: 500; width: 100%; cursor: pointer; transition: background-color 0.15s; }
+        .btn-primary:hover { background-color: #6d28d9; }
         .label { display: block; font-size: 0.875rem; font-weight: 500; color: #cbd5e1; margin-bottom: 0.25rem; }
-        .link-accent { color: #818cf8; text-decoration: none; font-weight: 500; }
-        .link-accent:hover { color: #6366f1; }
+        .link-accent { color: #a78bfa; text-decoration: none; font-weight: 500; }
+        .link-accent:hover { color: #7c3aed; }
         .requirements-box { background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.5rem; padding: 0.75rem; font-size: 0.75rem; color: #94a3b8; }
 
         /* Entrada escalonada (curva fuerte, ease-out). */
@@ -40,19 +40,19 @@
     <div class="flex items-center justify-center gap-1 mb-4">
         <i class="bi bi-globe2 text-slate-500 text-xs mr-1"></i>
         <a href="?lang=es" class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
-           th:classappend="${#locale.language == 'es'} ? 'text-indigo-300' : 'text-slate-500 hover:text-slate-200'"
-           th:styleappend="${#locale.language == 'es'} ? 'background:rgba(99,102,241,0.2);' : ''">ES</a>
+           th:classappend="${#locale.language == 'es'} ? 'text-violet-300' : 'text-slate-500 hover:text-slate-200'"
+           th:styleappend="${#locale.language == 'es'} ? 'background:rgba(124,58,237,0.2);' : ''">ES</a>
         <a href="?lang=en" class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
-           th:classappend="${#locale.language == 'en'} ? 'text-indigo-300' : 'text-slate-500 hover:text-slate-200'"
-           th:styleappend="${#locale.language == 'en'} ? 'background:rgba(99,102,241,0.2);' : ''">EN</a>
+           th:classappend="${#locale.language == 'en'} ? 'text-violet-300' : 'text-slate-500 hover:text-slate-200'"
+           th:styleappend="${#locale.language == 'en'} ? 'background:rgba(124,58,237,0.2);' : ''">EN</a>
         <a href="?lang=fr" class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
-           th:classappend="${#locale.language == 'fr'} ? 'text-indigo-300' : 'text-slate-500 hover:text-slate-200'"
-           th:styleappend="${#locale.language == 'fr'} ? 'background:rgba(99,102,241,0.2);' : ''">FR</a>
+           th:classappend="${#locale.language == 'fr'} ? 'text-violet-300' : 'text-slate-500 hover:text-slate-200'"
+           th:styleappend="${#locale.language == 'fr'} ? 'background:rgba(124,58,237,0.2);' : ''">FR</a>
     </div>
     <div class="auth-enter text-center mb-8" style="animation-delay:0ms;">
         <a href="/dashboard" class="inline-flex items-center gap-2 font-bold text-2xl no-underline" style="color: inherit;">
-            <i class="bi bi-credit-card-2-front text-3xl" style="color: #818cf8;"></i>
-            <span translate="no" style="color: #818cf8;">SusCript</span><span translate="no" style="color: #f1f5f9;">Wallet</span>
+            <i class="bi bi-credit-card-2-front text-3xl" style="color: #a78bfa;"></i>
+            <span translate="no" style="color: #a78bfa;">SusCript</span><span translate="no" style="color: #f1f5f9;">Wallet</span>
         </a>
         <p class="mt-2 text-sm" style="color: #94a3b8;" th:text="#{app.subtitle}">Gestión de suscripciones</p>
     </div>

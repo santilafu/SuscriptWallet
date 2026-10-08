@@ -58,7 +58,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.subia.android.ui.ServiceLogo
-import com.subia.android.ui.theme.Indigo500
+import com.subia.android.ui.theme.Violet600
 import com.subia.android.ui.theme.success
 import com.subia.android.ui.theme.urgent
 import com.subia.shared.repository.CatalogRepository
@@ -204,7 +204,7 @@ fun SuscripcionDetalleScreen(
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                             shape = RoundedCornerShape(14.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Indigo500,
+                                containerColor = Violet600,
                                 contentColor = Color.White
                             )
                         ) {

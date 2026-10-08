@@ -33,10 +33,10 @@ import com.subia.android.MainActivity
 import com.subia.android.R
 import com.subia.android.ui.components.formatearImporte
 import com.subia.android.ui.theme.BackgroundDark
-import com.subia.android.ui.theme.Indigo200
-import com.subia.android.ui.theme.Indigo400
-import com.subia.android.ui.theme.Indigo500
-import com.subia.android.ui.theme.Indigo700
+import com.subia.android.ui.theme.Violet200
+import com.subia.android.ui.theme.Violet400
+import com.subia.android.ui.theme.Violet600
+import com.subia.android.ui.theme.Violet800
 import com.subia.android.ui.theme.Surface700
 import com.subia.android.ui.theme.Surface800
 import com.subia.android.ui.theme.Surface900
@@ -128,14 +128,14 @@ class ResumenWidget : GlanceAppWidget() {
 /** Misma paleta que `SubIATheme` (Theme.kt mantiene sus esquemas privados; se replican aquí los tokens usados). */
 private val ColoresMarca = ColorProviders(
     light = lightColorScheme(
-        primary = Indigo500, onPrimary = SurfaceLight,
-        primaryContainer = Indigo200, onPrimaryContainer = Indigo700,
+        primary = Violet600, onPrimary = SurfaceLight,
+        primaryContainer = Violet200, onPrimaryContainer = Violet800,
         surface = SurfaceLight, onSurface = Surface900,
         surfaceVariant = SurfaceVariantLight, onSurfaceVariant = Surface700
     ),
     dark = darkColorScheme(
-        primary = Indigo400, onPrimary = BackgroundDark,
-        primaryContainer = Indigo700, onPrimaryContainer = Indigo200,
+        primary = Violet400, onPrimary = BackgroundDark,
+        primaryContainer = Violet800, onPrimaryContainer = Violet200,
         surface = Surface900, onSurface = TextPrimary,
         surfaceVariant = Surface800, onSurfaceVariant = TextSecondary
     )

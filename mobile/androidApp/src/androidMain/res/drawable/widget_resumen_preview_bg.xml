@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Fondo de la vista previa del widget: primaryContainer claro (indigo-200) con radio 16 dp. -->
+<!-- Fondo de la vista previa del widget: primaryContainer claro (violet-200) con radio 16 dp. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#C7D2FE" />
+    <solid android:color="#DDD6FE" />
     <corners android:radius="16dp" />
 </shape>

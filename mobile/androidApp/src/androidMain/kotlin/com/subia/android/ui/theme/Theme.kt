@@ -16,10 +16,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
 private val DarkColors = darkColorScheme(
-    primary            = Indigo400,
+    primary            = Violet400,
     onPrimary          = BackgroundDark,
-    primaryContainer   = Indigo700,
-    onPrimaryContainer = Indigo200,
+    primaryContainer   = Violet800,
+    onPrimaryContainer = Violet200,
+    secondary          = Pink400,
+    onSecondary        = BackgroundDark,
+    tertiary           = Sky400,
+    onTertiary         = BackgroundDark,
     background         = BackgroundDark,
     onBackground       = TextPrimary,
     surface            = Surface900,
@@ -31,10 +35,14 @@ private val DarkColors = darkColorScheme(
 )
 
 private val LightColors = lightColorScheme(
-    primary            = Indigo500,
+    primary            = Violet600,
     onPrimary          = SurfaceLight,
-    primaryContainer   = Indigo200,
-    onPrimaryContainer = Indigo700,
+    primaryContainer   = Color(0xFFEDE9FE),   // violet-100
+    onPrimaryContainer = Violet800,
+    secondary          = Pink600,
+    onSecondary        = SurfaceLight,
+    tertiary           = Sky600,
+    onTertiary         = SurfaceLight,
     background         = BackgroundLight,
     onBackground       = Surface900,
     surface            = SurfaceLight,
@@ -73,7 +81,7 @@ private val SubIAShapes = Shapes(
  *
  * @param dynamicColor si es `true` y el dispositivo es Android 12+ (S), usa la paleta
  *   Material You derivada del fondo de pantalla del usuario. Por defecto está desactivado
- *   para preservar la identidad índigo de la marca; se puede exponer como preferencia.
+ *   para preservar la identidad violeta de la marca (logo 2026); se puede exponer como preferencia.
  */
 @Composable
 fun SubIATheme(

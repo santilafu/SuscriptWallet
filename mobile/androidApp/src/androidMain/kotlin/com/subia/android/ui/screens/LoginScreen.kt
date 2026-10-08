@@ -73,13 +73,16 @@ import androidx.compose.ui.unit.sp
 import com.subia.android.R
 import com.subia.android.auth.GoogleSignInHelper
 import com.subia.android.auth.GoogleSignInResult
-import com.subia.android.ui.theme.GradientIndigoEnd
-import com.subia.android.ui.theme.GradientIndigoStart
+import com.subia.android.ui.theme.GradientBrandEnd
+import com.subia.android.ui.theme.GradientBrandMid
+import com.subia.android.ui.theme.GradientBrandStart
 import com.subia.shared.viewmodel.AuthError
 import com.subia.shared.viewmodel.AuthUiState
 import com.subia.shared.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
+import com.subia.android.ui.theme.Violet600
+import com.subia.android.ui.theme.Violet400
 
 private const val WEB_BASE = "https://suscriptwallet.onrender.com"
 
@@ -101,7 +104,7 @@ fun LoginScreen(
     val isLoading = uiState is AuthUiState.Loading
 
     val buttonGradient = Brush.horizontalGradient(
-        colors = listOf(GradientIndigoStart, GradientIndigoEnd)
+        colors = listOf(GradientBrandStart, GradientBrandMid, GradientBrandEnd)
     )
 
     LaunchedEffect(uiState) {
@@ -140,7 +143,7 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.size(12.dp))
                 Text(
                     text = buildAnnotatedString {
-                        withStyle(SpanStyle(color = Color(0xFF818CF8), fontWeight = FontWeight.Bold, fontSize = 22.sp)) {
+                        withStyle(SpanStyle(color = Violet400, fontWeight = FontWeight.Bold, fontSize = 22.sp)) {
                             append("Suscript")
                         }
                         withStyle(SpanStyle(color = Color(0xFFF1F5F9), fontWeight = FontWeight.Bold, fontSize = 22.sp)) {
@@ -207,11 +210,11 @@ fun LoginScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF6366F1),
+                            focusedBorderColor = Violet600,
                             unfocusedBorderColor = Color(0x1FFFFFFF),
                             focusedTextColor = Color(0xFFF1F5F9),
                             unfocusedTextColor = Color(0xFFF1F5F9),
-                            cursorColor = Color(0xFF6366F1),
+                            cursorColor = Violet600,
                             focusedContainerColor = Color(0xFF1A2235),
                             unfocusedContainerColor = Color(0xFF1A2235)
                         ),
@@ -237,11 +240,11 @@ fun LoginScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF6366F1),
+                            focusedBorderColor = Violet600,
                             unfocusedBorderColor = Color(0x1FFFFFFF),
                             focusedTextColor = Color(0xFFF1F5F9),
                             unfocusedTextColor = Color(0xFFF1F5F9),
-                            cursorColor = Color(0xFF6366F1),
+                            cursorColor = Violet600,
                             focusedContainerColor = Color(0xFF1A2235),
                             unfocusedContainerColor = Color(0xFF1A2235)
                         ),
@@ -278,7 +281,7 @@ fun LoginScreen(
                         ) {
                             Text(
                                 text = stringResource(R.string.forgot_password),
-                                color = Color(0xFF818CF8),
+                                color = Violet400,
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Medium
                             )
@@ -407,7 +410,7 @@ fun LoginScreen(
                             Text(
                                 text = stringResource(R.string.create_account),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF818CF8),
+                                color = Violet400,
                                 fontWeight = FontWeight.Medium
                             )
                         }

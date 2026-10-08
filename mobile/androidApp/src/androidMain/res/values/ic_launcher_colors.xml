@@ -3,6 +3,6 @@
     <!-- Fondo sólido del icono adaptativo: violeta del degradado del logo 2026 (solo se ve
          en la animación de lanzamiento; el primer plano ya es opaco). -->
     <color name="ic_launcher_background">#7B3FE4</color>
-    <!-- Fondo del splash: coincide con BackgroundLight (zinc-50) del tema Compose. -->
-    <color name="splash_background">#FAFAFA</color>
+    <!-- Fondo del splash: coincide con BackgroundLight (blanco violáceo) del tema Compose. -->
+    <color name="splash_background">#FAF9FD</color>
 </resources>
