@@ -17,9 +17,9 @@ object ChartColors {
     val acento: Color
         @Composable get() = MaterialTheme.colorScheme.primary
 
-    /** Marcas de contexto (el resto de meses). ≥ 3:1 sobre la superficie en claro y oscuro. */
+    /** Marcas de contexto (el resto de meses): gris suave para que el mes elegido mande; con 0,6 la pared de barras grises dominaba la tarjeta. */
     val neutro: Color
-        @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+        @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
 
     /** Pista vacía bajo una barra / línea base: un paso fuera de la superficie. */
     val pista: Color

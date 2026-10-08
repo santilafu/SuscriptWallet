@@ -17,7 +17,13 @@ data class CatalogItem(
     @SerialName("trialDays") val diasPrueba: Int? = null,
     @SerialName("cancelUrl") val cancelUrl: String? = null,
     @SerialName("domain") val domain: String? = null,
-    @SerialName("iconUrl") val iconUrl: String? = null
+    @SerialName("iconUrl") val iconUrl: String? = null,
+    /**
+     * `true` en recibos de importe variable (suministros, telecos, seguros): el
+     * precio es orientativo. Opcional con default `false` porque las versiones
+     * del backend anteriores a los recibos recurrentes no lo envían.
+     */
+    @SerialName("variablePrice") val variablePrice: Boolean = false
 ) {
     fun hasBothCycles(): Boolean = precioMensual != null && precioAnual != null
 

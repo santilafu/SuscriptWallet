@@ -73,6 +73,11 @@ class CatalogoViewModel(
         }
         var resultado = items
         if (categoria != null) resultado = resultado.filter { it.categoriaKey == categoria }
+        // Sin filtro de categoría, un servicio que está en "prueba" y en su categoría real
+        // salía dos veces seguidas en la rejilla: se queda el de la categoría real.
+        else resultado = resultado
+            .groupBy { it.nombre.lowercase() }
+            .map { (_, mismos) -> mismos.firstOrNull { it.categoriaKey != "prueba" } ?: mismos.first() }
         if (query.isNotBlank()) resultado = resultado.filter { it.nombre.contains(query, ignoreCase = true) }
         resultado
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())

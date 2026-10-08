@@ -43,7 +43,7 @@
     <string name="tira_next_charge">Próximo cobro</string>
     <string name="tira_no_charge">sin cobros</string>
     <string name="tira_open_sub">Abrir %1$s</string>
-    <string name="tira_empty">Nada que pagar en los próximos 14 días</string>
+    <string name="tira_empty">Ningún cobro en estas dos semanas</string>
     <string name="day_today">Hoy</string>
     <string name="day_tomorrow">Mañana</string>
     <plurals name="in_n_days">
@@ -180,6 +180,13 @@
     <string name="cat_educacion">Educación</string>
     <string name="cat_creatividad">Creatividad</string>
     <string name="cat_citas">Social</string>
+    <string name="cat_hogar">Hogar y suministros</string>
+    <string name="cat_seguros">Seguros</string>
+    <string name="cat_telecos">Telecomunicaciones</string>
+    <string name="cat_transporte">Transporte</string>
+    <string name="price_approx_prefix">≈ %1$s</string>
+    <string name="price_approx_label">Importe orientativo</string>
+    <string name="price_adjust_hint">Importe orientativo: ajústalo a tu última factura</string>
 
     <!-- Language -->
     <string name="language">Idioma</string>
@@ -220,7 +227,7 @@
     <string name="onb_next">Siguiente</string>
     <string name="onb_start">Empezar</string>
     <string name="onb1_title">Todas tus suscripciones, en un sitio</string>
-    <string name="onb1_desc">Netflix, Spotify, HBO, ChatGPT… Añádelas en segundos desde un catálogo con más de 320 servicios.</string>
+    <string name="onb1_desc">Netflix, ChatGPT, la luz, el móvil, el seguro… Añádelos en segundos desde un catálogo con más de 300 servicios.</string>
     <string name="onb2_title">Descubre cuánto gastas de verdad</string>
     <string name="onb2_desc">Tu gasto mensual y anual, claro y a la vista. El número te va a sorprender.</string>
     <string name="onb3_title">Nunca más un cobro por sorpresa</string>
@@ -253,14 +260,18 @@
     <string name="auth_error_generic">No se pudo iniciar sesión. Inténtalo de nuevo</string>
     <!-- Errores del formulario (mapeo de FormError del ViewModel) -->
     <string name="form_error_name_required">El nombre del servicio es obligatorio</string>
-    <string name="form_error_invalid_amount">Introduce un importe válido mayor que cero</string>
+    <string name="form_error_invalid_amount">Debe ser mayor que 0</string>
     <string name="form_error_renewal_date_required">La fecha de renovación es obligatoria</string>
     <string name="form_error_category_required">Selecciona una categoría</string>
     <string name="form_error_offline">Sin conexión. No es posible guardar cambios sin conexión</string>
     <string name="form_error_save_failed">No se ha podido guardar la suscripción. Inténtalo de nuevo</string>
     <!-- Pantalla de detección por Gmail -->
     <string name="gmail_scan_title">Detecta tus suscripciones</string>
-    <string name="gmail_scan_intro">Conecta tu Gmail y buscaremos recibos de suscripciones para que no tengas que añadirlas a mano. Solo leemos; no guardamos tus correos.</string>
+    <string name="gmail_scan_intro">Conecta tu Gmail y buscaremos recibos de suscripciones para que no tengas que añadirlas a mano.</string>
+    <string name="gmail_step1">Autorizas en Google el acceso de solo lectura</string>
+    <string name="gmail_step2">Buscamos recibos y facturas en tu correo</string>
+    <string name="gmail_step3">Eliges cuáles añadir a tu lista</string>
+    <string name="gmail_privacy">Solo leemos. No guardamos tus correos.</string>
     <string name="gmail_scan_connect">Conectar con Gmail</string>
     <string name="gmail_scan_waiting">Esperando la autorización…</string>
     <string name="gmail_scan_already_authorized">Ya autoricé</string>
@@ -316,6 +327,7 @@
     <string name="notif_status_off">Desactivados · toca para activar</string>
     <string name="help_section">Ayuda</string>
     <string name="view_tutorial_again">Ver el tutorial de nuevo</string>
+    <string name="view_tutorial_desc">Repasa lo básico en tres pantallas</string>
     <string name="password_show">Mostrar contraseña</string>
     <string name="password_hide">Ocultar contraseña</string>
     <string name="tomorrow">mañana</string>

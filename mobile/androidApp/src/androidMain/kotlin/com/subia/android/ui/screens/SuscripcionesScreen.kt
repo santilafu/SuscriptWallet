@@ -78,6 +78,8 @@ import com.subia.android.ui.components.formatearImporte
 import com.subia.android.ui.theme.Indigo500
 import com.subia.android.ui.theme.urgent
 import com.subia.android.util.fechaIsoLegible
+import com.subia.android.util.proximaRenovacionIso
+import com.subia.android.util.fechaIsoCorta
 import com.subia.shared.model.Category
 import com.subia.shared.model.Subscription
 import com.subia.shared.viewmodel.SuscripcionesUiState
@@ -95,7 +97,8 @@ private val serviciosSugeridos = listOf(
     "Netflix" to "netflix.com",
     "Spotify" to "spotify.com",
     "ChatGPT" to "openai.com",
-    "Iberdrola" to "iberdrola.es"
+    // Un recibo (teleco) en vez de Iberdrola, cuyo favicon solo existe a 16 px y salía borroso.
+    "Movistar" to "movistar.es"
 )
 
 /**
@@ -146,7 +149,7 @@ fun SuscripcionesScreen(
             val resultado = snackbarHostState.showSnackbar(
                 message = context.getString(R.string.sub_deleted, sub.nombre),
                 actionLabel = context.getString(R.string.undo),
-                duration = SnackbarDuration.Short
+                duration = SnackbarDuration.Long
             )
             if (resultado == SnackbarResult.ActionPerformed) viewModel.deshacerEliminacion(sub.id)
         }
@@ -326,12 +329,14 @@ private fun ListaSuscripciones(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 4.dp)
+                    .padding(start = 16.dp, end = 16.dp, top = 12.dp)
             )
         }
 
         stickyHeader {
-            Surface(color = MaterialTheme.colorScheme.surface) {
+            // Mismo color que el fondo de la página: con `surface` se veía una franja blanca
+            // entre el resumen y la lista. Sigue tapando las filas al quedar fija arriba.
+            Surface(color = MaterialTheme.colorScheme.background) {
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -478,7 +483,7 @@ private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Un
             Text(sub.nombre, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
                 periodoCiclo(sub.periodoFacturacion) + " · " +
-                    stringResource(R.string.renews_on, fechaIsoLegible(sub.fechaRenovacion)),
+                    stringResource(R.string.renews_on, fechaIsoCorta(proximaRenovacionIso(sub))),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

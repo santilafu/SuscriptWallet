@@ -3,6 +3,7 @@ package com.subia.shared
 import com.subia.shared.model.ProyeccionCobros
 import com.subia.shared.model.Subscription
 import com.subia.shared.model.calcularProyeccionCobros
+import com.subia.shared.model.proximaRenovacion
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -180,5 +181,33 @@ class ProyeccionCobrosTest {
         assertTrue(cats.none { it.categoriaId == 3L })
         assertEquals(83.98, p.totalMesActual["EUR"]!!, 1e-9)
         assertEquals(300.0 + 12.99 + 9.99 + 60.0 + 1.0, p.meses[2].total("EUR"), 1e-9)
+    }
+
+    // ── proximaRenovacion ────────────────────────────────────────────────
+
+    @Test
+    fun proximaRenovacion_futura_se_devuelve_tal_cual() {
+        assertEquals(LocalDate(2026, 10, 15), proximaRenovacion(sub(fecha = "2026-10-15"), hoy))
+    }
+
+    @Test
+    fun proximaRenovacion_hoy_cuenta_como_proxima() {
+        assertEquals(hoy, proximaRenovacion(sub(fecha = "2026-10-07"), hoy))
+    }
+
+    @Test
+    fun proximaRenovacion_mensual_pasada_avanza_al_siguiente_ciclo() {
+        assertEquals(LocalDate(2026, 10, 30), proximaRenovacion(sub(fecha = "2026-05-30"), hoy))
+        assertEquals(LocalDate(2026, 11, 3), proximaRenovacion(sub(fecha = "2026-05-03"), hoy))
+    }
+
+    @Test
+    fun proximaRenovacion_anual_pasada_avanza_un_anio() {
+        assertEquals(LocalDate(2027, 3, 1), proximaRenovacion(sub(periodo = "YEARLY", fecha = "2026-03-01"), hoy))
+    }
+
+    @Test
+    fun proximaRenovacion_fecha_invalida_es_null() {
+        assertNull(proximaRenovacion(sub(fecha = "no-es-fecha"), hoy))
     }
 }

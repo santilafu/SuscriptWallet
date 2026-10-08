@@ -1,5 +1,9 @@
 package com.subia.android.ui.screens
 
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import android.Manifest
 import android.app.Activity
 import android.content.Context
@@ -259,15 +263,29 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
-            Column(Modifier.selectableGroup()) {
-                reminderOptions.forEach { dias ->
-                    FilaRadio(
+            // Cuatro opciones cortas y excluyentes: control segmentado en una línea en vez de
+            // cuatro filas de radio (ocupaban media pantalla para elegir un número).
+            SingleChoiceSegmentedButtonRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
+            ) {
+                reminderOptions.forEachIndexed { indice, dias ->
+                    SegmentedButton(
                         selected = selectedDays == dias,
-                        label = if (dias == 1) stringResource(R.string.one_day) else stringResource(R.string.n_days, dias)
-                    ) {
-                        selectedDays = dias
-                        prefs.edit().putInt(KEY_NOTIFICATION_DAYS_BEFORE, dias).apply()
-                    }
+                        onClick = {
+                            selectedDays = dias
+                            prefs.edit().putInt(KEY_NOTIFICATION_DAYS_BEFORE, dias).apply()
+                        },
+                        shape = SegmentedButtonDefaults.itemShape(indice, reminderOptions.size),
+                        icon = {},
+                        label = {
+                            Text(
+                                if (dias == 1) stringResource(R.string.one_day) else stringResource(R.string.n_days, dias),
+                                maxLines = 1
+                            )
+                        }
+                    )
                 }
             }
             Text(
@@ -305,7 +323,7 @@ fun SettingsScreen(
             FilaNavegacion(
                 icon = Icons.Outlined.School,
                 titulo = stringResource(R.string.view_tutorial_again),
-                descripcion = stringResource(R.string.onb1_title),
+                descripcion = stringResource(R.string.view_tutorial_desc),
                 onClick = onVerTutorial
             )
             SeparadorSeccion()
@@ -413,6 +431,7 @@ private fun FilaRadio(selected: Boolean, label: String, onSelect: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         RadioButton(selected = selected, onClick = null)
+        Spacer(Modifier.width(16.dp))
         Text(text = label, style = MaterialTheme.typography.bodyLarge)
     }
 }

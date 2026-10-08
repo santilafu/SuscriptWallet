@@ -194,19 +194,33 @@ class SuscripcionesViewModel(
         }
     }
 
-    /** Elimina la suscripción con [id] de inmediato (ruta del botón del detalle). */
+    /** Elimina la suscripción con [id] de inmediato, en segundo plano. */
     fun eliminar(id: Long) {
-        viewModelScope.launch {
-            subscriptionRepository.delete(id)
-                .onSuccess {
-                    todasLasSuscripciones = todasLasSuscripciones.filterNot { it.id == id }
-                    cacheRepository.saveString(CACHE_KEY_SUBS, json.encodeToString(todasLasSuscripciones))
-                    SuscripcionesCambios.notificar()
-                    emitirFiltradas()
-                }
-                .onFailure { error -> _uiState.value = SuscripcionesUiState.Error(mensajeDeError(error)) }
-        }
+        viewModelScope.launch { eliminarAhora(id) }
     }
+
+    /**
+     * Elimina la suscripción con [id] y espera a la respuesta del servidor (ruta del botón del
+     * detalle). El detalle debe navegar atrás DESPUÉS de esto: si lo hacía justo tras llamar a
+     * [eliminar], su ViewModel se destruía, la corrutina se cancelaba y el DELETE no llegaba a
+     * salir (CancellationException en QA: la suscripción seguía en la lista).
+     *
+     * @return `true` si se borró; `false` si falló (el error queda en [uiState]).
+     */
+    suspend fun eliminarAhora(id: Long): Boolean =
+        subscriptionRepository.delete(id).fold(
+            onSuccess = {
+                todasLasSuscripciones = todasLasSuscripciones.filterNot { it.id == id }
+                cacheRepository.saveString(CACHE_KEY_SUBS, json.encodeToString(todasLasSuscripciones))
+                SuscripcionesCambios.notificar()
+                emitirFiltradas()
+                true
+            },
+            onFailure = { error ->
+                _uiState.value = SuscripcionesUiState.Error(mensajeDeError(error))
+                false
+            }
+        )
 
     private fun mensajeDeError(error: Throwable): String = when (error) {
         is NetworkException -> "Sin conexión. No es posible eliminar sin conexión"
@@ -225,7 +239,10 @@ class SuscripcionesViewModel(
     }
 
     companion object {
-        /** Ventana de deshacer: algo mayor que la duración corta del Snackbar (4 s). */
-        const val UNDO_WINDOW_MS = 4_500L
+        /**
+         * Ventana de deshacer: algo mayor que la duración larga del Snackbar (10 s). Con la
+         * corta (4 s) no daba tiempo a leer el aviso y llegar a "Deshacer" (visto en QA).
+         */
+        const val UNDO_WINDOW_MS = 10_500L
     }
 }

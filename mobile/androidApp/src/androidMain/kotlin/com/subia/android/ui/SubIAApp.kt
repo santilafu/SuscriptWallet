@@ -1,5 +1,8 @@
 package com.subia.android.ui
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.core.view.WindowCompat
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -19,6 +22,9 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -116,12 +122,31 @@ fun SubIAApp(
         if (!enGmail) navController.navigate(GmailScanRoute) { launchSingleTop = true }
     }
 
+    // Iconos de las barras del sistema: el login es siempre oscuro (marca), también con el
+    // sistema en claro, y con iconos oscuros la hora y la batería quedaban invisibles. Un único
+    // punto decide la apariencia según el destino; hacerlo en el propio login fallaba porque el
+    // onDispose del login saliente restauraba los iconos oscuros después del entrante.
+    val enLogin = currentDestination?.hasRoute(LoginRoute::class) != false
+    val temaOscuro = isSystemInDarkTheme()
+    val vista = LocalView.current
+    LaunchedEffect(enLogin, temaOscuro) {
+        val ventana = (vista.context as? android.app.Activity)?.window ?: return@LaunchedEffect
+        WindowCompat.getInsetsController(ventana, vista).apply {
+            isAppearanceLightStatusBars = !enLogin && !temaOscuro
+            isAppearanceLightNavigationBars = !enLogin && !temaOscuro
+        }
+    }
+
     // Pestaña activa (null fuera de las tres pestañas → sin barras del shell).
     val seccionActual = currentDestination?.let { dest ->
         bottomNavItems.firstOrNull { item -> dest.hasRoute(item.route::class) }
     }
 
     Scaffold(
+        // Sin las barras del shell (login, onboarding, formularios…) cada pantalla gestiona sus
+        // propios insets: si el Scaffold raíz también los aplicase, su fondo asomaría tras la
+        // barra de estado y las pantallas con TopAppBar propia tendrían el hueco duplicado.
+        contentWindowInsets = if (seccionActual != null) ScaffoldDefaults.contentWindowInsets else WindowInsets(0),
         topBar = {
             if (seccionActual != null) {
                 TopAppBar(
@@ -183,7 +208,9 @@ fun SubIAApp(
         NavHost(
             navController = navController,
             startDestination = startDestination,
-            modifier = Modifier.padding(innerPadding),
+            // consumeWindowInsets: los Scaffold internos (lista, catálogo) no vuelven a sumar
+            // la barra de estado que ya ocupa la TopAppBar del shell.
+            modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding),
             // Transiciones sutiles: fundido + ligero desplazamiento horizontal que insinúa
             // dirección al navegar (push) y al volver (pop), sin resultar intrusivo entre tabs.
             enterTransition = { fadeIn(tween(220)) + slideInHorizontally(tween(220)) { it / 12 } },

@@ -1,5 +1,8 @@
 package com.subia.android.ui.screens
 
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.WindowInsets
 import android.Manifest
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -68,7 +71,8 @@ private val serviciosPortada = listOf(
     ServicioEjemplo("Netflix", "netflix.com", 12.99),
     ServicioEjemplo("Spotify", "spotify.com", 10.99),
     ServicioEjemplo("ChatGPT", "openai.com", 21.99),
-    ServicioEjemplo("Iberdrola", "iberdrola.es", 48.0),
+    // Naturgy y no Iberdrola: el favicon de iberdrola.es solo existe a 16 px y se veía borroso.
+    ServicioEjemplo("Naturgy", "naturgy.es", 48.0),
     ServicioEjemplo("Movistar", "movistar.es", 39.9),
     ServicioEjemplo("Mapfre", "mapfre.es", 27.5)
 )
@@ -113,6 +117,9 @@ fun OnboardingScreen(onFinish: () -> Unit) {
     val pedirPermiso = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         onFinish()
     }
+    // Con el permiso ya concedido (p. ej. al repetir el tutorial desde Ajustes) el botón dice
+    // "Empezar" y no hay "Ahora no": ofrecer "Activar avisos" ya activados confundía.
+    val hayQuePedirAvisos = remember { NotificacionesPermiso.hayQuePedir(context) }
     val activarAvisos = {
         if (NotificacionesPermiso.hayQuePedir(context)) {
             NotificacionesPermiso.marcarPedidoAlGuardar(context)
@@ -122,7 +129,12 @@ fun OnboardingScreen(onFinish: () -> Unit) {
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(horizontal = 24.dp, vertical = 8.dp)
+    ) {
         // Saltar: siempre visible salvo en la última página, que ya ofrece "Ahora no".
         Row(modifier = Modifier.fillMaxWidth().height(48.dp), horizontalArrangement = Arrangement.End) {
             if (!esUltima) {
@@ -163,32 +175,30 @@ fun OnboardingScreen(onFinish: () -> Unit) {
 
         IndicadoresDePagina(actual = pagerState.currentPage, total = PAGINAS)
 
-        if (esUltima) {
-            Button(
-                onClick = activarAvisos,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(14.dp)
-            ) {
-                Text(
-                    text = stringResource(
-                        if (NotificacionesPermiso.requierePermiso) R.string.onb_notif_enable else R.string.onb_start
-                    ),
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-            if (NotificacionesPermiso.requierePermiso) {
-                Spacer(Modifier.height(8.dp))
-                TextButton(onClick = onFinish, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.onb_notif_later))
-                }
-            }
-        } else {
-            Button(
-                onClick = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(14.dp)
-            ) {
-                Text(text = stringResource(R.string.onb_next), fontWeight = FontWeight.SemiBold)
+        // Botón principal SIEMPRE en el mismo sitio y zona secundaria de alto fijo: al pasar
+        // de página no saltan ni los puntos ni el botón (antes subían 72 dp en la última).
+        Button(
+            onClick = {
+                if (esUltima) activarAvisos()
+                else scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
+            },
+            modifier = Modifier.fillMaxWidth().height(52.dp),
+            shape = RoundedCornerShape(14.dp)
+        ) {
+            Text(
+                text = stringResource(
+                    when {
+                        !esUltima -> R.string.onb_next
+                        hayQuePedirAvisos -> R.string.onb_notif_enable
+                        else -> R.string.onb_start
+                    }
+                ),
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+        Box(Modifier.fillMaxWidth().height(56.dp), contentAlignment = Alignment.Center) {
+            if (esUltima && hayQuePedirAvisos) {
+                TextButton(onClick = onFinish) { Text(stringResource(R.string.onb_notif_later)) }
             }
         }
     }
@@ -222,11 +232,13 @@ private fun PaginaLogos(animar: Boolean) {
                         enter = fadeIn(tween(220, delayMillis = indice * 50)) +
                             scaleIn(tween(220, delayMillis = indice * 50), initialScale = 0.92f)
                     ) {
+                        // Sin tinte tonal: el lavanda del tinte enmarcaba el fondo blanco del
+                        // logo y se veían dos marcos, uno dentro de otro.
                         Surface(
                             shape = RoundedCornerShape(18.dp),
                             color = MaterialTheme.colorScheme.surface,
-                            tonalElevation = 1.dp,
-                            shadowElevation = 1.dp
+                            tonalElevation = 0.dp,
+                            shadowElevation = 2.dp
                         ) {
                             Box(Modifier.padding(10.dp)) {
                                 ServiceLogo(
@@ -311,6 +323,11 @@ private fun PaginaGasto(activa: Boolean, animar: Boolean) {
 /** Página 3: la notificación tal y como la verán, en lugar de un icono de campana. */
 @Composable
 private fun PaginaAvisos() {
+    // Misma forma que la notificación real (RenovacionWorker): fecha dd/MM/yyyy dentro de 3 días.
+    val fechaEjemplo = remember {
+        val c = java.util.Calendar.getInstance().apply { add(java.util.Calendar.DAY_OF_YEAR, 3) }
+        java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(c.time)
+    }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -334,7 +351,7 @@ private fun PaginaAvisos() {
                     text = stringResource(
                         R.string.notif_renewal_text,
                         "Netflix",
-                        stringResource(R.string.tomorrow),
+                        fechaEjemplo,
                         "12,99",
                         "EUR"
                     ),

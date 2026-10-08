@@ -168,10 +168,7 @@ class SuscripcionFormViewModel(
         prerellenarDesdeCatalogo(item, BillingCycle.fromWire(item.periodoFacturacion))
         _catalogoSeleccionado.value = item
 
-        val claveBuscada = item.categoriaKey.normalizar()
-        val categoriaEncontrada = _categorias.value.firstOrNull { cat ->
-            cat.nombre.normalizar() == claveBuscada
-        }
+        val categoriaEncontrada = buscarCategoriaDeClave(item.categoriaKey, _categorias.value)
         categoriaEncontrada?.let { categoriaId.value = it.id }
     }
 
@@ -370,8 +367,39 @@ class SuscripcionFormViewModel(
             val normalizada = consulta.normalizar()
             return items
                 .filter { it.nombre.normalizar().contains(normalizada) }
+                // El catálogo repite servicios en "prueba" (pruebas gratis) y en su categoría real:
+                // en el desplegable salían dos "Spotify Premium" idénticos. Se queda uno por
+                // nombre, preferiendo el de la categoría real (la que se asignará al elegirlo).
+                .groupBy { it.nombre.normalizar() }
+                .map { (_, mismos) -> mismos.firstOrNull { it.categoriaKey != "prueba" } ?: mismos.first() }
                 .sortedWith(compareBy({ !it.nombre.normalizar().startsWith(normalizada) }, { it.nombre }))
                 .take(MAX_SUGERENCIAS)
+        }
+
+        /**
+         * Nombre sembrado de la categoría → clave del catálogo. Copia de
+         * `CategoryMappingService.NAME_TO_KEY` del backend: "Hogar y suministros" no se parece a
+         * "hogar" ni "Telecomunicaciones" a "telecos", así que comparar nombres no basta.
+         */
+        private val NOMBRE_A_CLAVE: Map<String, String> = mapOf(
+            "ia" to "ia", "streaming" to "streaming", "musica" to "musica", "software" to "software",
+            "cloud" to "cloud", "gaming" to "gaming", "seguridad" to "seguridad",
+            "noticias y lectura" to "noticias", "salud y deporte" to "salud", "desarrollo" to "desarrollo",
+            "prueba gratuita" to "prueba", "finanzas" to "finanzas", "educacion" to "educacion",
+            "creatividad y foto" to "creatividad", "citas y social" to "citas",
+            "hogar y suministros" to "hogar", "seguros" to "seguros",
+            "telecomunicaciones" to "telecos", "transporte" to "transporte"
+        )
+
+        /**
+         * Categoría del usuario que corresponde a la clave del catálogo: por el mapeo de nombres
+         * sembrados o, si el usuario la creó a mano, por nombre igual a la clave.
+         */
+        fun buscarCategoriaDeClave(clave: String, categorias: List<Category>): Category? {
+            val buscada = clave.trim().normalizar()
+            if (buscada.isEmpty()) return null
+            return categorias.firstOrNull { NOMBRE_A_CLAVE[it.nombre.trim().normalizar()] == buscada }
+                ?: categorias.firstOrNull { it.nombre.trim().normalizar() == buscada }
         }
 
         /** Minúsculas y sin acentos, para comparar nombres y claves de categoría. */

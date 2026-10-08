@@ -9,6 +9,7 @@ import com.subia.shared.repository.CategoryRepository
 import com.subia.shared.repository.SubscriptionRepository
 import com.subia.shared.storage.TokenStorageProvider
 import com.subia.shared.model.CatalogItem
+import com.subia.shared.model.Category
 import com.subia.shared.viewmodel.Campo
 import com.subia.shared.viewmodel.FormError
 import com.subia.shared.viewmodel.FormUiState
@@ -330,5 +331,45 @@ class SuscripcionFormViewModelTest {
         override fun getTokens(): AuthTokens = tokens
         override fun clearTokens() {}
         override fun hasTokens(): Boolean = true
+    }
+
+    // ── buscarCategoriaDeClave(): categoría al elegir del catálogo ─────────
+
+    private val categoriasSembradas = listOf(
+        Category(id = 1, nombre = "Streaming"),
+        Category(id = 2, nombre = "Hogar y suministros"),
+        Category(id = 3, nombre = "Telecomunicaciones"),
+        Category(id = 4, nombre = "Noticias y Lectura"),
+        Category(id = 5, nombre = "Seguros")
+    )
+
+    @Test
+    fun buscarCategoriaDeClave_resuelveNombresSembradosDistintosDeLaClave() {
+        assertEquals(2L, SuscripcionFormViewModel.buscarCategoriaDeClave("hogar", categoriasSembradas)?.id)
+        assertEquals(3L, SuscripcionFormViewModel.buscarCategoriaDeClave("telecos", categoriasSembradas)?.id)
+        assertEquals(4L, SuscripcionFormViewModel.buscarCategoriaDeClave("noticias", categoriasSembradas)?.id)
+    }
+
+    @Test
+    fun buscarCategoriaDeClave_nombreIgualALaClave() {
+        assertEquals(5L, SuscripcionFormViewModel.buscarCategoriaDeClave("seguros", categoriasSembradas)?.id)
+        assertEquals(1L, SuscripcionFormViewModel.buscarCategoriaDeClave("streaming", categoriasSembradas)?.id)
+    }
+
+    @Test
+    fun buscarCategoriaDeClave_sinCoincidenciaEsNull() {
+        assertNull(SuscripcionFormViewModel.buscarCategoriaDeClave("transporte", categoriasSembradas))
+        assertNull(SuscripcionFormViewModel.buscarCategoriaDeClave("", categoriasSembradas))
+    }
+
+    @Test
+    fun filtrarCatalogo_sinDuplicadosPorNombre_prefiereLaCategoriaReal() {
+        val items = listOf(
+            CatalogItem(id = 1, nombre = "Spotify Premium", precioMensual = 11.99, categoriaKey = "prueba"),
+            CatalogItem(id = 2, nombre = "Spotify Premium", precioMensual = 11.99, categoriaKey = "musica")
+        )
+        val resultado = SuscripcionFormViewModel.filtrarCatalogo("spoti", items, null)
+        assertEquals(1, resultado.size)
+        assertEquals("musica", resultado.first().categoriaKey)
     }
 }

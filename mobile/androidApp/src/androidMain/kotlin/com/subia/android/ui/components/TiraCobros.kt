@@ -62,6 +62,9 @@ fun TiraCobros(
     modifier: Modifier = Modifier
 ) {
     val fechaProximo: LocalDate? = proximoCobro?.fecha
+    // Sin ningún cobro en los 14 días la tira se queda en calendario (día + número): 80 dp de
+    // puntos vacíos se leían como contenido que no ha cargado.
+    val compacta = dias.none { it.tieneCobros }
     LazyRow(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(2.dp),
@@ -72,6 +75,7 @@ fun TiraCobros(
                 dia = dia,
                 esHoy = indice == 0,
                 esProximo = dia.tieneCobros && dia.fecha == fechaProximo,
+                compacta = compacta,
                 onOpenSuscripcion = onOpenSuscripcion
             )
         }
@@ -83,6 +87,7 @@ private fun DiaColumna(
     dia: DiaCobros,
     esHoy: Boolean,
     esProximo: Boolean,
+    compacta: Boolean,
     onOpenSuscripcion: (Long) -> Unit
 ) {
     val colores = MaterialTheme.colorScheme
@@ -138,6 +143,8 @@ private fun DiaColumna(
                 }
             )
         }
+
+        if (compacta) return@Column
 
         // Logos posados sobre el día
         Column(

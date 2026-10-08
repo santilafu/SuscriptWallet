@@ -48,6 +48,7 @@ import androidx.compose.ui.res.stringResource
 import com.subia.android.R
 import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.components.ErrorState
+import com.subia.android.ui.components.formatearImporte
 import com.subia.android.ui.theme.success
 import com.subia.shared.model.CatalogItem
 import com.subia.shared.viewmodel.CatalogoUiState
@@ -72,6 +73,10 @@ private fun nombreCategoria(key: String): String = when (key) {
     "educacion"   -> stringResource(R.string.cat_educacion)
     "creatividad" -> stringResource(R.string.cat_creatividad)
     "citas"       -> stringResource(R.string.cat_citas)
+    "hogar"       -> stringResource(R.string.cat_hogar)
+    "seguros"     -> stringResource(R.string.cat_seguros)
+    "telecos"     -> stringResource(R.string.cat_telecos)
+    "transporte"  -> stringResource(R.string.cat_transporte)
     else          -> key.replaceFirstChar { it.uppercaseChar() }
 }
 
@@ -224,18 +229,34 @@ private fun CatalogoItemCard(item: CatalogItem, onSeleccionar: (CatalogItem) -> 
                 item.nombre,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
+                // Siempre dos líneas de alto: si no, las tarjetas de una misma fila medían
+                // distinto según el nombre ("AdGuard Premium" vs "1Password").
+                minLines = 2,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center
             )
             item.precioMensual?.let {
+                // Recibos de importe variable (luz, teléfono, seguro): "≈" y la etiqueta debajo,
+                // para que nadie lea 70 € como la tarifa exacta.
+                val importe = formatearImporte(it, item.moneda) + "/" + stringResource(R.string.period_month)
                 Text(
-                    "%.2f €/m".format(it),
+                    if (item.variablePrice) stringResource(R.string.price_approx_prefix, importe) else importe,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    maxLines = 1
                 )
+                if (item.variablePrice) {
+                    Text(
+                        stringResource(R.string.price_approx_label),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        maxLines = 2
+                    )
+                }
             }
             item.annualSavingsPercent()?.takeIf { it > 0 }?.let { pct ->
                 Text(

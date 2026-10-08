@@ -1,5 +1,9 @@
 package com.subia.android.ui.screens
 
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -187,7 +191,50 @@ private fun Introduccion(onConectar: () -> Unit) {
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        Spacer(Modifier.height(28.dp))
+        // Cómo funciona: tres pasos reales (es una secuencia, por eso van numerados). Llena el
+        // vacío que quedaba hasta el botón con lo que la gente quiere saber antes de conectar.
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            listOf(R.string.gmail_step1, R.string.gmail_step2, R.string.gmail_step3).forEachIndexed { i, paso ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "${i + 1}",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    Spacer(Modifier.width(14.dp))
+                    Text(stringResource(paso), style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+        }
         Spacer(Modifier.weight(1f))
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Outlined.Lock,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                stringResource(R.string.gmail_privacy),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         Button(
             onClick = onConectar,
             modifier = Modifier.fillMaxWidth().height(52.dp),

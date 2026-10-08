@@ -121,6 +121,17 @@ private fun ocurrencias(sub: Subscription, hoy: LocalDate, fin: LocalDate): List
 }
 
 /**
+ * Próxima fecha de cobro (>= [hoy]) de [sub]. El backend guarda la fecha de renovación tal y como
+ * se dio de alta y no siempre la avanza, así que la lista y el detalle mostraban fechas pasadas
+ * ("Renueva: 3 may" en octubre). Devuelve null si la fecha no es una ISO válida.
+ */
+fun proximaRenovacion(sub: Subscription, hoy: LocalDate): LocalDate? {
+    val ancla = runCatching { LocalDate.parse(sub.fechaRenovacion.trim()) }.getOrNull() ?: return null
+    if (ancla >= hoy) return ancla
+    return ocurrencias(sub, hoy, hoy.plus(2, DateTimeUnit.YEAR)).firstOrNull() ?: ancla
+}
+
+/**
  * Calcula la [ProyeccionCobros] de las suscripciones **activas** a partir de [hoy].
  * Las inactivas y las que tienen fecha de renovación inválida se ignoran.
  */

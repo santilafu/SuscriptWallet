@@ -43,7 +43,7 @@
     <string name="tira_next_charge">Next charge</string>
     <string name="tira_no_charge">no charges</string>
     <string name="tira_open_sub">Open %1$s</string>
-    <string name="tira_empty">Nothing due in the next 14 days</string>
+    <string name="tira_empty">No charges in the next two weeks</string>
     <string name="day_today">Today</string>
     <string name="day_tomorrow">Tomorrow</string>
     <plurals name="in_n_days">
@@ -180,6 +180,13 @@
     <string name="cat_educacion">Education</string>
     <string name="cat_creatividad">Creativity</string>
     <string name="cat_citas">Social</string>
+    <string name="cat_hogar">Home &amp; utilities</string>
+    <string name="cat_seguros">Insurance</string>
+    <string name="cat_telecos">Telecom</string>
+    <string name="cat_transporte">Transport</string>
+    <string name="price_approx_prefix">≈ %1$s</string>
+    <string name="price_approx_label">Estimated amount</string>
+    <string name="price_adjust_hint">Estimated amount: adjust it to your latest bill</string>
 
     <!-- Language -->
     <string name="language">Language</string>
@@ -220,7 +227,7 @@
     <string name="onb_next">Next</string>
     <string name="onb_start">Get started</string>
     <string name="onb1_title">All your subscriptions, in one place</string>
-    <string name="onb1_desc">Netflix, Spotify, HBO, ChatGPT… Add them in seconds from a catalog of 320+ services.</string>
+    <string name="onb1_desc">Netflix, ChatGPT, power, phone, insurance… Add them in seconds from a catalog of 300+ services.</string>
     <string name="onb2_title">See what you really spend</string>
     <string name="onb2_desc">Your monthly and yearly spend, clear at a glance. The number will surprise you.</string>
     <string name="onb3_title">Never get charged by surprise again</string>
@@ -253,14 +260,18 @@
     <string name="auth_error_generic">Could not sign in. Please try again</string>
     <!-- Form errors (FormError mapping) -->
     <string name="form_error_name_required">The service name is required</string>
-    <string name="form_error_invalid_amount">Enter a valid amount greater than zero</string>
+    <string name="form_error_invalid_amount">Must be greater than 0</string>
     <string name="form_error_renewal_date_required">The renewal date is required</string>
     <string name="form_error_category_required">Select a category</string>
     <string name="form_error_offline">No connection. Changes can\'t be saved while offline</string>
     <string name="form_error_save_failed">The subscription could not be saved. Please try again</string>
     <!-- Gmail detection screen -->
     <string name="gmail_scan_title">Detect your subscriptions</string>
-    <string name="gmail_scan_intro">Connect your Gmail and we\'ll look for subscription receipts so you don\'t have to add them by hand. We only read; we never store your emails.</string>
+    <string name="gmail_scan_intro">Connect your Gmail and we\'ll look for subscription receipts so you don\'t have to add them by hand.</string>
+    <string name="gmail_step1">You grant read-only access in Google</string>
+    <string name="gmail_step2">We look for receipts and bills in your inbox</string>
+    <string name="gmail_step3">You choose which ones to add</string>
+    <string name="gmail_privacy">We only read. We never store your emails.</string>
     <string name="gmail_scan_connect">Connect with Gmail</string>
     <string name="gmail_scan_waiting">Waiting for authorization…</string>
     <string name="gmail_scan_already_authorized">I\'ve authorized it</string>
@@ -316,6 +327,7 @@
     <string name="notif_status_off">Off · tap to turn on</string>
     <string name="help_section">Help</string>
     <string name="view_tutorial_again">See the tutorial again</string>
+    <string name="view_tutorial_desc">Go over the basics in three screens</string>
     <string name="password_show">Show password</string>
     <string name="password_hide">Hide password</string>
     <string name="tomorrow">tomorrow</string>

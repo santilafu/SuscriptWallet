@@ -1,5 +1,10 @@
 package com.subia.android.ui.screens
 
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import com.subia.android.util.fechaIsoLegible
+import com.subia.android.util.proximaRenovacionIso
+import com.subia.android.ui.components.formatearImporte
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,7 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
@@ -73,6 +78,8 @@ fun SuscripcionDetalleScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var mostrarDialogoEliminar by remember { mutableStateOf(false) }
+    var eliminando by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val catalogRepository: CatalogRepository = koinInject()
     val uriHandler = LocalUriHandler.current
@@ -168,11 +175,11 @@ fun SuscripcionDetalleScreen(
                         .padding(horizontal = 20.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
-                    DetalleRow(stringResource(R.string.amount), "${suscripcion.precio} ${suscripcion.moneda}")
+                    DetalleRow(stringResource(R.string.amount), formatearImporte(suscripcion.precio, suscripcion.moneda))
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
                     DetalleRow(stringResource(R.string.billing), periodoCiclo(suscripcion.periodoFacturacion))
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
-                    DetalleRow(stringResource(R.string.next_renewal), suscripcion.fechaRenovacion)
+                    DetalleRow(stringResource(R.string.next_renewal), fechaIsoLegible(proximaRenovacionIso(suscripcion)))
                     if (suscripcion.descripcion.isNotBlank()) {
                         HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
                         DetalleRow(stringResource(R.string.description), suscripcion.descripcion)
@@ -211,15 +218,17 @@ fun SuscripcionDetalleScreen(
                                 onClick = { uriHandler.openUri(cancelUrl!!) },
                                 modifier = Modifier.fillMaxWidth().height(52.dp),
                                 shape = RoundedCornerShape(14.dp),
+                                // Neutro: abre la web del proveedor, no borra nada aquí. Dos botones
+                                // seguidos en naranja y rojo competían; el rojo queda para Eliminar.
                                 colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.urgent
+                                    contentColor = MaterialTheme.colorScheme.onSurface
                                 ),
                                 border = androidx.compose.foundation.BorderStroke(
                                     1.dp,
-                                    MaterialTheme.colorScheme.urgent.copy(alpha = 0.6f)
+                                    MaterialTheme.colorScheme.outlineVariant
                                 )
                             ) {
-                                Icon(Icons.Default.Cancel, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
                                 Text(stringResource(R.string.go_cancel_subscription), fontWeight = FontWeight.SemiBold)
                             }
@@ -227,6 +236,7 @@ fun SuscripcionDetalleScreen(
                         // Botón eliminar — outlined error
                         OutlinedButton(
                             onClick = { mostrarDialogoEliminar = true },
+                            enabled = !eliminando,
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                             shape = RoundedCornerShape(14.dp),
                             colors = ButtonDefaults.outlinedButtonColors(
@@ -237,7 +247,15 @@ fun SuscripcionDetalleScreen(
                                 MaterialTheme.colorScheme.error.copy(alpha = 0.6f)
                             )
                         ) {
-                            Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                            if (eliminando) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            } else {
+                                Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                            }
                             Spacer(Modifier.width(8.dp))
                             Text(stringResource(R.string.delete_subscription), fontWeight = FontWeight.SemiBold)
                         }
@@ -255,8 +273,13 @@ fun SuscripcionDetalleScreen(
                     TextButton(
                         onClick = {
                             mostrarDialogoEliminar = false
-                            viewModel.eliminar(suscripcionId)
-                            onNavigateBack()
+                            // Se vuelve atrás solo cuando el servidor confirma: navegar antes
+                            // destruía el ViewModel y cancelaba el DELETE en vuelo.
+                            eliminando = true
+                            scope.launch {
+                                if (viewModel.eliminarAhora(suscripcionId)) onNavigateBack()
+                                else eliminando = false
+                            }
                         },
                         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                     ) { Text(stringResource(R.string.delete)) }

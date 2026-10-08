@@ -7,6 +7,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlin.test.assertFalse
 
 /**
  * Pruebas de serialización para [CatalogItem] en el change `catalogo-modelo` (v2.13.0).
@@ -103,5 +105,29 @@ class CatalogItemSerializationTest {
         assertFailsWith<Exception> {
             json.decodeFromString<CatalogItem>(broken)
         }
+    }
+
+    @Test
+    fun variablePrice_defaults_to_false_when_absent() {
+        val item = json.decodeFromString<CatalogItem>(
+            """{"name": "Netflix", "price": 12.99, "categoryKey": "streaming"}"""
+        )
+        assertFalse(item.variablePrice)
+    }
+
+    @Test
+    fun variablePrice_true_is_parsed_for_recurring_bills() {
+        val item = json.decodeFromString<CatalogItem>(
+            """{"name": "Iberdrola", "price": 60.0, "categoryKey": "hogar", "variablePrice": true}"""
+        )
+        assertTrue(item.variablePrice)
+    }
+
+    @Test
+    fun variablePrice_false_is_parsed_explicitly() {
+        val item = json.decodeFromString<CatalogItem>(
+            """{"name": "Spotify", "price": 11.99, "variablePrice": false}"""
+        )
+        assertFalse(item.variablePrice)
     }
 }

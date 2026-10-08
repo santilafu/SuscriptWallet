@@ -1,5 +1,13 @@
 package com.subia.android.ui.screens
 
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.offset
+import androidx.compose.animation.AnimatedVisibility
 import android.Manifest
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -223,7 +231,15 @@ fun SuscripcionFormScreen(
             )
         }
     ) { innerPadding ->
-        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+        // imePadding: con edge-to-edge, adjustResize ya no encoge la ventana y el teclado tapaba
+        // Notas y Guardar. consumeWindowInsets evita sumar dos veces la barra de navegación.
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .consumeWindowInsets(innerPadding)
+                .imePadding()
+        ) {
             if (cargandoEdicion) LinearProgressIndicator(Modifier.fillMaxWidth())
 
             Column(
@@ -234,7 +250,7 @@ fun SuscripcionFormScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // ── Información del servicio ────────────────────────────────────────
-                SeccionFormulario(stringResource(R.string.service_info_section))
+                SeccionFormulario(stringResource(R.string.service_info_section), primera = true)
 
                 // Nombre con autocompletado: desplegable solo mientras hay sugerencias.
                 val mostrarSugerencias = menuNombreAbierto && sugerencias.isNotEmpty()
@@ -322,13 +338,25 @@ fun SuscripcionFormScreen(
                 // ── Facturación ─────────────────────────────────────────────────────
                 SeccionFormulario(stringResource(R.string.billing_section))
 
+                val transformacionDecimal = remember {
+                    if (java.text.DecimalFormatSymbols.getInstance().decimalSeparator == ',') {
+                        VisualTransformation { texto ->
+                            TransformedText(AnnotatedString(texto.text.replace('.', ',')), OffsetMapping.Identity)
+                        }
+                    } else VisualTransformation.None
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
                     var precioTuvoFoco by remember { mutableStateOf(false) }
                     OutlinedTextField(
                         value = precio,
                         onValueChange = { formViewModel.precio.value = it },
                         label = { Text(stringResource(R.string.amount_label)) },
-                        prefix = { Text(simboloMoneda(moneda)) },
+                        // "11,99 €" como se escribe en España/Francia (antes "€11.99"): símbolo
+                        // detrás salvo $ y £, y la coma decimal del idioma solo en pantalla (el
+                        // ViewModel acepta punto y coma).
+                        prefix = if (simboloDelante(moneda)) { { Text(simboloMoneda(moneda)) } } else null,
+                        suffix = if (!simboloDelante(moneda)) { { Text(simboloMoneda(moneda)) } } else null,
+                        visualTransformation = transformacionDecimal,
                         isError = errorDe(Campo.Precio) != null,
                         supportingText = textoDeError(errorDe(Campo.Precio)),
                         modifier = Modifier
@@ -365,6 +393,21 @@ fun SuscripcionFormScreen(
                             }
                         }
                     }
+                }
+
+                // Recibo de importe variable elegido del catálogo (luz, teléfono, seguro): el precio
+                // prerrellenado es orientativo. Va bajo la fila entera (como un supportingText a
+                // todo el ancho): bajo el campo de importe, que mide 5/8, se partía en tres líneas.
+                val esImporteOrientativo = catalogoSeleccionado?.variablePrice == true &&
+                    catalogoSeleccionado?.nombre.equals(nombre.trim(), ignoreCase = true) &&
+                    errorDe(Campo.Precio) == null
+                AnimatedVisibility(visible = esImporteOrientativo) {
+                    Text(
+                        text = stringResource(R.string.price_adjust_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp).offset(y = (-4).dp)
+                    )
                 }
 
                 ExposedDropdownMenuBox(expanded = expandedPeriodo, onExpandedChange = { expandedPeriodo = it }) {
@@ -602,8 +645,11 @@ private fun precioCortoDeCatalogo(item: CatalogItem): String? {
         item.precioMensual != null -> stringResource(R.string.period_month)
         else -> stringResource(R.string.period_year)
     }
-    return formatearImporte(precio, item.moneda) + "/" + periodo
+    val importe = formatearImporte(precio, item.moneda) + "/" + periodo
+    return if (item.variablePrice) stringResource(R.string.price_approx_prefix, importe) else importe
 }
+
+private fun simboloDelante(moneda: String): Boolean = moneda.uppercase() in setOf("USD", "GBP")
 
 private fun simboloMoneda(moneda: String): String = when (moneda.uppercase()) {
     "EUR" -> "€"
@@ -613,9 +659,10 @@ private fun simboloMoneda(moneda: String): String = when (moneda.uppercase()) {
 }
 
 @Composable
-private fun SeccionFormulario(titulo: String) {
+private fun SeccionFormulario(titulo: String, primera: Boolean = false) {
+    // Más aire encima que debajo: el título se agrupa con sus campos, no con los anteriores.
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(top = if (primera) 0.dp else 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {

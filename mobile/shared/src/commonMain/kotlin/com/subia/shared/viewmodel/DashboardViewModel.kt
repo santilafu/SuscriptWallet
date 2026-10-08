@@ -16,6 +16,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
@@ -130,7 +131,15 @@ class DashboardViewModel(
      */
     val proyeccion: StateFlow<ProyeccionCobros?> = _proyeccion.asStateFlow()
 
-    init { cargarEstadisticas() }
+    init {
+        cargarEstadisticas()
+        // Alta, edición o borrado en otra pantalla: el Inicio seguía mostrando los totales y la
+        // tira de antes (visto en QA tras crear una suscripción). drop(1): el valor actual al
+        // suscribirse no es un cambio nuevo.
+        viewModelScope.launch {
+            SuscripcionesCambios.version.drop(1).collect { cargarEstadisticas() }
+        }
+    }
 
     /** Carga las estadísticas del dashboard y los totales por divisa en paralelo. */
     fun cargarEstadisticas() {

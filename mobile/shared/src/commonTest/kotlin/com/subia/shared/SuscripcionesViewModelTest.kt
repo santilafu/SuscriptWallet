@@ -380,4 +380,17 @@ class SuscripcionesViewModelBorradoTest {
         override fun clearTokens() {}
         override fun hasTokens(): Boolean = true
     }
+
+    @Test
+    fun eliminarAhora_esperaAlServidorYDevuelveTrue() = runTest(dispatcher) {
+        val borrados = mutableListOf<Long>()
+        val vm = crearViewModel { borrados += it }
+        vm.esperarSuccess()
+
+        val ok = vm.eliminarAhora(1L)
+
+        assertTrue(ok)
+        assertEquals(listOf(1L), borrados, "El DELETE se ha enviado antes de volver")
+        assertEquals(listOf(2L), (vm.uiState.value as SuscripcionesUiState.Success).suscripciones.map { it.id })
+    }
 }

@@ -43,7 +43,7 @@
     <string name="tira_next_charge">Prochain prélèvement</string>
     <string name="tira_no_charge">aucun prélèvement</string>
     <string name="tira_open_sub">Ouvrir %1$s</string>
-    <string name="tira_empty">Rien à payer dans les 14 prochains jours</string>
+    <string name="tira_empty">Aucun prélèvement ces deux prochaines semaines</string>
     <string name="day_today">Aujourd\'hui</string>
     <string name="day_tomorrow">Demain</string>
     <plurals name="in_n_days">
@@ -180,6 +180,13 @@
     <string name="cat_educacion">Éducation</string>
     <string name="cat_creatividad">Créativité</string>
     <string name="cat_citas">Social</string>
+    <string name="cat_hogar">Maison et énergie</string>
+    <string name="cat_seguros">Assurances</string>
+    <string name="cat_telecos">Télécoms</string>
+    <string name="cat_transporte">Transports</string>
+    <string name="price_approx_prefix">≈ %1$s</string>
+    <string name="price_approx_label">Montant indicatif</string>
+    <string name="price_adjust_hint">Montant indicatif : ajustez-le à votre dernière facture</string>
 
     <!-- Language -->
     <string name="language">Langue</string>
@@ -220,7 +227,7 @@
     <string name="onb_next">Suivant</string>
     <string name="onb_start">Commencer</string>
     <string name="onb1_title">Tous vos abonnements, au même endroit</string>
-    <string name="onb1_desc">Netflix, Spotify, HBO, ChatGPT… Ajoutez-les en quelques secondes depuis un catalogue de plus de 320 services.</string>
+    <string name="onb1_desc">Netflix, ChatGPT, l’électricité, le mobile, l’assurance… Ajoutez-les en quelques secondes depuis un catalogue de plus de 300 services.</string>
     <string name="onb2_title">Découvrez ce que vous dépensez vraiment</string>
     <string name="onb2_desc">Votre dépense mensuelle et annuelle, claire en un coup d\'œil. Le chiffre va vous surprendre.</string>
     <string name="onb3_title">Plus jamais de prélèvement surprise</string>
@@ -253,14 +260,18 @@
     <string name="auth_error_generic">Impossible de se connecter. Réessayez</string>
     <!-- Erreurs du formulaire (mapping FormError) -->
     <string name="form_error_name_required">Le nom du service est obligatoire</string>
-    <string name="form_error_invalid_amount">Saisissez un montant valide supérieur à zéro</string>
+    <string name="form_error_invalid_amount">Doit être supérieur à 0</string>
     <string name="form_error_renewal_date_required">La date de renouvellement est obligatoire</string>
     <string name="form_error_category_required">Sélectionnez une catégorie</string>
     <string name="form_error_offline">Pas de connexion. Impossible d\'enregistrer les modifications hors ligne</string>
     <string name="form_error_save_failed">L\'abonnement n\'a pas pu être enregistré. Réessayez</string>
     <!-- Écran de détection Gmail -->
     <string name="gmail_scan_title">Détectez vos abonnements</string>
-    <string name="gmail_scan_intro">Connectez votre Gmail et nous chercherons les reçus d\'abonnements pour que vous n\'ayez pas à les saisir. Nous lisons seulement ; nous ne conservons pas vos e-mails.</string>
+    <string name="gmail_scan_intro">Connectez votre Gmail et nous chercherons les reçus d\'abonnements pour que vous n\'ayez pas à les saisir.</string>
+    <string name="gmail_step1">Vous autorisez un accès en lecture seule dans Google</string>
+    <string name="gmail_step2">Nous cherchons reçus et factures dans votre boîte</string>
+    <string name="gmail_step3">Vous choisissez ceux à ajouter</string>
+    <string name="gmail_privacy">Nous lisons seulement. Nous ne conservons pas vos e-mails.</string>
     <string name="gmail_scan_connect">Connecter Gmail</string>
     <string name="gmail_scan_waiting">En attente de l\'autorisation…</string>
     <string name="gmail_scan_already_authorized">J\'ai autorisé</string>
@@ -316,6 +327,7 @@
     <string name="notif_status_off">Désactivées · appuyez pour activer</string>
     <string name="help_section">Aide</string>
     <string name="view_tutorial_again">Revoir le tutoriel</string>
+    <string name="view_tutorial_desc">Revoyez l’essentiel en trois écrans</string>
     <string name="password_show">Afficher le mot de passe</string>
     <string name="password_hide">Masquer le mot de passe</string>
     <string name="tomorrow">demain</string>

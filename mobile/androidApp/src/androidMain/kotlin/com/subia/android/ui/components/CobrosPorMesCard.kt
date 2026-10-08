@@ -51,6 +51,7 @@ import com.subia.shared.model.MesCobros
 
 private val AltoBarras = 112.dp
 private val AnchoBarra = 18.dp
+private val AltoEtiqueta = 22.dp
 
 /**
  * "Qué te viene cada mes": 12 barras con el total previsto por mes (forma *énfasis* de la
@@ -235,36 +236,37 @@ private fun BarraMes(
             .padding(bottom = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Etiqueta de importe solo en la barra seleccionada (etiquetado selectivo)
-        Box(Modifier.height(18.dp), contentAlignment = Alignment.BottomCenter) {
-            if (seleccionada) {
-                Text(
-                    text = formatearImporteCompacto(valor, moneda),
-                    style = MaterialTheme.typography.labelSmall.tabular,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = colores.onSurface,
-                    maxLines = 1,
-                    softWrap = false,
-                    modifier = Modifier.wrapContentWidth(unbounded = true)
-                )
-            }
-        }
-        Spacer(Modifier.height(4.dp))
+        // Etiqueta de importe solo en la barra seleccionada, posada justo encima de SU barra:
+        // arriba del todo se leía como una etiqueta de eje ("15 €" sobre barras de 120 €).
         Box(
-            modifier = Modifier.height(AltoBarras).fillMaxWidth(),
+            modifier = Modifier.height(AltoBarras + AltoEtiqueta).fillMaxWidth(),
             contentAlignment = Alignment.BottomCenter
         ) {
-            if (valor > 0) {
-                Box(
-                    Modifier
-                        .width(AnchoBarra)
-                        .fillMaxHeight(altura.coerceAtLeast(0.03f))
-                        .background(colorBarra, RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
-                )
-            } else {
-                // Cero explícito: línea de 2 dp en la pista, para que "nada" se lea como 0 y no como ausencia.
-                Box(Modifier.width(AnchoBarra).height(2.dp).background(ChartColors.pista))
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                if (seleccionada) {
+                    Text(
+                        text = formatearImporteCompacto(valor, moneda),
+                        style = MaterialTheme.typography.labelSmall.tabular,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = colores.onSurface,
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier.wrapContentWidth(unbounded = true)
+                    )
+                    Spacer(Modifier.height(4.dp))
+                }
+                if (valor > 0) {
+                    Box(
+                        Modifier
+                            .width(AnchoBarra)
+                            .height(AltoBarras * altura.coerceAtLeast(0.03f))
+                            .background(colorBarra, RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                    )
+                } else {
+                    // Cero explícito: línea de 2 dp en la pista, para que "nada" se lea como 0 y no como ausencia.
+                    Box(Modifier.width(AnchoBarra).height(2.dp).background(ChartColors.pista))
+                }
             }
         }
         HorizontalDivider(color = ChartColors.pista, thickness = 1.dp)

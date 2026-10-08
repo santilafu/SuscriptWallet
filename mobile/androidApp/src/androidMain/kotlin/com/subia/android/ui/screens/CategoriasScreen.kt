@@ -1,5 +1,6 @@
 package com.subia.android.ui.screens
 
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -215,15 +216,27 @@ private fun CategoriaCard(cat: Category) {
                         .background(color.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Circle, null, tint = color, modifier = Modifier.size(18.dp))
+                    // El backend guarda un emoji por categoría (🏠, 🛡️, 📡, 🚌…): es su icono, no
+                    // un subtítulo. Si viene vacío o es una clave de texto, punto del color.
+                    if (esEmoji(cat.icon)) {
+                        Text(cat.icon, fontSize = 20.sp)
+                    } else {
+                        Icon(Icons.Default.Circle, null, tint = color, modifier = Modifier.size(18.dp))
+                    }
                 }
                 Column(Modifier.padding(start = 14.dp).weight(1f)) {
                     Text(cat.nombre, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge)
-                    if (cat.icon.isNotEmpty()) {
-                        Text(cat.icon, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
                 }
             }
         }
+    }
+}
+
+/** `true` si [texto] es un emoji corto (no una clave tipo "bi-house" ni texto normal). */
+private fun esEmoji(texto: String): Boolean {
+    val t = texto.trim()
+    if (t.isEmpty() || t.length > 8) return false
+    return t.codePoints().anyMatch { cp ->
+        Character.getType(cp) == Character.OTHER_SYMBOL.toInt() || cp >= 0x1F000
     }
 }
