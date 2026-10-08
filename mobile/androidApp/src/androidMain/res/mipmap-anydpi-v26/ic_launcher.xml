@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Icono adaptativo: fondo sólido + ilustración original del escudo (sin texto) centrada en la
-     zona segura de 66 dp + silueta monocroma para iconos temáticos (Android 13+).
-     Los PNG se regeneran con scratchpad/extract_shield.py + compose_icons.py a partir de
-     drawable/ic_app_logo.png (ver nota en engram "SubIA / iconos launcher"). -->
+<!-- Icono adaptativo con el logo 2026 (tarjetas + S + monedas sobre degradado). El primer plano es
+     opaco: el logo a 70 dp y el degradado prolongado hasta el borde de 108 dp, así que el fondo
+     sólido solo se ve durante la animación de lanzamiento. Monochrome: tarjeta con la S recortada.
+     Se regenera con mobile/tools/icons/compose_logo_2026.py a partir de logo_fuente_2026.png. -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@color/ic_launcher_background" />
     <foreground android:drawable="@mipmap/ic_launcher_foreground" />

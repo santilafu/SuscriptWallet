@@ -131,13 +131,13 @@ fun LoginScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                // El mismo escudo que el icono de la app (el nombre va al lado: logo decorativo).
+                // El mismo logo que el icono de la app (el nombre va al lado: logo decorativo).
                 Image(
-                    painter = painterResource(R.mipmap.ic_launcher_foreground),
+                    painter = painterResource(R.drawable.logo_app),
                     contentDescription = null,
                     modifier = Modifier.size(56.dp)
                 )
-                Spacer(modifier = Modifier.size(4.dp))
+                Spacer(modifier = Modifier.size(12.dp))
                 Text(
                     text = buildAnnotatedString {
                         withStyle(SpanStyle(color = Color(0xFF818CF8), fontWeight = FontWeight.Bold, fontSize = 22.sp)) {
