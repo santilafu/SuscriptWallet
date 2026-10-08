@@ -13,14 +13,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/widget_monthly_label"
-        android:textColor="#312E81"
+        android:textColor="#5B21B6"
         android:textSize="12sp" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="83,98 €"
-        android:textColor="#312E81"
+        android:textColor="#5B21B6"
         android:textSize="26sp"
         android:textStyle="bold" />
 
@@ -29,6 +29,6 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:text="Netflix · 12,99 €"
-        android:textColor="#312E81"
+        android:textColor="#5B21B6"
         android:textSize="12sp" />
 </LinearLayout>
