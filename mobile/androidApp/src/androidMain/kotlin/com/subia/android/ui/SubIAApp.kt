@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hasRoute
+import kotlinx.coroutines.flow.first
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -68,6 +69,9 @@ import org.koin.compose.viewmodel.koinViewModel
 
 private data class NavItem(val route: Any, val icon: ImageVector, val labelRes: Int)
 
+/** Clave del SavedStateHandle de la lista: nº de suscripciones añadidas desde Gmail. */
+private const val KEY_GMAIL_ADDED = "gmail_added"
+
 /**
  * Tres pestañas: Inicio · Suscripciones · Catálogo. Categorías vive en Ajustes (es una lista
  * de gestión, no un destino de uso diario) y Ajustes se abre desde la TopAppBar.
@@ -100,6 +104,16 @@ fun SubIAApp(
                 popUpTo(0) { inclusive = true }
             }
         }
+    }
+
+    // Vuelta del consentimiento de Gmail (subia://gmail/done) cuando la pantalla de detección
+    // ya no está en el back stack (el sistema mató la app mientras el usuario estaba en el
+    // navegador): se abre la pantalla, que consume el estado y pide los resultados (G-07).
+    LaunchedEffect(gmailReturnStatus, isLoggedIn) {
+        if (gmailReturnStatus == null || !isLoggedIn) return@LaunchedEffect
+        navController.currentBackStackEntryFlow.first() // el grafo ya está montado
+        val enGmail = navController.currentBackStackEntry?.destination?.hasRoute(GmailScanRoute::class) == true
+        if (!enGmail) navController.navigate(GmailScanRoute) { launchSingleTop = true }
     }
 
     // Pestaña activa (null fuera de las tres pestañas → sin barras del shell).
@@ -199,13 +213,21 @@ fun SubIAApp(
                         }
                     },
                     onNavigateToResumenAnual = { navController.navigate(ResumenAnualRoute) },
+                    // Tocar un logo de la tira de cobros o un cargo del mes abre su detalle
+                    onNavigateToDetalle = { id -> navController.navigate(SuscripcionDetalleRoute(id)) },
                     onSesionExpirada = { authViewModel.logout() }
                 )
             }
-            composable<SuscripcionesRoute> {
+            composable<SuscripcionesRoute> { backStackEntry ->
+                // Nº de suscripciones añadidas por la detección de Gmail (para el Snackbar).
+                val gmailAdded by backStackEntry.savedStateHandle
+                    .getStateFlow<Int?>(KEY_GMAIL_ADDED, null).collectAsState()
                 SuscripcionesScreen(
                     onNavigateToDetalle = { id -> navController.navigate(SuscripcionDetalleRoute(id)) },
-                    onNavigateToNueva = { navController.navigate(SuscripcionFormRoute()) },
+                    onNavigateToNueva = { nombre -> navController.navigate(SuscripcionFormRoute(prefillNombre = nombre)) },
+                    onDetectGmail = { navController.navigate(GmailScanRoute) },
+                    gmailAdded = gmailAdded,
+                    onGmailAddedConsumed = { backStackEntry.savedStateHandle[KEY_GMAIL_ADDED] = null },
                     onSesionExpirada = { authViewModel.logout() }
                 )
             }
@@ -221,6 +243,7 @@ fun SubIAApp(
                 val route: SuscripcionFormRoute = backStackEntry.toRoute()
                 SuscripcionFormScreen(
                     suscripcionId = route.id,
+                    prefillNombre = route.prefillNombre,
                     onSuccess = { navController.popBackStack() },
                     navController = navController
                 )
@@ -233,6 +256,10 @@ fun SubIAApp(
                     onBack = { navController.popBackStack() },
                     onNavigateToCategorias = { navController.navigate(CategoriasRoute) },
                     onDetectGmail = { navController.navigate(GmailScanRoute) },
+                    onVerTutorial = {
+                        OnboardingPrefs.reset(context)
+                        navController.navigate(OnboardingRoute)
+                    },
                     onLogout = { authViewModel.logout() }
                 )
             }
@@ -243,17 +270,12 @@ fun SubIAApp(
                 OnboardingScreen(
                     onFinish = {
                         OnboardingPrefs.setCompleted(context)
+                        // Tanto tras el primer login ([Onboarding]) como desde Ajustes
+                        // ([Dashboard, Ajustes, Onboarding]) se termina con Inicio como única raíz.
                         navController.navigate(DashboardRoute) {
-                            popUpTo(OnboardingRoute) { inclusive = true }
+                            popUpTo(0) { inclusive = true }
+                            launchSingleTop = true
                         }
-                    },
-                    onDetectGmail = {
-                        OnboardingPrefs.setCompleted(context)
-                        // Dejamos Dashboard como raíz y abrimos la detección encima.
-                        navController.navigate(DashboardRoute) {
-                            popUpTo(OnboardingRoute) { inclusive = true }
-                        }
-                        navController.navigate(GmailScanRoute)
                     }
                 )
             }
@@ -263,10 +285,13 @@ fun SubIAApp(
                     viewModel = gmailVm,
                     returnStatus = gmailReturnStatus,
                     onReturnConsumed = onGmailReturnConsumed,
-                    onDone = {
+                    onDone = { added ->
                         navController.navigate(SuscripcionesRoute) {
                             popUpTo(DashboardRoute)
+                            launchSingleTop = true
                         }
+                        // La lista (ya en lo alto de la pila) confirma con un Snackbar.
+                        navController.currentBackStackEntry?.savedStateHandle?.set(KEY_GMAIL_ADDED, added)
                     },
                     onBack = { navController.popBackStack() }
                 )

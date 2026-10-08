@@ -5,12 +5,15 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,17 +25,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -57,6 +65,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
@@ -84,6 +93,7 @@ fun LoginScreen(
     val uiState by viewModel.uiState.collectAsState()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var mostrarPassword by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -98,10 +108,13 @@ fun LoginScreen(
         if (uiState is AuthUiState.Success) onLoginSuccess()
     }
 
+    // El fondo oscuro cubre también la barra de estado (edge-to-edge); el contenido respeta
+    // los insets para no quedar bajo la cámara ni la barra de navegación.
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0A0F1E)),
+            .background(Color(0xFF0A0F1E))
+            .windowInsetsPadding(WindowInsets.safeDrawing),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -118,16 +131,17 @@ fun LoginScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
+                // El mismo escudo que el icono de la app (el nombre va al lado: logo decorativo).
                 Image(
-                    painter = painterResource(R.drawable.ic_app_logo),
-                    contentDescription = "SuscriptWallet",
-                    modifier = Modifier.size(36.dp)
+                    painter = painterResource(R.mipmap.ic_launcher_foreground),
+                    contentDescription = null,
+                    modifier = Modifier.size(56.dp)
                 )
-                Spacer(modifier = Modifier.size(10.dp))
+                Spacer(modifier = Modifier.size(4.dp))
                 Text(
                     text = buildAnnotatedString {
                         withStyle(SpanStyle(color = Color(0xFF818CF8), fontWeight = FontWeight.Bold, fontSize = 22.sp)) {
-                            append("SusCript")
+                            append("Suscript")
                         }
                         withStyle(SpanStyle(color = Color(0xFFF1F5F9), fontWeight = FontWeight.Bold, fontSize = 22.sp)) {
                             append("Wallet")
@@ -231,7 +245,16 @@ fun LoginScreen(
                             focusedContainerColor = Color(0xFF1A2235),
                             unfocusedContainerColor = Color(0xFF1A2235)
                         ),
-                        visualTransformation = PasswordVisualTransformation(),
+                        visualTransformation = if (mostrarPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { mostrarPassword = !mostrarPassword }) {
+                                Icon(
+                                    imageVector = if (mostrarPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                                    contentDescription = stringResource(if (mostrarPassword) R.string.password_hide else R.string.password_show),
+                                    tint = Color(0xFF94A3B8)
+                                )
+                            }
+                        },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Password,
                             imeAction = ImeAction.Done
@@ -245,24 +268,24 @@ fun LoginScreen(
                         enabled = !isLoading
                     )
 
-                    // ¿Olvidaste tu contraseña?
+                    // ¿Olvidaste tu contraseña? — TextButton: área táctil de 48 dp y rol de botón.
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                        Text(
-                            text = stringResource(R.string.forgot_password),
-                            color = Color(0xFF818CF8),
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier
-                                .padding(top = 6.dp)
-                                .clickable {
-                                    context.startActivity(
-                                        Intent(Intent.ACTION_VIEW, Uri.parse("$WEB_BASE/forgot-password"))
-                                    )
-                                }
-                        )
+                        TextButton(
+                            onClick = {
+                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("$WEB_BASE/forgot-password")))
+                            },
+                            contentPadding = PaddingValues(horizontal = 8.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.forgot_password),
+                                color = Color(0xFF818CF8),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     // Botón entrar
                     Box(
@@ -367,24 +390,27 @@ fun LoginScreen(
                     // Crear cuenta
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             text = stringResource(R.string.no_account),
                             style = MaterialTheme.typography.bodySmall,
                             color = Color(0xFF94A3B8)
                         )
-                        Text(
-                            text = stringResource(R.string.create_account),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF818CF8),
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.clickable {
-                                context.startActivity(
-                                    Intent(Intent.ACTION_VIEW, Uri.parse("$WEB_BASE/register"))
-                                )
-                            }
-                        )
+                        TextButton(
+                            onClick = {
+                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("$WEB_BASE/register")))
+                            },
+                            contentPadding = PaddingValues(horizontal = 4.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.create_account),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF818CF8),
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
                 }
             }

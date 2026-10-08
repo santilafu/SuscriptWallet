@@ -1,6 +1,16 @@
 package com.subia.android.ui.screens
 
+import android.Manifest
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,93 +22,138 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Apps
-import androidx.compose.material.icons.filled.MarkEmailRead
-import androidx.compose.material.icons.filled.NotificationsActive
-import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.subia.android.R
+import com.subia.android.ui.ServiceLogo
+import com.subia.android.ui.components.formatearImporte
+import com.subia.android.ui.theme.GradientIndigoDeepEnd
+import com.subia.android.ui.theme.GradientIndigoDeepStart
+import com.subia.android.util.NotificacionesPermiso
 import kotlinx.coroutines.launch
 
-private data class OnbPagina(val icon: ImageVector, val titleRes: Int, val descRes: Int)
+/** Servicio de ejemplo del onboarding: nombre, dominio del logo y precio mensual ilustrativo. */
+private data class ServicioEjemplo(val nombre: String, val dominio: String, val precioMes: Double)
+
+/** Página 1: logos reales de lo que la gente ya paga (streaming, IA, luz, teléfono, seguro). */
+private val serviciosPortada = listOf(
+    ServicioEjemplo("Netflix", "netflix.com", 12.99),
+    ServicioEjemplo("Spotify", "spotify.com", 10.99),
+    ServicioEjemplo("ChatGPT", "openai.com", 21.99),
+    ServicioEjemplo("Iberdrola", "iberdrola.es", 48.0),
+    ServicioEjemplo("Movistar", "movistar.es", 39.9),
+    ServicioEjemplo("Mapfre", "mapfre.es", 27.5)
+)
+
+/** Página 2: la suma de cuatro servicios corrientes. 47,96 €/mes → 575,52 €/año. */
+private val serviciosGasto = listOf(
+    ServicioEjemplo("Netflix", "netflix.com", 12.99),
+    ServicioEjemplo("Spotify", "spotify.com", 10.99),
+    ServicioEjemplo("ChatGPT", "openai.com", 21.99),
+    ServicioEjemplo("iCloud", "icloud.com", 1.99)
+)
+private val GASTO_EJEMPLO_MES = serviciosGasto.sumOf { it.precioMes }
+
+private const val PAGINAS = 3
+
+/** Curva ease-out marcada: arranca rápido y frena suave (la cifra "aterriza"). */
+private val EaseOutFuerte = CubicBezierEasing(0.23f, 1f, 0.32f, 1f)
 
 /**
- * Onboarding de bienvenida (3 páginas) que se muestra una sola vez tras el primer login.
- * Comunica la propuesta de valor (catálogo, gasto real, avisos) y termina llevando al usuario
- * a la app. Ataca la retención del primer día.
+ * Onboarding de tres páginas que se muestra una sola vez tras el primer login (y desde
+ * Ajustes › "Ver el tutorial de nuevo"):
+ *
+ * 1. Valor: logos reales de servicios que ya se pagan, no iconos genéricos.
+ * 2. Gasto: una tarjeta como la del Dashboard cuya cifra sube de 0 al ejemplo.
+ * 3. Avisos: la notificación que recibirán y el permiso del sistema, pedido en contexto.
+ *
+ * Las animaciones respetan `ANIMATOR_DURATION_SCALE` (ajustes de accesibilidad / desarrollador):
+ * con escala 0 los valores se fijan al instante.
  */
 @Composable
-fun OnboardingScreen(onFinish: () -> Unit, onDetectGmail: () -> Unit = {}) {
-    val paginas = listOf(
-        OnbPagina(Icons.Default.Apps, R.string.onb1_title, R.string.onb1_desc),
-        OnbPagina(Icons.Default.QueryStats, R.string.onb2_title, R.string.onb2_desc),
-        OnbPagina(Icons.Default.NotificationsActive, R.string.onb3_title, R.string.onb3_desc),
-        OnbPagina(Icons.Default.MarkEmailRead, R.string.onb4_title, R.string.onb4_desc)
-    )
-    val pagerState = rememberPagerState(pageCount = { paginas.size })
+fun OnboardingScreen(onFinish: () -> Unit) {
+    val context = LocalContext.current
+    val pagerState = rememberPagerState(pageCount = { PAGINAS })
     val scope = rememberCoroutineScope()
-    val esUltima = pagerState.currentPage == paginas.lastIndex
+    val esUltima = pagerState.currentPage == PAGINAS - 1
+    val animar = remember {
+        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f
+    }
+
+    // Permiso de notificaciones (Android 13+): un único botón que abre el diálogo del sistema.
+    // Concedido o no, el onboarding termina: la app funciona igual sin avisos.
+    val pedirPermiso = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        onFinish()
+    }
+    val activarAvisos = {
+        if (NotificacionesPermiso.hayQuePedir(context)) {
+            NotificacionesPermiso.marcarPedidoAlGuardar(context)
+            pedirPermiso.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            onFinish()
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
-        // Saltar
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            TextButton(onClick = onFinish) { Text(stringResource(R.string.onb_skip)) }
+        // Saltar: siempre visible salvo en la última página, que ya ofrece "Ahora no".
+        Row(modifier = Modifier.fillMaxWidth().height(48.dp), horizontalArrangement = Arrangement.End) {
+            if (!esUltima) {
+                TextButton(onClick = onFinish) { Text(stringResource(R.string.onb_skip)) }
+            }
         }
 
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxWidth().weight(1f)
         ) { page ->
-            val p = paginas[page]
             Column(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+                modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(120.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        p.icon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(56.dp)
-                    )
+                when (page) {
+                    0 -> PaginaLogos(animar = animar)
+                    1 -> PaginaGasto(activa = pagerState.currentPage == 1, animar = animar)
+                    else -> PaginaAvisos()
                 }
-                Spacer(Modifier.height(40.dp))
+                Spacer(Modifier.height(36.dp))
                 Text(
-                    text = stringResource(p.titleRes),
+                    text = stringResource(tituloDePagina(page)),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
                 )
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    text = stringResource(p.descRes),
+                    text = stringResource(descripcionDePagina(page)),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -106,39 +161,26 @@ fun OnboardingScreen(onFinish: () -> Unit, onDetectGmail: () -> Unit = {}) {
             }
         }
 
-        // Indicadores de página
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            repeat(paginas.size) { i ->
-                val seleccionado = pagerState.currentPage == i
-                val ancho by animateDpAsState(if (seleccionado) 24.dp else 8.dp, label = "dot")
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = 4.dp)
-                        .size(width = ancho, height = 8.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (seleccionado) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                        )
-                )
-            }
-        }
+        IndicadoresDePagina(actual = pagerState.currentPage, total = PAGINAS)
 
         if (esUltima) {
-            // Última página: ofrece la detección por Gmail o continuar sin ella.
             Button(
-                onClick = onDetectGmail,
+                onClick = activarAvisos,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(14.dp)
             ) {
-                Text(text = stringResource(R.string.onb4_action), fontWeight = FontWeight.SemiBold)
+                Text(
+                    text = stringResource(
+                        if (NotificacionesPermiso.requierePermiso) R.string.onb_notif_enable else R.string.onb_start
+                    ),
+                    fontWeight = FontWeight.SemiBold
+                )
             }
-            Spacer(Modifier.height(8.dp))
-            TextButton(onClick = onFinish, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.onb4_skip))
+            if (NotificacionesPermiso.requierePermiso) {
+                Spacer(Modifier.height(8.dp))
+                TextButton(onClick = onFinish, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.onb_notif_later))
+                }
             }
         } else {
             Button(
@@ -148,6 +190,186 @@ fun OnboardingScreen(onFinish: () -> Unit, onDetectGmail: () -> Unit = {}) {
             ) {
                 Text(text = stringResource(R.string.onb_next), fontWeight = FontWeight.SemiBold)
             }
+        }
+    }
+}
+
+private fun tituloDePagina(page: Int) = when (page) {
+    0 -> R.string.onb1_title
+    1 -> R.string.onb2_title
+    else -> R.string.onb3_title
+}
+
+private fun descripcionDePagina(page: Int) = when (page) {
+    0 -> R.string.onb1_desc
+    1 -> R.string.onb2_desc
+    else -> R.string.onb3_desc
+}
+
+/** Seis logos reales en dos filas, apareciendo en cascada (50 ms entre cada uno). */
+@Composable
+private fun PaginaLogos(animar: Boolean) {
+    var visible by remember { mutableStateOf(!animar) }
+    LaunchedEffect(Unit) { visible = true }
+
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        serviciosPortada.chunked(3).forEachIndexed { fila, grupo ->
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                grupo.forEachIndexed { col, servicio ->
+                    val indice = fila * 3 + col
+                    AnimatedVisibility(
+                        visible = visible,
+                        enter = fadeIn(tween(220, delayMillis = indice * 50)) +
+                            scaleIn(tween(220, delayMillis = indice * 50), initialScale = 0.92f)
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(18.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            tonalElevation = 1.dp,
+                            shadowElevation = 1.dp
+                        ) {
+                            Box(Modifier.padding(10.dp)) {
+                                ServiceLogo(
+                                    nombre = servicio.nombre,
+                                    domain = servicio.dominio,
+                                    size = 56.dp,
+                                    contentDescription = servicio.nombre
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Tarjeta de gasto propia del onboarding (mismo lenguaje visual que la del Dashboard, sin
+ * depender de ella). La cifra sube de 0 al ejemplo cuando la página pasa a ser la actual.
+ */
+@Composable
+private fun PaginaGasto(activa: Boolean, animar: Boolean) {
+    val cifra = remember { Animatable(0f) }
+    LaunchedEffect(activa) {
+        if (activa) {
+            if (animar) cifra.animateTo(GASTO_EJEMPLO_MES.toFloat(), tween(900, easing = EaseOutFuerte))
+            else cifra.snapTo(GASTO_EJEMPLO_MES.toFloat())
+        }
+    }
+    val gradiente = remember { Brush.linearGradient(listOf(GradientIndigoDeepStart, GradientIndigoDeepEnd)) }
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(gradiente)
+                .padding(20.dp)
+        ) {
+            Column {
+                Text(
+                    text = stringResource(R.string.onb2_card_label),
+                    color = Color.White.copy(alpha = 0.85f),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = formatearImporte(cifra.value.toDouble(), "EUR"),
+                    color = Color.White,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 40.sp,
+                    lineHeight = 44.sp
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = stringResource(
+                        R.string.onb2_card_footer,
+                        serviciosGasto.size,
+                        formatearImporte(GASTO_EJEMPLO_MES * 12, "EUR")
+                    ),
+                    color = Color.White.copy(alpha = 0.85f),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        // Los servicios que suman la cifra: la tarjeta no es un número abstracto.
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            serviciosGasto.forEach { servicio ->
+                ServiceLogo(
+                    nombre = servicio.nombre,
+                    domain = servicio.dominio,
+                    size = 40.dp,
+                    contentDescription = servicio.nombre
+                )
+            }
+        }
+    }
+}
+
+/** Página 3: la notificación tal y como la verán, en lugar de un icono de campana. */
+@Composable
+private fun PaginaAvisos() {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 2.dp,
+        shadowElevation = 2.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ServiceLogo(nombre = "Netflix", domain = "netflix.com", size = 44.dp, contentDescription = null)
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.notif_renewal_title, "Netflix"),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = stringResource(
+                        R.string.notif_renewal_text,
+                        "Netflix",
+                        stringResource(R.string.tomorrow),
+                        "12,99",
+                        "EUR"
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+/** Indicadores con semántica "Página X de N" para TalkBack (los puntos son decorativos). */
+@Composable
+private fun IndicadoresDePagina(actual: Int, total: Int) {
+    val descripcion = stringResource(R.string.onb_page_of, actual + 1, total)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 24.dp)
+            .semantics { contentDescription = descripcion },
+        horizontalArrangement = Arrangement.Center
+    ) {
+        repeat(total) { i ->
+            val seleccionado = actual == i
+            val ancho by animateDpAsState(if (seleccionado) 24.dp else 8.dp, label = "dot")
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 4.dp)
+                    .size(width = ancho, height = 8.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (seleccionado) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                    )
+            )
         }
     }
 }

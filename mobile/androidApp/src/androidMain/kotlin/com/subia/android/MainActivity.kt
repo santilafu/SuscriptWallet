@@ -1,14 +1,11 @@
 package com.subia.android
 
-import android.Manifest
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -30,16 +27,6 @@ import java.util.concurrent.TimeUnit
 /** Punto de entrada de la app. Única Activity, todo lo demás es Compose. */
 class MainActivity : AppCompatActivity() {
 
-    /**
-     * Lanzador de petición de permiso POST_NOTIFICATIONS (Android 13+).
-     * Si el usuario deniega el permiso, WorkManager sigue programado pero las notificaciones
-     * no se mostrarán hasta que el permiso sea concedido — sin crash ni reintentos forzados.
-     */
-    private val solicitarPermisoNotificaciones =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { _ ->
-            // No se requiere acción en caso de denegación: degradación elegante.
-        }
-
     /** Estado del deep link de vuelta del consentimiento de Gmail: "ok"/"error", o null. */
     private val gmailReturnStatus = MutableStateFlow<String?>(null)
 
@@ -54,10 +41,10 @@ class MainActivity : AppCompatActivity() {
         // Cargar la preferencia de color dinámico (Material You) antes de componer el tema.
         ThemeState.load(this)
 
-        // Solicitar POST_NOTIFICATIONS en Android 13+ (API 33+)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            solicitarPermisoNotificaciones.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
+        // El permiso POST_NOTIFICATIONS NO se pide aquí: se pide en contexto (página de avisos
+        // del onboarding, al guardar la primera suscripción o desde Ajustes). Si el usuario
+        // no lo concede, WorkManager sigue programado y las notificaciones simplemente no
+        // se muestran — degradación elegante, sin crash.
 
         // Programar la revisión periódica de renovaciones (24 h).
         // ExistingPeriodicWorkPolicy.KEEP evita reprogramar si ya hay una tarea activa.

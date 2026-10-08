@@ -11,9 +11,15 @@ import com.subia.shared.network.NetworkException
 import com.subia.shared.repository.CatalogRepository
 import com.subia.shared.repository.CategoryRepository
 import com.subia.shared.repository.SubscriptionRepository
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
@@ -40,6 +46,9 @@ sealed interface FormError {
     data object GuardadoFallido : FormError
 }
 
+/** Campos del formulario que pueden llevar un error asociado (validación en vivo). */
+enum class Campo { Nombre, Precio, FechaRenovacion, Categoria }
+
 sealed interface FormUiState {
     data object Idle : FormUiState
     data object Loading : FormUiState
@@ -49,8 +58,13 @@ sealed interface FormUiState {
 
 /**
  * ViewModel para crear y editar suscripciones.
- * Gestiona los campos del formulario y la validación antes de enviar al servidor.
- * Incluye soporte para el selector de catálogo en línea (categoría → servicio).
+ *
+ * - Valida en vivo: [errores] expone un mapa campo → error recalculado con cada tecla y
+ *   [puedeGuardar] es `true` solo cuando el mapa está vacío.
+ * - Autocompleta desde el catálogo: [sugerencias] filtra el catálogo por el texto del nombre
+ *   para que la UI lo muestre como desplegable; [seleccionarServicioDelCatalogo] prerrellena.
+ * - Detecta cambios sin guardar: [hayCambios] compara una huella de los campos con la que se
+ *   fijó al abrir el formulario (vacío, edición o prerrelleno).
  */
 class SuscripcionFormViewModel(
     private val subscriptionRepository: SubscriptionRepository,
@@ -73,84 +87,135 @@ class SuscripcionFormViewModel(
     val esPrueba = MutableStateFlow(false)
     val fechaFinPrueba = MutableStateFlow<String?>(null)
 
-    // ── Selector de catálogo en línea ──────────────────────────────────────
-
     private val _categorias = MutableStateFlow<List<Category>>(emptyList())
-    /** Lista de categorías disponibles para el selector de catálogo. */
+    /** Categorías disponibles para el desplegable de categoría. */
     val categorias: StateFlow<List<Category>> = _categorias.asStateFlow()
 
-    private val _serviciosPorCategoria = MutableStateFlow<List<CatalogItem>>(emptyList())
-    /** Servicios del catálogo correspondientes a la categoría seleccionada en el selector. */
-    val serviciosPorCategoria: StateFlow<List<CatalogItem>> = _serviciosPorCategoria.asStateFlow()
+    private val _catalogo = MutableStateFlow<List<CatalogItem>>(emptyList())
+    /** Catálogo completo (se carga una vez; si falla la red, el autocompletado queda vacío). */
+    val catalogo: StateFlow<List<CatalogItem>> = _catalogo.asStateFlow()
+
+    private val _catalogoSeleccionado = MutableStateFlow<CatalogItem?>(null)
+    /** Último servicio elegido del catálogo (para pintar su logo junto al nombre). */
+    val catalogoSeleccionado: StateFlow<CatalogItem?> = _catalogoSeleccionado.asStateFlow()
+
+    // ── Validación en vivo ─────────────────────────────────────────────────
+
+    /** Errores por campo, recalculados con cada cambio. Vacío cuando todo es válido. */
+    val errores: StateFlow<Map<Campo, FormError>> = combine(
+        nombre, precio, fechaRenovacion, categoriaId
+    ) { n, p, f, c -> validarCampos(n, p, f, c) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, validarCampos("", "", "", null))
+
+    /** `true` cuando no hay errores de validación. El botón Guardar se habilita con esto. */
+    val puedeGuardar: StateFlow<Boolean> = errores.map { it.isEmpty() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    // ── Autocompletado desde el catálogo ───────────────────────────────────
 
     /**
-     * Id de la categoría elegida en el selector de catálogo (UI únicamente).
-     * No confundir con [categoriaId], que es el campo real de la suscripción.
+     * Servicios del catálogo cuyo nombre contiene el texto escrito (máx. [MAX_SUGERENCIAS]).
+     * Vacío si el campo está en blanco o si el texto coincide exactamente con el servicio ya
+     * elegido (para no reabrir el desplegable justo después de seleccionar).
      */
-    val categoriaSeleccionadaId = MutableStateFlow<Long?>(null)
+    val sugerencias: StateFlow<List<CatalogItem>> = combine(
+        nombre, _catalogo, _catalogoSeleccionado
+    ) { texto, items, elegido -> filtrarCatalogo(texto, items, elegido) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    private val _cargandoServicios = MutableStateFlow(false)
-    /** Indica si se están cargando los servicios del catálogo para la categoría elegida. */
-    val cargandoServicios: StateFlow<Boolean> = _cargandoServicios.asStateFlow()
+    // ── Cambios sin guardar ────────────────────────────────────────────────
+
+    private val huellaInicial = MutableStateFlow(huella())
+
+    @Suppress("UNCHECKED_CAST")
+    private val huellaActual: Flow<String> = combine(
+        listOf(
+            nombre, descripcion, precio, moneda, periodoFacturacion,
+            fechaRenovacion, categoriaId, notas, esPrueba, fechaFinPrueba
+        ) as List<Flow<Any?>>
+    ) { valores -> valores.joinToString("\u0001") }
+
+    /** `true` si algún campo difiere de lo que había al abrir el formulario. */
+    val hayCambios: StateFlow<Boolean> = combine(huellaActual, huellaInicial) { actual, inicial ->
+        actual != inicial
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     init {
-        cargarCategorias()
-    }
-
-    /** Carga la lista de categorías al inicializar el ViewModel. */
-    private fun cargarCategorias() {
         viewModelScope.launch {
-            categoryRepository.getAll()
-                .onSuccess { _categorias.value = it }
+            categoryRepository.getAll().onSuccess { _categorias.value = it }
+        }
+        viewModelScope.launch {
+            catalogRepository.getAll().onSuccess { _catalogo.value = it }
         }
     }
 
-    /**
-     * Selecciona una categoría en el selector de catálogo y carga sus servicios.
-     * Pasar `null` limpia la selección y la lista de servicios.
-     */
-    fun seleccionarCategoriaDelSelector(categoriaId: Long?) {
-        categoriaSeleccionadaId.value = categoriaId
-        _serviciosPorCategoria.value = emptyList()
-        if (categoriaId == null) return
-
-        viewModelScope.launch {
-            _cargandoServicios.value = true
-            catalogRepository.getByCategory(categoriaId)
-                .onSuccess { _serviciosPorCategoria.value = it }
-            _cargandoServicios.value = false
-        }
+    /** Fija el estado actual como "sin cambios" (tras cargar para editar o prerrellenar). */
+    fun marcarComoSinCambios() {
+        huellaInicial.value = huella()
     }
 
+    private fun huella(): String = listOf(
+        nombre.value, descripcion.value, precio.value, moneda.value, periodoFacturacion.value,
+        fechaRenovacion.value, categoriaId.value, notas.value, esPrueba.value, fechaFinPrueba.value
+    ).joinToString("\u0001")
+
     /**
-     * Aplica el servicio elegido en el selector de catálogo al formulario.
-     * Llama a [prerellenarDesdeCatalogo] y además asigna la [categoriaId] de la suscripción
-     * buscando la categoría cuyo nombre coincida con [CatalogItem.categoriaKey] (sin distinguir
-     * mayúsculas ni acentos). Si no hay coincidencia exacta se usa la primera categoría disponible.
-     * También actualiza [categoriaSeleccionadaId] para que el desplegable de la UI refleje la
-     * selección.
+     * Aplica un servicio del catálogo al formulario: nombre, precio, ciclo, moneda, prueba y
+     * categoría (buscando la categoría del usuario cuyo nombre coincide con
+     * [CatalogItem.categoriaKey], sin distinguir mayúsculas ni acentos).
      */
     fun seleccionarServicioDelCatalogo(item: CatalogItem) {
         prerellenarDesdeCatalogo(item, BillingCycle.fromWire(item.periodoFacturacion))
-
-        // Normaliza una cadena eliminando acentos y pasándola a minúsculas para comparar
-        fun String.normalizar(): String =
-            this.lowercase()
-                .replace('á', 'a').replace('é', 'e').replace('í', 'i')
-                .replace('ó', 'o').replace('ú', 'u').replace('ü', 'u').replace('ñ', 'n')
+        _catalogoSeleccionado.value = item
 
         val claveBuscada = item.categoriaKey.normalizar()
         val categoriaEncontrada = _categorias.value.firstOrNull { cat ->
             cat.nombre.normalizar() == claveBuscada
-        } ?: _categorias.value.firstOrNull()
+        }
+        categoriaEncontrada?.let { categoriaId.value = it.id }
+    }
 
-        categoriaEncontrada?.let { cat ->
-            categoriaId.value = cat.id
-            categoriaSeleccionadaId.value = cat.id
+    /**
+     * Prerrellena buscando en el catálogo por nombre (p. ej. desde el empty state de la lista).
+     * Pone el nombre al instante y, cuando el catálogo esté cargado, completa el resto.
+     */
+    fun prerellenarPorNombre(nombreServicio: String) {
+        nombre.value = nombreServicio
+        marcarComoSinCambios()
+        viewModelScope.launch {
+            val items = _catalogo.first { it.isNotEmpty() }
+            val item = items.firstOrNull { it.nombre.equals(nombreServicio, ignoreCase = true) }
+                ?: items.firstOrNull { it.nombre.contains(nombreServicio, ignoreCase = true) }
+            if (item != null) {
+                // Espera a las categorías (si llegan) para poder asignar la del servicio.
+                if (_categorias.value.isEmpty()) {
+                    runCatching { _categorias.first { it.isNotEmpty() } }
+                }
+                seleccionarServicioDelCatalogo(item)
+                marcarComoSinCambios()
+            }
         }
     }
 
-    // ── Operaciones existentes ─────────────────────────────────────────────
+    private val _cargandoEdicion = MutableStateFlow(false)
+    /** `true` mientras se descarga la suscripción a editar (la UI bloquea el formulario). */
+    val cargandoEdicion: StateFlow<Boolean> = _cargandoEdicion.asStateFlow()
+
+    /**
+     * Modo edición por id: descarga la suscripción y precarga los campos. Si falla, deja el
+     * formulario vacío y expone [FormError.SinConexion]/[FormError.GuardadoFallido] para que
+     * la UI avise (el usuario puede reintentar volviendo a entrar).
+     */
+    fun cargarParaEditar(id: Long) {
+        if (_cargandoEdicion.value) return
+        viewModelScope.launch {
+            _cargandoEdicion.value = true
+            subscriptionRepository.getById(id)
+                .onSuccess { cargarParaEditar(it) }
+                .onFailure { _uiState.value = FormUiState.Error(mapearErrorGuardado(it)) }
+            _cargandoEdicion.value = false
+        }
+    }
 
     /** Precarga los campos a partir de una suscripción existente (modo edición). */
     fun cargarParaEditar(suscripcion: Subscription) {
@@ -164,6 +229,7 @@ class SuscripcionFormViewModel(
         notas.value = suscripcion.notas
         esPrueba.value = suscripcion.esPrueba
         fechaFinPrueba.value = suscripcion.fechaFinPrueba
+        marcarComoSinCambios()
     }
 
     /**
@@ -179,9 +245,10 @@ class SuscripcionFormViewModel(
             BillingCycle.MONTHLY -> item.precioMensual ?: item.precioAnual?.div(12.0)
             BillingCycle.YEARLY -> item.precioAnual ?: item.precioMensual?.times(12.0)
         }
-        precioElegido?.let { precio.value = it.toString() }
+        precioElegido?.let { precio.value = formatearPrecioParaCampo(it) }
         periodoFacturacion.value = cicloElegido.wire
         moneda.value = item.moneda
+        _catalogoSeleccionado.value = item
         val diasPrueba = item.diasPrueba
         if (diasPrueba != null) {
             esPrueba.value = true
@@ -195,7 +262,7 @@ class SuscripcionFormViewModel(
         fechaFinPrueba.value = fecha
     }
 
-    /** Establece la categoría de la suscripción desde el desplegable standalone del formulario. */
+    /** Establece la categoría de la suscripción desde el desplegable del formulario. */
     fun seleccionarCategoria(id: Long) {
         categoriaId.value = id
     }
@@ -230,7 +297,11 @@ class SuscripcionFormViewModel(
                 subscriptionRepository.create(request)
             }
             result
-                .onSuccess { _uiState.value = FormUiState.Success }
+                .onSuccess {
+                    marcarComoSinCambios()
+                    SuscripcionesCambios.notificar()
+                    _uiState.value = FormUiState.Success
+                }
                 .onFailure { error -> _uiState.value = FormUiState.Error(mapearErrorGuardado(error)) }
         }
     }
@@ -238,28 +309,75 @@ class SuscripcionFormViewModel(
     fun resetState() { _uiState.value = FormUiState.Idle }
 
     companion object {
-        /** Convierte el texto del importe a número aceptando coma o punto decimal. */
-        fun parsearPrecio(texto: String): Double? = texto.replace(",", ".").toDoubleOrNull()
+        const val MAX_SUGERENCIAS = 8
+
+        /**
+         * Convierte el texto del importe a número aceptando coma o punto decimal y espacios.
+         * Si aparecen ambos separadores, el último es el decimal ("1.234,56" → 1234.56;
+         * "1,234.56" → 1234.56). Devuelve `null` si no es un número.
+         */
+        fun parsearPrecio(texto: String): Double? {
+            val limpio = texto.trim().replace(" ", "").replace(" ", "")
+            if (limpio.isEmpty()) return null
+            val ultimaComa = limpio.lastIndexOf(',')
+            val ultimoPunto = limpio.lastIndexOf('.')
+            val normalizado = when {
+                ultimaComa >= 0 && ultimoPunto >= 0 ->
+                    if (ultimaComa > ultimoPunto) limpio.replace(".", "").replace(',', '.')
+                    else limpio.replace(",", "")
+                ultimaComa >= 0 -> limpio.replace(',', '.')
+                else -> limpio
+            }
+            return normalizado.toDoubleOrNull()
+        }
+
+        /** Texto del importe para el campo: sin ".0" sobrante ("9.99", "12"). */
+        fun formatearPrecioParaCampo(valor: Double): String {
+            val redondeado = kotlin.math.round(valor * 100) / 100
+            return if (redondeado == kotlin.math.floor(redondeado)) redondeado.toLong().toString()
+            else redondeado.toString()
+        }
+
+        /** Validación por campo: devuelve un mapa con el error de cada campo inválido. */
+        fun validarCampos(nombre: String, precio: String, fechaRenovacion: String, categoriaId: Long?): Map<Campo, FormError> {
+            val errores = linkedMapOf<Campo, FormError>()
+            if (nombre.isBlank()) errores[Campo.Nombre] = FormError.NombreVacio
+            val precioDouble = parsearPrecio(precio)
+            if (precioDouble == null || precioDouble <= 0) errores[Campo.Precio] = FormError.PrecioInvalido
+            if (fechaRenovacion.isBlank()) errores[Campo.FechaRenovacion] = FormError.FechaRenovacionVacia
+            if (categoriaId == null || categoriaId == 0L) errores[Campo.Categoria] = FormError.CategoriaNoSeleccionada
+            return errores
+        }
 
         /**
          * Validación pura del formulario. Devuelve el primer [FormError] encontrado
          * (en el orden visual de los campos) o `null` si todo es válido.
          */
-        fun validar(nombre: String, precio: String, fechaRenovacion: String, categoriaId: Long?): FormError? {
-            val precioDouble = parsearPrecio(precio)
-            return when {
-                nombre.isBlank() -> FormError.NombreVacio
-                precioDouble == null || precioDouble <= 0 -> FormError.PrecioInvalido
-                fechaRenovacion.isBlank() -> FormError.FechaRenovacionVacia
-                categoriaId == null || categoriaId == 0L -> FormError.CategoriaNoSeleccionada
-                else -> null
-            }
-        }
+        fun validar(nombre: String, precio: String, fechaRenovacion: String, categoriaId: Long?): FormError? =
+            validarCampos(nombre, precio, fechaRenovacion, categoriaId).values.firstOrNull()
 
         /** Traduce la excepción del repositorio al error tipado que entiende la UI. */
         fun mapearErrorGuardado(error: Throwable): FormError = when (error) {
             is NetworkException -> FormError.SinConexion
             else -> FormError.GuardadoFallido
         }
+
+        /** Filtro del autocompletado (función pura para poder probarla). */
+        fun filtrarCatalogo(texto: String, items: List<CatalogItem>, elegido: CatalogItem?): List<CatalogItem> {
+            val consulta = texto.trim()
+            if (consulta.isBlank()) return emptyList()
+            if (elegido != null && elegido.nombre.equals(consulta, ignoreCase = true)) return emptyList()
+            val normalizada = consulta.normalizar()
+            return items
+                .filter { it.nombre.normalizar().contains(normalizada) }
+                .sortedWith(compareBy({ !it.nombre.normalizar().startsWith(normalizada) }, { it.nombre }))
+                .take(MAX_SUGERENCIAS)
+        }
+
+        /** Minúsculas y sin acentos, para comparar nombres y claves de categoría. */
+        private fun String.normalizar(): String =
+            lowercase()
+                .replace('á', 'a').replace('é', 'e').replace('í', 'i')
+                .replace('ó', 'o').replace('ú', 'u').replace('ü', 'u').replace('ñ', 'n')
     }
 }

@@ -1,5 +1,6 @@
 package com.subia.android.ui.screens
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -7,11 +8,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,13 +20,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Subscriptions
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -37,39 +38,51 @@ import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.repeatOnLifecycle
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import com.subia.android.R
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.subia.android.R
 import com.subia.android.ui.BannerAdView
 import com.subia.android.ui.ServiceLogo
-import com.subia.android.ui.components.EmptyState
 import com.subia.android.ui.components.ErrorState
 import com.subia.android.ui.components.formatearImporte
 import com.subia.android.ui.theme.Indigo500
 import com.subia.android.ui.theme.urgent
+import com.subia.android.util.fechaIsoLegible
 import com.subia.shared.model.Category
 import com.subia.shared.model.Subscription
 import com.subia.shared.viewmodel.SuscripcionesUiState
 import com.subia.shared.viewmodel.SuscripcionesViewModel
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -77,38 +90,94 @@ import kotlinx.datetime.daysUntil
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
 
+/** Servicios propuestos en el estado vacío: los que casi todo el mundo paga. */
+private val serviciosSugeridos = listOf(
+    "Netflix" to "netflix.com",
+    "Spotify" to "spotify.com",
+    "ChatGPT" to "openai.com",
+    "Iberdrola" to "iberdrola.es"
+)
+
+/**
+ * Lista de suscripciones.
+ *
+ * - La recarga la decide el ViewModel ([com.subia.shared.viewmodel.SuscripcionesCambios]):
+ *   al volver del detalle no se parpadea; solo se refresca cuando algo cambió.
+ * - Deslizar una fila hacia la izquierda la elimina con "Deshacer" (el borrado real se
+ *   difiere en el ViewModel); el botón Eliminar del detalle sigue existiendo como alternativa
+ *   sin gesto.
+ * - Sin suscripciones no hay banner de anuncios: la pantalla entera es la invitación.
+ *
+ * @param gmailAdded nº de suscripciones añadidas desde la detección por Gmail (para el Snackbar).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SuscripcionesScreen(
     onNavigateToDetalle: (Long) -> Unit,
-    onNavigateToNueva: () -> Unit,
+    onNavigateToNueva: (prefillNombre: String?) -> Unit,
+    onDetectGmail: () -> Unit = {},
+    gmailAdded: Int? = null,
+    onGmailAddedConsumed: () -> Unit = {},
     onSesionExpirada: () -> Unit = {},
     viewModel: SuscripcionesViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val lifecycleOwner = LocalLifecycleOwner.current
-    LaunchedEffect(lifecycleOwner) {
-        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            viewModel.invalidarCacheYRecargar()
+    val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    // Confirmación de la detección por Gmail: "3 suscripciones añadidas".
+    LaunchedEffect(gmailAdded) {
+        if (gmailAdded != null) {
+            onGmailAddedConsumed()
+            snackbarHostState.showSnackbar(
+                context.resources.getQuantityString(R.plurals.gmail_added_snackbar, gmailAdded, gmailAdded)
+            )
         }
     }
 
+    val eliminarConDeshacer: (Subscription) -> Unit = { sub ->
+        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        viewModel.eliminarConDeshacer(sub.id)
+        scope.launch {
+            // Un segundo borrado cierra el Snackbar anterior; su ventana de deshacer sigue en el VM.
+            snackbarHostState.currentSnackbarData?.dismiss()
+            val resultado = snackbarHostState.showSnackbar(
+                message = context.getString(R.string.sub_deleted, sub.nombre),
+                actionLabel = context.getString(R.string.undo),
+                duration = SnackbarDuration.Short
+            )
+            if (resultado == SnackbarResult.ActionPerformed) viewModel.deshacerEliminacion(sub.id)
+        }
+    }
+
+    val hayFilas = when (val s = uiState) {
+        is SuscripcionesUiState.Success -> s.suscripciones.isNotEmpty() || s.categoriaSeleccionada != null
+        is SuscripcionesUiState.Offline -> s.suscripciones.isNotEmpty()
+        else -> false
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNavigateToNueva,
-                containerColor = Indigo500,
-                elevation = FloatingActionButtonDefaults.elevation(4.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add), tint = Color.White)
+            if (hayFilas) {
+                FloatingActionButton(
+                    onClick = { onNavigateToNueva(null) },
+                    containerColor = Indigo500,
+                    elevation = FloatingActionButtonDefaults.elevation(4.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add), tint = Color.White)
+                }
             }
         },
         bottomBar = {
-            BannerAdView(modifier = Modifier.fillMaxWidth())
+            // Sin suscripciones, sin anuncios: el primer uso no se interrumpe con un banner.
+            if (hayFilas) BannerAdView(modifier = Modifier.fillMaxWidth())
         }
     ) { innerPadding ->
         PullToRefreshBox(
-            isRefreshing = uiState is SuscripcionesUiState.Loading,
+            isRefreshing = (uiState as? SuscripcionesUiState.Success)?.isRefreshing == true,
             onRefresh = { viewModel.cargar() },
             modifier = Modifier.fillMaxSize().padding(innerPadding)
         ) {
@@ -116,14 +185,15 @@ fun SuscripcionesScreen(
                 is SuscripcionesUiState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
                 is SuscripcionesUiState.Success -> {
                     if (state.suscripciones.isEmpty() && state.categoriaSeleccionada == null) {
-                        EmptyStateSuscripciones(onNavigateToNueva)
+                        EmptyStateSuscripciones(onAnadir = onNavigateToNueva, onDetectGmail = onDetectGmail)
                     } else {
                         ListaSuscripciones(
                             suscripciones = state.suscripciones,
                             categorias = state.categorias,
                             categoriaSeleccionada = state.categoriaSeleccionada,
                             onNavigateToDetalle = onNavigateToDetalle,
-                            onFiltrar = { viewModel.filtrarPorCategoria(it) }
+                            onFiltrar = { viewModel.filtrarPorCategoria(it) },
+                            onEliminar = eliminarConDeshacer
                         )
                     }
                 }
@@ -134,7 +204,8 @@ fun SuscripcionesScreen(
                         categorias = state.categorias,
                         categoriaSeleccionada = null,
                         onNavigateToDetalle = onNavigateToDetalle,
-                        onFiltrar = {}
+                        onFiltrar = {},
+                        onEliminar = null // sin red no se puede borrar: el gesto se desactiva
                     )
                 }
                 is SuscripcionesUiState.Error -> ErrorState(
@@ -147,25 +218,86 @@ fun SuscripcionesScreen(
     }
 }
 
+/**
+ * Estado vacío: en vez de "no hay nada", una invitación concreta. Cada logo abre el
+ * formulario con el servicio ya rellenado desde el catálogo.
+ */
 @Composable
-private fun EmptyStateSuscripciones(onNavigateToNueva: () -> Unit) {
-    EmptyState(
-        icon = Icons.Default.Subscriptions,
-        titulo = stringResource(R.string.no_subscriptions),
-        subtitulo = stringResource(R.string.tap_to_add_first),
-        actionLabel = stringResource(R.string.add_first_subscription),
-        onAction = onNavigateToNueva
-    )
+private fun EmptyStateSuscripciones(onAnadir: (String?) -> Unit, onDetectGmail: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp, vertical = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = stringResource(R.string.empty_subs_title),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.empty_subs_subtitle),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(28.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            serviciosSugeridos.forEach { (nombre, dominio) ->
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .clickable(role = Role.Button) { onAnadir(nombre) }
+                        .padding(horizontal = 6.dp, vertical = 8.dp)
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 1.dp,
+                        shadowElevation = 1.dp
+                    ) {
+                        Box(Modifier.padding(8.dp)) {
+                            ServiceLogo(nombre = nombre, domain = dominio, size = 48.dp, contentDescription = null)
+                        }
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Text(nombre, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                }
+            }
+        }
+        Spacer(Modifier.height(28.dp))
+        Button(
+            onClick = { onAnadir(null) },
+            modifier = Modifier.fillMaxWidth().height(52.dp),
+            shape = RoundedCornerShape(14.dp)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.empty_add_other), fontWeight = FontWeight.SemiBold)
+        }
+        Spacer(Modifier.height(4.dp))
+        TextButton(onClick = onDetectGmail, modifier = Modifier.fillMaxWidth()) {
+            Icon(Icons.Outlined.Email, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.detect_with_gmail))
+        }
+    }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun ListaSuscripciones(
     suscripciones: List<Subscription>,
     categorias: List<Category>,
     categoriaSeleccionada: Long?,
     onNavigateToDetalle: (Long) -> Unit,
-    onFiltrar: (Long?) -> Unit
+    onFiltrar: (Long?) -> Unit,
+    onEliminar: ((Subscription) -> Unit)?
 ) {
     // La TopAppBar ya dice "Suscripciones": en vez de repetir el título con un badge, un
     // subtítulo con significado: "7 activas · 47,96 €/mes" (S-05). El gasto mensual se
@@ -184,7 +316,7 @@ private fun ListaSuscripciones(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 16.dp),
+        contentPadding = PaddingValues(bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item {
@@ -199,10 +331,7 @@ private fun ListaSuscripciones(
         }
 
         stickyHeader {
-            Surface(
-                color = MaterialTheme.colorScheme.background,
-                tonalElevation = 2.dp
-            ) {
+            Surface(color = MaterialTheme.colorScheme.surface) {
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -242,27 +371,89 @@ private fun ListaSuscripciones(
                     modifier = Modifier.fillMaxWidth().padding(32.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            stringResource(R.string.no_subscriptions_in_category),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
+                    Text(
+                        stringResource(R.string.no_subscriptions_in_category),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
             }
         } else {
-            items(suscripciones) { sub ->
-                SuscripcionCard(sub, onNavigateToDetalle, modifier = Modifier.padding(horizontal = 16.dp))
+            items(suscripciones, key = { it.id }) { sub ->
+                val fila: @Composable () -> Unit = {
+                    SuscripcionCard(sub, onNavigateToDetalle)
+                }
+                if (onEliminar == null) {
+                    Box(Modifier.padding(horizontal = 16.dp).animateItem()) { fila() }
+                } else {
+                    FilaDeslizable(
+                        onEliminar = { onEliminar(sub) },
+                        modifier = Modifier.padding(horizontal = 16.dp).animateItem(),
+                        content = fila
+                    )
+                }
             }
         }
     }
 }
 
+/**
+ * Deslizar hacia la izquierda elimina. El fondo rojo muestra la papelera, que crece al cruzar
+ * el umbral (40 % del ancho) con un toque háptico: el gesto "responde" antes de soltar.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FilaDeslizable(
+    onEliminar: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    val haptic = LocalHapticFeedback.current
+    val estado = rememberSwipeToDismissBoxState(
+        confirmValueChange = { valor ->
+            if (valor == SwipeToDismissBoxValue.EndToStart) {
+                onEliminar()
+                true
+            } else false
+        },
+        positionalThreshold = { ancho -> ancho * 0.4f }
+    )
+    val pasadoUmbral = estado.targetValue == SwipeToDismissBoxValue.EndToStart
+    LaunchedEffect(pasadoUmbral) {
+        if (pasadoUmbral) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+    }
+    val escalaIcono by animateFloatAsState(if (pasadoUmbral) 1.15f else 0.9f, label = "papelera")
+    val forma = RoundedCornerShape(14.dp)
+
+    SwipeToDismissBox(
+        state = estado,
+        modifier = modifier.clip(forma),
+        enableDismissFromStartToEnd = false,
+        backgroundContent = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(forma)
+                    .background(MaterialTheme.colorScheme.errorContainer)
+                    .padding(end = 24.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Icon(
+                    Icons.Outlined.Delete,
+                    contentDescription = stringResource(R.string.delete),
+                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.scale(escalaIcono)
+                )
+            }
+        },
+        content = { content() }
+    )
+}
+
 @Composable
 private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Unit, modifier: Modifier = Modifier) {
-    // Calcula días restantes de prueba si procede
-    // Una fecha nula o mal formada (p. ej. creada desde la web) no debe tirar la lista.
+    // Días restantes de prueba, si procede. Una fecha nula o mal formada (p. ej. creada desde
+    // la web) no debe tirar la lista.
     val fechaFinPrueba = sub.fechaFinPrueba
     val diasPrueba: Int? = if (sub.esPrueba && !fechaFinPrueba.isNullOrBlank()) {
         runCatching {
@@ -271,77 +462,48 @@ private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Un
         }.getOrNull()
     } else null
 
-    // Borde izquierdo acento + contenedor de tarjeta
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(IntrinsicSize.Min)
             .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surface)
             .border(1.dp, MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(14.dp))
             .clickable { onNavigateToDetalle(sub.id) }
+            .padding(horizontal = 14.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        // Acento izquierdo discreto (outlineVariant, sin gradiente) — crece con el alto de la tarjeta
-        Box(
-            modifier = Modifier
-                .width(4.dp)
-                .fillMaxHeight()
-                .background(
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                    shape = RoundedCornerShape(topStart = 14.dp, bottomStart = 14.dp)
-                )
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ServiceLogo(nombre = sub.nombre, size = 44.dp, contentDescription = null)
-                Spacer(Modifier.width(14.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(sub.nombre, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(
-                        periodoCiclo(sub.periodoFacturacion),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        stringResource(R.string.renews_on, sub.fechaRenovacion),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text("%.2f €".format(sub.precio), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                    Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
-                }
-            }
-
-            // Badge de prueba gratuita
+        ServiceLogo(nombre = sub.nombre, size = 44.dp, contentDescription = null)
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(sub.nombre, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                periodoCiclo(sub.periodoFacturacion) + " · " +
+                    stringResource(R.string.renews_on, fechaIsoLegible(sub.fechaRenovacion)),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             if (diasPrueba != null) {
-                val badgeColor = if (diasPrueba <= 3) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.urgent
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(top = 8.dp, end = 8.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(badgeColor)
-                        .padding(horizontal = 7.dp, vertical = 3.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.trial_badge, diasPrueba),
-                        color = Color.White,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
+                // Texto en la columna, no un badge flotante sobre el precio (S-02).
+                Text(
+                    text = stringResource(R.string.trial_badge, diasPrueba),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (diasPrueba <= 3) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.urgent
+                )
             }
         }
+        Spacer(Modifier.width(8.dp))
+        Text(
+            formatearImporte(sub.precio, sub.moneda),
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Icon(
+            Icons.Default.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 4.dp)
+        )
     }
 }
 

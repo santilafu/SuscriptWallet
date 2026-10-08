@@ -1,11 +1,47 @@
 package com.subia.shared
 
+import com.russhwolf.settings.MapSettings
+import com.subia.shared.cache.CacheRepository
+import com.subia.shared.model.ApiResponse
+import com.subia.shared.model.AuthTokens
 import com.subia.shared.model.Category
 import com.subia.shared.model.NuevaSuscripcionRequest
 import com.subia.shared.model.Subscription
+import com.subia.shared.network.ApiClient
+import com.subia.shared.network.ApiRoutes
+import com.subia.shared.repository.CategoryRepository
+import com.subia.shared.repository.SubscriptionRepository
+import com.subia.shared.storage.TokenStorageProvider
 import com.subia.shared.viewmodel.SuscripcionesUiState
+import com.subia.shared.viewmodel.SuscripcionesViewModel
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.MockRequestHandleScope
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.engine.mock.respondError
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -192,5 +228,156 @@ private class FiltradoCategorias(private val todasLasSubs: List<Subscription>) {
         categoriaActual = categoriaId
         return if (categoriaId == null) todasLasSubs
         else todasLasSubs.filter { it.categoriaId == categoriaId }
+    }
+}
+
+// =========================================================================================
+// Pruebas sobre el ViewModel real: refresco silencioso y borrado con deshacer
+// =========================================================================================
+
+/**
+ * [com.subia.shared.viewmodel.SuscripcionesViewModel] sobre un [ApiClient] con motor mock:
+ * - la recarga con datos en memoria pasa por `Success(isRefreshing = true)` y nunca por `Loading`;
+ * - [SuscripcionesViewModel.eliminarConDeshacer] oculta la fila sin llamar al servidor hasta
+ *   pasada la ventana de deshacer;
+ * - [SuscripcionesViewModel.deshacerEliminacion] la recupera y no se hace ninguna petición DELETE.
+ */
+class SuscripcionesViewModelBorradoTest {
+
+    private val json = Json { ignoreUnknownKeys = true; isLenient = true; coerceInputValues = true }
+    private val dispatcher = StandardTestDispatcher()
+
+    @BeforeTest
+    fun setUp() = Dispatchers.setMain(dispatcher)
+
+    @AfterTest
+    fun tearDown() = Dispatchers.resetMain()
+
+    private val subs = listOf(
+        Subscription(id = 1L, nombre = "Netflix", precio = 12.99, periodoFacturacion = "MONTHLY", fechaRenovacion = "2026-12-01"),
+        Subscription(id = 2L, nombre = "Spotify", precio = 10.99, periodoFacturacion = "MONTHLY", fechaRenovacion = "2026-12-05")
+    )
+    private val cats = listOf(Category(id = 1L, nombre = "Streaming"))
+
+    private fun crearViewModel(onDelete: (Long) -> Unit = {}): SuscripcionesViewModel {
+        val engine = MockEngine { request ->
+            val path = request.url.encodedPath
+            when {
+                request.method == HttpMethod.Delete -> {
+                    onDelete(path.substringAfterLast('/').toLong())
+                    respond("", HttpStatusCode.NoContent)
+                }
+                path == ApiRoutes.SUBSCRIPTIONS -> respondJson(json.encodeToString(ApiResponse(data = subs)))
+                path == ApiRoutes.CATEGORIES -> respondJson(json.encodeToString(ApiResponse(data = cats)))
+                else -> respondError(HttpStatusCode.NotFound)
+            }
+        }
+        val api = ApiClient(baseUrl = "http://localhost", tokenStorage = TokensFijos, isDebug = false, httpEngine = engine)
+        return SuscripcionesViewModel(
+            subscriptionRepository = SubscriptionRepository(api),
+            categoryRepository = CategoryRepository(api),
+            cacheRepository = CacheRepository(MapSettings())
+        )
+    }
+
+    private fun MockRequestHandleScope.respondJson(body: String) = respond(
+        content = body,
+        status = HttpStatusCode.OK,
+        headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+    )
+
+    /** Espera (en tiempo real: la red mock responde en otro hilo) al estado Success estable. */
+    private suspend fun SuscripcionesViewModel.esperarSuccess(): SuscripcionesUiState.Success =
+        uiState.first { it is SuscripcionesUiState.Success && !it.isRefreshing } as SuscripcionesUiState.Success
+
+    /** Deja correr los hilos reales un instante para comprobar que algo NO ocurre. */
+    private suspend fun pausaReal(ms: Long = 150) = withContext(Dispatchers.Default) { delay(ms) }
+
+    @Test
+    fun cargaInicial_sinCache_pasaPorLoadingYLuegoSuccess() = runTest(dispatcher) {
+        val vm = crearViewModel()
+        assertTrue(vm.uiState.value is SuscripcionesUiState.Loading)
+        val estado = vm.esperarSuccess()
+        assertEquals(2, estado.suscripciones.size)
+        assertFalse(estado.isRefreshing)
+    }
+
+    @Test
+    fun recargaConDatos_marcaIsRefreshingSinVolverALoading() = runTest(dispatcher) {
+        val vm = crearViewModel()
+        vm.esperarSuccess()
+        val estados = mutableListOf<SuscripcionesUiState>()
+        val job = launch { vm.uiState.collect { estados += it } }
+        runCurrent()
+        estados.clear()
+
+        vm.cargar()
+        runCurrent()
+        assertTrue(estados.first() is SuscripcionesUiState.Success, "El primer estado tras recargar debe ser Success, no Loading")
+        assertTrue((estados.first() as SuscripcionesUiState.Success).isRefreshing)
+        vm.esperarSuccess()
+        assertTrue(estados.none { it is SuscripcionesUiState.Loading })
+        job.cancel()
+    }
+
+    @Test
+    fun eliminarConDeshacer_ocultaLaFilaYNoLlamaAlServidorHastaLaVentana() = runTest(dispatcher) {
+        val borrado = CompletableDeferred<Long>()
+        val borrados = mutableListOf<Long>()
+        val vm = crearViewModel { borrados += it; borrado.complete(it) }
+        vm.esperarSuccess()
+
+        vm.eliminarConDeshacer(1L)
+        runCurrent()
+        val visibles = (vm.uiState.value as SuscripcionesUiState.Success).suscripciones.map { it.id }
+        assertEquals(listOf(2L), visibles)
+        // runCurrent() no avanza el reloj virtual: el delay() del borrado sigue pendiente y
+        // el repositorio aún no se ha tocado. (Una pausa real aquí haría que runTest
+        // adelantara el tiempo virtual por sí solo.)
+        assertTrue(borrados.isEmpty(), "No debe borrar en el servidor antes de la ventana de deshacer")
+
+        advanceTimeBy(SuscripcionesViewModel.UNDO_WINDOW_MS + 100)
+        runCurrent()
+        assertEquals(1L, borrado.await())
+        vm.uiState.first { it is SuscripcionesUiState.Success && it.suscripciones.size == 1 }
+        assertEquals(listOf(2L), (vm.uiState.value as SuscripcionesUiState.Success).suscripciones.map { it.id })
+    }
+
+    @Test
+    fun deshacerEliminacion_recuperaLaFilaYNoBorraNunca() = runTest(dispatcher) {
+        val borrados = mutableListOf<Long>()
+        val vm = crearViewModel { borrados += it }
+        vm.esperarSuccess()
+
+        vm.eliminarConDeshacer(1L)
+        runCurrent()
+        vm.deshacerEliminacion(1L)
+        runCurrent()
+        assertEquals(listOf(1L, 2L), (vm.uiState.value as SuscripcionesUiState.Success).suscripciones.map { it.id })
+
+        advanceTimeBy(SuscripcionesViewModel.UNDO_WINDOW_MS * 2)
+        runCurrent()
+        pausaReal()
+        assertTrue(borrados.isEmpty(), "Tras deshacer no debe haber ninguna petición DELETE")
+    }
+
+    @Test
+    fun confirmarEliminacion_borraDeInmediatoSinEsperarLaVentana() = runTest(dispatcher) {
+        val borrado = CompletableDeferred<Long>()
+        val vm = crearViewModel { borrado.complete(it) }
+        vm.esperarSuccess()
+
+        vm.eliminarConDeshacer(2L)
+        vm.confirmarEliminacion(2L)
+        runCurrent()
+        assertEquals(2L, borrado.await())
+    }
+
+    private object TokensFijos : TokenStorageProvider {
+        private val tokens = AuthTokens(accessToken = "a", refreshToken = "r")
+        override fun saveTokens(tokens: AuthTokens) {}
+        override fun getTokens(): AuthTokens = tokens
+        override fun clearTokens() {}
+        override fun hasTokens(): Boolean = true
     }
 }

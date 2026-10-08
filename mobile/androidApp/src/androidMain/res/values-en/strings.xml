@@ -36,6 +36,27 @@
     <string name="view_subscriptions">View subscriptions</string>
     <string name="upcoming_renewals">Upcoming renewals</string>
     <string name="no_upcoming_renewals">No upcoming renewals</string>
+    <string name="hero_monthly_label">Monthly spend</string>
+    <string name="hero_per_year">%1$s per year</string>
+    <string name="this_month">This month</string>
+    <string name="tira_title">Next 14 days</string>
+    <string name="tira_next_charge">Next charge</string>
+    <string name="tira_no_charge">no charges</string>
+    <string name="tira_open_sub">Open %1$s</string>
+    <string name="tira_empty">Nothing due in the next 14 days</string>
+    <string name="day_today">Today</string>
+    <string name="day_tomorrow">Tomorrow</string>
+    <plurals name="in_n_days">
+        <item quantity="one">In %d day</item>
+        <item quantity="other">In %d days</item>
+    </plurals>
+    <string name="months_chart_title">What\'s coming each month</string>
+    <string name="months_chart_desc">Expected charges by month: %1$s</string>
+    <plurals name="month_charges_count">
+        <item quantity="one">%d charge</item>
+        <item quantity="other">%d charges</item>
+    </plurals>
+    <string name="month_no_charges">No charges expected this month</string>
     <string name="year_card_desc">See what your subscriptions add up to in a year and share it.</string>
     <string name="year_card_cta">View summary</string>
     <string name="offline_data">Showing cached data — offline</string>
@@ -171,9 +192,13 @@
     <string name="spending_by_category">Spending by category</string>
     <string name="no_category_data">No category data</string>
     <string name="others">Others</string>
+    <string name="category_monthly_equiv">Monthly equivalent per category</string>
+    <string name="no_category">No category</string>
+    <plurals name="category_subs_count">
+        <item quantity="one">%d subscription</item>
+        <item quantity="other">%d subscriptions</item>
+    </plurals>
     <string name="monthly_label">monthly</string>
-    <string name="top_5_monthly">Top 5 monthly expenses</string>
-    <string name="add_subscriptions_for_stats">Add subscriptions to see statistics</string>
     <!-- Appearance / Material You -->
     <string name="appearance">Appearance</string>
     <string name="dynamic_color">Dynamic color (Material You)</string>
@@ -202,15 +227,23 @@
     <string name="onb3_desc">We warn you before every renewal and before a free trial ends, so you can cancel in time.</string>
     <!-- Widget -->
     <string name="widget_monthly_label">Spent this month</string>
-    <string name="widget_next">Next: %1$s · %2$d days</string>
+    <string name="widget_next">Next: %1$s · %2$s</string>
     <string name="widget_no_data">Open the app to start</string>
+    <string name="widget_description">This month\'s spend and upcoming charges at a glance</string>
+    <string name="widget_no_charges_week">No charges this week</string>
+    <plurals name="widget_more_this_week">
+        <item quantity="one">+%d more charge this week</item>
+        <item quantity="other">+%d more charges this week</item>
+    </plurals>
     <!-- Gmail detection -->
     <string name="gmail_detect_section">Automatic detection</string>
     <string name="gmail_detect_desc">Detect your subscriptions by reading your Gmail — no typing.</string>
-    <string name="onb4_title">Detect your subscriptions</string>
-    <string name="onb4_desc">Connect your Gmail and we\'ll add them for you, no typing.</string>
-    <string name="onb4_action">Detect with Gmail</string>
-    <string name="onb4_skip">Not now</string>
+    <string name="onb_page_of">Page %1$d of %2$d</string>
+    <string name="onb2_card_label">Your monthly spend</string>
+    <string name="onb2_card_footer">%1$d services · %2$s a year</string>
+    <string name="onb_notif_enable">Turn on alerts</string>
+    <string name="onb_notif_later">Not now</string>
+    <string name="detect_with_gmail">Detect with Gmail</string>
     <!-- Login errors (AuthError mapping) -->
     <string name="auth_error_empty_credentials">Email and password are required</string>
     <string name="auth_error_bad_credentials">Incorrect email or password</string>
@@ -236,7 +269,7 @@
         <item quantity="one">We found %d subscription</item>
         <item quantity="other">We found %d subscriptions</item>
     </plurals>
-    <string name="gmail_scan_item_meta">%1$s %2$s · %3$s · seen %4$s</string>
+    <string name="gmail_scan_item_meta">%1$s · %2$s · seen %3$s</string>
     <plurals name="gmail_scan_add_selected">
         <item quantity="one">Add %d selected</item>
         <item quantity="other">Add %d selected</item>
@@ -256,4 +289,34 @@
     <string name="notif_trial_title">Trial ending: %1$s</string>
     <string name="notif_trial_text">Your free trial of %1$s ends on %2$s. After that you\'ll be charged %3$s %4$s/month</string>
     <string name="notif_trial_big">Your free trial of %1$s ends on %2$s. If you don\'t cancel, you\'ll be charged %3$s %4$s per month.</string>
+    <!-- Sprint 3: first use, list, form, Gmail, login, settings -->
+    <string name="empty_subs_title">Start with one</string>
+    <string name="empty_subs_subtitle">Tap a service to add it with its price filled in, or type your own.</string>
+    <string name="empty_add_other">Add another service</string>
+    <string name="sub_deleted">%1$s deleted</string>
+    <string name="undo">Undo</string>
+    <string name="required_legend">* Required</string>
+    <string name="discard_changes_title">Discard changes?</string>
+    <string name="discard_changes_text">What you\'ve entered will be lost.</string>
+    <string name="discard">Discard</string>
+    <string name="keep_editing">Keep editing</string>
+    <string name="gmail_error_start">Couldn\'t start the Gmail connection</string>
+    <string name="gmail_error_consent">The authorization in the browser wasn\'t completed</string>
+    <string name="gmail_error_results">Couldn\'t fetch the scan results</string>
+    <string name="gmail_error_add">Couldn\'t add the subscriptions</string>
+    <string name="gmail_error_offline">No connection. Check your network and try again</string>
+    <string name="gmail_select_all">Select all</string>
+    <string name="gmail_clear_selection">Clear selection</string>
+    <plurals name="gmail_added_snackbar">
+        <item quantity="one">%d subscription added</item>
+        <item quantity="other">%d subscriptions added</item>
+    </plurals>
+    <string name="notif_status_title">Alerts on this device</string>
+    <string name="notif_status_on">On</string>
+    <string name="notif_status_off">Off · tap to turn on</string>
+    <string name="help_section">Help</string>
+    <string name="view_tutorial_again">See the tutorial again</string>
+    <string name="password_show">Show password</string>
+    <string name="password_hide">Hide password</string>
+    <string name="tomorrow">tomorrow</string>
 </resources>

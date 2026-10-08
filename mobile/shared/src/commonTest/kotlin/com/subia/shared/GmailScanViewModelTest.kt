@@ -4,6 +4,9 @@ import com.subia.shared.model.GmailAddResult
 import com.subia.shared.model.GmailDetected
 import com.subia.shared.model.GmailScanTicketResponse
 import com.subia.shared.repository.GmailScanRepository
+import com.subia.shared.network.ApiException
+import com.subia.shared.network.NetworkException
+import com.subia.shared.viewmodel.GmailScanError
 import com.subia.shared.viewmodel.GmailScanUiState
 import com.subia.shared.viewmodel.GmailScanViewModel
 import kotlinx.coroutines.Dispatchers
@@ -44,10 +47,34 @@ class GmailScanViewModelTest {
     }
 
     @Test
-    fun `onReturn con status error pasa a Error`() = runTest {
+    fun `onReturn con status error pasa a Error tipado de consentimiento`() = runTest {
         val vm = GmailScanViewModel(FakeRepo())
         vm.onReturnedFromConsent("error")
-        assertTrue(vm.uiState.value is GmailScanUiState.Error)
+        assertEquals(GmailScanUiState.Error(GmailScanError.ConsentimientoFallido), vm.uiState.value)
+    }
+
+    @Test
+    fun `sin red el error es SinConexion y con fallo de API es el del paso`() {
+        assertEquals(GmailScanError.SinConexion, GmailScanViewModel.mapearError(NetworkException("timeout"), GmailScanError.AltaFallida))
+        assertEquals(GmailScanError.AltaFallida, GmailScanViewModel.mapearError(ApiException(500, "x"), GmailScanError.AltaFallida))
+    }
+
+    @Test
+    fun `fallo al pedir resultados pasa a ResultadosNoDisponibles`() = runTest {
+        val vm = GmailScanViewModel(FakeRepo(fallaResultados = true))
+        vm.onReturnedFromConsent("ok")
+        assertEquals(GmailScanUiState.Error(GmailScanError.ResultadosNoDisponibles), vm.uiState.value)
+    }
+
+    @Test
+    fun `alternarSeleccionarTodo desmarca todo y vuelve a marcarlo`() = runTest {
+        val vm = GmailScanViewModel(FakeRepo(results = listOf(detected(1), detected(2))))
+        vm.onReturnedFromConsent("ok")
+        assertTrue(vm.todoSeleccionado)
+        vm.alternarSeleccionarTodo()
+        assertEquals(emptySet(), vm.selectedIds.value)
+        vm.alternarSeleccionarTodo()
+        assertEquals(setOf(1L, 2L), vm.selectedIds.value)
     }
 
     @Test
@@ -80,9 +107,11 @@ class GmailScanViewModelTest {
 private class FakeRepo(
     private val results: List<GmailDetected> = emptyList(),
     private val ticketUrl: String = "https://accounts.google.com/o/oauth2/v2/auth?x=1",
-    private val addResult: GmailAddResult = GmailAddResult(added = 0)
+    private val addResult: GmailAddResult = GmailAddResult(added = 0),
+    private val fallaResultados: Boolean = false
 ) : GmailScanRepository {
     override suspend fun requestTicket(months: Int) = Result.success(GmailScanTicketResponse(ticketUrl))
-    override suspend fun getResults() = Result.success(results)
+    override suspend fun getResults(): Result<List<GmailDetected>> =
+        if (fallaResultados) Result.failure(ApiException(500, "boom")) else Result.success(results)
     override suspend fun add(ids: List<Long>) = Result.success(addResult)
 }

@@ -36,6 +36,27 @@
     <string name="view_subscriptions">Voir les abonnements</string>
     <string name="upcoming_renewals">Prochains renouvellements</string>
     <string name="no_upcoming_renewals">Aucun renouvellement à venir</string>
+    <string name="hero_monthly_label">Dépense mensuelle</string>
+    <string name="hero_per_year">%1$s par an</string>
+    <string name="this_month">Ce mois-ci</string>
+    <string name="tira_title">14 prochains jours</string>
+    <string name="tira_next_charge">Prochain prélèvement</string>
+    <string name="tira_no_charge">aucun prélèvement</string>
+    <string name="tira_open_sub">Ouvrir %1$s</string>
+    <string name="tira_empty">Rien à payer dans les 14 prochains jours</string>
+    <string name="day_today">Aujourd\'hui</string>
+    <string name="day_tomorrow">Demain</string>
+    <plurals name="in_n_days">
+        <item quantity="one">Dans %d jour</item>
+        <item quantity="other">Dans %d jours</item>
+    </plurals>
+    <string name="months_chart_title">Ce qui arrive chaque mois</string>
+    <string name="months_chart_desc">Prélèvements prévus par mois : %1$s</string>
+    <plurals name="month_charges_count">
+        <item quantity="one">%d prélèvement</item>
+        <item quantity="other">%d prélèvements</item>
+    </plurals>
+    <string name="month_no_charges">Aucun prélèvement prévu ce mois-ci</string>
     <string name="year_card_desc">Découvrez le total annuel de vos abonnements et partagez-le.</string>
     <string name="year_card_cta">Voir le résumé</string>
     <string name="offline_data">Données en cache — hors ligne</string>
@@ -171,9 +192,13 @@
     <string name="spending_by_category">Dépenses par catégorie</string>
     <string name="no_category_data">Aucune donnée de catégorie</string>
     <string name="others">Autres</string>
+    <string name="category_monthly_equiv">Équivalent mensuel par catégorie</string>
+    <string name="no_category">Sans catégorie</string>
+    <plurals name="category_subs_count">
+        <item quantity="one">%d abonnement</item>
+        <item quantity="other">%d abonnements</item>
+    </plurals>
     <string name="monthly_label">mensuel</string>
-    <string name="top_5_monthly">Top 5 dépenses mensuelles</string>
-    <string name="add_subscriptions_for_stats">Ajoutez des abonnements pour voir les statistiques</string>
     <!-- Apparence / Material You -->
     <string name="appearance">Apparence</string>
     <string name="dynamic_color">Couleurs dynamiques (Material You)</string>
@@ -202,15 +227,23 @@
     <string name="onb3_desc">On vous prévient avant chaque renouvellement et avant la fin d\'un essai gratuit, pour annuler à temps.</string>
     <!-- Widget -->
     <string name="widget_monthly_label">Dépensé ce mois</string>
-    <string name="widget_next">Prochain : %1$s · %2$d jours</string>
+    <string name="widget_next">Prochain : %1$s · %2$s</string>
     <string name="widget_no_data">Ouvrez l\'app pour commencer</string>
+    <string name="widget_description">Dépense du mois et prochains prélèvements en un coup d\'œil</string>
+    <string name="widget_no_charges_week">Aucun prélèvement cette semaine</string>
+    <plurals name="widget_more_this_week">
+        <item quantity="one">+%d autre prélèvement cette semaine</item>
+        <item quantity="other">+%d autres prélèvements cette semaine</item>
+    </plurals>
     <!-- Détection Gmail -->
     <string name="gmail_detect_section">Détection automatique</string>
     <string name="gmail_detect_desc">Détectez vos abonnements en lisant votre Gmail, sans rien saisir.</string>
-    <string name="onb4_title">Détectez vos abonnements</string>
-    <string name="onb4_desc">Connectez votre Gmail et nous les ajoutons pour vous, sans rien saisir.</string>
-    <string name="onb4_action">Détecter avec Gmail</string>
-    <string name="onb4_skip">Pas maintenant</string>
+    <string name="onb_page_of">Page %1$d sur %2$d</string>
+    <string name="onb2_card_label">Votre dépense mensuelle</string>
+    <string name="onb2_card_footer">%1$d services · %2$s par an</string>
+    <string name="onb_notif_enable">Activer les alertes</string>
+    <string name="onb_notif_later">Pas maintenant</string>
+    <string name="detect_with_gmail">Détecter avec Gmail</string>
     <!-- Erreurs de connexion (mapping AuthError) -->
     <string name="auth_error_empty_credentials">L\'e-mail et le mot de passe sont obligatoires</string>
     <string name="auth_error_bad_credentials">E-mail ou mot de passe incorrect</string>
@@ -236,7 +269,7 @@
         <item quantity="one">Nous avons trouvé %d abonnement</item>
         <item quantity="other">Nous avons trouvé %d abonnements</item>
     </plurals>
-    <string name="gmail_scan_item_meta">%1$s %2$s · %3$s · vu le %4$s</string>
+    <string name="gmail_scan_item_meta">%1$s · %2$s · vu le %3$s</string>
     <plurals name="gmail_scan_add_selected">
         <item quantity="one">Ajouter %d sélectionné</item>
         <item quantity="other">Ajouter %d sélectionnés</item>
@@ -256,4 +289,34 @@
     <string name="notif_trial_title">Essai bientôt terminé : %1$s</string>
     <string name="notif_trial_text">Votre essai gratuit de %1$s se termine le %2$s. Ensuite, %3$s %4$s/mois seront facturés</string>
     <string name="notif_trial_big">Votre période d\'essai gratuit de %1$s se termine le %2$s. Si vous n\'annulez pas, %3$s %4$s par mois vous seront facturés.</string>
+    <!-- Sprint 3 : première utilisation, liste, formulaire, Gmail, connexion, réglages -->
+    <string name="empty_subs_title">Commencez par un</string>
+    <string name="empty_subs_subtitle">Touchez un service pour l\'ajouter avec son prix déjà rempli, ou saisissez le vôtre.</string>
+    <string name="empty_add_other">Ajouter un autre service</string>
+    <string name="sub_deleted">%1$s supprimé</string>
+    <string name="undo">Annuler</string>
+    <string name="required_legend">* Obligatoire</string>
+    <string name="discard_changes_title">Abandonner les modifications ?</string>
+    <string name="discard_changes_text">Ce que vous avez saisi sera perdu.</string>
+    <string name="discard">Abandonner</string>
+    <string name="keep_editing">Continuer la saisie</string>
+    <string name="gmail_error_start">Impossible de démarrer la connexion à Gmail</string>
+    <string name="gmail_error_consent">L\'autorisation dans le navigateur n\'a pas été terminée</string>
+    <string name="gmail_error_results">Impossible de récupérer les résultats de l\'analyse</string>
+    <string name="gmail_error_add">Impossible d\'ajouter les abonnements</string>
+    <string name="gmail_error_offline">Pas de connexion. Vérifiez votre réseau et réessayez</string>
+    <string name="gmail_select_all">Tout sélectionner</string>
+    <string name="gmail_clear_selection">Tout désélectionner</string>
+    <plurals name="gmail_added_snackbar">
+        <item quantity="one">%d abonnement ajouté</item>
+        <item quantity="other">%d abonnements ajoutés</item>
+    </plurals>
+    <string name="notif_status_title">Alertes sur cet appareil</string>
+    <string name="notif_status_on">Activées</string>
+    <string name="notif_status_off">Désactivées · appuyez pour activer</string>
+    <string name="help_section">Aide</string>
+    <string name="view_tutorial_again">Revoir le tutoriel</string>
+    <string name="password_show">Afficher le mot de passe</string>
+    <string name="password_hide">Masquer le mot de passe</string>
+    <string name="tomorrow">demain</string>
 </resources>

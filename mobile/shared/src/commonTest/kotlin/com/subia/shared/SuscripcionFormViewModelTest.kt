@@ -8,13 +8,19 @@ import com.subia.shared.repository.CatalogRepository
 import com.subia.shared.repository.CategoryRepository
 import com.subia.shared.repository.SubscriptionRepository
 import com.subia.shared.storage.TokenStorageProvider
+import com.subia.shared.model.CatalogItem
+import com.subia.shared.viewmodel.Campo
 import com.subia.shared.viewmodel.FormError
 import com.subia.shared.viewmodel.FormUiState
 import com.subia.shared.viewmodel.SuscripcionFormViewModel
 import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.respondError
+import io.ktor.http.HttpHeaders
+import io.ktor.http.headersOf
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -24,6 +30,8 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 /**
  * Pruebas de la validación del formulario de suscripción.
@@ -129,16 +137,179 @@ class SuscripcionFormViewModelTest {
         assertEquals(0, peticionesDeGuardado, "La validación debe cortar antes de llamar al servidor")
     }
 
+    // ── validarCampos(): mapa campo → error (validación en vivo) ─────────────
+
+    @Test
+    fun validarCampos_todoVacio_devuelveLosCuatroErrores() {
+        val errores = SuscripcionFormViewModel.validarCampos("", "", "", null)
+        assertEquals(
+            mapOf(
+                Campo.Nombre to FormError.NombreVacio,
+                Campo.Precio to FormError.PrecioInvalido,
+                Campo.FechaRenovacion to FormError.FechaRenovacionVacia,
+                Campo.Categoria to FormError.CategoriaNoSeleccionada
+            ),
+            errores
+        )
+    }
+
+    @Test
+    fun validarCampos_soloPrecioMalo_devuelveSoloElImporte() {
+        val errores = SuscripcionFormViewModel.validarCampos("Netflix", "-3", "2026-11-01", 2L)
+        assertEquals(mapOf(Campo.Precio to FormError.PrecioInvalido), errores)
+    }
+
+    @Test
+    fun validarCampos_formularioCompleto_devuelveMapaVacio() {
+        assertTrue(SuscripcionFormViewModel.validarCampos("Netflix", "12,99", "2026-11-01", 2L).isEmpty())
+    }
+
+    // ── parsearPrecio(): coma, punto y miles ─────────────────────────────────
+
+    @Test
+    fun parsearPrecio_aceptaComaYPuntoComoDecimal() {
+        assertEquals(9.99, SuscripcionFormViewModel.parsearPrecio("9,99"))
+        assertEquals(9.99, SuscripcionFormViewModel.parsearPrecio("9.99"))
+        assertEquals(12.0, SuscripcionFormViewModel.parsearPrecio("12"))
+    }
+
+    @Test
+    fun parsearPrecio_conSeparadorDeMiles_usaElUltimoComoDecimal() {
+        assertEquals(1234.56, SuscripcionFormViewModel.parsearPrecio("1.234,56"))
+        assertEquals(1234.56, SuscripcionFormViewModel.parsearPrecio("1,234.56"))
+    }
+
+    @Test
+    fun parsearPrecio_ignoraEspacios() {
+        assertEquals(10.5, SuscripcionFormViewModel.parsearPrecio(" 10,5 "))
+    }
+
+    @Test
+    fun parsearPrecio_textoNoNumerico_devuelveNull() {
+        assertNull(SuscripcionFormViewModel.parsearPrecio("abc"))
+        assertNull(SuscripcionFormViewModel.parsearPrecio(""))
+        assertNull(SuscripcionFormViewModel.parsearPrecio("9,,9"))
+    }
+
+    @Test
+    fun formatearPrecioParaCampo_quitaDecimalesInutiles() {
+        assertEquals("12", SuscripcionFormViewModel.formatearPrecioParaCampo(12.0))
+        assertEquals("9.99", SuscripcionFormViewModel.formatearPrecioParaCampo(9.99))
+        assertEquals("1.08", SuscripcionFormViewModel.formatearPrecioParaCampo(12.99 / 12.0))
+    }
+
+    // ── filtrarCatalogo(): autocompletado del nombre ─────────────────────────
+
+    private val catalogo = listOf(
+        CatalogItem(id = 1, nombre = "Netflix", precioMensual = 12.99),
+        CatalogItem(id = 2, nombre = "Spotify", precioMensual = 10.99),
+        CatalogItem(id = 3, nombre = "Movistar+", precioMensual = 14.0),
+        CatalogItem(id = 4, nombre = "Disney+", precioMensual = 8.99)
+    )
+
+    @Test
+    fun filtrarCatalogo_textoVacio_noSugiereNada() {
+        assertTrue(SuscripcionFormViewModel.filtrarCatalogo("", catalogo, null).isEmpty())
+    }
+
+    @Test
+    fun filtrarCatalogo_ignoraMayusculasYPrioritzaPrefijo() {
+        val resultado = SuscripcionFormViewModel.filtrarCatalogo("net", catalogo, null)
+        assertEquals(listOf("Netflix"), resultado.map { it.nombre })
+    }
+
+    @Test
+    fun filtrarCatalogo_siElTextoEsElServicioYaElegido_noReabre() {
+        val netflix = catalogo[0]
+        assertTrue(SuscripcionFormViewModel.filtrarCatalogo("Netflix", catalogo, netflix).isEmpty())
+    }
+
+    // ── Flujos en vivo: errores, puedeGuardar y hayCambios ───────────────────
+
+    @Test
+    fun puedeGuardar_soloCuandoTodosLosCamposSonValidos() = runTest {
+        val vm = crearViewModel()
+        assertFalse(vm.puedeGuardar.value)
+        assertEquals(FormError.NombreVacio, vm.errores.value[Campo.Nombre])
+
+        vm.nombre.value = "Spotify"
+        vm.precio.value = "10,99"
+        vm.fechaRenovacion.value = "2026-11-01"
+        vm.categoriaId.value = 1L
+
+        assertTrue(vm.errores.value.isEmpty())
+        assertTrue(vm.puedeGuardar.value)
+    }
+
+    @Test
+    fun hayCambios_esFalsoAlAbrirYVerdaderoTrasEscribir() = runTest {
+        val vm = crearViewModel()
+        assertFalse(vm.hayCambios.value)
+        vm.nombre.value = "N"
+        assertTrue(vm.hayCambios.value)
+        vm.marcarComoSinCambios()
+        assertFalse(vm.hayCambios.value)
+    }
+
+    @Test
+    fun seleccionarServicioDelCatalogo_prerrellenaPrecioCicloYLogo() = runTest {
+        val vm = crearViewModel()
+        vm.seleccionarServicioDelCatalogo(
+            CatalogItem(id = 1, nombre = "Netflix", precioMensual = 12.99, periodoFacturacion = "MONTHLY", domain = "netflix.com")
+        )
+        assertEquals("Netflix", vm.nombre.value)
+        assertEquals("12.99", vm.precio.value)
+        assertEquals("MONTHLY", vm.periodoFacturacion.value)
+        assertEquals("netflix.com", vm.catalogoSeleccionado.value?.domain)
+        assertTrue(vm.sugerencias.value.isEmpty(), "Tras elegir, el desplegable no debe reabrirse")
+    }
+
+    @Test
+    fun cargarParaEditar_porId_precargaLosCamposYNoMarcaCambios() = runTest {
+        val vm = crearViewModel(respuestas = mapOf(
+            "/subscriptions/7" to """{"data":{"id":7,"name":"Spotify","price":10.99,"moneda":"EUR","billingCycle":"MONTHLY","renewalDate":"2026-11-03","categoryId":2,"notes":"familiar"}}"""
+        ))
+        vm.cargarParaEditar(7L)
+        vm.cargandoEdicion.first { !it } // espera a la respuesta del motor mock
+        assertEquals("Spotify", vm.nombre.value)
+        assertEquals("10.99", vm.precio.value)
+        assertEquals("2026-11-03", vm.fechaRenovacion.value)
+        assertEquals(2L, vm.categoriaId.value)
+        assertEquals("familiar", vm.notas.value)
+        assertFalse(vm.hayCambios.value, "Tras cargar para editar no hay cambios pendientes")
+        // puedeGuardar es un StateFlow derivado de los errores: esperamos a que se propague
+        assertTrue(vm.puedeGuardar.first { it })
+        assertFalse(vm.cargandoEdicion.value)
+    }
+
+    @Test
+    fun cargarParaEditar_porId_siFallaExponeErrorYDejaElFormularioVacio() = runTest {
+        val vm = crearViewModel()
+        vm.cargarParaEditar(99L)
+        val estado = vm.uiState.first { it is FormUiState.Error }
+        assertEquals("", vm.nombre.value)
+        assertEquals(FormUiState.Error(FormError.GuardadoFallido), estado)
+    }
+
     // ── Fixtures ─────────────────────────────────────────────────────────────
 
     /**
      * ViewModel real sobre un [ApiClient] con motor mock que responde 404 a todo:
      * suficiente para probar la validación, que ocurre antes de cualquier petición.
      */
-    private fun crearViewModel(onRequest: (String) -> Unit = {}): SuscripcionFormViewModel {
+    private fun crearViewModel(
+        respuestas: Map<String, String> = emptyMap(),
+        onRequest: (String) -> Unit = {}
+    ): SuscripcionFormViewModel {
         val engine = MockEngine { request ->
-            onRequest(request.url.encodedPath)
-            respondError(HttpStatusCode.NotFound)
+            val path = request.url.encodedPath
+            onRequest(path)
+            val cuerpo = respuestas.entries.firstOrNull { path.endsWith(it.key) }?.value
+            if (cuerpo != null) {
+                respond(cuerpo, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+            } else {
+                respondError(HttpStatusCode.NotFound)
+            }
         }
         val api = ApiClient(
             baseUrl = "http://localhost",

@@ -37,12 +37,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.subia.android.R
+import com.subia.android.ui.components.formatearImporte
+import com.subia.android.ui.components.tabular
 import com.subia.android.ui.theme.GradientIndigoDeepEnd
 import com.subia.android.ui.theme.GradientIndigoDeepStart
 import com.subia.android.util.ResumenCompartible
 import com.subia.android.util.compartirResumenAnual
-import com.subia.shared.viewmodel.DashboardUiState
 import com.subia.shared.viewmodel.DashboardViewModel
+import com.subia.shared.viewmodel.resumenDisponible
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -64,7 +66,7 @@ fun ResumenAnualScreen(
     val tops by viewModel.topSuscripciones.collectAsState()
     val gastosCat by viewModel.gastosPorCategoria.collectAsState()
 
-    val numSubs = (uiState as? DashboardUiState.Success)?.resumen?.totalSuscripciones ?: tops.size
+    val numSubs = uiState.resumenDisponible?.totalSuscripciones ?: tops.size
     val entradaAnual = totalesAnuales.entries.firstOrNull()
     val moneda = entradaAnual?.key ?: "EUR"
     val totalAnual = entradaAnual?.value ?: 0.0
@@ -73,8 +75,8 @@ fun ResumenAnualScreen(
     val categoriaTop = gastosCat.keys.firstOrNull()?.substringBeforeLast(" (")
 
     val hayDatos = totalAnual > 0.0
-    val simbolo = if (moneda == "EUR") "€" else moneda
-    val totalValor = "%,.0f %s".format(totalAnual, simbolo)
+    // Símbolo y separadores según el locale del usuario (R-03); sin decimales en una cifra anual.
+    val totalValor = formatearImporte(totalAnual, moneda, decimales = 0)
 
     val context = LocalContext.current
     val titulo = stringResource(R.string.resumen_anual_title)
@@ -203,6 +205,7 @@ private fun TarjetaResumen(
         Text(
             text = totalValor,
             color = Color.White,
+            style = MaterialTheme.typography.displayLarge.tabular,
             fontSize = 48.sp,
             fontWeight = FontWeight.ExtraBold,
             textAlign = TextAlign.Center

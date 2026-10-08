@@ -16,4 +16,12 @@ object OnboardingPrefs {
             .putBoolean(KEY, true)
             .apply()
     }
+
+    /** Vuelve a marcar el onboarding como no visto ("Ver tutorial de nuevo" en Ajustes). */
+    fun reset(context: Context) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY, false)
+            .apply()
+    }
 }

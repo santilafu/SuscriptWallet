@@ -1,8 +1,11 @@
 package com.subia.android.ui.screens
 
+import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import androidx.core.app.ActivityCompat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
@@ -25,6 +28,9 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.FileDownload
+import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.outlined.NotificationsOff
+import androidx.compose.material.icons.outlined.School
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,6 +52,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -63,6 +70,7 @@ import androidx.core.os.LocaleListCompat
 import com.subia.android.BuildConfig
 import com.subia.android.R
 import com.subia.android.ui.theme.ThemeState
+import com.subia.android.util.NotificacionesPermiso
 import com.subia.android.util.openCustomTab
 import com.subia.android.util.toCsv
 import com.subia.android.worker.DEFAULT_NOTIFICATION_DAYS_BEFORE
@@ -98,6 +106,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onNavigateToCategorias: () -> Unit = {},
     onDetectGmail: () -> Unit = {},
+    onVerTutorial: () -> Unit = {},
     onLogout: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -108,6 +117,30 @@ fun SettingsScreen(
 
     var selectedDays by remember {
         mutableIntStateOf(prefs.getInt(KEY_NOTIFICATION_DAYS_BEFORE, DEFAULT_NOTIFICATION_DAYS_BEFORE))
+    }
+
+    // Estado real de los avisos (permiso + canal): se relee al volver de los ajustes del sistema.
+    var avisosActivados by remember { mutableStateOf(NotificacionesPermiso.estanActivadas(context)) }
+    LifecycleResumeEffect(Unit) {
+        avisosActivados = NotificacionesPermiso.estanActivadas(context)
+        onPauseOrDispose { }
+    }
+    val pedirPermiso = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedido ->
+        avisosActivados = NotificacionesPermiso.estanActivadas(context)
+        val activity = context as? Activity
+        // Denegado de forma permanente (el sistema ya no muestra el diálogo): única salida, Ajustes.
+        if (!concedido && activity != null &&
+            !ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.POST_NOTIFICATIONS)
+        ) {
+            NotificacionesPermiso.abrirAjustesDelSistema(context)
+        }
+    }
+    val gestionarAvisos = {
+        if (NotificacionesPermiso.hayQuePedir(context)) {
+            pedirPermiso.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            NotificacionesPermiso.abrirAjustesDelSistema(context)
+        }
     }
 
     var selectedLocale by remember {
@@ -203,6 +236,24 @@ fun SettingsScreen(
 
             // ── Notificaciones ────────────────────────────────────────
             SeccionTitulo(stringResource(R.string.notifications))
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.notif_status_title)) },
+                supportingContent = {
+                    Text(stringResource(if (avisosActivados) R.string.notif_status_on else R.string.notif_status_off))
+                },
+                leadingContent = {
+                    Icon(
+                        if (avisosActivados) Icons.Outlined.NotificationsActive else Icons.Outlined.NotificationsOff,
+                        contentDescription = null,
+                        tint = if (avisosActivados) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error
+                    )
+                },
+                trailingContent = {
+                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier.clickable(onClick = gestionarAvisos)
+            )
             Text(
                 text = stringResource(R.string.notify_before_renewal),
                 style = MaterialTheme.typography.bodyLarge,
@@ -246,6 +297,16 @@ fun SettingsScreen(
                 titulo = stringResource(R.string.gmail_detect_section),
                 descripcion = stringResource(R.string.gmail_detect_desc),
                 onClick = onDetectGmail
+            )
+            SeparadorSeccion()
+
+            // ── Ayuda ─────────────────────────────────────────────────
+            SeccionTitulo(stringResource(R.string.help_section))
+            FilaNavegacion(
+                icon = Icons.Outlined.School,
+                titulo = stringResource(R.string.view_tutorial_again),
+                descripcion = stringResource(R.string.onb1_title),
+                onClick = onVerTutorial
             )
             SeparadorSeccion()
 

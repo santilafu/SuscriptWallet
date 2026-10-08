@@ -5,7 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.subia.shared.cache.CacheRepository
 import com.subia.shared.model.DashboardSummary
 import com.subia.shared.model.ProximaRenovacion
+import com.subia.shared.model.ProyeccionCobros
 import com.subia.shared.model.Subscription
+import com.subia.shared.model.calcularProyeccionCobros
 import com.subia.shared.network.SessionExpiredException
 import com.subia.shared.repository.CategoryRepository
 import com.subia.shared.repository.DashboardRepository
@@ -29,13 +31,36 @@ data class TopSuscripcion(
     val moneda: String
 )
 
+/** Gasto mensual normalizado de una categoría en una divisa, con su peso dentro de esa divisa. */
+data class GastoCategoria(
+    val categoriaId: Long?,
+    val nombre: String,
+    val moneda: String,
+    val gastoMensual: Double,
+    val numSuscripciones: Int,
+    /** Porcentaje (0..100) sobre el total mensual de la misma divisa. */
+    val porcentaje: Int
+)
+
 sealed interface DashboardUiState {
+    /** Carga inicial sin ningún dato que mostrar. */
     data object Loading : DashboardUiState
     data class Success(val resumen: DashboardSummary) : DashboardUiState
+    /** Refresco (pull-to-refresh o vuelta a la pantalla) manteniendo los datos anteriores visibles. */
+    data class Refreshing(val resumen: DashboardSummary) : DashboardUiState
     data class Error(val mensaje: String) : DashboardUiState
     data class Offline(val resumenCacheado: DashboardSummary?) : DashboardUiState
     data object SesionExpirada : DashboardUiState
 }
+
+/** Resumen disponible en el estado, sea cual sea su fase (éxito, refresco u offline). */
+val DashboardUiState.resumenDisponible: DashboardSummary?
+    get() = when (this) {
+        is DashboardUiState.Success -> resumen
+        is DashboardUiState.Refreshing -> resumen
+        is DashboardUiState.Offline -> resumenCacheado
+        else -> null
+    }
 
 private const val CACHE_KEY_DASHBOARD = "dashboard_summary"
 private const val CACHE_KEY_SUBS = "dashboard_subscriptions"
@@ -46,8 +71,8 @@ private const val CACHE_KEY_SUBS = "dashboard_subscriptions"
  * Implementa la estrategia stale-while-revalidate usando [CacheRepository]:
  * - Al iniciarse, muestra inmediatamente los datos en caché (si existen).
  * - En paralelo lanza peticiones de red y actualiza la UI y la caché con datos frescos.
- * - Calcula [totalesPorMoneda] y [gastosPorCategoria] agrupando las suscripciones por divisa/categoría
- *   en el cliente.
+ * - Calcula [totalesPorMoneda], [gastosPorCategoria] y la [proyeccion] de cobros agrupando
+ *   las suscripciones por divisa/categoría en el cliente.
  */
 class DashboardViewModel(
     private val dashboardRepository: DashboardRepository,
@@ -72,6 +97,10 @@ class DashboardViewModel(
      */
     val gastosPorCategoria: StateFlow<Map<String, Double>> = _gastosPorCategoria.asStateFlow()
 
+    private val _gastosPorCategoriaDetalle = MutableStateFlow<List<GastoCategoria>>(emptyList())
+    /** Mismo desglose que [gastosPorCategoria] pero tipado (nombre, divisa, nº subs, porcentaje), ordenado de mayor a menor. */
+    val gastosPorCategoriaDetalle: StateFlow<List<GastoCategoria>> = _gastosPorCategoriaDetalle.asStateFlow()
+
     private val _totalesAnualesPorMoneda = MutableStateFlow<Map<String, Double>>(emptyMap())
     /**
      * Mapa de divisa → gasto anual total (gasto mensual × 12).
@@ -94,11 +123,21 @@ class DashboardViewModel(
      */
     val topSuscripciones: StateFlow<List<TopSuscripcion>> = _topSuscripciones.asStateFlow()
 
+    private val _proyeccion = MutableStateFlow<ProyeccionCobros?>(null)
+    /**
+     * Proyección de cobros (tira de 14 días, 12 meses, totales del mes actual y siguiente)
+     * calculada en el cliente con [calcularProyeccionCobros]. `null` hasta que haya suscripciones.
+     */
+    val proyeccion: StateFlow<ProyeccionCobros?> = _proyeccion.asStateFlow()
+
     init { cargarEstadisticas() }
 
     /** Carga las estadísticas del dashboard y los totales por divisa en paralelo. */
     fun cargarEstadisticas() {
         viewModelScope.launch {
+            // Si ya hay datos en pantalla, pasamos a Refreshing para no vaciarla (D-05).
+            _uiState.value.resumenDisponible?.let { _uiState.value = DashboardUiState.Refreshing(it) }
+
             // Lanzamos la carga de categorías en paralelo para poder mapear id→nombre
             // en calcularGastosPorCategoria y evitar el fallback "Categoría N".
             val categoriasDeferred = async { categoryRepository.getAll() }
@@ -107,10 +146,10 @@ class DashboardViewModel(
             val cachedSummaryJson = cacheRepository.getString(CACHE_KEY_DASHBOARD)
             val cachedSubsJson = cacheRepository.getString(CACHE_KEY_SUBS)
 
-            if (cachedSummaryJson != null) {
+            if (cachedSummaryJson != null && _uiState.value is DashboardUiState.Loading) {
                 val cachedSummary = runCatching { json.decodeFromString<DashboardSummary>(cachedSummaryJson) }.getOrNull()
                 if (cachedSummary != null) {
-                    _uiState.value = DashboardUiState.Success(cachedSummary)
+                    _uiState.value = DashboardUiState.Refreshing(cachedSummary)
                 }
             }
             // Esperamos el mapa de categorías una sola vez: las llamadas de caché y de red
@@ -118,15 +157,9 @@ class DashboardViewModel(
             val nombreCatMap = categoriasDeferred.await().getOrNull().orEmpty()
                 .associate { it.id to it.nombre }
 
-            if (cachedSubsJson != null) {
+            if (cachedSubsJson != null && _proyeccion.value == null) {
                 val cachedSubs = runCatching { json.decodeFromString<List<Subscription>>(cachedSubsJson) }.getOrNull()
-                if (cachedSubs != null) {
-                    _totalesPorMoneda.value = calcularTotalesPorMoneda(cachedSubs)
-                    _totalesAnualesPorMoneda.value = calcularTotalesAnualesPorMoneda(cachedSubs)
-                    _gastosPorCategoria.value = calcularGastosPorCategoria(cachedSubs, nombreCatMap)
-                    _pruebasPorVencer.value = calcularPruebasPorVencer(cachedSubs)
-                    _topSuscripciones.value = calcularTopSuscripciones(cachedSubs)
-                }
+                if (cachedSubs != null) publicarDerivados(cachedSubs, nombreCatMap)
             }
 
             // --- Peticiones de red en paralelo ---
@@ -146,32 +179,37 @@ class DashboardViewModel(
                     when (error) {
                         is SessionExpiredException -> _uiState.value = DashboardUiState.SesionExpirada
                         else -> {
-                            // Si ya emitimos caché, pasar a Offline; si no, Error
-                            val estadoActual = _uiState.value
-                            if (estadoActual !is DashboardUiState.Success) {
-                                _uiState.value = DashboardUiState.Error(
-                                    error.message ?: "Error al cargar los datos"
-                                )
+                            // Si ya tenemos datos (caché o carga anterior), pasar a Offline; si no, Error
+                            val previo = _uiState.value.resumenDisponible
+                            _uiState.value = if (previo == null) {
+                                DashboardUiState.Error(error.message ?: "Error al cargar los datos")
                             } else {
-                                _uiState.value = DashboardUiState.Offline(
-                                    (estadoActual as? DashboardUiState.Success)?.resumen
-                                )
+                                DashboardUiState.Offline(previo)
                             }
                         }
                     }
                 }
 
             subsResult.onSuccess { subs ->
-                _totalesPorMoneda.value = calcularTotalesPorMoneda(subs)
-                _totalesAnualesPorMoneda.value = calcularTotalesAnualesPorMoneda(subs)
-                _gastosPorCategoria.value = calcularGastosPorCategoria(subs, nombreCatMap)
-                _pruebasPorVencer.value = calcularPruebasPorVencer(subs)
-                _topSuscripciones.value = calcularTopSuscripciones(subs)
+                publicarDerivados(subs, nombreCatMap)
                 cacheRepository.saveString(CACHE_KEY_SUBS, json.encodeToString(subs))
                 cacheRepository.saveTimestamp(CACHE_KEY_SUBS)
             }
         }
     }
+
+    /** Publica todos los cálculos derivados de la lista de suscripciones. */
+    private fun publicarDerivados(subs: List<Subscription>, nombreCatMap: Map<Long, String>) {
+        _totalesPorMoneda.value = calcularTotalesPorMoneda(subs)
+        _totalesAnualesPorMoneda.value = calcularTotalesAnualesPorMoneda(subs)
+        _gastosPorCategoria.value = calcularGastosPorCategoria(subs, nombreCatMap)
+        _gastosPorCategoriaDetalle.value = calcularGastosPorCategoriaDetalle(subs, nombreCatMap)
+        _pruebasPorVencer.value = calcularPruebasPorVencer(subs)
+        _topSuscripciones.value = calcularTopSuscripciones(subs)
+        _proyeccion.value = calcularProyeccionCobros(subs, hoy())
+    }
+
+    private fun hoy(): LocalDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
     /** Refresca los datos (p.ej. tras pull-to-refresh). */
     fun refrescar() = cargarEstadisticas()
@@ -184,8 +222,7 @@ class DashboardViewModel(
     internal fun calcularTotalesPorMoneda(subs: List<Subscription>): Map<String, Double> {
         val result = mutableMapOf<String, Double>()
         for (sub in subs) {
-            val mensual = if (sub.periodoFacturacion == "YEARLY") sub.precio / 12.0 else sub.precio
-            result[sub.moneda] = (result[sub.moneda] ?: 0.0) + mensual
+            result[sub.moneda] = (result[sub.moneda] ?: 0.0) + gastoMensualNormalizado(sub)
         }
         return result.entries
             .sortedWith(compareBy { entry ->
@@ -206,7 +243,7 @@ class DashboardViewModel(
     internal fun calcularTotalesAnualesPorMoneda(subs: List<Subscription>): Map<String, Double> {
         val result = mutableMapOf<String, Double>()
         for (sub in subs) {
-            val anual = if (sub.periodoFacturacion == "YEARLY") sub.precio else sub.precio * 12.0
+            val anual = gastoMensualNormalizado(sub) * 12.0
             result[sub.moneda] = (result[sub.moneda] ?: 0.0) + anual
         }
         return result.entries
@@ -225,7 +262,7 @@ class DashboardViewModel(
      * y las devuelve como [ProximaRenovacion] para reutilizar el mismo modelo de UI.
      */
     internal fun calcularPruebasPorVencer(subs: List<Subscription>): List<ProximaRenovacion> {
-        val hoy = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val hoy = hoy()
         return subs
             .filter { it.esPrueba && !it.fechaFinPrueba.isNullOrBlank() }
             .mapNotNull { sub ->
@@ -257,13 +294,46 @@ class DashboardViewModel(
         for (sub in subs) {
             val catId = sub.categoriaId ?: continue
             val catNombre = nombreCategoria[catId] ?: "Categoría $catId"
-            val mensual = if (sub.periodoFacturacion == "YEARLY") sub.precio / 12.0 else sub.precio
             val clave = "$catNombre (${sub.moneda})"
-            result[clave] = (result[clave] ?: 0.0) + mensual
+            result[clave] = (result[clave] ?: 0.0) + gastoMensualNormalizado(sub)
         }
         return result.entries
             .sortedByDescending { it.value }
             .associate { it.key to it.value }
+    }
+
+    /**
+     * Desglose tipado por categoría y divisa del gasto mensual normalizado, con el porcentaje
+     * sobre el total de su divisa. Las suscripciones sin categoría se agrupan bajo `categoriaId = null`
+     * con nombre vacío (la UI pone la etiqueta localizada). Orden: EUR primero y, dentro, de mayor a menor.
+     */
+    internal fun calcularGastosPorCategoriaDetalle(
+        subs: List<Subscription>,
+        nombreCategoria: Map<Long, String> = emptyMap()
+    ): List<GastoCategoria> {
+        val activas = subs.filter { it.activa }
+        val totalPorMoneda = activas.groupBy { it.moneda }
+            .mapValues { (_, lista) -> lista.sumOf { gastoMensualNormalizado(it) } }
+        return activas
+            .groupBy { it.categoriaId to it.moneda }
+            .map { (clave, lista) ->
+                val (catId, moneda) = clave
+                val gasto = lista.sumOf { gastoMensualNormalizado(it) }
+                val total = totalPorMoneda[moneda] ?: 0.0
+                GastoCategoria(
+                    categoriaId = catId,
+                    nombre = catId?.let { nombreCategoria[it] ?: "Categoría $it" } ?: "",
+                    moneda = moneda,
+                    gastoMensual = gasto,
+                    numSuscripciones = lista.size,
+                    porcentaje = if (total > 0) (gasto / total * 100.0 + 0.5).toInt().coerceIn(0, 100) else 0
+                )
+            }
+            .sortedWith(
+                compareBy<GastoCategoria> {
+                    when (it.moneda) { "EUR" -> "0"; "USD" -> "1"; else -> "2${it.moneda}" }
+                }.thenByDescending { it.gastoMensual }
+            )
     }
 
     /**
@@ -274,9 +344,16 @@ class DashboardViewModel(
     internal fun calcularTopSuscripciones(subs: List<Subscription>): List<TopSuscripcion> =
         subs
             .map { sub ->
-                val mensual = if (sub.periodoFacturacion == "YEARLY") sub.precio / 12.0 else sub.precio
-                TopSuscripcion(nombre = sub.nombre, gastoMensual = mensual, moneda = sub.moneda)
+                TopSuscripcion(nombre = sub.nombre, gastoMensual = gastoMensualNormalizado(sub), moneda = sub.moneda)
             }
             .sortedByDescending { it.gastoMensual }
             .take(5)
+
+    /** Equivalente mensual de una suscripción según su ciclo (anual /12, trimestral /3, semanal ×52/12). */
+    private fun gastoMensualNormalizado(sub: Subscription): Double = when (sub.periodoFacturacion.uppercase()) {
+        "YEARLY" -> sub.precio / 12.0
+        "QUARTERLY" -> sub.precio / 3.0
+        "WEEKLY" -> sub.precio * 52.0 / 12.0
+        else -> sub.precio
+    }
 }

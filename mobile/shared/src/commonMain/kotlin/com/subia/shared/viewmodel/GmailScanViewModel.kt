@@ -3,11 +3,29 @@ package com.subia.shared.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.subia.shared.model.GmailDetected
+import com.subia.shared.network.NetworkException
 import com.subia.shared.repository.GmailScanRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+
+/**
+ * Error tipado de la detección por Gmail. Sin textos: cada plataforma lo traduce a su
+ * recurso localizado (en Android, `R.string`).
+ */
+sealed interface GmailScanError {
+    /** No se pudo pedir el ticket de conexión al servidor. */
+    data object NoSePudoIniciar : GmailScanError
+    /** El usuario no completó (o canceló) el consentimiento en el navegador. */
+    data object ConsentimientoFallido : GmailScanError
+    /** El servidor no devolvió los resultados del escaneo. */
+    data object ResultadosNoDisponibles : GmailScanError
+    /** El alta de las suscripciones seleccionadas falló. */
+    data object AltaFallida : GmailScanError
+    /** Sin red en cualquiera de los pasos. */
+    data object SinConexion : GmailScanError
+}
 
 /** Estados de la pantalla de detección por Gmail. */
 sealed interface GmailScanUiState {
@@ -21,7 +39,7 @@ sealed interface GmailScanUiState {
     data object Empty : GmailScanUiState
     data object Adding : GmailScanUiState
     data class Done(val added: Int) : GmailScanUiState
-    data class Error(val message: String) : GmailScanUiState
+    data class Error(val error: GmailScanError) : GmailScanUiState
 }
 
 class GmailScanViewModel(
@@ -39,7 +57,7 @@ class GmailScanViewModel(
         viewModelScope.launch {
             repository.requestTicket(months)
                 .onSuccess { _uiState.value = GmailScanUiState.LaunchConsent(it.connectUrl) }
-                .onFailure { _uiState.value = GmailScanUiState.Error("No se pudo iniciar la conexión") }
+                .onFailure { _uiState.value = GmailScanUiState.Error(mapearError(it, GmailScanError.NoSePudoIniciar)) }
         }
     }
 
@@ -49,7 +67,7 @@ class GmailScanViewModel(
     /** Llamado al volver por el deep link subia://gmail/done?status=... */
     fun onReturnedFromConsent(status: String?) {
         if (status == "error") {
-            _uiState.value = GmailScanUiState.Error("No se completó la conexión con Gmail")
+            _uiState.value = GmailScanUiState.Error(GmailScanError.ConsentimientoFallido)
             return
         }
         viewModelScope.launch {
@@ -63,7 +81,7 @@ class GmailScanViewModel(
                         _uiState.value = GmailScanUiState.Results(items)
                     }
                 }
-                .onFailure { _uiState.value = GmailScanUiState.Error("No se pudieron cargar los resultados") }
+                .onFailure { _uiState.value = GmailScanUiState.Error(mapearError(it, GmailScanError.ResultadosNoDisponibles)) }
         }
     }
 
@@ -73,14 +91,36 @@ class GmailScanViewModel(
         }
     }
 
+    /** `true` si todos los resultados están marcados. */
+    val todoSeleccionado: Boolean
+        get() {
+            val items = (_uiState.value as? GmailScanUiState.Results)?.items ?: return false
+            return items.isNotEmpty() && items.all { it.id in _selectedIds.value }
+        }
+
+    /** Marca todos los resultados; si ya estaban todos marcados, los desmarca. */
+    fun alternarSeleccionarTodo() {
+        val items = (_uiState.value as? GmailScanUiState.Results)?.items ?: return
+        _selectedIds.value = if (todoSeleccionado) emptySet() else items.map { it.id }.toSet()
+    }
+
     fun addSelected() {
         val ids = _selectedIds.value.toList()
         if (ids.isEmpty()) return
         viewModelScope.launch {
             _uiState.value = GmailScanUiState.Adding
             repository.add(ids)
-                .onSuccess { _uiState.value = GmailScanUiState.Done(it.added) }
-                .onFailure { _uiState.value = GmailScanUiState.Error("No se pudieron añadir") }
+                .onSuccess {
+                    SuscripcionesCambios.notificar()
+                    _uiState.value = GmailScanUiState.Done(it.added)
+                }
+                .onFailure { _uiState.value = GmailScanUiState.Error(mapearError(it, GmailScanError.AltaFallida)) }
         }
+    }
+
+    companion object {
+        /** Sin red → [GmailScanError.SinConexion]; cualquier otro fallo → el error del paso. */
+        fun mapearError(error: Throwable, porDefecto: GmailScanError): GmailScanError =
+            if (error is NetworkException) GmailScanError.SinConexion else porDefecto
     }
 }
