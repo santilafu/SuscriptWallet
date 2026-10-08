@@ -1,5 +1,6 @@
 package com.subia.shared
 
+import com.subia.shared.model.BillingCycle
 import com.subia.shared.model.CatalogItem
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -107,5 +108,22 @@ class CatalogItemHelpersTest {
     fun annualSavingsPercent_exactly_12x_monthly_is_zero() {
         val item = baseItem().copy(precioMensual = 10.0, precioAnual = 120.0)
         assertEquals(0, item.annualSavingsPercent())
+    }
+
+    @Test
+    fun precioPara_servicio_anual_no_multiplica_por_12() {
+        // Un seguro anual llega con price = 450 y billingCycle = YEARLY (sin priceAnnual).
+        val seguro = baseItem().copy(precioMensual = 450.0, periodoFacturacion = "YEARLY")
+        assertEquals(450.0, seguro.precioPara(BillingCycle.YEARLY))
+        assertEquals(37.5, seguro.precioPara(BillingCycle.MONTHLY))
+    }
+
+    @Test
+    fun precioPara_servicio_mensual_con_y_sin_precio_anual() {
+        val mensual = baseItem().copy(precioMensual = 10.0)
+        assertEquals(10.0, mensual.precioPara(BillingCycle.MONTHLY))
+        assertEquals(120.0, mensual.precioPara(BillingCycle.YEARLY))
+        val conAnual = mensual.copy(precioAnual = 100.0)
+        assertEquals(100.0, conAnual.precioPara(BillingCycle.YEARLY))
     }
 }

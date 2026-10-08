@@ -81,6 +81,7 @@ import androidx.navigation.NavController
 import com.subia.android.R
 import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.components.formatearImporte
+import com.subia.android.ui.components.importeConPeriodo
 import com.subia.android.ui.theme.Indigo500
 import com.subia.android.util.NotificacionesPermiso
 import com.subia.android.util.fechaIsoLegible
@@ -640,12 +641,13 @@ private fun textoDeError(error: FormError?): (@Composable () -> Unit)? =
 /** "12,99 €/mes" para la fila del desplegable; `null` si el catálogo no trae precio. */
 @Composable
 private fun precioCortoDeCatalogo(item: CatalogItem): String? {
-    val precio = item.precioMensual ?: item.precioAnual ?: return null
-    val periodo = when {
-        item.precioMensual != null -> stringResource(R.string.period_month)
-        else -> stringResource(R.string.period_year)
+    val precioCiclo = item.precioMensual
+    val precioAnual = item.precioAnual
+    val importe = when {
+        precioCiclo != null -> importeConPeriodo(precioCiclo, item.moneda, item.periodoFacturacion)
+        precioAnual != null -> importeConPeriodo(precioAnual, item.moneda, "YEARLY")
+        else -> return null
     }
-    val importe = formatearImporte(precio, item.moneda) + "/" + periodo
     return if (item.variablePrice) stringResource(R.string.price_approx_prefix, importe) else importe
 }
 

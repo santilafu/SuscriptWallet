@@ -232,16 +232,12 @@ class SuscripcionFormViewModel(
     /**
      * Precarga nombre, precio y periodo desde un ítem del catálogo según el ciclo elegido.
      *
-     * Para [BillingCycle.MONTHLY] usa [CatalogItem.precioMensual]; si no existe pero hay
-     * precio anual, cae a `precioAnual / 12`. Para [BillingCycle.YEARLY] usa
-     * [CatalogItem.precioAnual]; si no existe pero hay mensual, cae a `precioMensual * 12`.
+     * El importe sale de [CatalogItem.precioPara], que respeta el ciclo propio del servicio
+     * (un seguro anual de 450 € no se convierte en 5400 €/año).
      */
     fun prerellenarDesdeCatalogo(item: CatalogItem, cicloElegido: BillingCycle) {
         nombre.value = item.nombre
-        val precioElegido: Double? = when (cicloElegido) {
-            BillingCycle.MONTHLY -> item.precioMensual ?: item.precioAnual?.div(12.0)
-            BillingCycle.YEARLY -> item.precioAnual ?: item.precioMensual?.times(12.0)
-        }
+        val precioElegido = item.precioPara(cicloElegido)
         precioElegido?.let { precio.value = formatearPrecioParaCampo(it) }
         periodoFacturacion.value = cicloElegido.wire
         moneda.value = item.moneda

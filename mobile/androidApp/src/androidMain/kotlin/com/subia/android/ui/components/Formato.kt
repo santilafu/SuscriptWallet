@@ -92,3 +92,21 @@ fun formatearFechaCorta(fecha: LocalDate): String {
 /** Fecha localizada de estilo medio: "9 oct 2026" / "Oct 9, 2026". */
 fun formatearFechaMedia(fecha: LocalDate): String =
     fecha.toJavaLocalDate().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault()))
+
+/** Sufijo corto del ciclo de cobro ("mes", "año", "sem."); en el catálogo `price` es el precio de ese ciclo. */
+@Composable
+fun sufijoPeriodo(ciclo: String): String = when (ciclo) {
+    "YEARLY" -> stringResource(R.string.period_year)
+    "WEEKLY" -> stringResource(R.string.period_week)
+    else -> stringResource(R.string.period_month)
+}
+
+/**
+ * "12,99 €/mes" o "450 €/año" para celdas estrechas: los importes redondos de tres cifras
+ * van sin decimales para que la etiqueta quepa en la tarjeta del catálogo.
+ */
+@Composable
+fun importeConPeriodo(valor: Double, moneda: String, ciclo: String): String {
+    val decimales = if (valor >= 100 && valor % 1.0 == 0.0) 0 else 2
+    return formatearImporte(valor, moneda, decimales) + "/" + sufijoPeriodo(ciclo)
+}

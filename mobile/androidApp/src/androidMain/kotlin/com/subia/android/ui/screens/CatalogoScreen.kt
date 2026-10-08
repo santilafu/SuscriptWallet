@@ -49,6 +49,7 @@ import com.subia.android.R
 import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.components.ErrorState
 import com.subia.android.ui.components.formatearImporte
+import com.subia.android.ui.components.importeConPeriodo
 import com.subia.android.ui.theme.success
 import com.subia.shared.model.CatalogItem
 import com.subia.shared.viewmodel.CatalogoUiState
@@ -239,14 +240,16 @@ private fun CatalogoItemCard(item: CatalogItem, onSeleccionar: (CatalogItem) -> 
             item.precioMensual?.let {
                 // Recibos de importe variable (luz, teléfono, seguro): "≈" y la etiqueta debajo,
                 // para que nadie lea 70 € como la tarifa exacta.
-                val importe = formatearImporte(it, item.moneda) + "/" + stringResource(R.string.period_month)
+                // `price` es el precio del ciclo del servicio: un seguro anual es "450 €/año", no "/mes".
+                val importe = importeConPeriodo(it, item.moneda, item.periodoFacturacion)
                 Text(
                     if (item.variablePrice) stringResource(R.string.price_approx_prefix, importe) else importe,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.Center,
-                    maxLines = 1
+                    // Dos líneas como red: en pantallas estrechas parte por "/" en vez de cortar.
+                    maxLines = 2
                 )
                 if (item.variablePrice) {
                     Text(
