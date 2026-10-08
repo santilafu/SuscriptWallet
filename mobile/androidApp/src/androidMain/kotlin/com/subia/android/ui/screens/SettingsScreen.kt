@@ -72,6 +72,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.core.os.LocaleListCompat
 import com.subia.android.BuildConfig
+import com.subia.android.util.Funciones
 import com.subia.android.R
 import com.subia.android.ui.theme.ThemeState
 import com.subia.android.util.NotificacionesPermiso
@@ -310,12 +311,14 @@ fun SettingsScreen(
                 descripcion = stringResource(R.string.export_description),
                 onClick = { exportLauncher.launch("subia_suscripciones.csv") }
             )
-            FilaNavegacion(
-                icon = Icons.Outlined.Email,
-                titulo = stringResource(R.string.gmail_detect_section),
-                descripcion = stringResource(R.string.gmail_detect_desc),
-                onClick = onDetectGmail
-            )
+            if (Funciones.GMAIL) {
+                FilaNavegacion(
+                    icon = Icons.Outlined.Email,
+                    titulo = stringResource(R.string.gmail_detect_section),
+                    descripcion = stringResource(R.string.gmail_detect_desc),
+                    onClick = onDetectGmail
+                )
+            }
             SeparadorSeccion()
 
             // ── Ayuda ─────────────────────────────────────────────────

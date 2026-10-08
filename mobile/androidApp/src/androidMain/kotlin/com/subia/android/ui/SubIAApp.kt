@@ -44,6 +44,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.toRoute
 import com.subia.android.R
+import com.subia.android.util.Funciones
 import com.subia.android.navigation.CatalogoRoute
 import com.subia.android.navigation.CategoriasRoute
 import com.subia.android.navigation.DashboardRoute
@@ -116,7 +117,7 @@ fun SubIAApp(
     // ya no está en el back stack (el sistema mató la app mientras el usuario estaba en el
     // navegador): se abre la pantalla, que consume el estado y pide los resultados (G-07).
     LaunchedEffect(gmailReturnStatus, isLoggedIn) {
-        if (gmailReturnStatus == null || !isLoggedIn) return@LaunchedEffect
+        if (!Funciones.GMAIL || gmailReturnStatus == null || !isLoggedIn) return@LaunchedEffect
         navController.currentBackStackEntryFlow.first() // el grafo ya está montado
         val enGmail = navController.currentBackStackEntry?.destination?.hasRoute(GmailScanRoute::class) == true
         if (!enGmail) navController.navigate(GmailScanRoute) { launchSingleTop = true }

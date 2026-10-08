@@ -18,13 +18,14 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        <!-- Detectar suscripciones desde Gmail -->
-        <div class="enter glass-card rounded-xl overflow-hidden md:col-span-2" style="animation-delay:0ms">
+        <!-- Detectar suscripciones desde Gmail: pausado hasta que Google verifique el scope
+             gmail.readonly (th:if="false"). Para reactivarlo basta con quitar el th:if. -->
+        <div th:if="false" class="enter glass-card rounded-xl overflow-hidden md:col-span-2" style="animation-delay:0ms">
             <div class="px-5 py-4 border-b border-white/[0.06] flex items-center gap-2">
                 <i class="bi bi-envelope-paper text-accent"></i>
                 <span class="text-sm font-semibold text-slate-200">Detectar suscripciones desde Gmail</span>
                 <span class="ml-auto text-[0.65rem] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full"
-                      style="background:rgba(99,102,241,0.15);color:#a5b4fc;">Nuevo</span>
+                      style="background:rgba(124,58,237,0.15);color:#c4b5fd;">Nuevo</span>
             </div>
             <div class="p-5">
                 <div th:if="${param.gmailError != null}"
