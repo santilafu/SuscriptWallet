@@ -30,8 +30,8 @@ android {
         applicationId = "com.subia.android"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 31
-        versionName = "2.17.3"
+        versionCode = 32
+        versionName = "2.17.4"
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
         buildConfigField("String", "SUBIA_GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
         buildConfigField("boolean", "DEMO", demo.toString())
@@ -65,6 +65,15 @@ android {
     buildFeatures {
         buildConfig = true
         compose = true
+    }
+    // El idioma se elige dentro de la app (Ajustes > Idioma). Si el AAB se parte por idioma,
+    // Play solo instala los recursos de los idiomas del sistema del móvil: en un teléfono en
+    // español, elegir English/Français/Português no cambiaba nada porque values-en/-fr/-pt no
+    // estaban instalados. Son unos pocos KB de strings, así que van todos en el APK base.
+    bundle {
+        language {
+            enableSplit = false
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

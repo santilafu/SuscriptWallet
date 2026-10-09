@@ -12,6 +12,8 @@ import com.subia.shared.network.ApiRoutes
 import com.subia.shared.repository.CategoryRepository
 import com.subia.shared.repository.SubscriptionRepository
 import com.subia.shared.storage.TokenStorageProvider
+import com.subia.shared.viewmodel.ErrorRemoto
+import com.subia.shared.viewmodel.SuscripcionesError
 import com.subia.shared.viewmodel.SuscripcionesUiState
 import com.subia.shared.viewmodel.SuscripcionesViewModel
 import io.ktor.client.engine.mock.MockEngine
@@ -259,13 +261,16 @@ class SuscripcionesViewModelBorradoTest {
     )
     private val cats = listOf(Category(id = 1L, nombre = "Streaming"))
 
-    private fun crearViewModel(onDelete: (Long) -> Unit = {}): SuscripcionesViewModel {
+    private fun crearViewModel(
+        estadoDelete: HttpStatusCode = HttpStatusCode.NoContent,
+        onDelete: (Long) -> Unit = {}
+    ): SuscripcionesViewModel {
         val engine = MockEngine { request ->
             val path = request.url.encodedPath
             when {
                 request.method == HttpMethod.Delete -> {
                     onDelete(path.substringAfterLast('/').toLong())
-                    respond("", HttpStatusCode.NoContent)
+                    respond("", estadoDelete)
                 }
                 path == ApiRoutes.SUBSCRIPTIONS -> respondJson(json.encodeToString(ApiResponse(data = subs)))
                 path == ApiRoutes.CATEGORIES -> respondJson(json.encodeToString(ApiResponse(data = cats)))
@@ -379,6 +384,20 @@ class SuscripcionesViewModelBorradoTest {
         override fun getTokens(): AuthTokens = tokens
         override fun clearTokens() {}
         override fun hasTokens(): Boolean = true
+    }
+
+    @Test
+    fun eliminarAhora_errorDelServidor_exponeEliminacionFallidaConCodigo() = runTest(dispatcher) {
+        val vm = crearViewModel(estadoDelete = HttpStatusCode.InternalServerError)
+        vm.esperarSuccess()
+
+        val ok = vm.eliminarAhora(1L)
+
+        assertFalse(ok)
+        assertEquals(
+            SuscripcionesUiState.Error(SuscripcionesError.EliminacionFallida(ErrorRemoto.Servidor(500))),
+            vm.uiState.value
+        )
     }
 
     @Test

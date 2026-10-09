@@ -8,13 +8,18 @@ import androidx.credentials.exceptions.NoCredentialException
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.subia.android.BuildConfig
+import kotlinx.coroutines.CancellationException
 
 sealed class GoogleSignInResult {
     data class Success(val idToken: String) : GoogleSignInResult()
     object UserCancelled : GoogleSignInResult()
     object NoGoogleAccounts : GoogleSignInResult()
     object NotConfigured : GoogleSignInResult()
-    data class Unknown(val message: String) : GoogleSignInResult()
+    /**
+     * Fallo no previsto. [detalle] es el mensaje técnico de la excepción (si lo hay), que la UI
+     * ya mostraba; sin él, la UI usa un texto genérico localizado.
+     */
+    data class Unknown(val detalle: String?) : GoogleSignInResult()
 }
 
 object GoogleSignInHelper {
@@ -40,9 +45,12 @@ object GoogleSignInHelper {
         } catch (e: NoCredentialException) {
             GoogleSignInResult.NoGoogleAccounts
         } catch (e: GetCredentialException) {
-            GoogleSignInResult.Unknown(e.message ?: "Error de Google Sign-In")
+            GoogleSignInResult.Unknown(e.message)
+        } catch (e: CancellationException) {
+            // La corrutina se canceló (p. ej. se salió de la pantalla): no es un error que mostrar.
+            throw e
         } catch (e: Throwable) {
-            GoogleSignInResult.Unknown(e.message ?: "Error inesperado")
+            GoogleSignInResult.Unknown(e.message)
         }
     }
 }

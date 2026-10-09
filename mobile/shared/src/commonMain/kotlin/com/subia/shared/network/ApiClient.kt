@@ -28,6 +28,9 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
@@ -140,17 +143,25 @@ class ApiClient(
         val response = try {
             block()
         } catch (e: Exception) {
+            relanzarSiCancelada(e)
             return Result.failure(NetworkException(e.message ?: "Error de red"))
         }
 
         if (response.status == HttpStatusCode.Unauthorized) {
-            val refreshed = refreshMutex.withLock {
+            val refresco = refreshMutex.withLock {
                 if (!tokenStorage.hasTokens()) return Result.failure(SessionExpiredException())
                 tryRefresh(tokenStorage.getTokens()!!.refreshToken)
             }
-            if (!refreshed) return Result.failure(SessionExpiredException())
+            when (refresco) {
+                ResultadoRefresco.Renovado -> Unit
+                ResultadoRefresco.Rechazado -> return Result.failure(SessionExpiredException())
+                // Sin red no sabemos si la sesión sigue viva: se conservan los tokens y se
+                // informa como fallo de red (no como sesión caducada, que llevaría al login).
+                ResultadoRefresco.SinRed -> return Result.failure(NetworkException("Refresco sin red"))
+            }
 
             val retried = try { block() } catch (e: Exception) {
+                relanzarSiCancelada(e)
                 return Result.failure(NetworkException(e.message ?: "Error de red"))
             }
             return parseResponse(retried)
@@ -159,20 +170,49 @@ class ApiClient(
         return parseResponse(response)
     }
 
+    /**
+     * Intenta renovar los tokens. Solo los borra si el servidor RECHAZA el refresh (respuesta
+     * no exitosa o sin tokens): un corte de red o la cancelación de la corrutina (p. ej. el
+     * worker de avisos con timeout o reemplazado) no deben cerrar la sesión del usuario.
+     */
     @PublishedApi
-    internal suspend fun tryRefresh(refreshToken: String): Boolean {
-        return try {
-            val response: ApiResponse<AuthTokens> = client.post(ApiRoutes.REFRESH) {
+    internal suspend fun tryRefresh(refreshToken: String): ResultadoRefresco {
+        val response = try {
+            client.post(ApiRoutes.REFRESH) {
                 contentType(ContentType.Application.Json)
                 setBody(RefreshRequest(refreshToken))
-            }.body()
-            val tokens = response.data ?: return false
-            tokenStorage.saveTokens(tokens)
-            true
+            }
         } catch (e: Exception) {
-            tokenStorage.clearTokens()
-            false
+            relanzarSiCancelada(e)
+            return ResultadoRefresco.SinRed
         }
+        if (!response.status.isSuccess()) {
+            tokenStorage.clearTokens()
+            return ResultadoRefresco.Rechazado
+        }
+        val tokens = try {
+            response.body<ApiResponse<AuthTokens>>().data
+        } catch (e: Exception) {
+            relanzarSiCancelada(e)
+            // Cuerpo cortado a medias o ilegible: no hay prueba de que la sesión no valga.
+            return ResultadoRefresco.SinRed
+        }
+        if (tokens == null) {
+            tokenStorage.clearTokens()
+            return ResultadoRefresco.Rechazado
+        }
+        tokenStorage.saveTokens(tokens)
+        return ResultadoRefresco.Renovado
+    }
+
+    /**
+     * Propaga la cancelación de la corrutina en vez de tratarla como fallo de red. Se comprueba
+     * el estado del job y no solo el tipo: algunos timeouts de Ktor/coroutines también son
+     * CancellationException sin que nuestra corrutina esté cancelada (esos sí son "sin red").
+     */
+    @PublishedApi
+    internal suspend fun relanzarSiCancelada(e: Exception) {
+        if (e is CancellationException) currentCoroutineContext().ensureActive()
     }
 
     @PublishedApi
@@ -184,6 +224,9 @@ class ApiClient(
         return runCatching { response.body<ApiResponse<T>>().data ?: error("Respuesta vacía del servidor") }
     }
 }
+
+/** Resultado de intentar renovar los tokens con el refresh token. */
+enum class ResultadoRefresco { Renovado, Rechazado, SinRed }
 
 /** El refresh token no es válido o ha caducado — el usuario debe volver a iniciar sesión. */
 class SessionExpiredException : Exception("Sesión expirada. Por favor, inicia sesión de nuevo.")

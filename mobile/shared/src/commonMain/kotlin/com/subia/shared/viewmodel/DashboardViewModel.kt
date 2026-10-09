@@ -49,7 +49,7 @@ sealed interface DashboardUiState {
     data class Success(val resumen: DashboardSummary) : DashboardUiState
     /** Refresco (pull-to-refresh o vuelta a la pantalla) manteniendo los datos anteriores visibles. */
     data class Refreshing(val resumen: DashboardSummary) : DashboardUiState
-    data class Error(val mensaje: String) : DashboardUiState
+    data class Error(val error: ErrorRemoto) : DashboardUiState
     data class Offline(val resumenCacheado: DashboardSummary?) : DashboardUiState
     data object SesionExpirada : DashboardUiState
 }
@@ -191,7 +191,7 @@ class DashboardViewModel(
                             // Si ya tenemos datos (caché o carga anterior), pasar a Offline; si no, Error
                             val previo = _uiState.value.resumenDisponible
                             _uiState.value = if (previo == null) {
-                                DashboardUiState.Error(error.message ?: "Error al cargar los datos")
+                                DashboardUiState.Error(ErrorRemoto.desde(error))
                             } else {
                                 DashboardUiState.Offline(previo)
                             }

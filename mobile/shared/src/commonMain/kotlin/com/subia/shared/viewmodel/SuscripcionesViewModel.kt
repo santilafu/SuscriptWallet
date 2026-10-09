@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.subia.shared.cache.CacheRepository
 import com.subia.shared.model.Category
 import com.subia.shared.model.Subscription
-import com.subia.shared.network.NetworkException
 import com.subia.shared.network.SessionExpiredException
 import com.subia.shared.repository.CategoryRepository
 import com.subia.shared.repository.SubscriptionRepository
@@ -34,12 +33,24 @@ sealed interface SuscripcionesUiState {
         val categoriaSeleccionada: Long?,
         val isRefreshing: Boolean = false
     ) : SuscripcionesUiState
-    data class Error(val mensaje: String) : SuscripcionesUiState
+    data class Error(val error: SuscripcionesError) : SuscripcionesUiState
     data class Offline(
         val suscripciones: List<Subscription>,
         val categorias: List<Category>
     ) : SuscripcionesUiState
     data object SesionExpirada : SuscripcionesUiState
+}
+
+/**
+ * Error tipado de la lista de suscripciones: qué operación falló y por qué. La UI elige el
+ * texto localizado según la operación y añade la causa (sin conexión, código del servidor).
+ */
+sealed interface SuscripcionesError {
+    val causa: ErrorRemoto
+    /** No se pudo cargar la lista. */
+    data class CargaFallida(override val causa: ErrorRemoto) : SuscripcionesError
+    /** No se pudo eliminar una suscripción (la fila vuelve a la lista). */
+    data class EliminacionFallida(override val causa: ErrorRemoto) : SuscripcionesError
 }
 
 private const val CACHE_KEY_SUBS = "subscriptions"
@@ -124,7 +135,7 @@ class SuscripcionesViewModel(
                         SuscripcionesUiState.Offline(visibles(todasLasSuscripciones), todasLasCategorias)
                     } else {
                         val error = (subsResult.exceptionOrNull() ?: catResult.exceptionOrNull())
-                        SuscripcionesUiState.Error(error?.message ?: "Error al cargar las suscripciones")
+                        SuscripcionesUiState.Error(SuscripcionesError.CargaFallida(ErrorRemoto.desde(error)))
                     }
                 }
                 else -> {
@@ -183,13 +194,15 @@ class SuscripcionesViewModel(
                     pendientesDeBorrado.value = pendientesDeBorrado.value - id
                     todasLasSuscripciones = todasLasSuscripciones.filterNot { it.id == id }
                     cacheRepository.saveString(CACHE_KEY_SUBS, json.encodeToString(todasLasSuscripciones))
+                    // La marca de tiempo decide qué caché lee el aviso en segundo plano (la más reciente).
+                    cacheRepository.saveTimestamp(CACHE_KEY_SUBS)
                     emitirFiltradas()
                     SuscripcionesCambios.notificar()
                 }
                 .onFailure { error ->
                     // Falló: la fila vuelve y se informa.
                     pendientesDeBorrado.value = pendientesDeBorrado.value - id
-                    _uiState.value = SuscripcionesUiState.Error(mensajeDeError(error))
+                    _uiState.value = SuscripcionesUiState.Error(errorDeEliminacion(error))
                 }
         }
     }
@@ -212,20 +225,20 @@ class SuscripcionesViewModel(
             onSuccess = {
                 todasLasSuscripciones = todasLasSuscripciones.filterNot { it.id == id }
                 cacheRepository.saveString(CACHE_KEY_SUBS, json.encodeToString(todasLasSuscripciones))
+                // La marca de tiempo decide qué caché lee el aviso en segundo plano (la más reciente).
+                cacheRepository.saveTimestamp(CACHE_KEY_SUBS)
                 SuscripcionesCambios.notificar()
                 emitirFiltradas()
                 true
             },
             onFailure = { error ->
-                _uiState.value = SuscripcionesUiState.Error(mensajeDeError(error))
+                _uiState.value = SuscripcionesUiState.Error(errorDeEliminacion(error))
                 false
             }
         )
 
-    private fun mensajeDeError(error: Throwable): String = when (error) {
-        is NetworkException -> "Sin conexión. No es posible eliminar sin conexión"
-        else -> error.message ?: "Error al eliminar la suscripción"
-    }
+    private fun errorDeEliminacion(error: Throwable): SuscripcionesError =
+        SuscripcionesError.EliminacionFallida(ErrorRemoto.desde(error))
 
     private fun visibles(lista: List<Subscription>): List<Subscription> {
         val ocultas = pendientesDeBorrado.value

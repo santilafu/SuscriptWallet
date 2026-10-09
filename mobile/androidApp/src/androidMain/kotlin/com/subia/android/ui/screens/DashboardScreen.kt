@@ -55,6 +55,7 @@ import com.subia.android.ui.BannerAdView
 import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.components.CobrosPorMesCard
 import com.subia.android.ui.components.ErrorState
+import com.subia.android.ui.components.textoErrorRemoto
 import com.subia.android.ui.components.GastosPorCategoriaCard
 import com.subia.android.ui.components.TiraCobros
 import com.subia.android.ui.components.formatearFechaMedia
@@ -149,7 +150,7 @@ fun DashboardScreen(
                     )
                 }
                 is DashboardUiState.Error -> ErrorState(
-                    mensaje = state.mensaje,
+                    mensaje = textoErrorRemoto(state.error, R.string.error_load_dashboard),
                     onRetry = { viewModel.cargarEstadisticas() }
                 )
                 is DashboardUiState.SesionExpirada -> LaunchedEffect(Unit) { onSesionExpirada() }

@@ -40,7 +40,7 @@ fun sharedModule(apiBaseUrl: String, isDebug: Boolean = false) = module {
     single<GmailScanRepository> { GmailScanRepositoryImpl(get()) }
 
     // ViewModels
-    viewModel { AuthViewModel(get()) }
+    viewModel { AuthViewModel(get(), get<CacheRepository>()) }
     viewModel { DashboardViewModel(get(), get(), get(), get()) }
     viewModel { SuscripcionesViewModel(get(), get(), get()) }
     viewModel { SuscripcionFormViewModel(get(), get(), get()) }

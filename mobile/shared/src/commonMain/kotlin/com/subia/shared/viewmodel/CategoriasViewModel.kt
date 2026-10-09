@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 sealed interface CategoriasUiState {
     data object Loading : CategoriasUiState
     data class Success(val categorias: List<Category>) : CategoriasUiState
-    data class Error(val mensaje: String) : CategoriasUiState
+    data class Error(val error: ErrorRemoto) : CategoriasUiState
     data class Offline(val categorias: List<Category>) : CategoriasUiState
     data object SesionExpirada : CategoriasUiState
 }
@@ -23,7 +23,17 @@ sealed interface CrearCategoriaUiState {
     data object Idle : CrearCategoriaUiState
     data object Loading : CrearCategoriaUiState
     data class Success(val categoria: Category) : CrearCategoriaUiState
-    data class Error(val mensaje: String) : CrearCategoriaUiState
+    data class Error(val error: CrearCategoriaError) : CrearCategoriaUiState
+}
+
+/** Error tipado al crear una categoría; la UI lo traduce a su recurso localizado. */
+sealed interface CrearCategoriaError {
+    /** El nombre está vacío. */
+    data object NombreVacio : CrearCategoriaError
+    /** Fallo de red: sin conexión no se pueden crear categorías. */
+    data object SinConexion : CrearCategoriaError
+    /** Cualquier otro fallo del servidor. */
+    data object CreacionFallida : CrearCategoriaError
 }
 
 /**
@@ -57,7 +67,7 @@ class CategoriasViewModel(
                         else -> _uiState.value = if (categoriasEnCache.isNotEmpty()) {
                             CategoriasUiState.Offline(categoriasEnCache)
                         } else {
-                            CategoriasUiState.Error(error.message ?: "Error al cargar las categorías")
+                            CategoriasUiState.Error(ErrorRemoto.desde(error))
                         }
                     }
                 }
@@ -66,7 +76,7 @@ class CategoriasViewModel(
 
     fun crearCategoria(nombre: String, color: String = "#6c757d", icon: String = "") {
         if (nombre.isBlank()) {
-            _crearState.value = CrearCategoriaUiState.Error("El nombre de la categoría es obligatorio")
+            _crearState.value = CrearCategoriaUiState.Error(CrearCategoriaError.NombreVacio)
             return
         }
         viewModelScope.launch {
@@ -79,14 +89,18 @@ class CategoriasViewModel(
                     cargarCategorias()
                 }
                 .onFailure { error ->
-                    val mensaje = when (error) {
-                        is NetworkException -> "Sin conexión. No es posible crear categorías sin conexión"
-                        else -> "No se ha podido crear la categoría. Inténtalo de nuevo"
-                    }
-                    _crearState.value = CrearCategoriaUiState.Error(mensaje)
+                    _crearState.value = CrearCategoriaUiState.Error(mapearErrorCreacion(error))
                 }
         }
     }
 
     fun resetCrearState() { _crearState.value = CrearCategoriaUiState.Idle }
+
+    companion object {
+        /** Traduce el fallo al crear una categoría al error tipado. */
+        fun mapearErrorCreacion(error: Throwable): CrearCategoriaError = when (error) {
+            is NetworkException -> CrearCategoriaError.SinConexion
+            else -> CrearCategoriaError.CreacionFallida
+        }
+    }
 }

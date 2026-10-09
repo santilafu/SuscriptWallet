@@ -68,6 +68,7 @@ import com.subia.android.ui.screens.SuscripcionDetalleScreen
 import com.subia.android.ui.screens.SuscripcionFormScreen
 import com.subia.android.ui.screens.SuscripcionesScreen
 import com.subia.android.util.OnboardingPrefs
+import com.subia.android.worker.ProgramadorAvisos
 import com.subia.shared.viewmodel.AuthViewModel
 import com.subia.shared.viewmodel.GmailScanViewModel
 import kotlinx.serialization.encodeToString
@@ -97,7 +98,9 @@ fun SubIAApp(
     startDestination: Any,
     authViewModel: AuthViewModel,
     gmailReturnStatus: String? = null,
-    onGmailReturnConsumed: () -> Unit = {}
+    onGmailReturnConsumed: () -> Unit = {},
+    suscripcionDesdeAviso: Long? = null,
+    onSuscripcionDesdeAvisoConsumida: () -> Unit = {}
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
@@ -111,6 +114,27 @@ fun SubIAApp(
                 popUpTo(0) { inclusive = true }
             }
         }
+    }
+
+    // Cierre de sesión (botón de Ajustes o sesión caducada): además de los tokens y la caché
+    // de datos (AuthViewModel), fuera los avisos programados, los de la bandeja y su registro;
+    // si no, el siguiente usuario del móvil recibiría avisos de esta cuenta (N-06). Los avisos
+    // se limpian tras borrar los tokens (ver AuthViewModel.logout). Un aviso tocado pendiente
+    // de abrir tampoco debe abrirse en la sesión del siguiente usuario.
+    val contextoApp = context.applicationContext
+    val cerrarSesion: () -> Unit = {
+        onSuscripcionDesdeAvisoConsumida()
+        authViewModel.logout(trasBorrarSesion = { ProgramadorAvisos.alCerrarSesion(contextoApp) })
+    }
+
+    // Toque en un aviso de cobro: abre el detalle de esa suscripción en cuanto haya sesión y el
+    // grafo haya salido del login (al arrancar en frío isLoggedIn empieza en false).
+    LaunchedEffect(suscripcionDesdeAviso, isLoggedIn) {
+        val id = suscripcionDesdeAviso ?: return@LaunchedEffect
+        if (!isLoggedIn) return@LaunchedEffect
+        navController.currentBackStackEntryFlow.first { !it.destination.hasRoute(LoginRoute::class) }
+        navController.navigate(SuscripcionDetalleRoute(id)) { launchSingleTop = true }
+        onSuscripcionDesdeAvisoConsumida()
     }
 
     // Vuelta del consentimiento de Gmail (subia://gmail/done) cuando la pantalla de detección
@@ -243,7 +267,7 @@ fun SubIAApp(
                     onNavigateToResumenAnual = { navController.navigate(ResumenAnualRoute) },
                     // Tocar un logo de la tira de cobros o un cargo del mes abre su detalle
                     onNavigateToDetalle = { id -> navController.navigate(SuscripcionDetalleRoute(id)) },
-                    onSesionExpirada = { authViewModel.logout() }
+                    onSesionExpirada = cerrarSesion
                 )
             }
             composable<SuscripcionesRoute> { backStackEntry ->
@@ -256,7 +280,7 @@ fun SubIAApp(
                     onDetectGmail = { navController.navigate(GmailScanRoute) },
                     gmailAdded = gmailAdded,
                     onGmailAddedConsumed = { backStackEntry.savedStateHandle[KEY_GMAIL_ADDED] = null },
-                    onSesionExpirada = { authViewModel.logout() }
+                    onSesionExpirada = cerrarSesion
                 )
             }
             composable<SuscripcionDetalleRoute> { backStackEntry ->
@@ -288,7 +312,7 @@ fun SubIAApp(
                         OnboardingPrefs.reset(context)
                         navController.navigate(OnboardingRoute)
                     },
-                    onLogout = { authViewModel.logout() }
+                    onLogout = cerrarSesion
                 )
             }
             composable<ResumenAnualRoute> {

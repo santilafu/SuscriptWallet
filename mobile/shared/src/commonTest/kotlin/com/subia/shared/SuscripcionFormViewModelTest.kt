@@ -17,6 +17,8 @@ import com.subia.shared.viewmodel.SuscripcionFormViewModel
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.respondError
+import io.ktor.content.TextContent
+import io.ktor.http.content.ByteArrayContent
 import io.ktor.http.HttpHeaders
 import io.ktor.http.headersOf
 import io.ktor.http.HttpStatusCode
@@ -265,6 +267,23 @@ class SuscripcionFormViewModelTest {
         assertTrue(vm.sugerencias.value.isEmpty(), "Tras elegir, el desplegable no debe reabrirse")
     }
 
+    /** El precio del catálogo es solo un punto de partida: el que se guarda es el que deja el usuario. */
+    @Test
+    fun seleccionarServicioDelCatalogo_precioEditadoEsElQueSeEnvia() = runTest {
+        var cuerpoEnviado: String? = null
+        val vm = crearViewModel(onRequestBody = { cuerpoEnviado = it })
+        vm.seleccionarServicioDelCatalogo(
+            CatalogItem(id = 1, nombre = "Netflix", precioMensual = 12.99, periodoFacturacion = "MONTHLY")
+        )
+        vm.precio.value = "9,50"
+        vm.fechaRenovacion.value = "2026-11-01"
+        vm.categoriaId.value = 3L
+        vm.enviar(esEdicion = false)
+        vm.uiState.first { it !is FormUiState.Loading && it != FormUiState.Idle }
+        val cuerpo = cuerpoEnviado ?: error("No se envió ninguna petición")
+        assertTrue("\"price\":9.5" in cuerpo, "Se esperaba el precio editado en el cuerpo: $cuerpo")
+    }
+
     @Test
     fun cargarParaEditar_porId_precargaLosCamposYNoMarcaCambios() = runTest {
         val vm = crearViewModel(respuestas = mapOf(
@@ -300,11 +319,17 @@ class SuscripcionFormViewModelTest {
      */
     private fun crearViewModel(
         respuestas: Map<String, String> = emptyMap(),
-        onRequest: (String) -> Unit = {}
+        onRequest: (String) -> Unit = {},
+        onRequestBody: (String) -> Unit = {}
     ): SuscripcionFormViewModel {
         val engine = MockEngine { request ->
             val path = request.url.encodedPath
             onRequest(path)
+            when (val body = request.body) {
+                is TextContent -> onRequestBody(body.text)
+                is ByteArrayContent -> onRequestBody(body.bytes().decodeToString())
+                else -> {}
+            }
             val cuerpo = respuestas.entries.firstOrNull { path.endsWith(it.key) }?.value
             if (cuerpo != null) {
                 respond(cuerpo, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))

@@ -63,6 +63,15 @@ import com.subia.android.ui.theme.GradientBrandDeepMid
 import com.subia.android.ui.theme.GradientBrandDeepStart
 import com.subia.android.util.NotificacionesPermiso
 import kotlinx.coroutines.launch
+import com.subia.android.worker.NotificadorAvisos
+import com.subia.shared.model.AvisoRenovacion
+import com.subia.shared.model.Subscription
+import com.subia.shared.model.TipoAviso
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
+import kotlinx.datetime.todayIn
 
 /** Servicio de ejemplo del onboarding: nombre, dominio del logo y precio mensual ilustrativo. */
 private data class ServicioEjemplo(val nombre: String, val dominio: String, val precioMes: Double)
@@ -324,10 +333,16 @@ private fun PaginaGasto(activa: Boolean, animar: Boolean) {
 /** Página 3: la notificación tal y como la verán, en lugar de un icono de campana. */
 @Composable
 private fun PaginaAvisos() {
-    // Misma forma que la notificación real (RenovacionWorker): fecha dd/MM/yyyy dentro de 3 días.
-    val fechaEjemplo = remember {
-        val c = java.util.Calendar.getInstance().apply { add(java.util.Calendar.DAY_OF_YEAR, 3) }
-        java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(c.time)
+    // Mismos textos que la notificación real (NotificadorAvisos): cobro dentro de 3 días.
+    val context = LocalContext.current
+    val ejemplo = remember(context) {
+        val hoy = Clock.System.todayIn(TimeZone.currentSystemDefault())
+        val fecha = hoy.plus(3, DateTimeUnit.DAY)
+        val sub = Subscription(
+            nombre = "Netflix", precio = 12.99, moneda = "EUR",
+            periodoFacturacion = "MONTHLY", fechaRenovacion = fecha.toString()
+        )
+        NotificadorAvisos.textos(context, AvisoRenovacion(sub, TipoAviso.COBRO, fecha, 3))
     }
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -344,18 +359,12 @@ private fun PaginaAvisos() {
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Text(
-                    text = stringResource(R.string.notif_renewal_title, "Netflix"),
+                    text = ejemplo.titulo,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = stringResource(
-                        R.string.notif_renewal_text,
-                        "Netflix",
-                        fechaEjemplo,
-                        "12,99",
-                        "EUR"
-                    ),
+                    text = ejemplo.texto,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

@@ -187,6 +187,9 @@
     <string name="price_approx_prefix">≈ %1$s</string>
     <string name="price_approx_label">Montant indicatif</string>
     <string name="price_adjust_hint">Montant indicatif : ajustez-le à votre dernière facture</string>
+    <!-- Ayuda bajo el campo Importe: precio prerrellenado del catálogo / sin catálogo -->
+    <string name="price_catalog_hint">Prix indicatif du catalogue. Modifiez-le si le vôtre est différent.</string>
+    <string name="price_per_charge_hint">Ce que vous payez à chaque prélèvement</string>
 
     <!-- Language -->
     <string name="language">Langue</string>
@@ -194,6 +197,7 @@
     <string name="language_es">Español</string>
     <string name="language_en">English</string>
     <string name="language_fr">Français</string>
+    <string name="language_pt">Português</string>
 
     <!-- Charts -->
     <string name="spending_by_category">Dépenses par catégorie</string>
@@ -294,12 +298,36 @@
     <!-- Notifications de renouvellement (RenovacionWorker) -->
     <string name="notif_channel_name">Renouvellements d\'abonnements</string>
     <string name="notif_channel_desc">Alertes sur les abonnements sur le point d\'être renouvelés</string>
-    <string name="notif_renewal_title">Renouvellement proche : %1$s</string>
-    <string name="notif_renewal_text">%1$s se renouvelle le %2$s pour %3$s %4$s</string>
-    <string name="notif_renewal_big">Votre abonnement à %1$s se renouvelle le %2$s. Montant : %3$s %4$s</string>
-    <string name="notif_trial_title">Essai bientôt terminé : %1$s</string>
-    <string name="notif_trial_text">Votre essai gratuit de %1$s se termine le %2$s. Ensuite, %3$s %4$s/mois seront facturés</string>
-    <string name="notif_trial_big">Votre période d\'essai gratuit de %1$s se termine le %2$s. Si vous n\'annulez pas, %3$s %4$s par mois vous seront facturés.</string>
+    <!-- Avisos de cobro y fin de prueba (worker/NotificadorAvisos.kt) -->
+    <string name="notif_charge_title_today">%1$s est prélevé aujourd\'hui</string>
+    <string name="notif_charge_title_tomorrow">%1$s est prélevé demain</string>
+    <plurals name="notif_charge_title_in_days">
+        <item quantity="one">%1$s est prélevé dans %2$d jour</item>
+        <item quantity="other">%1$s est prélevé dans %2$d jours</item>
+    </plurals>
+    <!-- %1$s importe, %2$s periodo (notif_every_*), %3$s fecha -->
+    <string name="notif_charge_text">%1$s %2$s · %3$s</string>
+    <string name="notif_charge_big">%1$s %2$s seront prélevés le %3$s. Si vous ne l\'utilisez plus, il est encore temps de résilier.</string>
+    <string name="notif_trial_title_today">Votre essai de %1$s se termine aujourd\'hui</string>
+    <string name="notif_trial_title_tomorrow">Votre essai de %1$s se termine demain</string>
+    <plurals name="notif_trial_title_in_days">
+        <item quantity="one">Votre essai de %1$s se termine dans %2$d jour</item>
+        <item quantity="other">Votre essai de %1$s se termine dans %2$d jours</item>
+    </plurals>
+    <!-- %1$s importe, %2$s periodo (notif_every_*) -->
+    <string name="notif_trial_text">Ensuite : %1$s %2$s</string>
+    <!-- %1$s nombre, %2$s fecha, %3$s importe, %4$s periodo (notif_every_*) -->
+    <string name="notif_trial_big">Votre essai gratuit de %1$s se termine le %2$s. Si vous n\'annulez pas, %3$s %4$s vous seront facturés.</string>
+    <string name="notif_every_month">par mois</string>
+    <string name="notif_every_year">par an</string>
+    <string name="notif_every_week">par semaine</string>
+    <string name="notif_every_quarter">par trimestre</string>
+    <string name="notif_every_two_weeks">toutes les deux semaines</string>
+    <string name="notif_every_day">par jour</string>
+    <plurals name="notif_summary_title">
+        <item quantity="one">%d prélèvement à venir</item>
+        <item quantity="other">%d prélèvements à venir</item>
+    </plurals>
     <!-- Sprint 3 : première utilisation, liste, formulaire, Gmail, connexion, réglages -->
     <string name="empty_subs_title">Commencez par un</string>
     <string name="empty_subs_subtitle">Touchez un service pour l\'ajouter avec son prix déjà rempli, ou saisissez le vôtre.</string>
@@ -325,10 +353,30 @@
     <string name="notif_status_title">Alertes sur cet appareil</string>
     <string name="notif_status_on">Activées</string>
     <string name="notif_status_off">Désactivées · appuyez pour activer</string>
+    <string name="notif_test_action">Envoyer une alerte de test</string>
+    <string name="notif_test_desc">Vérifiez comment les alertes vous parviennent</string>
+    <string name="notif_test_sent">Alerte de test envoyée</string>
+    <string name="notif_test_blocked">Activez les alertes pour en envoyer une de test</string>
     <string name="help_section">Aide</string>
     <string name="view_tutorial_again">Revoir le tutoriel</string>
     <string name="view_tutorial_desc">Revoyez l’essentiel en trois écrans</string>
     <string name="password_show">Afficher le mot de passe</string>
     <string name="password_hide">Masquer le mot de passe</string>
     <string name="tomorrow">demain</string>
+
+    <!-- Errores al hablar con el servidor (ViewModels de shared con ErrorRemoto) -->
+    <string name="error_offline">Pas de connexion. Vérifiez votre réseau et réessayez</string>
+    <string name="error_with_code">%1$s (erreur %2$d)</string>
+    <string name="error_load_catalog">Impossible de charger le catalogue</string>
+    <string name="error_load_categories">Impossible de charger les catégories</string>
+    <string name="error_load_dashboard">Impossible de charger les données</string>
+    <string name="error_load_subscriptions">Impossible de charger les abonnements</string>
+    <string name="error_delete_subscription">Impossible de supprimer l\'abonnement</string>
+    <string name="error_delete_offline">Pas de connexion. Impossible de supprimer hors ligne</string>
+    <string name="category_error_name_required">Le nom de la catégorie est obligatoire</string>
+    <string name="category_error_offline">Pas de connexion. Impossible de créer des catégories hors ligne</string>
+    <string name="category_error_create_failed">Impossible de créer la catégorie. Réessayez</string>
+    <string name="google_error_unknown">Impossible de se connecter avec Google. Réessayez</string>
+    <string name="subscription_not_found_title">Cet abonnement n\'existe plus</string>
+    <string name="subscription_not_found_desc">Il a peut-être été supprimé depuis un autre appareil ou sur le web.</string>
 </resources>

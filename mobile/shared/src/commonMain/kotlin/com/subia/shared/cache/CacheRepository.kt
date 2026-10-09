@@ -59,11 +59,34 @@ class CacheRepository(private val settings: Settings) {
     }
 
     /**
+     * Borra solo los datos de la cuenta (suscripciones, resumen, categorías y sus marcas de
+     * tiempo) y conserva las preferencias del dispositivo que viven en el mismo fichero
+     * (umbral de avisos, tema, onboarding…). Se llama al cerrar sesión: si no, el siguiente
+     * usuario del móvil veía y recibía avisos de las suscripciones del anterior.
+     */
+    fun borrarDatosDeUsuario() {
+        CLAVES_DATOS_USUARIO.forEach { clave ->
+            settings.remove(clave)
+            settings.remove("${clave}_ts")
+        }
+    }
+
+    /**
      * Elimina todos los valores almacenados en esta instancia de [Settings].
      * Debe llamarse en el momento del logout para evitar que datos de un usuario
      * sean visibles por otro usuario en el mismo dispositivo.
      */
     fun clear() {
         settings.clear()
+    }
+
+    companion object {
+        /** Claves con datos de la cuenta (ver [borrarDatosDeUsuario]). El catálogo es público y se conserva. */
+        val CLAVES_DATOS_USUARIO = listOf(
+            "subscriptions",
+            "dashboard_subscriptions",
+            "dashboard_summary",
+            "categories"
+        )
     }
 }

@@ -4,6 +4,7 @@ import com.subia.shared.model.ApiResponse
 import com.subia.shared.model.AuthTokens
 import com.subia.shared.network.ApiClient
 import com.subia.shared.network.ApiRoutes
+import com.subia.shared.network.NetworkException
 import com.subia.shared.network.SessionExpiredException
 import com.subia.shared.storage.TokenStorageProvider
 import io.ktor.client.engine.mock.MockEngine
@@ -18,6 +19,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -152,6 +154,39 @@ class ApiClientTest {
         assertTrue(resultado.isFailure)
         assertTrue(resultado.exceptionOrNull() is SessionExpiredException)
         assertEquals(0, requestCount, "No debe realizarse ninguna petición de red si no hay tokens")
+    }
+
+    /**
+     * Si el refresh falla por red (excepción del motor), los tokens se CONSERVAN y el error es
+     * de red, no de sesión caducada: un corte puntual no debe cerrar la sesión del usuario.
+     */
+    @Test
+    fun apiClient_refreshSinRed_conservaTokensYDevuelveNetworkException() = runTest {
+        val mockEngine = MockEngine { request ->
+            if (request.url.encodedPath == ApiRoutes.REFRESH) throw IllegalStateException("sin red")
+            respondError(HttpStatusCode.Unauthorized)
+        }
+        val tokens = AuthTokens(accessToken = "a", refreshToken = "r")
+        val tokenStorage = InMemoryTokenStorage(tokens = tokens)
+        val client = ApiClient(baseUrl = "http://localhost", tokenStorage = tokenStorage, isDebug = false, httpEngine = mockEngine)
+
+        val resultado = client.get<String>("/api/test")
+
+        assertTrue(resultado.exceptionOrNull() is NetworkException, "Debe ser NetworkException: ${resultado.exceptionOrNull()}")
+        assertEquals(tokens, tokenStorage.getTokens(), "Los tokens no deben borrarse por un fallo de red")
+    }
+
+    /** Si el servidor rechaza el refresh (401), los tokens se borran y la sesión caduca. */
+    @Test
+    fun apiClient_refreshRechazado_borraTokens() = runTest {
+        val mockEngine = MockEngine { _ -> respondError(HttpStatusCode.Unauthorized) }
+        val tokenStorage = InMemoryTokenStorage(tokens = AuthTokens(accessToken = "a", refreshToken = "r"))
+        val client = ApiClient(baseUrl = "http://localhost", tokenStorage = tokenStorage, isDebug = false, httpEngine = mockEngine)
+
+        val resultado = client.get<String>("/api/test")
+
+        assertTrue(resultado.exceptionOrNull() is SessionExpiredException)
+        assertNull(tokenStorage.getTokens(), "Un refresh rechazado debe borrar los tokens")
     }
 }
 

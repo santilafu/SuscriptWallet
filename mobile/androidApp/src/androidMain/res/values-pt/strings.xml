@@ -1,0 +1,385 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- values-pt serve Portugal e Brasil. Base gramatical europeia, com vocabulário entendido nos
+     dois lados ("assinatura", "senha", "conexão", "Sair", "Desfazer"); evitam-se termos de um
+     só lado (celular/telemóvel, tela/ecrã, arquivo/ficheiro, deteção/detecção). -->
+<resources>
+    <string name="app_name">SuscriptWallet</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Início</string>
+    <string name="nav_subscriptions">Assinaturas</string>
+    <string name="nav_catalog">Catálogo</string>
+    <string name="settings">Definições</string>
+    <string name="logout">Sair</string>
+    <string name="back">Voltar</string>
+
+    <!-- Login -->
+    <string name="subscription_management">Gestão de assinaturas</string>
+    <string name="sign_in">Iniciar sessão</string>
+    <string name="email_label">E-mail</string>
+    <string name="email_placeholder">voce@email.com</string>
+    <string name="password_label">Senha</string>
+    <string name="forgot_password">Esqueceu a senha?</string>
+    <string name="login_button">Entrar</string>
+    <string name="or_divider">ou</string>
+    <string name="continue_with_google">Continuar com o Google</string>
+    <string name="no_account">"Não tem conta? "</string>
+    <string name="create_account">Criar conta</string>
+    <string name="google_no_accounts">Não há contas Google neste dispositivo. Adicione uma em Definições > Contas e tente novamente.</string>
+    <string name="google_not_configured">O início de sessão com Google não está configurado nesta versão.</string>
+    <string name="google_error">Erro no início de sessão com Google: %1$s</string>
+
+    <!-- Dashboard -->
+    <string name="monthly">Mensal</string>
+    <string name="yearly">Anual</string>
+    <string name="weekly">Semanal</string>
+    <string name="monthly_currency">Mensal (%1$s)</string>
+    <string name="yearly_currency">Anual (%1$s)</string>
+    <string name="active_subscriptions">Assinaturas ativas</string>
+    <string name="view_subscriptions">Ver assinaturas</string>
+    <string name="upcoming_renewals">Próximas renovações</string>
+    <string name="no_upcoming_renewals">Não tem renovações próximas</string>
+    <string name="hero_monthly_label">Gasto mensal</string>
+    <string name="hero_per_year">%1$s por ano</string>
+    <string name="this_month">Este mês</string>
+    <string name="tira_title">Próximos 14 dias</string>
+    <string name="tira_next_charge">Próxima cobrança</string>
+    <string name="tira_no_charge">sem cobranças</string>
+    <string name="tira_open_sub">Abrir %1$s</string>
+    <string name="tira_empty">Nenhuma cobrança nestas duas semanas</string>
+    <string name="day_today">Hoje</string>
+    <string name="day_tomorrow">Amanhã</string>
+    <plurals name="in_n_days">
+        <item quantity="one">Em %d dia</item>
+        <item quantity="other">Em %d dias</item>
+    </plurals>
+    <string name="months_chart_title">O que vem em cada mês</string>
+    <string name="months_chart_desc">Cobranças previstas por mês: %1$s</string>
+    <plurals name="month_charges_count">
+        <item quantity="one">%d cobrança</item>
+        <item quantity="other">%d cobranças</item>
+    </plurals>
+    <string name="month_no_charges">Nenhuma cobrança prevista este mês</string>
+    <string name="year_card_desc">Descubra quanto somam as suas assinaturas num ano e partilhe.</string>
+    <string name="year_card_cta">Ver resumo</string>
+    <string name="offline_data">Dados guardados — sem conexão</string>
+    <string name="offline_catalog">Catálogo guardado — sem conexão</string>
+    <string name="retry">Tentar novamente</string>
+    <string name="trials_expiring">Testes a terminar</string>
+    <string name="expires_on">Termina a %1$s</string>
+
+    <!-- Subscriptions list -->
+    <string name="add">Adicionar</string>
+    <string name="no_subscriptions">Sem assinaturas</string>
+    <string name="tap_to_add_first">Toque em + para adicionar a primeira</string>
+    <string name="all_filter">Todas</string>
+    <string name="no_subscriptions_in_category">Não há assinaturas nesta categoria</string>
+    <string name="renews_on">Renova: %1$s</string>
+    <plurals name="subs_active_count">
+        <item quantity="one">%d ativa</item>
+        <item quantity="other">%d ativas</item>
+    </plurals>
+    <string name="subs_monthly_total">%1$s/mês</string>
+    <string name="trial_badge">Teste · %1$dd</string>
+
+    <!-- Subscription form -->
+    <string name="edit_subscription">Editar assinatura</string>
+    <string name="new_subscription">Nova assinatura</string>
+    <string name="choose_from_catalog">Escolher do catálogo</string>
+    <string name="auto_fill_fields">Preenche os campos automaticamente</string>
+    <string name="collapse">Recolher</string>
+    <string name="expand">Expandir</string>
+    <string name="category">Categoria</string>
+    <string name="select_category">Selecione uma categoria</string>
+    <string name="loading_services">A carregar serviços…</string>
+    <string name="service">Serviço</string>
+    <string name="select_category_first">Escolha primeiro uma categoria</string>
+    <string name="select_service">Selecione um serviço</string>
+    <string name="period_year">ano</string>
+    <string name="period_week">sem.</string>
+    <string name="period_month">mês</string>
+    <string name="apply_selection">Aplicar seleção</string>
+    <string name="service_info_section">Informação do serviço</string>
+    <string name="service_name_label">Nome do serviço *</string>
+    <string name="description_label">Descrição</string>
+    <string name="billing_section">Faturação</string>
+    <string name="amount_label">Valor *</string>
+    <string name="currency_label">Moeda</string>
+    <string name="payment_frequency">Frequência de pagamento</string>
+    <string name="renewal_date_label">Data de renovação *</string>
+    <string name="select_date">Selecionar data</string>
+    <string name="accept">Aceitar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="free_trial_period">Período de teste gratuito</string>
+    <string name="trial_end_label">Fim do teste</string>
+    <string name="select_trial_end_date">Selecionar data de fim do teste</string>
+    <string name="category_required">Categoria *</string>
+    <string name="notes_section">Notas adicionais</string>
+    <string name="notes_label">Notas</string>
+    <string name="save">Guardar</string>
+
+    <!-- Subscription detail -->
+    <string name="detail">Detalhe</string>
+    <string name="active">Ativa</string>
+    <string name="inactive">Inativa</string>
+    <string name="amount">Valor</string>
+    <string name="billing">Faturação</string>
+    <string name="next_renewal">Próxima renovação</string>
+    <string name="description">Descrição</string>
+    <string name="notes">Notas</string>
+    <string name="go_cancel_subscription">Ir cancelar a assinatura</string>
+    <string name="delete_subscription">Eliminar assinatura</string>
+    <string name="delete_subscription_confirm">Eliminar a assinatura?</string>
+    <string name="delete_irreversible">Esta ação não pode ser desfeita.</string>
+    <string name="delete">Eliminar</string>
+
+    <!-- Settings -->
+    <string name="notifications">Notificações</string>
+    <string name="notify_before_renewal">Avisar-me antes de uma renovação</string>
+    <string name="one_day">1 dia</string>
+    <string name="n_days">%1$d dias</string>
+    <string name="also_applies_to_trials">Também se aplica aos testes gratuitos</string>
+    <string name="data_section">Dados</string>
+    <string name="export_subscriptions">Exportar assinaturas</string>
+    <string name="export_description">Exporte todas as suas assinaturas em formato CSV.</string>
+    <string name="export_success">Exportado para %1$s</string>
+    <string name="export_error">Erro ao exportar</string>
+    <string name="file_open_error">Não foi possível abrir o documento</string>
+    <string name="account_section">Conta</string>
+    <string name="logout_confirm_title">Sair da conta?</string>
+    <string name="logout_confirm_text">Terá de iniciar sessão novamente para ver as suas assinaturas.</string>
+    <string name="privacy_policy">Política de privacidade</string>
+    <string name="app_version">Versão %1$s</string>
+
+    <!-- Categories -->
+    <string name="new_category">Nova categoria</string>
+    <string name="offline_no_create">Sem conexão — não é possível criar categorias</string>
+    <string name="categories_title">Categorias</string>
+    <string name="organize_expenses">Organize os seus gastos</string>
+    <string name="name_required">Nome *</string>
+    <string name="create">Criar</string>
+
+    <!-- Catalog -->
+    <string name="services_available">%1$d serviços disponíveis</string>
+    <string name="services_available_loading">320+ serviços disponíveis</string>
+    <string name="search_service">Pesquisar serviço…</string>
+    <string name="all_categories">Todos</string>
+    <string name="no_results">Sem resultados</string>
+    <string name="annual_savings">-%1$d%% anual</string>
+
+    <!-- Catalog category names -->
+    <string name="cat_ia">IA</string>
+    <string name="cat_streaming">Streaming</string>
+    <string name="cat_musica">Música</string>
+    <string name="cat_software">Software</string>
+    <string name="cat_cloud">Cloud</string>
+    <string name="cat_gaming">Jogos</string>
+    <string name="cat_seguridad">Segurança</string>
+    <string name="cat_noticias">Notícias</string>
+    <string name="cat_salud">Saúde</string>
+    <string name="cat_desarrollo">Desenvolvimento</string>
+    <string name="cat_prueba">Testes</string>
+    <string name="cat_finanzas">Finanças</string>
+    <string name="cat_educacion">Educação</string>
+    <string name="cat_creatividad">Criatividade</string>
+    <string name="cat_citas">Social</string>
+    <string name="cat_hogar">Casa e serviços</string>
+    <string name="cat_seguros">Seguros</string>
+    <string name="cat_telecos">Telecomunicações</string>
+    <string name="cat_transporte">Transporte</string>
+    <string name="price_approx_prefix">≈ %1$s</string>
+    <string name="price_approx_label">Valor indicativo</string>
+    <string name="price_adjust_hint">Valor indicativo: ajuste-o à sua última fatura</string>
+    <!-- Ajuda sob o campo Valor: preço pré-preenchido do catálogo / sem catálogo -->
+    <string name="price_catalog_hint">Preço indicativo do catálogo. Pode alterá-lo se o seu for diferente.</string>
+    <string name="price_per_charge_hint">O que paga em cada cobrança</string>
+
+    <!-- Language -->
+    <string name="language">Idioma</string>
+    <string name="language_system">Sistema</string>
+    <string name="language_es">Español</string>
+    <string name="language_en">English</string>
+    <string name="language_fr">Français</string>
+    <string name="language_pt">Português</string>
+
+    <!-- Charts -->
+    <string name="spending_by_category">Gasto por categoria</string>
+    <string name="no_category_data">Sem dados de categorias</string>
+    <string name="others">Outros</string>
+    <string name="category_monthly_equiv">Equivalente mensal por categoria</string>
+    <string name="no_category">Sem categoria</string>
+    <plurals name="category_subs_count">
+        <item quantity="one">%d assinatura</item>
+        <item quantity="other">%d assinaturas</item>
+    </plurals>
+    <string name="monthly_label">mensal</string>
+    <!-- Aparência / Material You -->
+    <string name="appearance">Aparência</string>
+    <string name="dynamic_color">Cor dinâmica (Material You)</string>
+    <string name="dynamic_color_desc">Adapta as cores da app ao seu papel de parede.</string>
+    <!-- Estados de erro e vazio -->
+    <string name="error_title">Ocorreu um erro</string>
+    <string name="add_first_subscription">Adicionar a minha primeira assinatura</string>
+    <!-- Resumo anual partilhável -->
+    <string name="resumen_anual_title">O seu ano em assinaturas</string>
+    <string name="resumen_anual_total_label">Gasto anual</string>
+    <string name="resumen_anual_subs">%d assinaturas ativas</string>
+    <string name="resumen_anual_top_service">O seu serviço mais caro</string>
+    <string name="resumen_anual_top_category">Onde gasta mais</string>
+    <string name="resumen_anual_share">Partilhar o meu resumo</string>
+    <string name="resumen_anual_brand">Calculado com o SuscriptWallet</string>
+    <string name="resumen_anual_empty">Adicione alguma assinatura para ver o seu resumo.</string>
+    <!-- Onboarding -->
+    <string name="onb_skip">Saltar</string>
+    <string name="onb_next">Seguinte</string>
+    <string name="onb_start">Começar</string>
+    <string name="onb1_title">Todas as suas assinaturas num só lugar</string>
+    <string name="onb1_desc">Netflix, ChatGPT, a luz, o telefone, o seguro… Adicione-os em segundos a partir de um catálogo com mais de 300 serviços.</string>
+    <string name="onb2_title">Descubra quanto gasta de verdade</string>
+    <string name="onb2_desc">O seu gasto mensal e anual, claro e à vista. O número vai surpreendê-lo.</string>
+    <string name="onb3_title">Nunca mais uma cobrança surpresa</string>
+    <string name="onb3_desc">Avisamos antes de cada renovação e antes de terminar um teste gratuito, para cancelar a tempo.</string>
+    <!-- Widget -->
+    <string name="widget_monthly_label">Gasto este mês</string>
+    <string name="widget_next">Próxima: %1$s · %2$s</string>
+    <string name="widget_no_data">Abra a app para começar</string>
+    <string name="widget_description">Gasto do mês e próximas cobranças num relance</string>
+    <string name="widget_no_charges_week">Sem cobranças esta semana</string>
+    <plurals name="widget_more_this_week">
+        <item quantity="one">+%d cobrança esta semana</item>
+        <item quantity="other">+%d cobranças esta semana</item>
+    </plurals>
+    <!-- Identificação pelo Gmail -->
+    <string name="gmail_detect_section">Identificação automática</string>
+    <string name="gmail_detect_desc">Encontra as suas assinaturas lendo o seu Gmail, sem escrever nada à mão.</string>
+    <string name="onb_page_of">Página %1$d de %2$d</string>
+    <string name="onb2_card_label">O seu gasto mensal</string>
+    <string name="onb2_card_footer">%1$d serviços · %2$s por ano</string>
+    <string name="onb_notif_enable">Ativar avisos</string>
+    <string name="onb_notif_later">Agora não</string>
+    <string name="detect_with_gmail">Encontrar com o Gmail</string>
+    <!-- Erros de início de sessão (AuthError do ViewModel) -->
+    <string name="auth_error_empty_credentials">O e-mail e a senha são obrigatórios</string>
+    <string name="auth_error_bad_credentials">E-mail ou senha incorretos</string>
+    <string name="auth_error_google_token_empty">Não foi recebido o token do Google</string>
+    <string name="auth_error_google_not_verified">Não foi possível verificar a conta Google</string>
+    <string name="auth_error_offline">Sem conexão. Verifique a sua rede e tente novamente</string>
+    <string name="auth_error_generic">Não foi possível iniciar sessão. Tente novamente</string>
+    <!-- Erros do formulário (FormError do ViewModel) -->
+    <string name="form_error_name_required">O nome do serviço é obrigatório</string>
+    <string name="form_error_invalid_amount">Tem de ser maior que 0</string>
+    <string name="form_error_renewal_date_required">A data de renovação é obrigatória</string>
+    <string name="form_error_category_required">Selecione uma categoria</string>
+    <string name="form_error_offline">Sem conexão. Não é possível guardar alterações sem conexão</string>
+    <string name="form_error_save_failed">Não foi possível guardar a assinatura. Tente novamente</string>
+    <!-- Identificação pelo Gmail -->
+    <string name="gmail_scan_title">Encontre as suas assinaturas</string>
+    <string name="gmail_scan_intro">Conecte o seu Gmail e procuraremos recibos de assinaturas para não ter de as adicionar à mão.</string>
+    <string name="gmail_step1">Autoriza no Google o acesso só de leitura</string>
+    <string name="gmail_step2">Procuramos recibos e faturas no seu e-mail</string>
+    <string name="gmail_step3">Escolhe quais adicionar à sua lista</string>
+    <string name="gmail_privacy">Só lemos. Não guardamos os seus e-mails.</string>
+    <string name="gmail_scan_connect">Conectar ao Gmail</string>
+    <string name="gmail_scan_waiting">À espera da autorização…</string>
+    <string name="gmail_scan_already_authorized">Já autorizei</string>
+    <string name="gmail_scan_searching">A procurar assinaturas…</string>
+    <plurals name="gmail_scan_found">
+        <item quantity="one">Encontramos %d assinatura</item>
+        <item quantity="other">Encontramos %d assinaturas</item>
+    </plurals>
+    <string name="gmail_scan_item_meta">%1$s · %2$s · visto %3$s</string>
+    <plurals name="gmail_scan_add_selected">
+        <item quantity="one">Adicionar %d selecionada</item>
+        <item quantity="other">Adicionar %d selecionadas</item>
+    </plurals>
+    <string name="gmail_scan_empty">Não encontrámos assinaturas no seu e-mail.</string>
+    <string name="gmail_scan_adding">A adicionar…</string>
+    <string name="gmail_scan_done">Concluído</string>
+    <string name="cycle_monthly">mensal</string>
+    <string name="cycle_yearly">anual</string>
+    <string name="cycle_weekly">semanal</string>
+    <!-- Notificações de renovação (RenovacionWorker) -->
+    <string name="notif_channel_name">Renovações de assinaturas</string>
+    <string name="notif_channel_desc">Alertas sobre assinaturas prestes a renovar</string>
+    <!-- Avisos de cobrança e fim de teste (worker/NotificadorAvisos.kt) -->
+    <string name="notif_charge_title_today">%1$s é cobrado hoje</string>
+    <string name="notif_charge_title_tomorrow">%1$s é cobrado amanhã</string>
+    <plurals name="notif_charge_title_in_days">
+        <item quantity="one">%1$s é cobrado dentro de %2$d dia</item>
+        <item quantity="other">%1$s é cobrado dentro de %2$d dias</item>
+    </plurals>
+    <!-- %1$s valor, %2$s período (notif_every_*), %3$s data -->
+    <string name="notif_charge_text">%1$s %2$s · %3$s</string>
+    <string name="notif_charge_big">Cobrança de %1$s %2$s prevista para %3$s. Se já não a usa, ainda vai a tempo de cancelar.</string>
+    <string name="notif_trial_title_today">O seu teste de %1$s termina hoje</string>
+    <string name="notif_trial_title_tomorrow">O seu teste de %1$s termina amanhã</string>
+    <plurals name="notif_trial_title_in_days">
+        <item quantity="one">O seu teste de %1$s termina dentro de %2$d dia</item>
+        <item quantity="other">O seu teste de %1$s termina dentro de %2$d dias</item>
+    </plurals>
+    <!-- %1$s valor, %2$s período (notif_every_*) -->
+    <string name="notif_trial_text">Depois serão cobrados %1$s %2$s</string>
+    <!-- %1$s nome, %2$s data, %3$s valor, %4$s período (notif_every_*) -->
+    <string name="notif_trial_big">O seu teste gratuito de %1$s termina a %2$s. Se não cancelar, serão cobrados %3$s %4$s.</string>
+    <string name="notif_every_month">por mês</string>
+    <string name="notif_every_year">por ano</string>
+    <string name="notif_every_week">por semana</string>
+    <string name="notif_every_quarter">por trimestre</string>
+    <string name="notif_every_two_weeks">a cada duas semanas</string>
+    <string name="notif_every_day">por dia</string>
+    <plurals name="notif_summary_title">
+        <item quantity="one">%d cobrança próxima</item>
+        <item quantity="other">%d cobranças próximas</item>
+    </plurals>
+    <!-- Sprint 3: primeiro uso, lista, formulário, Gmail, login, definições -->
+    <string name="empty_subs_title">Comece por uma</string>
+    <string name="empty_subs_subtitle">Toque num serviço para o adicionar já com o preço, ou escreva o seu.</string>
+    <string name="empty_add_other">Adicionar outro serviço</string>
+    <string name="sub_deleted">%1$s eliminada</string>
+    <string name="undo">Desfazer</string>
+    <string name="required_legend">* Obrigatório</string>
+    <string name="discard_changes_title">Descartar alterações?</string>
+    <string name="discard_changes_text">O que escreveu será perdido.</string>
+    <string name="discard">Descartar</string>
+    <string name="keep_editing">Continuar a editar</string>
+    <string name="gmail_error_start">Não foi possível iniciar a conexão com o Gmail</string>
+    <string name="gmail_error_consent">A autorização no navegador não foi concluída</string>
+    <string name="gmail_error_results">Não foi possível obter os resultados da pesquisa</string>
+    <string name="gmail_error_add">Não foi possível adicionar as assinaturas</string>
+    <string name="gmail_error_offline">Sem conexão. Verifique a sua rede e tente novamente</string>
+    <string name="gmail_select_all">Selecionar tudo</string>
+    <string name="gmail_clear_selection">Limpar seleção</string>
+    <plurals name="gmail_added_snackbar">
+        <item quantity="one">%d assinatura adicionada</item>
+        <item quantity="other">%d assinaturas adicionadas</item>
+    </plurals>
+    <string name="notif_status_title">Avisos neste dispositivo</string>
+    <string name="notif_status_on">Ativados</string>
+    <string name="notif_status_off">Desativados · toque para ativar</string>
+    <string name="notif_test_action">Enviar aviso de teste</string>
+    <string name="notif_test_desc">Veja como lhe chegam os avisos</string>
+    <string name="notif_test_sent">Aviso de teste enviado</string>
+    <string name="notif_test_blocked">Ative os avisos para poder enviar um de teste</string>
+    <string name="help_section">Ajuda</string>
+    <string name="view_tutorial_again">Ver o tutorial novamente</string>
+    <string name="view_tutorial_desc">Reveja o essencial em três passos</string>
+    <string name="password_show">Mostrar senha</string>
+    <string name="password_hide">Ocultar senha</string>
+    <string name="tomorrow">amanhã</string>
+
+    <!-- Errores al hablar con el servidor (ViewModels de shared con ErrorRemoto) -->
+    <string name="error_offline">Sem conexão. Verifique a sua rede e tente novamente</string>
+    <string name="error_with_code">%1$s (erro %2$d)</string>
+    <string name="error_load_catalog">Erro ao carregar o catálogo</string>
+    <string name="error_load_categories">Erro ao carregar as categorias</string>
+    <string name="error_load_dashboard">Erro ao carregar os dados</string>
+    <string name="error_load_subscriptions">Erro ao carregar as assinaturas</string>
+    <string name="error_delete_subscription">Erro ao eliminar a assinatura</string>
+    <string name="error_delete_offline">Sem conexão. Não é possível eliminar sem conexão</string>
+    <string name="category_error_name_required">O nome da categoria é obrigatório</string>
+    <string name="category_error_offline">Sem conexão. Não é possível criar categorias sem conexão</string>
+    <string name="category_error_create_failed">Não foi possível criar a categoria. Tente novamente</string>
+    <string name="google_error_unknown">Não foi possível iniciar sessão com o Google. Tente novamente</string>
+    <string name="subscription_not_found_title">Esta assinatura já não existe</string>
+    <string name="subscription_not_found_desc">Pode ter sido eliminada noutro dispositivo ou na web.</string>
+</resources>

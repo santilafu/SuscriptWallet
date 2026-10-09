@@ -2,6 +2,7 @@ package com.subia.shared.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.subia.shared.cache.CacheRepository
 import com.subia.shared.network.ApiException
 import com.subia.shared.network.NetworkException
 import com.subia.shared.repository.AuthRepository
@@ -42,7 +43,9 @@ sealed interface AuthUiState {
  * ViewModel para el flujo de autenticación: login, logout y restauración de sesión.
  */
 class AuthViewModel(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    /** Opcional para no obligar a los tests a montar Settings; en la app lo inyecta Koin. */
+    private val cacheRepository: CacheRepository? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
@@ -98,10 +101,22 @@ class AuthViewModel(
         _uiState.value = AuthUiState.Error(AuthError.Mensaje(mensaje))
     }
 
-    /** Cierra sesión. Garantiza limpieza local incluso sin red. */
-    fun logout() {
+    /**
+     * Cierra sesión. Garantiza limpieza local incluso sin red.
+     *
+     * @param trasBorrarSesion limpieza de plataforma (avisos programados, bandeja, registro de
+     *   avisados). Se ejecuta DESPUÉS de borrar los tokens: el POST de logout puede tardar hasta
+     *   30 s y, si el proceso muriera en medio con esa limpieza ya hecha, la sesión seguiría viva
+     *   con el registro de avisados vacío y los avisos se repetirían. Al revés no pasa nada: sin
+     *   tokens, el worker no avisa.
+     */
+    fun logout(trasBorrarSesion: () -> Unit = {}) {
         viewModelScope.launch {
             authRepository.logout()
+            // Datos de la cuenta fuera: el siguiente usuario del móvil no debe verlos ni recibir
+            // avisos de ellos (N-06). Las preferencias del dispositivo se conservan.
+            cacheRepository?.borrarDatosDeUsuario()
+            trasBorrarSesion()
             _isLoggedIn.value = false
             _uiState.value = AuthUiState.Idle
         }

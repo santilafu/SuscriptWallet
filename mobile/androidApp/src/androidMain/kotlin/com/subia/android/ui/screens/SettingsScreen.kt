@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.FileDownload
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.NotificationsOff
 import androidx.compose.material.icons.outlined.School
@@ -73,6 +74,7 @@ import androidx.core.net.toUri
 import androidx.core.os.LocaleListCompat
 import com.subia.android.BuildConfig
 import com.subia.android.util.Funciones
+import com.subia.android.util.IdiomaApp
 import com.subia.android.R
 import com.subia.android.ui.theme.ThemeState
 import com.subia.android.util.NotificacionesPermiso
@@ -80,6 +82,8 @@ import com.subia.android.util.openCustomTab
 import com.subia.android.util.toCsv
 import com.subia.android.worker.DEFAULT_NOTIFICATION_DAYS_BEFORE
 import com.subia.android.worker.KEY_NOTIFICATION_DAYS_BEFORE
+import com.subia.android.worker.NotificadorAvisos
+import com.subia.android.worker.ProgramadorAvisos
 import com.subia.shared.model.Subscription
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -96,7 +100,8 @@ private val languageOptions = listOf(
     "" to R.string.language_system,
     "es" to R.string.language_es,
     "en" to R.string.language_en,
-    "fr" to R.string.language_fr
+    "fr" to R.string.language_fr,
+    "pt" to R.string.language_pt
 )
 private val csvJson = Json { ignoreUnknownKeys = true; isLenient = true; coerceInputValues = true }
 
@@ -132,6 +137,8 @@ fun SettingsScreen(
     }
     val pedirPermiso = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedido ->
         avisosActivados = NotificacionesPermiso.estanActivadas(context)
+        // Los avisos que no salieron por falta de permiso (siguen en su ventana) salen ya.
+        if (concedido) ProgramadorAvisos.comprobarAhora(context)
         val activity = context as? Activity
         // Denegado de forma permanente (el sistema ya no muestra el diálogo): única salida, Ajustes.
         if (!concedido && activity != null &&
@@ -234,6 +241,8 @@ fun SettingsScreen(
                         val locales = if (localeTag.isEmpty()) LocaleListCompat.getEmptyLocaleList()
                         else LocaleListCompat.forLanguageTags(localeTag)
                         AppCompatDelegate.setApplicationLocales(locales)
+                        // Copia para el worker de avisos en Android 8-12 (ver IdiomaApp).
+                        IdiomaApp.guardar(context, localeTag)
                     }
                 }
             }
@@ -277,6 +286,10 @@ fun SettingsScreen(
                         onClick = {
                             selectedDays = dias
                             prefs.edit().putInt(KEY_NOTIFICATION_DAYS_BEFORE, dias).apply()
+                            // Con un umbral mayor, lo que ya entra en la nueva ventana se avisa
+                            // ahora en vez de perderse (N-18). apply basta: el worker corre en
+                            // este proceso y lee la copia en memoria de las preferencias.
+                            ProgramadorAvisos.comprobarAhora(context)
                         },
                         shape = SegmentedButtonDefaults.itemShape(indice, reminderOptions.size),
                         icon = {},
@@ -294,6 +307,21 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+            // Para soporte y QA: muestra un aviso real (mismo formato) sin esperar a un cobro.
+            FilaNavegacion(
+                icon = Icons.Outlined.Notifications,
+                titulo = stringResource(R.string.notif_test_action),
+                descripcion = stringResource(R.string.notif_test_desc),
+                onClick = {
+                    val enviado = NotificadorAvisos.mostrarPrueba(context)
+                    avisosActivados = NotificacionesPermiso.estanActivadas(context)
+                    scope.launch {
+                        snackbarHostState.showSnackbar(
+                            context.getString(if (enviado) R.string.notif_test_sent else R.string.notif_test_blocked)
+                        )
+                    }
+                }
             )
             SeparadorSeccion()
 

@@ -187,6 +187,9 @@
     <string name="price_approx_prefix">≈ %1$s</string>
     <string name="price_approx_label">Importe orientativo</string>
     <string name="price_adjust_hint">Importe orientativo: ajústalo a tu última factura</string>
+    <!-- Ayuda bajo el campo Importe: precio prerrellenado del catálogo / sin catálogo -->
+    <string name="price_catalog_hint">Precio orientativo del catálogo. Puedes cambiarlo si el tuyo es distinto.</string>
+    <string name="price_per_charge_hint">Lo que pagas en cada cobro</string>
 
     <!-- Language -->
     <string name="language">Idioma</string>
@@ -194,6 +197,7 @@
     <string name="language_es">Español</string>
     <string name="language_en">English</string>
     <string name="language_fr">Français</string>
+    <string name="language_pt">Português</string>
 
     <!-- Charts -->
     <string name="spending_by_category">Gasto por categoría</string>
@@ -294,12 +298,36 @@
     <!-- Notificaciones de renovación (RenovacionWorker) -->
     <string name="notif_channel_name">Renovaciones de suscripciones</string>
     <string name="notif_channel_desc">Alertas sobre suscripciones próximas a renovarse</string>
-    <string name="notif_renewal_title">Renovación próxima: %1$s</string>
-    <string name="notif_renewal_text">%1$s se renueva el %2$s por %3$s %4$s</string>
-    <string name="notif_renewal_big">Tu suscripción a %1$s se renueva el %2$s. Importe: %3$s %4$s</string>
-    <string name="notif_trial_title">Prueba por vencer: %1$s</string>
-    <string name="notif_trial_text">Tu prueba gratuita de %1$s vence el %2$s. Después se cobrará %3$s %4$s/mes</string>
-    <string name="notif_trial_big">Tu período de prueba gratuita de %1$s vence el %2$s. Si no cancelas, se te cobrará %3$s %4$s al mes.</string>
+    <!-- Avisos de cobro y fin de prueba (worker/NotificadorAvisos.kt) -->
+    <string name="notif_charge_title_today">%1$s se cobra hoy</string>
+    <string name="notif_charge_title_tomorrow">%1$s se cobra mañana</string>
+    <plurals name="notif_charge_title_in_days">
+        <item quantity="one">%1$s se cobra en %2$d día</item>
+        <item quantity="other">%1$s se cobra en %2$d días</item>
+    </plurals>
+    <!-- %1$s importe, %2$s periodo (notif_every_*), %3$s fecha -->
+    <string name="notif_charge_text">%1$s %2$s · %3$s</string>
+    <string name="notif_charge_big">Cargo de %1$s %2$s previsto para el %3$s. Si ya no la usas, aún estás a tiempo de cancelarla.</string>
+    <string name="notif_trial_title_today">Tu prueba de %1$s termina hoy</string>
+    <string name="notif_trial_title_tomorrow">Tu prueba de %1$s termina mañana</string>
+    <plurals name="notif_trial_title_in_days">
+        <item quantity="one">Tu prueba de %1$s termina en %2$d día</item>
+        <item quantity="other">Tu prueba de %1$s termina en %2$d días</item>
+    </plurals>
+    <!-- %1$s importe, %2$s periodo (notif_every_*) -->
+    <string name="notif_trial_text">Después se cobrará %1$s %2$s</string>
+    <!-- %1$s nombre, %2$s fecha, %3$s importe, %4$s periodo (notif_every_*) -->
+    <string name="notif_trial_big">Tu prueba gratuita de %1$s termina el %2$s. Si no cancelas, se te cobrará %3$s %4$s.</string>
+    <string name="notif_every_month">al mes</string>
+    <string name="notif_every_year">al año</string>
+    <string name="notif_every_week">a la semana</string>
+    <string name="notif_every_quarter">al trimestre</string>
+    <string name="notif_every_two_weeks">cada dos semanas</string>
+    <string name="notif_every_day">al día</string>
+    <plurals name="notif_summary_title">
+        <item quantity="one">%d cobro próximo</item>
+        <item quantity="other">%d cobros próximos</item>
+    </plurals>
     <!-- Sprint 3: primer uso, lista, formulario, Gmail, login, ajustes -->
     <string name="empty_subs_title">Empieza por una</string>
     <string name="empty_subs_subtitle">Toca un servicio para añadirlo con su precio ya puesto, o escribe el tuyo.</string>
@@ -325,10 +353,30 @@
     <string name="notif_status_title">Avisos en este dispositivo</string>
     <string name="notif_status_on">Activados</string>
     <string name="notif_status_off">Desactivados · toca para activar</string>
+    <string name="notif_test_action">Enviar aviso de prueba</string>
+    <string name="notif_test_desc">Comprueba cómo te llegan los avisos</string>
+    <string name="notif_test_sent">Aviso de prueba enviado</string>
+    <string name="notif_test_blocked">Activa los avisos para poder enviar uno de prueba</string>
     <string name="help_section">Ayuda</string>
     <string name="view_tutorial_again">Ver el tutorial de nuevo</string>
     <string name="view_tutorial_desc">Repasa lo básico en tres pantallas</string>
     <string name="password_show">Mostrar contraseña</string>
     <string name="password_hide">Ocultar contraseña</string>
     <string name="tomorrow">mañana</string>
+
+    <!-- Errores al hablar con el servidor (ViewModels de shared con ErrorRemoto) -->
+    <string name="error_offline">Sin conexión. Comprueba tu red e inténtalo de nuevo</string>
+    <string name="error_with_code">%1$s (error %2$d)</string>
+    <string name="error_load_catalog">Error al cargar el catálogo</string>
+    <string name="error_load_categories">Error al cargar las categorías</string>
+    <string name="error_load_dashboard">Error al cargar los datos</string>
+    <string name="error_load_subscriptions">Error al cargar las suscripciones</string>
+    <string name="error_delete_subscription">Error al eliminar la suscripción</string>
+    <string name="error_delete_offline">Sin conexión. No es posible eliminar sin conexión</string>
+    <string name="category_error_name_required">El nombre de la categoría es obligatorio</string>
+    <string name="category_error_offline">Sin conexión. No es posible crear categorías sin conexión</string>
+    <string name="category_error_create_failed">No se ha podido crear la categoría. Inténtalo de nuevo</string>
+    <string name="google_error_unknown">No se pudo iniciar sesión con Google. Inténtalo de nuevo</string>
+    <string name="subscription_not_found_title">Esta suscripción ya no existe</string>
+    <string name="subscription_not_found_desc">Puede que se haya eliminado desde otro dispositivo o desde la web.</string>
 </resources>

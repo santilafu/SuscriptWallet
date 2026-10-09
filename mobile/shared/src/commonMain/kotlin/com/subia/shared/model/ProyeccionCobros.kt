@@ -100,7 +100,7 @@ private fun fechaCobro(ancla: LocalDate, ciclo: Ciclo, k: Int): LocalDate =
     else ancla.plus(k * ciclo.dias, DateTimeUnit.DAY)
 
 /** Cobros de una suscripción en [hoy, fin], avanzando ciclos si la fecha de renovación es pasada. */
-private fun ocurrencias(sub: Subscription, hoy: LocalDate, fin: LocalDate): List<LocalDate> {
+internal fun ocurrencias(sub: Subscription, hoy: LocalDate, fin: LocalDate): List<LocalDate> {
     val ancla = runCatching { LocalDate.parse(sub.fechaRenovacion.trim()) }.getOrNull() ?: return emptyList()
     val ciclo = cicloDe(sub.periodoFacturacion)
     // Estimación (por defecto) del primer ciclo >= hoy, para no iterar desde anclas muy antiguas.

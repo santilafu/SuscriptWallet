@@ -54,6 +54,7 @@ import androidx.compose.ui.res.stringResource
 import com.subia.android.R
 import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.components.ErrorState
+import com.subia.android.ui.components.textoErrorRemoto
 import com.subia.android.ui.components.formatearImporte
 import com.subia.android.ui.components.formatearImporteCorto
 import com.subia.android.ui.components.sufijoPeriodo
@@ -183,7 +184,7 @@ fun CatalogoScreen(
                 }
                 is CatalogoUiState.Success -> CatalogoGrid(itemsFiltrados, onSeleccionarItem)
                 is CatalogoUiState.Error -> ErrorState(
-                    mensaje = state.mensaje,
+                    mensaje = textoErrorRemoto(state.error, R.string.error_load_catalog),
                     onRetry = { viewModel.cargarCatalogo() }
                 )
                 is CatalogoUiState.SesionExpirada -> Unit

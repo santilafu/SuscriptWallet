@@ -75,6 +75,7 @@ import com.subia.android.util.Funciones
 import com.subia.android.ui.BannerAdView
 import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.components.ErrorState
+import com.subia.android.ui.components.textoErrorSuscripciones
 import com.subia.android.ui.components.formatearImporte
 import com.subia.android.ui.theme.Violet600
 import com.subia.android.ui.theme.urgent
@@ -213,7 +214,7 @@ fun SuscripcionesScreen(
                     )
                 }
                 is SuscripcionesUiState.Error -> ErrorState(
-                    mensaje = state.mensaje,
+                    mensaje = textoErrorSuscripciones(state.error),
                     onRetry = { viewModel.cargar() }
                 )
                 is SuscripcionesUiState.SesionExpirada -> LaunchedEffect(Unit) { onSesionExpirada() }

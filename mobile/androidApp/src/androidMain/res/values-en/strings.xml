@@ -187,6 +187,9 @@
     <string name="price_approx_prefix">≈ %1$s</string>
     <string name="price_approx_label">Estimated amount</string>
     <string name="price_adjust_hint">Estimated amount: adjust it to your latest bill</string>
+    <!-- Ayuda bajo el campo Importe: precio prerrellenado del catálogo / sin catálogo -->
+    <string name="price_catalog_hint">Approximate catalog price. Change it if yours is different.</string>
+    <string name="price_per_charge_hint">What you pay each time you are charged</string>
 
     <!-- Language -->
     <string name="language">Language</string>
@@ -194,6 +197,7 @@
     <string name="language_es">Español</string>
     <string name="language_en">English</string>
     <string name="language_fr">Français</string>
+    <string name="language_pt">Português</string>
 
     <!-- Charts -->
     <string name="spending_by_category">Spending by category</string>
@@ -294,12 +298,36 @@
     <!-- Renewal notifications (RenovacionWorker) -->
     <string name="notif_channel_name">Subscription renewals</string>
     <string name="notif_channel_desc">Alerts about subscriptions about to renew</string>
-    <string name="notif_renewal_title">Upcoming renewal: %1$s</string>
-    <string name="notif_renewal_text">%1$s renews on %2$s for %3$s %4$s</string>
-    <string name="notif_renewal_big">Your %1$s subscription renews on %2$s. Amount: %3$s %4$s</string>
-    <string name="notif_trial_title">Trial ending: %1$s</string>
-    <string name="notif_trial_text">Your free trial of %1$s ends on %2$s. After that you\'ll be charged %3$s %4$s/month</string>
-    <string name="notif_trial_big">Your free trial of %1$s ends on %2$s. If you don\'t cancel, you\'ll be charged %3$s %4$s per month.</string>
+    <!-- Avisos de cobro y fin de prueba (worker/NotificadorAvisos.kt) -->
+    <string name="notif_charge_title_today">%1$s is charged today</string>
+    <string name="notif_charge_title_tomorrow">%1$s is charged tomorrow</string>
+    <plurals name="notif_charge_title_in_days">
+        <item quantity="one">%1$s is charged in %2$d day</item>
+        <item quantity="other">%1$s is charged in %2$d days</item>
+    </plurals>
+    <!-- %1$s importe, %2$s periodo (notif_every_*), %3$s fecha -->
+    <string name="notif_charge_text">%1$s %2$s · %3$s</string>
+    <string name="notif_charge_big">%1$s %2$s will be charged on %3$s. If you no longer use it, there\'s still time to cancel.</string>
+    <string name="notif_trial_title_today">Your %1$s trial ends today</string>
+    <string name="notif_trial_title_tomorrow">Your %1$s trial ends tomorrow</string>
+    <plurals name="notif_trial_title_in_days">
+        <item quantity="one">Your %1$s trial ends in %2$d day</item>
+        <item quantity="other">Your %1$s trial ends in %2$d days</item>
+    </plurals>
+    <!-- %1$s importe, %2$s periodo (notif_every_*) -->
+    <string name="notif_trial_text">Then you\'ll be charged %1$s %2$s</string>
+    <!-- %1$s nombre, %2$s fecha, %3$s importe, %4$s periodo (notif_every_*) -->
+    <string name="notif_trial_big">Your free trial of %1$s ends on %2$s. If you don\'t cancel, you\'ll be charged %3$s %4$s.</string>
+    <string name="notif_every_month">per month</string>
+    <string name="notif_every_year">per year</string>
+    <string name="notif_every_week">per week</string>
+    <string name="notif_every_quarter">per quarter</string>
+    <string name="notif_every_two_weeks">every two weeks</string>
+    <string name="notif_every_day">per day</string>
+    <plurals name="notif_summary_title">
+        <item quantity="one">%d upcoming charge</item>
+        <item quantity="other">%d upcoming charges</item>
+    </plurals>
     <!-- Sprint 3: first use, list, form, Gmail, login, settings -->
     <string name="empty_subs_title">Start with one</string>
     <string name="empty_subs_subtitle">Tap a service to add it with its price filled in, or type your own.</string>
@@ -325,10 +353,30 @@
     <string name="notif_status_title">Alerts on this device</string>
     <string name="notif_status_on">On</string>
     <string name="notif_status_off">Off · tap to turn on</string>
+    <string name="notif_test_action">Send a test alert</string>
+    <string name="notif_test_desc">Check how alerts reach you</string>
+    <string name="notif_test_sent">Test alert sent</string>
+    <string name="notif_test_blocked">Turn on alerts to send a test one</string>
     <string name="help_section">Help</string>
     <string name="view_tutorial_again">See the tutorial again</string>
     <string name="view_tutorial_desc">Go over the basics in three screens</string>
     <string name="password_show">Show password</string>
     <string name="password_hide">Hide password</string>
     <string name="tomorrow">tomorrow</string>
+
+    <!-- Errores al hablar con el servidor (ViewModels de shared con ErrorRemoto) -->
+    <string name="error_offline">No connection. Check your network and try again</string>
+    <string name="error_with_code">%1$s (error %2$d)</string>
+    <string name="error_load_catalog">Could not load the catalogue</string>
+    <string name="error_load_categories">Could not load the categories</string>
+    <string name="error_load_dashboard">Could not load the data</string>
+    <string name="error_load_subscriptions">Could not load the subscriptions</string>
+    <string name="error_delete_subscription">Could not delete the subscription</string>
+    <string name="error_delete_offline">No connection. Subscriptions cannot be deleted offline</string>
+    <string name="category_error_name_required">The category name is required</string>
+    <string name="category_error_offline">No connection. Categories cannot be created offline</string>
+    <string name="category_error_create_failed">Could not create the category. Please try again</string>
+    <string name="google_error_unknown">Could not sign in with Google. Please try again</string>
+    <string name="subscription_not_found_title">This subscription no longer exists</string>
+    <string name="subscription_not_found_desc">It may have been deleted on another device or on the web.</string>
 </resources>

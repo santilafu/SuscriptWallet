@@ -52,6 +52,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.subia.android.R
 import com.subia.android.ui.components.ErrorState
+import com.subia.android.ui.components.textoErrorCrearCategoria
+import com.subia.android.ui.components.textoErrorRemoto
 import com.subia.android.ui.theme.Violet600
 import com.subia.shared.model.Category
 import com.subia.shared.viewmodel.CategoriasUiState
@@ -117,7 +119,7 @@ fun CategoriasScreen(
             }
             // Mismo componente de error que el resto de pantallas (C-02).
             is CategoriasUiState.Error -> ErrorState(
-                mensaje = state.mensaje,
+                mensaje = textoErrorRemoto(state.error, R.string.error_load_categories),
                 onRetry = { viewModel.cargarCategorias() },
                 modifier = Modifier.padding(innerPadding)
             )
@@ -141,7 +143,7 @@ fun CategoriasScreen(
                     )
                     if (crearState is CrearCategoriaUiState.Error) {
                         Spacer(Modifier.height(4.dp))
-                        Text((crearState as CrearCategoriaUiState.Error).mensaje, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                        Text(textoErrorCrearCategoria((crearState as CrearCategoriaUiState.Error).error), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                     }
                 }
             },

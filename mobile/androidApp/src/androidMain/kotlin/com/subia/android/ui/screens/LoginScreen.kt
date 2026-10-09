@@ -364,7 +364,11 @@ fun LoginScreen(
                                     GoogleSignInResult.NotConfigured ->
                                         viewModel.showGoogleError(context.getString(R.string.google_not_configured))
                                     is GoogleSignInResult.Unknown ->
-                                        viewModel.showGoogleError(context.getString(R.string.google_error, result.message))
+                                        viewModel.showGoogleError(
+                                            result.detalle?.takeIf { it.isNotBlank() }
+                                                ?.let { context.getString(R.string.google_error, it) }
+                                                ?: context.getString(R.string.google_error_unknown)
+                                        )
                                 }
                             }
                         },

@@ -21,8 +21,14 @@ import java.time.format.TextStyle as JavaTextStyle
  * ("47,96 €", "$12.00"). Si el código de divisa no es ISO válido, cae a "valor CÓDIGO"
  * para no tirar la pantalla por un dato raro del servidor.
  */
-fun formatearImporte(valor: Double, moneda: String = "EUR", decimales: Int = 2): String {
-    val locale = Locale.getDefault()
+fun formatearImporte(
+    valor: Double,
+    moneda: String = "EUR",
+    decimales: Int = 2,
+    // Las notificaciones pasan el locale de los recursos de la app (idioma elegido en Ajustes),
+    // que en segundo plano puede no coincidir con Locale.getDefault().
+    locale: Locale = Locale.getDefault()
+): String {
     return runCatching {
         NumberFormat.getCurrencyInstance(locale).apply {
             currency = Currency.getInstance(moneda)

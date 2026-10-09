@@ -19,7 +19,7 @@ import kotlinx.serialization.json.Json
 sealed interface CatalogoUiState {
     data object Loading : CatalogoUiState
     data class Success(val items: List<CatalogItem>) : CatalogoUiState
-    data class Error(val mensaje: String) : CatalogoUiState
+    data class Error(val error: ErrorRemoto) : CatalogoUiState
     data class Offline(val items: List<CatalogItem>) : CatalogoUiState
     data object SesionExpirada : CatalogoUiState
 }
@@ -115,7 +115,7 @@ class CatalogoViewModel(
                         else -> _uiState.value = if (todosLosItems.isNotEmpty()) {
                             CatalogoUiState.Offline(todosLosItems)
                         } else {
-                            CatalogoUiState.Error(error.message ?: "Error al cargar el catálogo")
+                            CatalogoUiState.Error(ErrorRemoto.desde(error))
                         }
                     }
                 }

@@ -4,7 +4,9 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import com.subia.android.util.fechaIsoLegible
 import com.subia.android.util.proximaRenovacionIso
+import com.subia.android.ui.components.EmptyState
 import com.subia.android.ui.components.formatearImporte
+import com.subia.android.ui.components.textoErrorSuscripciones
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,6 +27,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -91,10 +94,19 @@ fun SuscripcionDetalleScreen(
         else -> null
     }
 
+    // Lista ya cargada (no en carga inicial ni refrescando): si la suscripción no está, no va a
+    // aparecer. Pasa al tocar el aviso de una suscripción borrada después: antes el detalle se
+    // quedaba con el indicador de carga para siempre.
+    val listaCargada = when (val state = uiState) {
+        is SuscripcionesUiState.Success -> !state.isRefreshing
+        is SuscripcionesUiState.Offline -> true
+        else -> false
+    }
+
+    // El texto se resuelve aquí (contexto composable) y el efecto solo lo muestra.
+    val mensajeError = (uiState as? SuscripcionesUiState.Error)?.let { textoErrorSuscripciones(it.error) }
     LaunchedEffect(uiState) {
-        if (uiState is SuscripcionesUiState.Error) {
-            snackbarHostState.showSnackbar((uiState as SuscripcionesUiState.Error).mensaje)
-        }
+        if (mensajeError != null) snackbarHostState.showSnackbar(mensajeError)
     }
 
     // Busca la URL de cancelación en el catálogo por nombre de servicio
@@ -120,7 +132,16 @@ fun SuscripcionDetalleScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
-        if (suscripcion == null) {
+        if (suscripcion == null && listaCargada && !eliminando) {
+            EmptyState(
+                icon = Icons.Outlined.SearchOff,
+                titulo = stringResource(R.string.subscription_not_found_title),
+                subtitulo = stringResource(R.string.subscription_not_found_desc),
+                modifier = Modifier.padding(innerPadding),
+                actionLabel = stringResource(R.string.back),
+                onAction = onNavigateBack
+            )
+        } else if (suscripcion == null) {
             Box(Modifier.fillMaxSize().padding(innerPadding), Alignment.Center) {
                 CircularProgressIndicator()
             }

@@ -85,6 +85,7 @@ import com.subia.android.ui.components.importeConPeriodo
 import com.subia.android.ui.theme.Violet600
 import com.subia.android.util.NotificacionesPermiso
 import com.subia.android.util.fechaIsoLegible
+import com.subia.shared.model.BillingCycle
 import com.subia.shared.model.CatalogItem
 import com.subia.shared.viewmodel.Campo
 import com.subia.shared.viewmodel.FormError
@@ -396,15 +397,25 @@ fun SuscripcionFormScreen(
                     }
                 }
 
-                // Recibo de importe variable elegido del catálogo (luz, teléfono, seguro): el precio
-                // prerrellenado es orientativo. Va bajo la fila entera (como un supportingText a
-                // todo el ancho): bajo el campo de importe, que mide 5/8, se partía en tres líneas.
-                val esImporteOrientativo = catalogoSeleccionado?.variablePrice == true &&
-                    catalogoSeleccionado?.nombre.equals(nombre.trim(), ignoreCase = true) &&
-                    errorDe(Campo.Precio) == null
-                AnimatedVisibility(visible = esImporteOrientativo) {
+                // Ayuda del importe. Hace de supportingText del campo, pero va bajo la fila entera
+                // (a todo el ancho): bajo el campo de importe, que mide 5/8, se partía en tres líneas.
+                // - Precio tal cual viene del catálogo: avisa de que es orientativo y editable
+                //   (los recibos de importe variable —luz, teléfono, seguro— con su texto propio).
+                // - Si no viene del catálogo o el usuario ya lo ha cambiado: qué hay que poner.
+                // El error del campo tiene prioridad: mientras se ve, la ayuda se oculta.
+                val itemCatalogo = catalogoSeleccionado
+                    ?.takeIf { it.nombre.equals(nombre.trim(), ignoreCase = true) }
+                val precioEsDelCatalogo = itemCatalogo != null &&
+                    itemCatalogo.precioPara(BillingCycle.fromWire(periodoFacturacion))
+                        ?.let { it == SuscripcionFormViewModel.parsearPrecio(precio) } == true
+                val ayudaImporte = when {
+                    !precioEsDelCatalogo -> R.string.price_per_charge_hint
+                    itemCatalogo?.variablePrice == true -> R.string.price_adjust_hint
+                    else -> R.string.price_catalog_hint
+                }
+                AnimatedVisibility(visible = errorDe(Campo.Precio) == null) {
                     Text(
-                        text = stringResource(R.string.price_adjust_hint),
+                        text = stringResource(ayudaImporte),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(start = 16.dp, end = 16.dp).offset(y = (-4).dp)

@@ -1,188 +1,114 @@
 package com.subia.android.worker
 
-import android.Manifest
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.Context
-import android.content.pm.PackageManager
-import android.os.Build
-import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
+import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.subia.android.R
+import com.subia.shared.cache.CacheRepository
 import com.subia.shared.model.Subscription
+import com.subia.shared.model.avisosPendientes
+import com.subia.shared.model.esHoraDeSilencio
+import com.subia.shared.model.purgarAvisosAntiguos
+import com.subia.shared.repository.AuthRepository
+import com.subia.shared.repository.SubscriptionRepository
+import com.subia.android.util.IdiomaApp
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.Clock
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.daysUntil
 import kotlinx.datetime.toLocalDateTime
-import kotlinx.serialization.json.Json
-
-/** Clave de SharedPreferences("subia_cache") con el umbral de días para avisar. */
-const val KEY_NOTIFICATION_DAYS_BEFORE = "notification_days_before"
-const val DEFAULT_NOTIFICATION_DAYS_BEFORE = 3
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.get
 
 /**
- * Worker periódico que revisa las próximas renovaciones de suscripciones y lanza
- * una notificación local para aquellas que se renuevan exactamente en 3 días.
+ * Comprueba qué avisos de cobro o de fin de prueba tocan hoy y los muestra.
  *
- * Lee las suscripciones directamente desde SharedPreferences("subia_cache") para no
- * depender de inyección de dependencias en el contexto del Worker.
- *
- * El canal de notificaciones "renovaciones" se crea con importancia HIGH para que
- * las alertas se muestren como heads-up notifications.
- *
- * En Android 13+ (API 33+), si el permiso POST_NOTIFICATIONS no está concedido,
- * el worker devuelve [Result.success] silenciosamente (degradación elegante).
+ * 1. Si es la ejecución diaria y cae en horas de silencio, se aplaza a la hora del aviso.
+ * 2. Intenta refrescar la lista desde el servidor (Render puede estar dormido: con timeout) y,
+ *    si falla, usa la caché más reciente de las pantallas. La red nunca bloquea el aviso.
+ * 3. Sin sesión no avisa (la caché podría ser de otra cuenta).
+ * 4. La decisión es [avisosPendientes] (shared, con tests): activas, próxima renovación real,
+ *    ventana `[hoy, hoy + umbral]` y sin repetir lo ya avisado ([RegistroAvisos]).
+ * 5. Solo se marcan como avisados los que se han mostrado: si las notificaciones están
+ *    desactivadas, saldrán cuando se activen (dentro de la ventana).
  */
 class RenovacionWorker(
-    private val context: Context,
+    context: Context,
     workerParams: WorkerParameters
-) : CoroutineWorker(context, workerParams) {
-
-    private val json = Json { ignoreUnknownKeys = true; isLenient = true; coerceInputValues = true }
+) : CoroutineWorker(context, workerParams), KoinComponent {
 
     override suspend fun doWork(): Result {
-        crearCanalDeNotificaciones()
+        // En Android 8-12 los recursos del worker son los del sistema: sin esto, los avisos y el
+        // nombre del canal salían en el idioma del móvil y no en el elegido en Ajustes.
+        val contexto = IdiomaApp.contexto(applicationContext)
+        NotificadorAvisos.crearCanal(contexto)
 
-        // Leer suscripciones directamente desde SharedPreferences (misma store que CacheRepository)
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val subsJson = prefs.getString(CACHE_KEY_SUBS, null) ?: return Result.success()
+        val ahora = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        val inmediato = inputData.getBoolean(KEY_INMEDIATO, false)
+        if (!inmediato && esHoraDeSilencio(ahora.hour)) {
+            ProgramadorAvisos.aplazarHastaLaHoraDelAviso(contexto)
+            return Result.success()
+        }
 
-        val suscripciones = runCatching {
-            json.decodeFromString<List<Subscription>>(subsJson)
-        }.getOrNull() ?: return Result.success()
+        val refrescar = inputData.getBoolean(KEY_REFRESCAR_RED, true)
+        val subs = (if (refrescar) refrescarDesdeRed() else null)
+            ?: CacheAvisos.leerSuscripciones(contexto)
+            ?: return Result.success()
 
-        val umbralDias = prefs.getInt(KEY_NOTIFICATION_DAYS_BEFORE, DEFAULT_NOTIFICATION_DAYS_BEFORE)
-        val hoy = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        // Después del refresco: si el servidor rechazó la sesión, ApiClient ya borró los tokens.
+        if (!haySesion()) return Result.success()
 
-        // Notificaciones de renovaciones próximas (excluye trials)
-        suscripciones
-            .filter { sub ->
-                if (sub.esPrueba) return@filter false
-                val fechaRenovacion = runCatching { LocalDate.parse(sub.fechaRenovacion) }.getOrNull()
-                    ?: return@filter false
-                val diasRestantes = hoy.daysUntil(fechaRenovacion)
-                diasRestantes == umbralDias
-            }
-            .forEachIndexed { index, sub ->
-                lanzarNotificacion(sub, index)
-            }
-
-        // Notificaciones de pruebas gratuitas por vencer en el mismo umbral
-        suscripciones
-            .filter { sub ->
-                if (!sub.esPrueba) return@filter false
-                val fechaFinPrueba = runCatching { LocalDate.parse(sub.fechaFinPrueba ?: return@filter false) }.getOrNull()
-                    ?: return@filter false
-                val diasRestantes = hoy.daysUntil(fechaFinPrueba)
-                diasRestantes == umbralDias
-            }
-            .forEachIndexed { index, sub ->
-                lanzarNotificacionPrueba(sub, index)
-            }
-
+        val hoy = ahora.date
+        // La diaria, la inmediata y la aplazada pueden ejecutarse a la vez: sin exclusión, las
+        // dos leían el registro antes de que la otra lo guardase y el aviso salía duplicado.
+        candado.withLock {
+            // Un aviso de una suscripción ya borrada (aquí o en la web) abriría un detalle vacío.
+            NotificadorAvisos.retirarAvisosHuerfanos(contexto, subs)
+            val registro = purgarAvisosAntiguos(RegistroAvisos.leer(contexto), hoy)
+            val avisos = avisosPendientes(subs, hoy, CacheAvisos.umbralDias(contexto), registro)
+            val mostrados = NotificadorAvisos.mostrar(contexto, avisos)
+            RegistroAvisos.guardar(contexto, registro + mostrados)
+        }
         return Result.success()
     }
 
-    /** Crea el canal de notificaciones "renovaciones" si aún no existe. */
-    private fun crearCanalDeNotificaciones() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val canal = NotificationChannel(
-                CHANNEL_ID,
-                context.getString(R.string.notif_channel_name),
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = context.getString(R.string.notif_channel_desc)
+    /**
+     * Lista fresca del servidor, guardada en caché para la próxima vez; `null` si no hay red,
+     * el servidor tarda demasiado o falla (se usará la caché).
+     */
+    private suspend fun refrescarDesdeRed(): List<Subscription>? = try {
+        withTimeoutOrNull(TIMEOUT_RED_MS) { get<SubscriptionRepository>().getAll().getOrNull() }
+            ?.also { subs ->
+                val cache = get<CacheRepository>()
+                cache.saveString(CacheAvisos.CLAVE_SUSCRIPCIONES, CacheAvisos.codificar(subs))
+                cache.saveTimestamp(CacheAvisos.CLAVE_SUSCRIPCIONES)
             }
-            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            manager.createNotificationChannel(canal)
-        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Log.w(TAG_LOG, "No se pudo refrescar la lista; se usa la caché", e)
+        null
     }
 
-    /**
-     * Lanza una notificación para la [suscripcion] indicada.
-     * En Android 13+ (API 33), si el permiso POST_NOTIFICATIONS no está concedido,
-     * omite la notificación sin lanzar excepción (degradación elegante).
-     *
-     * @param suscripcion Suscripción próxima a renovarse.
-     * @param index       Índice para generar un ID de notificación único.
-     */
-    private fun lanzarNotificacion(suscripcion: Subscription, index: Int) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val permiso = ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
-            if (permiso != PackageManager.PERMISSION_GRANTED) return
-        }
-
-        val fechaFormateada = runCatching {
-            val localDate = LocalDate.parse(suscripcion.fechaRenovacion)
-            "%02d/%02d/%04d".format(localDate.dayOfMonth, localDate.monthNumber, localDate.year)
-        }.getOrElse { suscripcion.fechaRenovacion }
-
-        val importe = "%.2f".format(suscripcion.precio)
-        val notificacion = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_stat_renovacion)
-            .setContentTitle(context.getString(R.string.notif_renewal_title, suscripcion.nombre))
-            .setContentText(
-                context.getString(R.string.notif_renewal_text, suscripcion.nombre, fechaFormateada, importe, suscripcion.moneda)
-            )
-            .setStyle(
-                NotificationCompat.BigTextStyle().bigText(
-                    context.getString(R.string.notif_renewal_big, suscripcion.nombre, fechaFormateada, importe, suscripcion.moneda)
-                )
-            )
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .build()
-
-        NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_BASE + index, notificacion)
-    }
-
-    /**
-     * Lanza una notificación para una suscripción en período de prueba gratuita próxima a vencer.
-     *
-     * @param suscripcion Suscripción en prueba próxima a vencer.
-     * @param index       Índice para generar un ID de notificación único (base 2500).
-     */
-    private fun lanzarNotificacionPrueba(suscripcion: Subscription, index: Int) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val permiso = ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
-            if (permiso != PackageManager.PERMISSION_GRANTED) return
-        }
-
-        val fechaFormateada = runCatching {
-            val localDate = LocalDate.parse(suscripcion.fechaFinPrueba ?: return)
-            "%02d/%02d/%04d".format(localDate.dayOfMonth, localDate.monthNumber, localDate.year)
-        }.getOrElse { suscripcion.fechaFinPrueba ?: "" }
-
-        val importe = "%.2f".format(suscripcion.precio)
-        val notificacion = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_stat_renovacion)
-            .setContentTitle(context.getString(R.string.notif_trial_title, suscripcion.nombre))
-            .setContentText(
-                context.getString(R.string.notif_trial_text, suscripcion.nombre, fechaFormateada, importe, suscripcion.moneda)
-            )
-            .setStyle(
-                NotificationCompat.BigTextStyle().bigText(
-                    context.getString(R.string.notif_trial_big, suscripcion.nombre, fechaFormateada, importe, suscripcion.moneda)
-                )
-            )
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .build()
-
-        NotificationManagerCompat.from(context).notify(TRIAL_NOTIFICATION_ID_BASE + index, notificacion)
-    }
+    /** Si Koin no respondiera (no debería: lo arranca la Application), se asume sesión. */
+    private fun haySesion(): Boolean =
+        runCatching { get<AuthRepository>().hasValidSession() }.getOrDefault(true)
 
     companion object {
-        /** Tag único para identificar y cancelar las tareas de WorkManager. */
+        /** Tag común de todos los trabajos de avisos (para cancelarlos juntos al cerrar sesión). */
         const val TAG = "renovaciones"
-        private const val PREFS_NAME = "subia_cache"
-        private const val CHANNEL_ID = "renovaciones"
-        private const val NOTIFICATION_ID_BASE = 1000
-        private const val TRIAL_NOTIFICATION_ID_BASE = 2500
-        private const val CACHE_KEY_SUBS = "subscriptions"
+
+        /** `true` en comprobaciones lanzadas con la app en uso: no aplican horas de silencio. */
+        const val KEY_INMEDIATO = "inmediato"
+        const val KEY_REFRESCAR_RED = "refrescar_red"
+
+        /** Render free tarda ~50 s en despertar; ApiClient corta a los 30 s por petición. */
+        private const val TIMEOUT_RED_MS = 45_000L
+        private const val TAG_LOG = "RenovacionWorker"
+
+        /** Único por proceso (WorkManager ejecuta todos los workers en el proceso de la app). */
+        private val candado = Mutex()
     }
 }
