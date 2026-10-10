@@ -3,6 +3,7 @@ package com.subia.security
 import com.subia.model.User
 import com.subia.model.UserRole
 import com.subia.repository.UserRepository
+import com.subia.repository.findByEmailAnyCase
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.event.ApplicationReadyEvent
@@ -28,7 +29,7 @@ class AdminBootstrapListener(
             return
         }
 
-        if (userRepository.existsByEmail(adminEmail)) {
+        if (userRepository.findByEmailAnyCase(adminEmail) != null) {
             log.debug("Usuario admin ya existe: {}", adminEmail)
             return
         }

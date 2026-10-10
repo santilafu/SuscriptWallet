@@ -4,50 +4,29 @@ import com.subia.model.Subscription
 import com.subia.repository.SubscriptionRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 /**
  * Servicio de negocio para la gestión de suscripciones.
  *
  * Actúa como capa intermedia entre los controladores y el repositorio JPA.
- * Centraliza las operaciones CRUD sobre [Subscription] y encapsula las
- * reglas de negocio que puedan añadirse en el futuro.
+ * Todas las operaciones exigen el `userId` del propietario: los métodos sin usuario
+ * (findAll(), findActive(), findById(id), delete(id)) se eliminaron por riesgo de IDOR (B-02).
  *
- * [@Transactional] garantiza que cada operación se ejecute en una transacción de base
- * de datos. Si ocurre un error inesperado, los cambios se revierten automáticamente.
+ * Antes de guardar se valida y normaliza la entidad ([validated]) para que datos fuera de los
+ * límites de la tabla (nombre > 100, precio con más de 8 cifras, divisa rara…) den un 400 en
+ * lugar de un 500 por violación de la base de datos.
  */
 @Service
 @Transactional
 class SubscriptionService(private val repo: SubscriptionRepository) {
 
-    /**
-     * Devuelve todas las suscripciones, activas e inactivas, sin ningún orden garantizado.
-     * Se usa en la pantalla de lista completa de suscripciones (admin/legacy).
-     */
-    fun findAll(): List<Subscription> = repo.findAll()
-
-    /**
-     * Devuelve todas las suscripciones de un usuario.
-     */
+    /** Devuelve todas las suscripciones de un usuario. */
     fun findAll(userId: Long): List<Subscription> = repo.findByUserId(userId)
 
-    /**
-     * Devuelve solo las suscripciones marcadas como activas.
-     * Se usa en el dashboard para calcular totales y renovaciones próximas (legacy).
-     */
-    fun findActive(): List<Subscription> = repo.findByActiveTrue()
-
-    /**
-     * Devuelve solo las suscripciones activas de un usuario.
-     */
+    /** Devuelve solo las suscripciones activas de un usuario. */
     fun findActive(userId: Long): List<Subscription> = repo.findByUserIdAndActiveTrue(userId)
-
-    /**
-     * Busca una suscripción por su ID.
-     *
-     * @throws NoSuchElementException si no existe ninguna suscripción con ese ID.
-     */
-    fun findById(id: Long): Subscription =
-        repo.findById(id).orElseThrow { NoSuchElementException("Suscripción $id no encontrada") }
 
     /**
      * Busca una suscripción por ID verificando que pertenece al usuario indicado.
@@ -59,24 +38,17 @@ class SubscriptionService(private val repo: SubscriptionRepository) {
             ?: throw NoSuchElementException("Suscripción $id no encontrada")
 
     /**
-     * Guarda una suscripción nueva o actualiza una existente.
-     * Si [subscription.id] es 0, JPA hace INSERT; si tiene un ID válido, hace UPDATE.
-     *
-     * @return La entidad guardada con el ID asignado por la base de datos.
+     * Actualiza una suscripción existente (ya con su `userId`) o la inserta si `id` es 0.
+     * Los llamadores deben haber comprobado antes la propiedad con [findById].
      */
-    fun save(subscription: Subscription): Subscription = repo.save(subscription)
+    fun save(subscription: Subscription): Subscription {
+        requireNotNull(subscription.userId) { "La suscripción debe tener propietario" }
+        return repo.save(validated(subscription))
+    }
 
-    /**
-     * Guarda una suscripción asignándole el userId indicado.
-     */
+    /** Guarda una suscripción asignándole el userId indicado. */
     fun save(subscription: Subscription, userId: Long): Subscription =
-        repo.save(subscription.copy(userId = userId))
-
-    /**
-     * Elimina permanentemente la suscripción con el ID indicado.
-     * No comprueba si el ID existe; si no existe, Spring Data lanza [EmptyResultDataAccessException].
-     */
-    fun delete(id: Long) = repo.deleteById(id)
+        repo.save(validated(subscription.copy(userId = userId)))
 
     /**
      * Elimina la suscripción verificando que pertenece al usuario indicado.
@@ -84,7 +56,30 @@ class SubscriptionService(private val repo: SubscriptionRepository) {
      * @throws NoSuchElementException si no existe o no pertenece al usuario.
      */
     fun delete(id: Long, userId: Long) {
-        findById(id, userId) // verifica ownership
-        repo.deleteById(id)
+        repo.delete(findById(id, userId))
+    }
+
+    companion object {
+        /** Máximo admitido por la columna `price DECIMAL(10,2)`. */
+        val MAX_PRICE = BigDecimal("99999999.99")
+        private val CURRENCY_REGEX = Regex("^[A-Z]{3}$")
+
+        /**
+         * Valida y normaliza una suscripción contra los límites del esquema (V1/V4).
+         * @throws IllegalArgumentException con un mensaje legible si algo no cuadra.
+         */
+        fun validated(s: Subscription): Subscription {
+            val name = s.name.trim()
+            require(name.isNotEmpty()) { "El nombre es obligatorio" }
+            require(name.length <= 100) { "El nombre no puede superar 100 caracteres" }
+            require(s.description.length <= 500) { "La descripción no puede superar 500 caracteres" }
+            require(s.notes.length <= 1000) { "Las notas no pueden superar 1000 caracteres" }
+            require(s.price.signum() >= 0) { "El precio no puede ser negativo" }
+            val price = s.price.setScale(2, RoundingMode.HALF_UP)
+            require(price <= MAX_PRICE) { "El precio es demasiado alto" }
+            val currency = s.currency.trim().uppercase()
+            require(CURRENCY_REGEX.matches(currency)) { "Divisa no válida: ${s.currency.take(10)}" }
+            return s.copy(name = name, price = price, currency = currency)
+        }
     }
 }

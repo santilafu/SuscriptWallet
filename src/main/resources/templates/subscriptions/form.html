@@ -9,17 +9,17 @@
     <!-- ── Cabecera ───────────────────────────────────────────────────── -->
     <div class="mb-10">
         <h1 class="text-[1.6rem] font-bold text-slate-100 leading-tight" style="letter-spacing:-0.03em;">
-            <span th:if="${sub instanceof T(com.subia.model.Subscription) and sub.id > 0}" th:text="#{form.title.edit}">Editar suscripción</span>
-            <span th:unless="${sub instanceof T(com.subia.model.Subscription) and sub.id > 0}" th:text="#{form.title.new}">Nueva suscripción</span>
+            <span th:if="${isEntity and sub.id > 0}" th:text="#{form.title.edit}">Editar suscripción</span>
+            <span th:unless="${isEntity and sub.id > 0}" th:text="#{form.title.new}">Nueva suscripción</span>
         </h1>
-        <p class="text-sm mt-1" style="color:#4a5a78;" th:text="#{form.subtitle}">Completa los datos de tu suscripción</p>
+        <p class="text-sm mt-1" style="color:#8291a8;" th:text="#{form.subtitle}">Completa los datos de tu suscripción</p>
     </div>
 
     <!-- ── Selector de catálogo (solo al crear) ───────────────────────── -->
     <div class="enter glass-card rounded-xl mb-6 overflow-hidden" style="animation-delay:0ms"
-         th:unless="${sub instanceof T(com.subia.model.Subscription) and sub.id > 0}">
+         th:unless="${isEntity and sub.id > 0}">
         <div class="px-5 py-4 border-b border-white/[0.06] flex items-center gap-2">
-            <i class="bi bi-grid-3x3-gap" style="color:#a78bfa;"></i>
+            <i aria-hidden="true" class="bi bi-grid-3x3-gap" style="color:#a78bfa;"></i>
             <span class="text-sm font-semibold text-slate-200" th:text="#{form.catalog.title}">Elegir del catálogo</span>
             <span class="text-xs text-slate-500 ml-1" th:text="#{form.catalog.optional}">— opcional, rellena el formulario automáticamente</span>
         </div>
@@ -28,7 +28,7 @@
 
                 <!-- Categoría -->
                 <div class="flex-1">
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5" th:text="#{form.catalog.category}">Categoría</label>
+                    <label for="catalogCategory" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5" th:text="#{form.catalog.category}">Categoría</label>
                     <select id="catalogCategory"
                             class="w-full px-3 py-2 rounded-lg text-sm focus:outline-none transition-all duration-200">
                         <option value="" th:text="#{form.catalog.choose-cat}">— Elige una categoría —</option>
@@ -41,7 +41,7 @@
 
                 <!-- Servicio -->
                 <div class="flex-1">
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5" th:text="#{form.catalog.service}">Servicio</label>
+                    <label for="catalogService" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5" th:text="#{form.catalog.service}">Servicio</label>
                     <select id="catalogService" disabled
                             class="w-full px-3 py-2 rounded-lg text-sm focus:outline-none transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                         <option value="" th:text="#{form.catalog.choose-first}">— Primero elige una categoría —</option>
@@ -52,7 +52,7 @@
                 <button type="button" id="btnApplyCatalog" disabled
                         class="flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex-shrink-0"
                         style="background-color:#7c3aed;">
-                    <i class="bi bi-arrow-down-circle"></i><span th:text="#{form.catalog.apply}">Aplicar</span>
+                    <i aria-hidden="true" class="bi bi-arrow-down-circle"></i><span th:text="#{form.catalog.apply}">Aplicar</span>
                 </button>
             </div>
         </div>
@@ -79,8 +79,8 @@
             <div class="flex flex-col items-center" style="flex:0 0 auto;">
                 <div id="step-dot-2"
                      class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold transition-all"
-                     style="background:rgba(255,255,255,0.06);color:#3d4d66;border:1px solid rgba(255,255,255,0.09);transition:all 0.2s cubic-bezier(0.4,0,0.2,1);">2</div>
-                <span id="step-label-2" class="text-xs mt-1.5 font-semibold" style="color:#3d4d66;letter-spacing:0.01em;" th:text="#{form.step.price}">Precio</span>
+                     style="background:rgba(255,255,255,0.06);color:#8291a8;border:1px solid rgba(255,255,255,0.09);transition:all 0.2s cubic-bezier(0.4,0,0.2,1);">2</div>
+                <span id="step-label-2" class="text-xs mt-1.5 font-semibold" style="color:#8291a8;letter-spacing:0.01em;" th:text="#{form.step.price}">Precio</span>
             </div>
 
             <!-- Línea 2-3 -->
@@ -90,17 +90,17 @@
             <div class="flex flex-col items-center" style="flex:0 0 auto;">
                 <div id="step-dot-3"
                      class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold transition-all"
-                     style="background:rgba(255,255,255,0.06);color:#3d4d66;border:1px solid rgba(255,255,255,0.09);transition:all 0.2s cubic-bezier(0.4,0,0.2,1);">3</div>
-                <span id="step-label-3" class="text-xs mt-1.5 font-semibold" style="color:#3d4d66;letter-spacing:0.01em;" th:text="#{form.step.details}">Detalles</span>
+                     style="background:rgba(255,255,255,0.06);color:#8291a8;border:1px solid rgba(255,255,255,0.09);transition:all 0.2s cubic-bezier(0.4,0,0.2,1);">3</div>
+                <span id="step-label-3" class="text-xs mt-1.5 font-semibold" style="color:#8291a8;letter-spacing:0.01em;" th:text="#{form.step.details}">Detalles</span>
             </div>
         </div>
     </div>
 
     <!-- ── Formulario principal ─────────────────────────────────────────── -->
-    <form th:action="${(sub instanceof T(com.subia.model.Subscription) and sub.id > 0)
+    <form th:action="${(isEntity and sub.id > 0)
                         ? '/subscriptions/' + sub.id
                         : '/subscriptions'}"
-          method="post">
+          method="post" id="subForm">
         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
         <div class="enter glass-card rounded-xl overflow-hidden" style="animation-delay:160ms">
@@ -115,25 +115,25 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+                        <label for="fieldName" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
                             <span th:text="#{form.field.name}">Nombre</span> <span class="text-red-400">*</span>
                         </label>
-                        <input type="text" name="name" id="fieldName" required
-                               th:value="${sub instanceof T(com.subia.model.Subscription) ? sub.name : ''}"
+                        <input type="text" name="name" id="fieldName" required maxlength="100"
+                               th:value="${isEntity ? sub.name : ''}"
                                class="w-full px-3 py-2.5 rounded-lg text-sm"
                                th:placeholder="#{form.field.name.placeholder}"/>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5" th:text="#{form.field.description}">Descripción</label>
-                        <input type="text" name="description" id="fieldDescription"
-                               th:value="${sub instanceof T(com.subia.model.Subscription) ? sub.description : ''}"
+                        <label for="fieldDescription" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5" th:text="#{form.field.description}">Descripción</label>
+                        <input type="text" name="description" id="fieldDescription" maxlength="500"
+                               th:value="${isEntity ? sub.description : ''}"
                                class="w-full px-3 py-2.5 rounded-lg text-sm"
                                th:placeholder="#{form.field.description.placeholder}"/>
                     </div>
 
                     <div class="md:col-span-2">
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+                        <label for="fieldCategoryId" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
                             <span th:text="#{form.field.category}">Categoría</span> <span class="text-red-400">*</span>
                         </label>
                         <select name="categoryId" id="fieldCategoryId" required
@@ -142,7 +142,7 @@
                             <option th:each="cat : ${categories}"
                                     th:value="${cat.id}"
                                     th:text="${cat.icon + ' ' + cat.name}"
-                                    th:selected="${sub instanceof T(com.subia.model.Subscription) and sub.category != null and sub.category.id == cat.id}">
+                                    th:selected="${isEntity and sub.category != null and sub.category.id == cat.id}">
                             </option>
                         </select>
                     </div>
@@ -152,7 +152,7 @@
                     <button type="button" onclick="wizardGoTo(2)"
                             class="flex items-center gap-2 px-5 py-2.5 text-white text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer"
                             style="background-color:#7c3aed;">
-                        <span th:text="#{form.btn.next}">Siguiente</span> <i class="bi bi-arrow-right"></i>
+                        <span th:text="#{form.btn.next}">Siguiente</span> <i aria-hidden="true" class="bi bi-arrow-right"></i>
                     </button>
                 </div>
             </div>
@@ -167,32 +167,35 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+                        <label for="fieldPrice" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
                             <span th:text="#{form.field.price}">Precio</span> <span class="text-red-400">*</span>
                         </label>
                         <div class="relative">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">€</span>
-                            <input type="number" name="price" id="fieldPrice" step="0.01" min="0" required
-                                   th:value="${sub instanceof T(com.subia.model.Subscription) ? sub.price : ''}"
+                            <span id="priceSymbol" aria-hidden="true"
+                                  class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium pointer-events-none"
+                                  th:text="${currencies[isEntity ? sub.currency : 'EUR'] ?: '€'}">€</span>
+                            <input type="number" name="price" id="fieldPrice" step="0.01" min="0" max="99999999.99" required inputmode="decimal"
+                                   th:value="${isEntity ? sub.price : ''}"
                                    class="w-full pl-7 pr-3 py-2.5 rounded-lg text-sm"
                                    th:placeholder="#{form.field.price.placeholder}"/>
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5" th:text="#{form.field.currency}">Moneda</label>
+                        <label for="fieldCurrency" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5" th:text="#{form.field.currency}">Moneda</label>
                         <select name="currency" id="fieldCurrency"
                                 class="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none transition-all duration-200">
                             <option th:each="cur : ${currencies}"
                                     th:value="${cur.key}"
+                                    th:data-symbol="${cur.value}"
                                     th:text="${cur.key + '  ' + cur.value}"
-                                    th:selected="${(sub instanceof T(com.subia.model.Subscription) ? sub.currency : 'EUR') == cur.key}">
+                                    th:selected="${(isEntity ? sub.currency : 'EUR') == cur.key}">
                             </option>
                         </select>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+                        <label for="fieldBillingCycle" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
                             <span th:text="#{form.field.cycle}">Ciclo</span> <span class="text-red-400">*</span>
                         </label>
                         <select name="billingCycle" id="fieldBillingCycle" required
@@ -201,7 +204,7 @@
                             <option th:each="cycle : ${billingCycles}"
                                     th:value="${cycle}"
                                     th:text="${cycle.name() == 'MONTHLY'} ? #{form.billing.monthly} : (${cycle.name() == 'YEARLY'} ? #{form.billing.yearly} : #{form.billing.weekly})"
-                                    th:selected="${sub instanceof T(com.subia.model.Subscription) and sub.billingCycle == cycle}">
+                                    th:selected="${isEntity and sub.billingCycle == cycle}">
                             </option>
                         </select>
                     </div>
@@ -210,12 +213,12 @@
                 <div class="flex justify-between mt-6">
                     <button type="button" onclick="wizardGoTo(1)"
                             class="flex items-center gap-2 px-5 py-2.5 border border-white/[0.1] text-slate-400 hover:text-slate-200 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer">
-                        <i class="bi bi-arrow-left"></i><span th:text="#{form.btn.prev}">Anterior</span>
+                        <i aria-hidden="true" class="bi bi-arrow-left"></i><span th:text="#{form.btn.prev}">Anterior</span>
                     </button>
                     <button type="button" onclick="wizardGoTo(3)"
                             class="flex items-center gap-2 px-5 py-2.5 text-white text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer"
                             style="background-color:#7c3aed;">
-                        <span th:text="#{form.btn.next}">Siguiente</span> <i class="bi bi-arrow-right"></i>
+                        <span th:text="#{form.btn.next}">Siguiente</span> <i aria-hidden="true" class="bi bi-arrow-right"></i>
                     </button>
                 </div>
             </div>
@@ -230,29 +233,29 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+                        <label for="fieldRenewalDate" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
                             <span th:text="#{form.field.renewal}">Fecha de renovación</span> <span class="text-red-400">*</span>
                         </label>
-                        <input type="date" name="renewalDate" required
-                               th:value="${sub instanceof T(com.subia.model.Subscription)
+                        <input type="date" name="renewalDate" id="fieldRenewalDate" required
+                               th:value="${isEntity
                                            ? sub.renewalDate
                                            : #temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"
                                class="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none transition-all duration-200"/>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5" th:text="#{form.field.notes}">Notas</label>
-                        <input type="text" name="notes"
-                               th:value="${sub instanceof T(com.subia.model.Subscription) ? sub.notes : ''}"
+                        <label for="fieldNotes" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5" th:text="#{form.field.notes}">Notas</label>
+                        <input type="text" name="notes" id="fieldNotes" maxlength="1000"
+                               th:value="${isEntity ? sub.notes : ''}"
                                class="w-full px-3 py-2.5 rounded-lg text-sm"
                                th:placeholder="#{form.field.notes.placeholder}"/>
                     </div>
 
                     <div class="flex flex-col justify-center">
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2" th:text="#{form.field.status}">Estado</label>
+                        <p class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2" th:text="#{form.field.status}">Estado</p>
                         <label class="flex items-center gap-3 cursor-pointer select-none">
                             <input type="checkbox" name="active" value="true"
-                                   th:checked="${!(sub instanceof T(com.subia.model.Subscription)) or sub.active}"
+                                   th:checked="${!(isEntity) or sub.active}"
                                    id="activeCheck"
                                    class="w-4 h-4 rounded"/>
                             <span class="text-sm text-slate-300" th:text="#{form.field.active}">Suscripción activa</span>
@@ -267,24 +270,25 @@
                                class="w-4 h-4 rounded"
                                style="accent-color:#f97316;"
                                onchange="toggleTrial(this.checked)"
-                               th:checked="${sub instanceof T(com.subia.model.Subscription) and sub.isTrial}">
+                               th:checked="${isEntity and sub.isTrial}">
                         <span class="text-sm font-medium text-slate-300" th:text="#{form.field.trial}">Período de prueba gratuita</span>
                     </label>
                 </div>
 
                 <!-- Trial end date -->
                 <div id="trialEndDateDiv" class="mt-4"
-                     th:style="${sub instanceof T(com.subia.model.Subscription) and sub.isTrial} ? '' : 'display:none;'">
-                    <label class="block text-xs font-medium text-slate-400 mb-1" th:text="#{form.field.trial-end}">Fecha de fin de prueba</label>
+                     th:style="${isEntity and sub.isTrial} ? '' : 'display:none;'">
+                    <label for="fieldTrialEndsAt" class="block text-xs font-medium text-slate-400 mb-1" th:text="#{form.field.trial-end}">Fecha de fin de prueba</label>
                     <input type="date" name="trialEndsAt" id="fieldTrialEndsAt"
+                           th:required="${isEntity and sub.isTrial}"
                            class="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
-                           th:value="${sub instanceof T(com.subia.model.Subscription) and sub.trialEndsAt != null ? sub.trialEndsAt : ''}">
+                           th:value="${isEntity and sub.trialEndsAt != null ? sub.trialEndsAt : ''}">
                 </div>
 
                 <div class="flex justify-between mt-6">
                     <button type="button" onclick="wizardGoTo(2)"
                             class="flex items-center gap-2 px-5 py-2.5 border border-white/[0.1] text-slate-400 hover:text-slate-200 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer">
-                        <i class="bi bi-arrow-left"></i><span th:text="#{form.btn.prev}">Anterior</span>
+                        <i aria-hidden="true" class="bi bi-arrow-left"></i><span th:text="#{form.btn.prev}">Anterior</span>
                     </button>
                     <div class="flex items-center gap-3">
                         <a th:href="@{/subscriptions}"
@@ -292,10 +296,10 @@
                            th:text="#{form.btn.cancel}">
                             Cancelar
                         </a>
-                        <button type="submit"
+                        <button type="submit" id="subSubmit"
                                 class="flex items-center gap-2 px-5 py-2.5 text-white text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer"
                                 style="background-color:#7c3aed;">
-                            <i class="bi bi-floppy"></i><span th:text="#{form.btn.save}">Guardar</span>
+                            <i aria-hidden="true" class="bi bi-floppy"></i><span th:text="#{form.btn.save}">Guardar</span>
                         </button>
                     </div>
                 </div>
@@ -338,7 +342,23 @@ var i18n = {
 
     var currentStep = 1;
 
+    // Primer campo inválido (required vacío, precio negativo...) dentro de un paso.
+    function firstInvalidIn(container) {
+        if (!container) return null;
+        var fields = container.querySelectorAll('input, select, textarea');
+        for (var i = 0; i < fields.length; i++) {
+            if (!fields[i].disabled && !fields[i].checkValidity()) return fields[i];
+        }
+        return null;
+    }
+
     window.wizardGoTo = function (step) {
+        // Al avanzar no se deja pasar un paso con campos obligatorios vacíos: antes el submit
+        // final fallaba en silencio porque el navegador no puede enfocar un campo oculto.
+        if (step > currentStep) {
+            var bad = firstInvalidIn(document.getElementById('wizard-step-' + currentStep));
+            if (bad) { bad.reportValidity(); return; }
+        }
         var prev = document.getElementById('wizard-step-' + currentStep);
         if (prev) prev.style.display = 'none';
 
@@ -364,10 +384,10 @@ var i18n = {
                 label.style.color      = '#a78bfa';
             } else {
                 dot.style.background   = 'rgba(255,255,255,0.06)';
-                dot.style.color        = '#3d4d66';
+                dot.style.color        = '#8291a8';
                 dot.style.border       = '1px solid rgba(255,255,255,0.09)';
                 dot.style.boxShadow    = 'none';
-                label.style.color      = '#3d4d66';
+                label.style.color      = '#8291a8';
             }
         }
 
@@ -382,7 +402,44 @@ var i18n = {
     window.toggleTrial = function (checked) {
         var div = document.getElementById('trialEndDateDiv');
         if (div) div.style.display = checked ? '' : 'none';
+        // El backend responde 400 si isTrial=true sin fecha de fin: se exige ya en el cliente.
+        var trialField = document.getElementById('fieldTrialEndsAt');
+        if (trialField) trialField.required = !!checked;
     };
+
+    // Submit: si hay un campo inválido en un paso oculto, se salta a ese paso y se muestra el aviso.
+    var subForm   = document.getElementById('subForm');
+    var subSubmit = document.getElementById('subSubmit');
+    if (subForm && subSubmit) {
+        subSubmit.addEventListener('click', function (e) {
+            for (var n = 1; n <= 3; n++) {
+                var bad = firstInvalidIn(document.getElementById('wizard-step-' + n));
+                if (bad) {
+                    e.preventDefault();
+                    if (n !== currentStep) {
+                        // Retroceder no valida (step < currentStep), así que se puede saltar directo.
+                        window.wizardGoTo(n);
+                    }
+                    window.setTimeout(function () { bad.reportValidity(); }, 0);
+                    return;
+                }
+            }
+        });
+    }
+
+    // Símbolo de la moneda junto al precio (antes era siempre el del euro).
+    var currencySel = document.getElementById('fieldCurrency');
+    var priceSymbol = document.getElementById('priceSymbol');
+    var priceInput  = document.getElementById('fieldPrice');
+    function updatePriceSymbol() {
+        if (!currencySel || !priceSymbol) return;
+        var opt = currencySel.options[currencySel.selectedIndex];
+        var sym = (opt && opt.getAttribute('data-symbol')) || currencySel.value || '';
+        priceSymbol.textContent = sym;
+        if (priceInput) priceInput.style.paddingLeft = (0.9 + 0.6 * Math.max(1, sym.length)) + 'rem';
+    }
+    if (currencySel) currencySel.addEventListener('change', updatePriceSymbol);
+    updatePriceSymbol();
 
     // ── Selector de catálogo ────────────────────────────────────────────
     var catSelect  = document.getElementById('catalogCategory');
@@ -448,7 +505,7 @@ var i18n = {
             if (fieldName)       fieldName.value       = item.name;
             if (fieldDesc)       fieldDesc.value       = item.description || '';
             if (fieldPrice)      fieldPrice.value      = item.price.toFixed(2);
-            if (fieldCurrency)   fieldCurrency.value   = item.currency;
+            if (fieldCurrency)   { fieldCurrency.value = item.currency; updatePriceSymbol(); }
             if (fieldCycle)      fieldCycle.value      = item.billingCycle;
             if (fieldCategoryId) fieldCategoryId.value = catSelect.value;
 
@@ -461,8 +518,8 @@ var i18n = {
                 if (trialField) trialField.value = endsAt.toISOString().slice(0, 10);
             }
 
-            var form = document.querySelector('form');
-            if (form) form.scrollIntoView({ behavior: 'smooth' });
+            // Ojo: el primer <form> del documento es el de logout del navbar.
+            if (subForm) subForm.scrollIntoView({ behavior: 'smooth' });
         });
     }
 }());

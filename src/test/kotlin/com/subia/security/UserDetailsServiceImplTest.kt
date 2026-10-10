@@ -32,26 +32,39 @@ class UserDetailsServiceImplTest {
     }
 
     @Test
-    fun `loadUserByUsername con cuenta bloqueada lanza LockedException`() {
+    fun `loadUserByUsername con cuenta bloqueada lanza LockedException en loadActiveUser`() {
         val lockedUser = verifiedUser().copy(
             lockedUntil = OffsetDateTime.now().plusMinutes(10)
         )
         every { userRepository.findByEmail("user@example.com") } returns lockedUser
 
         assertThrows(LockedException::class.java) {
-            userDetailsService.loadUserByUsername("user@example.com")
+            userDetailsService.loadActiveUser("user@example.com")
         }
+        // Para el formLogin se devuelve marcada como bloqueada (DaoAuthenticationProvider lanza la excepción)
+        assertFalse(userDetailsService.loadUserByUsername("user@example.com").isAccountNonLocked)
     }
 
     @Test
-    fun `loadUserByUsername con email no verificado lanza DisabledException`() {
+    fun `loadUserByUsername con email no verificado lanza DisabledException en loadActiveUser`() {
         val unverifiedUser = verifiedUser().copy(emailVerified = false)
         every { userRepository.findByEmail("user@example.com") } returns unverifiedUser
 
         val ex = assertThrows(DisabledException::class.java) {
-            userDetailsService.loadUserByUsername("user@example.com")
+            userDetailsService.loadActiveUser("user@example.com")
         }
         assertEquals("EMAIL_NOT_VERIFIED", ex.message)
+        assertFalse(userDetailsService.loadUserByUsername("user@example.com").isEnabled)
+    }
+
+    @Test
+    fun `loadUserForGoogle ignora el bloqueo por intentos pero exige email verificado (ronda 5)`() {
+        every { userRepository.findByEmail("user@example.com") } returns
+            verifiedUser().copy(lockedUntil = OffsetDateTime.now().plusMinutes(10), failedAttempts = 5)
+        assertTrue(userDetailsService.loadUserForGoogle("user@example.com").isAccountNonLocked)
+
+        every { userRepository.findByEmail("user@example.com") } returns verifiedUser().copy(emailVerified = false)
+        assertThrows(DisabledException::class.java) { userDetailsService.loadUserForGoogle("user@example.com") }
     }
 
     @Test
@@ -65,5 +78,31 @@ class UserDetailsServiceImplTest {
         assertEquals("user@example.com", userDetails.username)
         assertEquals(user.passwordHash, userDetails.password)
         assertTrue(userDetails.authorities.any { it.authority == "ROLE_USER" })
+    }
+
+    @Test
+    fun `formLogin con cuenta sin verificar da DisabledException y no InternalAuthenticationServiceException`() {
+        every { userRepository.findByEmail("user@example.com") } returns verifiedUser().copy(emailVerified = false)
+        val provider = org.springframework.security.authentication.dao.DaoAuthenticationProvider(userDetailsService)
+        provider.setPasswordEncoder(object : org.springframework.security.crypto.password.PasswordEncoder {
+            override fun encode(raw: CharSequence) = raw.toString()
+            override fun matches(raw: CharSequence, encoded: String) = raw.toString() == encoded
+        })
+
+        assertThrows(DisabledException::class.java) {
+            provider.authenticate(
+                org.springframework.security.authentication.UsernamePasswordAuthenticationToken("user@example.com", "x")
+            )
+        }
+    }
+
+    @Test
+    fun `loadUserByUsername encuentra una cuenta antigua con mayusculas (ronda 4)`() {
+        every { userRepository.findByEmail("juan@gmail.com") } returns null
+        every { userRepository.findFirstByEmailIgnoreCaseOrderByIdAsc("juan@gmail.com") } returns
+            verifiedUser().copy(email = "Juan@Gmail.com")
+
+        // El username devuelto es el email canónico guardado (el que se usa en JWT y sesiones)
+        assertEquals("Juan@Gmail.com", userDetailsService.loadUserByUsername(" juan@gmail.com ").username)
     }
 }

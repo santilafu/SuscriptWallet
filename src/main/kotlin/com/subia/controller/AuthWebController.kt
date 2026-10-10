@@ -1,6 +1,7 @@
 package com.subia.controller
 
 import com.subia.dto.RegisterRequest
+import com.subia.exception.InvalidRegistrationException
 import com.subia.exception.VerificationTokenException
 import com.subia.exception.WeakPasswordException
 import com.subia.exception.InvalidGoogleTokenException
@@ -8,19 +9,26 @@ import com.subia.security.GoogleOAuthService
 import com.subia.security.UserDetailsServiceImpl
 import com.subia.service.UserService
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.AuthenticationException
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.*
 import jakarta.servlet.http.HttpServletRequest
+import org.slf4j.LoggerFactory
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 @Controller
 class AuthWebController(
     private val userService: UserService,
     private val googleOAuthService: GoogleOAuthService,
-    private val userDetailsService: UserDetailsServiceImpl
+    private val userDetailsService: UserDetailsServiceImpl,
+    @Value("\${app.google.client-id:}") private val googleClientId: String
 ) {
+    private val log = LoggerFactory.getLogger(AuthWebController::class.java)
 
     // ── Login ─────────────────────────────────────────────────────────────
 
@@ -38,6 +46,8 @@ class AuthWebController(
         if (verified != null) model.addAttribute("verified", true)
         if (passwordReset != null) model.addAttribute("passwordReset", true)
         if (expired != null) model.addAttribute("expired", true)
+        // Antes la plantilla leía `@environment.getProperty(...)`, prohibido en Thymeleaf 3.1.3
+        model.addAttribute("googleClientId", googleClientId)
         return "auth/login"
     }
 
@@ -60,6 +70,9 @@ class AuthWebController(
             "redirect:/verify-pending"
         } catch (ex: WeakPasswordException) {
             "redirect:/register?error=weakPassword"
+        } catch (ex: InvalidRegistrationException) {
+            // error=invalidEmail | passwordMismatch (antes se ignoraba confirmPassword, M-10)
+            "redirect:/register?error=${ex.code}"
         }
     }
 
@@ -67,6 +80,10 @@ class AuthWebController(
 
     @GetMapping("/verify-pending")
     fun verifyPending(): String = "auth/verify-pending"
+
+    /** Destino del enlace de verificación inválido o caducado (antes la ruta no existía → 404). */
+    @GetMapping("/verify-email-error")
+    fun verifyEmailError(): String = "auth/verify-email-error"
 
     // ── Verify email ──────────────────────────────────────────────────────
 
@@ -106,7 +123,14 @@ class AuthWebController(
         model: Model
     ): String {
         model.addAttribute("token", token)
-        if (error != null) model.addAttribute("error", error)
+        // R3-04: un enlace inválido, usado o caducado se avisa al abrirlo, sin formulario (antes
+        // el usuario escribía la contraseña dos veces y solo entonces veía el error).
+        val tokenValid = userService.isResetTokenValid(token)
+        model.addAttribute("tokenValid", tokenValid)
+        when {
+            !tokenValid -> model.addAttribute("error", "invalidToken")
+            error != null -> model.addAttribute("error", error)
+        }
         return "auth/reset-password"
     }
 
@@ -116,16 +140,19 @@ class AuthWebController(
         @RequestParam newPassword: String,
         @RequestParam confirmPassword: String
     ): String {
+        // El token viene del formulario: se codifica para que no pueda inyectar otros parámetros
+        // (p. ej. `abc&error=...`) en la URL de redirección.
+        val encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8)
         if (newPassword != confirmPassword) {
-            return "redirect:/reset-password?token=$token&error=passwordMismatch"
+            return "redirect:/reset-password?token=$encodedToken&error=passwordMismatch"
         }
         return try {
             userService.resetPassword(token, newPassword)
             "redirect:/login?passwordReset=true"
         } catch (ex: VerificationTokenException) {
-            "redirect:/reset-password?token=$token&error=invalidToken"
+            "redirect:/reset-password?token=$encodedToken&error=invalidToken"
         } catch (ex: WeakPasswordException) {
-            "redirect:/reset-password?token=$token&error=weakPassword"
+            "redirect:/reset-password?token=$encodedToken&error=weakPassword"
         }
     }
 
@@ -140,9 +167,10 @@ class AuthWebController(
             val payload = googleOAuthService.verifyAndGetPayload(credential)
             val email = payload.email
             val googleId = payload.subject
-            userService.findOrCreateByGoogle(email, googleId)
+            // Ignora el bloqueo por intentos de contraseña y reinicia el contador (ronda 5)
+            val user = userService.loginWithGoogle(email, googleId)
 
-            val userDetails = userDetailsService.loadUserByUsername(email)
+            val userDetails = userDetailsService.loadUserForGoogle(user.email)
             val auth = UsernamePasswordAuthenticationToken(
                 userDetails, null, userDetails.authorities
             )
@@ -162,6 +190,10 @@ class AuthWebController(
 
             "redirect:/dashboard"
         } catch (ex: InvalidGoogleTokenException) {
+            "redirect:/login?error=googleFailed"
+        } catch (ex: AuthenticationException) {
+            // Cuenta sin verificar u otra causa (el bloqueo por intentos ya no aplica a Google): antes era un 500.
+            log.info("Login web con Google rechazado: {}", ex.javaClass.simpleName)
             "redirect:/login?error=googleFailed"
         }
     }

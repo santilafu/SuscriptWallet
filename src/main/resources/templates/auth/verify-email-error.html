@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}" class="dark">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title th:text="#{verify.error.title} + ' — SusCriptWallet'">Enlace no válido — SusCriptWallet</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico"/>
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/>
+    <style>
+        body { background-color: #0a0f1e; color: #f1f5f9; font-family: 'Inter', system-ui, sans-serif; }
+        .card { background-color: #111827; border: 1px solid rgba(255,255,255,0.08); border-radius: 1rem; }
+        .link-accent { color: #a78bfa; text-decoration: none; font-weight: 500; }
+        .link-accent:hover { color: #7c3aed; }
+
+        /* Entrada escalonada (curva fuerte, ease-out). */
+        @keyframes authEnter {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .auth-enter { animation: authEnter 0.45s cubic-bezier(0.23, 1, 0.32, 1) backwards; }
+        @media (prefers-reduced-motion: reduce) {
+            .auth-enter { animation-duration: 0.01ms !important; transform: none !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center px-4">
+<div class="w-full max-w-md text-center">
+    <div class="flex items-center justify-center gap-1 mb-4">
+        <i class="bi bi-globe2 text-slate-500 text-xs mr-1"></i>
+        <a href="?lang=es" class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
+           th:classappend="${#locale.language == 'es'} ? 'text-violet-300' : 'text-slate-400 hover:text-slate-200'"
+           th:styleappend="${#locale.language == 'es'} ? 'background:rgba(124,58,237,0.2);' : ''">ES</a>
+        <a href="?lang=en" class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
+           th:classappend="${#locale.language == 'en'} ? 'text-violet-300' : 'text-slate-400 hover:text-slate-200'"
+           th:styleappend="${#locale.language == 'en'} ? 'background:rgba(124,58,237,0.2);' : ''">EN</a>
+        <a href="?lang=fr" class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
+           th:classappend="${#locale.language == 'fr'} ? 'text-violet-300' : 'text-slate-400 hover:text-slate-200'"
+           th:styleappend="${#locale.language == 'fr'} ? 'background:rgba(124,58,237,0.2);' : ''">FR</a>
+    </div>
+    <div class="auth-enter mb-8" style="animation-delay:0ms;">
+        <i class="bi bi-envelope-exclamation text-5xl" style="color:#f87171;"></i>
+    </div>
+    <div class="auth-enter card p-8" style="animation-delay:80ms;">
+        <h1 class="text-xl font-semibold mb-3" style="color:#f1f5f9;" th:text="#{verify.error.title}">Enlace no válido</h1>
+        <p class="text-sm mb-6" style="color:#94a3b8;" th:text="#{verify.error.text}">El enlace de verificación no es válido o ha caducado.</p>
+        <p class="text-xs mb-6" style="color:#64748b;" th:text="#{verify.error.retry}">Vuelve a registrarte con el mismo email y te enviaremos un enlace nuevo.</p>
+        <a href="/login" class="inline-flex items-center gap-2 text-sm link-accent">
+            <i class="bi bi-arrow-left"></i>
+            <span th:text="#{verify.back}">Volver al inicio de sesión</span>
+        </a>
+    </div>
+</div>
+</body>
+</html>

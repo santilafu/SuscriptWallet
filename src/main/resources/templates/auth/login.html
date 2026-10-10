@@ -76,7 +76,7 @@
         .link-accent { color: #a78bfa; text-decoration: none; font-weight: 600; transition: color 0.15s; }
         .link-accent:hover { color: #c4b5fd; }
         .divider-line { border-color: rgba(255,255,255,0.07); }
-        .divider-text { background-color: transparent; padding: 0 0.875rem; color: #3d4d66; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.04em; }
+        .divider-text { background-color: transparent; padding: 0 0.875rem; color: #8291a8; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.04em; }
 
         /* Entrada escalonada (curva fuerte, ease-out). */
         @keyframes authEnter {
@@ -97,13 +97,13 @@
     <div class="flex items-center justify-center gap-1 mb-4">
         <i class="bi bi-globe2 text-slate-500 text-xs mr-1"></i>
         <a href="?lang=es" class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
-           th:classappend="${#locale.language == 'es'} ? 'text-violet-300' : 'text-slate-500 hover:text-slate-200'"
+           th:classappend="${#locale.language == 'es'} ? 'text-violet-300' : 'text-slate-400 hover:text-slate-200'"
            th:styleappend="${#locale.language == 'es'} ? 'background:rgba(124,58,237,0.2);' : ''">ES</a>
         <a href="?lang=en" class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
-           th:classappend="${#locale.language == 'en'} ? 'text-violet-300' : 'text-slate-500 hover:text-slate-200'"
+           th:classappend="${#locale.language == 'en'} ? 'text-violet-300' : 'text-slate-400 hover:text-slate-200'"
            th:styleappend="${#locale.language == 'en'} ? 'background:rgba(124,58,237,0.2);' : ''">EN</a>
         <a href="?lang=fr" class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
-           th:classappend="${#locale.language == 'fr'} ? 'text-violet-300' : 'text-slate-500 hover:text-slate-200'"
+           th:classappend="${#locale.language == 'fr'} ? 'text-violet-300' : 'text-slate-400 hover:text-slate-200'"
            th:styleappend="${#locale.language == 'fr'} ? 'background:rgba(124,58,237,0.2);' : ''">FR</a>
     </div>
 
@@ -115,7 +115,7 @@
             </div>
             <span translate="no" style="color:#a78bfa;">SusCript</span><span translate="no" style="color:#e8edf5;">Wallet</span>
         </a>
-        <p class="mt-2 text-xs font-medium tracking-wide" style="color:#3d4d66;letter-spacing:0.06em;text-transform:uppercase;" th:text="#{app.subtitle}">Gestión de suscripciones</p>
+        <p class="mt-2 text-xs font-medium tracking-wide" style="color:#8291a8;letter-spacing:0.06em;text-transform:uppercase;" th:text="#{app.subtitle}">Gestión de suscripciones</p>
     </div>
 
     <!-- Card -->
@@ -135,10 +135,18 @@
         <div th:if="${param.expired}" class="mb-4 rounded-lg px-4 py-3 text-sm" style="background:rgba(234,179,8,0.1); border:1px solid rgba(234,179,8,0.3); color:#facc15;">
             <i class="bi bi-clock mr-1"></i> <span th:text="#{login.msg.expired}">Tu sesión ha expirado.</span>
         </div>
-        <div th:if="${param.error}" class="mb-4 rounded-lg px-4 py-3 text-sm" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171;">
+        <div th:if="${param.error != null and param.error[0] != 'googleFailed' and param.error[0] != 'unverified' and param.error[0] != 'locked'}" class="mb-4 rounded-lg px-4 py-3 text-sm" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171;">
             <i class="bi bi-exclamation-triangle mr-1"></i> <span th:text="#{login.msg.error}">Correo o contraseña incorrectos.</span>
         </div>
-        <div th:if="${param.googleFailed}" class="mb-4 rounded-lg px-4 py-3 text-sm" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171;">
+        <!-- SecurityConfig redirige a /login?error=unverified | locked según el motivo -->
+        <div th:if="${param.error != null and param.error[0] == 'unverified'}" class="mb-4 rounded-lg px-4 py-3 text-sm" style="background:rgba(234,179,8,0.1); border:1px solid rgba(234,179,8,0.3); color:#facc15;">
+            <i class="bi bi-envelope-exclamation mr-1"></i> <span th:text="#{login.msg.unverified}">Verifica tu correo antes de iniciar sesión.</span>
+        </div>
+        <div th:if="${param.error != null and param.error[0] == 'locked'}" class="mb-4 rounded-lg px-4 py-3 text-sm" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171;">
+            <i class="bi bi-lock mr-1"></i> <span th:text="#{login.msg.locked}">Cuenta bloqueada temporalmente.</span>
+        </div>
+        <!-- El callback de Google redirige a /login?error=googleFailed (AuthWebController) -->
+        <div th:if="${param.error != null and param.error[0] == 'googleFailed'}" class="mb-4 rounded-lg px-4 py-3 text-sm" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171;">
             <i class="bi bi-exclamation-triangle mr-1"></i> <span th:text="#{login.msg.google-failed}">No se pudo autenticar con Google.</span>
         </div>
 
@@ -174,17 +182,18 @@
         </div>
 
         <div id="g_id_onload"
-             th:attr="data-client_id=${@environment.getProperty('app.google.client-id','')}"
+             th:attr="data-client_id=${googleClientId}"
              data-callback="handleGoogleCredential"
              data-auto_prompt="false">
         </div>
-        <div class="g_id_signin"
+        <!-- GSI solo admite un ancho en píxeles (200-400); "100%" se ignoraba con aviso en consola -->
+        <div class="g_id_signin flex justify-center"
              data-type="standard"
              data-shape="rectangular"
              data-theme="filled_black"
              data-text="signin_with"
              data-size="large"
-             data-width="100%">
+             data-width="320">
         </div>
 
         <p class="auth-enter mt-6 text-center text-sm" style="color: #94a3b8;animation-delay:160ms;">

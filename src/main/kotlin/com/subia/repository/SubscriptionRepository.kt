@@ -2,25 +2,18 @@ package com.subia.repository
 
 import com.subia.model.Subscription
 import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.data.jpa.repository.Query
-import org.springframework.data.repository.query.Param
-import java.time.LocalDate
 
 /**
  * Repositorio JPA para la entidad [Subscription].
  *
  * Spring Data genera automáticamente la implementación en tiempo de ejecución.
- * Además de las operaciones CRUD heredadas de [JpaRepository], define consultas
- * específicas del negocio mediante la convención de nombres y @Query JPQL.
+ * Todas las consultas de negocio van filtradas por usuario: los métodos "legacy" sin `userId`
+ * (findByActiveTrue, rangos de renovación globales…) se eliminaron porque reutilizarlos por
+ * error exponía suscripciones de otros usuarios (B-02). Las renovaciones próximas se calculan
+ * en memoria con la fecha proyectada ([com.subia.service.RenewalDates]), no por SQL sobre la
+ * `renewalDate` guardada, que nunca se avanza (N-12).
  */
 interface SubscriptionRepository : JpaRepository<Subscription, Long> {
-
-    /**
-     * Devuelve todas las suscripciones marcadas como activas.
-     * Spring Data deriva la consulta del nombre del método: WHERE active = true.
-     * Se usa en el dashboard y para el cálculo de totales.
-     */
-    fun findByActiveTrue(): List<Subscription>
 
     /** Devuelve todas las suscripciones de un usuario. */
     fun findByUserId(userId: Long): List<Subscription>
@@ -38,39 +31,6 @@ interface SubscriptionRepository : JpaRepository<Subscription, Long> {
      * Comprueba si existe alguna suscripción asociada a la categoría indicada.
      * Se usa en [com.subia.service.CategoryService] para impedir el borrado de
      * categorías que todavía tienen suscripciones.
-     *
-     * @param categoryId ID de la categoría a comprobar.
-     * @return true si hay al menos una suscripción con esa categoría.
      */
     fun existsByCategoryId(categoryId: Long): Boolean
-
-    /**
-     * Devuelve las suscripciones activas cuya fecha de renovación cae entre [from] y [to] (inclusive).
-     * Se usa en el dashboard para mostrar las renovaciones próximas a 30 días y las alertas a 7 días.
-     *
-     * Usa JPQL explícito porque la lógica de rango no se puede expresar limpiamente
-     * solo con el nombre del método.
-     *
-     * @param from Fecha de inicio del rango (normalmente hoy).
-     * @param to   Fecha de fin del rango (normalmente hoy + 7 o + 30 días).
-     */
-    @Query("SELECT s FROM Subscription s WHERE s.active = true AND s.renewalDate BETWEEN :from AND :to")
-    fun findActiveRenewingBetween(from: LocalDate, to: LocalDate): List<Subscription>
-
-    @Query("SELECT s FROM Subscription s WHERE s.userId = :userId AND s.active = true AND s.renewalDate BETWEEN :from AND :to")
-    fun findActiveRenewingBetweenForUser(@Param("userId") userId: Long, @Param("from") from: LocalDate, @Param("to") to: LocalDate): List<Subscription>
-
-    /**
-     * Devuelve las suscripciones activas que están en período de prueba y cuya fecha de fin
-     * de prueba cae entre [from] y [to] (inclusive).
-     * Se usa en el dashboard para mostrar la alerta amber de pruebas próximas a vencer.
-     *
-     * @param from Fecha de inicio del rango (normalmente hoy).
-     * @param to   Fecha de fin del rango (normalmente hoy + 7 días).
-     */
-    @Query("SELECT s FROM Subscription s WHERE s.active = true AND s.isTrial = true AND s.trialEndsAt BETWEEN :from AND :to")
-    fun findActiveTrialsExpiringBetween(@Param("from") from: LocalDate, @Param("to") to: LocalDate): List<Subscription>
-
-    @Query("SELECT s FROM Subscription s WHERE s.userId = :userId AND s.active = true AND s.isTrial = true AND s.trialEndsAt BETWEEN :from AND :to")
-    fun findActiveTrialsExpiringBetweenForUser(@Param("userId") userId: Long, @Param("from") from: LocalDate, @Param("to") to: LocalDate): List<Subscription>
 }

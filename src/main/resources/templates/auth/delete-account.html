@@ -17,13 +17,13 @@
         <div class="flex items-center justify-center gap-1 mb-4">
             <i class="bi bi-globe2 text-gray-500 text-xs mr-1"></i>
             <a href="?lang=es" class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
-               th:classappend="${#locale.language == 'es'} ? 'text-violet-300' : 'text-gray-500 hover:text-gray-200'"
+               th:classappend="${#locale.language == 'es'} ? 'text-violet-300' : 'text-gray-400 hover:text-gray-200'"
                th:styleappend="${#locale.language == 'es'} ? 'background:rgba(124,58,237,0.2);' : ''">ES</a>
             <a href="?lang=en" class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
-               th:classappend="${#locale.language == 'en'} ? 'text-violet-300' : 'text-gray-500 hover:text-gray-200'"
+               th:classappend="${#locale.language == 'en'} ? 'text-violet-300' : 'text-gray-400 hover:text-gray-200'"
                th:styleappend="${#locale.language == 'en'} ? 'background:rgba(124,58,237,0.2);' : ''">EN</a>
             <a href="?lang=fr" class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
-               th:classappend="${#locale.language == 'fr'} ? 'text-violet-300' : 'text-gray-500 hover:text-gray-200'"
+               th:classappend="${#locale.language == 'fr'} ? 'text-violet-300' : 'text-gray-400 hover:text-gray-200'"
                th:styleappend="${#locale.language == 'fr'} ? 'background:rgba(124,58,237,0.2);' : ''">FR</a>
         </div>
 
@@ -43,7 +43,7 @@
                 <li class="flex items-start gap-2"><span class="text-red-400 mt-0.5">✕</span> <span th:text="#{delete.what.tokens}">Los tokens de sesión activos</span></li>
                 <li class="flex items-start gap-2"><span class="text-red-400 mt-0.5">✕</span> <span th:text="#{delete.what.google}">La vinculación con tu cuenta de Google (si la tienes)</span></li>
             </ul>
-            <p class="text-gray-500 text-xs mt-4" th:text="#{delete.what.no-data}">No conservamos ningún dato tuyo tras la eliminación. La acción es inmediata e irreversible.</p>
+            <p class="text-gray-400 text-xs mt-4" th:text="#{delete.what.no-data}">No conservamos ningún dato tuyo tras la eliminación. La acción es inmediata e irreversible.</p>
         </div>
 
         <!-- Pasos -->
@@ -60,15 +60,15 @@
         <!-- Formulario si está logueado -->
         <div th:if="${loggedIn}" class="bg-gray-900 rounded-2xl p-6 border border-red-900">
             <div class="bg-red-950 border border-red-800 rounded-xl p-4 mb-5">
-                <p class="text-red-300 text-sm font-medium" th:utext="'⚠️ ' + #{delete.warning(${userEmail})}">⚠️ Estás a punto de eliminar la cuenta usuario@email.com. Esta acción es permanente e irreversible.</p>
+                <p class="text-red-300 text-sm font-medium" th:text="'⚠️ ' + #{delete.warning(${userEmail})}">⚠️ Estás a punto de eliminar la cuenta usuario@email.com. Esta acción es permanente e irreversible.</p>
             </div>
 
             <form th:action="@{/delete-account}" method="post">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
                 <div th:if="${hasPassword}" class="mb-5">
-                    <label class="block text-sm font-medium text-gray-300 mb-2" th:text="#{delete.confirm-password}">Confirma tu contraseña actual</label>
-                    <input type="password" name="password" required
+                    <label for="deletePassword" class="block text-sm font-medium text-gray-300 mb-2" th:text="#{delete.confirm-password}">Confirma tu contraseña actual</label>
+                    <input type="password" id="deletePassword" name="password" required autocomplete="current-password"
                            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-red-500"
                            th:placeholder="#{delete.password.placeholder}"/>
                 </div>
@@ -95,7 +95,7 @@
         </div>
 
         <div class="text-center mt-6">
-            <a href="/login" class="text-gray-500 hover:text-gray-300 text-sm">
+            <a href="/login" th:href="${loggedIn} ? @{/dashboard} : @{/login}" class="text-gray-400 hover:text-gray-200 text-sm">
                 ← <span th:text="#{delete.back}">Volver al inicio</span>
             </a>
         </div>

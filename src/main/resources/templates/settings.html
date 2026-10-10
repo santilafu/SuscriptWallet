@@ -9,7 +9,7 @@
     <div class="flex items-center justify-between mb-8">
         <div>
             <h1 class="text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
-                <i class="bi bi-gear text-accent"></i>
+                <i aria-hidden="true" class="bi bi-gear text-accent"></i>
                 <span th:text="#{settings.title}">Ajustes</span>
             </h1>
             <p class="text-sm text-slate-500 mt-0.5" th:text="#{settings.subtitle}">Preferencias y herramientas de tu cuenta</p>
@@ -22,7 +22,7 @@
              gmail.readonly (th:if="false"). Para reactivarlo basta con quitar el th:if. -->
         <div th:if="false" class="enter glass-card rounded-xl overflow-hidden md:col-span-2" style="animation-delay:0ms">
             <div class="px-5 py-4 border-b border-white/[0.06] flex items-center gap-2">
-                <i class="bi bi-envelope-paper text-accent"></i>
+                <i aria-hidden="true" class="bi bi-envelope-paper text-accent"></i>
                 <span class="text-sm font-semibold text-slate-200">Detectar suscripciones desde Gmail</span>
                 <span class="ml-auto text-[0.65rem] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full"
                       style="background:rgba(124,58,237,0.15);color:#c4b5fd;">Nuevo</span>
@@ -58,7 +58,7 @@
                     </div>
                     <button type="submit"
                             class="inline-flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-lg shadow-accent/20 cursor-pointer">
-                        <i class="bi bi-google"></i>
+                        <i aria-hidden="true" class="bi bi-google"></i>
                         <span>Detectar con Gmail</span>
                     </button>
                 </form>
@@ -67,7 +67,7 @@
 
         <div class="enter glass-card rounded-xl overflow-hidden" style="animation-delay:70ms">
             <div class="px-5 py-4 border-b border-white/[0.06] flex items-center gap-2">
-                <i class="bi bi-download text-accent"></i>
+                <i aria-hidden="true" class="bi bi-download text-accent"></i>
                 <span class="text-sm font-semibold text-slate-200" th:text="#{settings.export.title}">Exportar datos</span>
             </div>
             <div class="p-5">
@@ -76,7 +76,7 @@
                 </p>
                 <a th:href="@{/subscriptions/export}"
                    class="inline-flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-all duration-200 no-underline shadow-lg shadow-accent/20">
-                    <i class="bi bi-file-earmark-spreadsheet"></i>
+                    <i aria-hidden="true" class="bi bi-file-earmark-spreadsheet"></i>
                     <span th:text="#{settings.export.btn}">Exportar a CSV</span>
                 </a>
             </div>
@@ -84,7 +84,7 @@
 
         <div class="enter glass-card rounded-xl overflow-hidden" style="animation-delay:140ms">
             <div class="px-5 py-4 border-b border-white/[0.06] flex items-center gap-2">
-                <i class="bi bi-person-circle text-accent"></i>
+                <i aria-hidden="true" class="bi bi-person-circle text-accent"></i>
                 <span class="text-sm font-semibold text-slate-200" th:text="#{settings.account.title}">Cuenta</span>
             </div>
             <div class="p-5">
@@ -93,7 +93,7 @@
                 </p>
                 <a th:href="@{/delete-account}"
                    class="inline-flex items-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 text-sm font-medium rounded-lg transition-all duration-200 no-underline border border-red-500/30">
-                    <i class="bi bi-person-x"></i>
+                    <i aria-hidden="true" class="bi bi-person-x"></i>
                     <span th:text="#{settings.account.delete}">Eliminar cuenta</span>
                 </a>
             </div>
@@ -101,14 +101,14 @@
 
         <div class="enter glass-card rounded-xl overflow-hidden md:col-span-2" style="animation-delay:210ms">
             <div class="px-5 py-4 border-b border-white/[0.06] flex items-center gap-2">
-                <i class="bi bi-info-circle text-accent"></i>
+                <i aria-hidden="true" class="bi bi-info-circle text-accent"></i>
                 <span class="text-sm font-semibold text-slate-200" th:text="#{settings.about.title}">Acerca de SusCriptWallet</span>
             </div>
             <div class="p-5">
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                     <div>
                         <p class="text-slate-500 text-xs uppercase tracking-widest mb-1" th:text="#{settings.about.version}">Versión web</p>
-                        <p class="text-slate-200 font-medium">3.1.0</p>
+                        <p class="text-slate-200 font-medium">3.2.0</p>
                     </div>
                     <div>
                         <p class="text-slate-500 text-xs uppercase tracking-widest mb-1" th:text="#{settings.about.backend}">Backend</p>

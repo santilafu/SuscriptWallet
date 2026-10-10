@@ -19,7 +19,7 @@ class WebConfig : WebMvcConfigurer {
     @Bean
     fun localeResolver(): LocaleResolver {
         val resolver = CookieLocaleResolver("lang")
-        resolver.setDefaultLocale(Locale("es"))
+        resolver.setDefaultLocale(Locale.forLanguageTag("es"))
         return resolver
     }
 
@@ -44,6 +44,9 @@ class CurrentPathInterceptor : HandlerInterceptor {
         handler: Any,
         modelAndView: ModelAndView?
     ) {
-        modelAndView?.model?.put("currentPath", request.servletPath)
+        // En una redirección el modelo se convierte en parámetros de la URL: antes todas las
+        // redirecciones acababan en `...?currentPath=%2F...`. Solo hace falta al pintar vistas.
+        if (modelAndView == null || modelAndView.viewName?.startsWith("redirect:") == true) return
+        modelAndView.model["currentPath"] = request.servletPath
     }
 }

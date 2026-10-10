@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.context.annotation.Bean
 import org.springframework.scheduling.annotation.EnableAsync
+import org.springframework.scheduling.annotation.EnableScheduling
 import javax.sql.DataSource
 
 /**
@@ -18,6 +19,7 @@ import javax.sql.DataSource
  */
 @SpringBootApplication
 @EnableAsync
+@EnableScheduling
 class SubIaApplication {
 
     private val log = LoggerFactory.getLogger(SubIaApplication::class.java)

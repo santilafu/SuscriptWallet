@@ -15,6 +15,7 @@ import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
 import java.math.BigDecimal
+import java.time.Clock
 import java.time.LocalDate
 
 /**
@@ -33,7 +34,8 @@ class SubscriptionController(
     private val subscriptionService: SubscriptionService,
     private val categoryService: CategoryService,
     private val catalogService: com.subia.service.CatalogService,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val clock: Clock
 ) {
 
     private fun resolveUserId(userDetails: UserDetails): Long =
@@ -47,7 +49,13 @@ class SubscriptionController(
     @GetMapping
     fun list(@AuthenticationPrincipal userDetails: UserDetails, model: Model): String {
         val userId = resolveUserId(userDetails)
-        model.addAttribute("subscriptions", subscriptionService.findAll(userId))
+        val subs = subscriptionService.findAll(userId).map { it.projected() }
+        val today = LocalDate.now(clock)
+        model.addAttribute("subscriptions", subs)
+        // Días restantes de prueba calculados aquí: Thymeleaf 3.1.3 (Spring Boot 3.5) prohíbe
+        // T(...) en las plantillas y la lista reventaba al calcularlo con T(ChronoUnit).
+        model.addAttribute("trialDaysLeft", subs.filter { it.trialEndsAt != null }
+            .associate { it.id to java.time.temporal.ChronoUnit.DAYS.between(today, it.trialEndsAt) })
         model.addAttribute("categories", categoryService.findAll())
         model.addAttribute("serviceDomains", catalogService.getDomainMap())
         model.addAttribute("cancelUrls", catalogService.getCancelUrlMap())
@@ -69,6 +77,8 @@ class SubscriptionController(
         model.addAttribute("billingCycles", BillingCycle.values())
         model.addAttribute("currencies", com.subia.model.Currencies.SUPPORTED)
         model.addAttribute("sub", emptyForm())
+        // La plantilla distinguía alta/edición con `instanceof T(...)`, prohibido en Thymeleaf 3.1.3
+        model.addAttribute("isEntity", false)
         return "subscriptions/form"
     }
 
@@ -120,7 +130,8 @@ class SubscriptionController(
         model: Model
     ): String {
         val userId = resolveUserId(userDetails)
-        model.addAttribute("sub", subscriptionService.findById(id, userId))
+        model.addAttribute("sub", subscriptionService.findById(id, userId).projected())
+        model.addAttribute("isEntity", true)
         model.addAttribute("categories", categoryService.findAll())
         model.addAttribute("billingCycles", BillingCycle.values())
         model.addAttribute("currencies", com.subia.model.Currencies.SUPPORTED)
@@ -153,12 +164,17 @@ class SubscriptionController(
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "trialEndsAt is required when isTrial is true")
         val userId = resolveUserId(userDetails)
         // verify ownership
-        subscriptionService.findById(id, userId)
+        val stored = subscriptionService.findById(id, userId)
         val category = categoryService.findById(categoryId)
+        // R3-01: el formulario muestra la próxima renovación proyectada; si vuelve sin tocar se
+        // conserva el ancla guardada (día 31, 29-feb…) en vez de guardar el día recortado.
+        val renewal = com.subia.service.RenewalDates.anchorForUpdate(
+            stored, renewalDate, billingCycle, LocalDate.now(clock)
+        )
         subscriptionService.save(
             Subscription(
                 id = id, name = name, description = description, price = price, currency = currency,
-                billingCycle = billingCycle, renewalDate = renewalDate, category = category,
+                billingCycle = billingCycle, renewalDate = renewal, category = category,
                 active = active, notes = notes, isTrial = isTrial, trialEndsAt = trialEndsAt,
                 userId = userId
             )
@@ -192,7 +208,7 @@ class SubscriptionController(
             Subscription(
                 name = name, description = description, price = price, currency = currency,
                 billingCycle = billingCycle,
-                renewalDate = if (isTrial && trialEndsAt != null) trialEndsAt else LocalDate.now().plusMonths(1),
+                renewalDate = if (isTrial && trialEndsAt != null) trialEndsAt else LocalDate.now(clock).plusMonths(1),
                 category = category, active = true, notes = "",
                 isTrial = isTrial, trialEndsAt = trialEndsAt
             ),
@@ -212,7 +228,7 @@ class SubscriptionController(
         model: Model
     ): String {
         val userId = resolveUserId(userDetails)
-        model.addAttribute("sub", subscriptionService.findById(id, userId))
+        model.addAttribute("sub", subscriptionService.findById(id, userId).projected())
         return "subscriptions/confirm-delete"
     }
 
@@ -243,7 +259,7 @@ class SubscriptionController(
         response: HttpServletResponse
     ) {
         val userId = resolveUserId(userDetails)
-        val subs = subscriptionService.findAll(userId)
+        val subs = subscriptionService.findAll(userId).map { it.projected() }
 
         response.contentType = "text/csv; charset=UTF-8"
         response.setHeader("Content-Disposition", "attachment; filename=\"suscripciones.csv\"")
@@ -269,7 +285,16 @@ class SubscriptionController(
         writer.flush()
     }
 
-    private fun csvEscape(value: String): String {
+    /**
+     * Copia (no persistida) con la próxima renovación real en `renewalDate` (N-12): la fecha
+     * guardada no se avanza nunca y la lista mostraba cobros de hace meses.
+     */
+    private fun Subscription.projected(): Subscription =
+        copy(renewalDate = com.subia.service.RenewalDates.nextRenewal(this, LocalDate.now(clock)))
+
+    private fun csvEscape(raw: String): String {
+        // Inyección de fórmulas: Excel/LibreOffice ejecutan celdas que empiezan por = + - @
+        val value = if (raw.isNotEmpty() && raw[0] in "=+-@\t\r") "'$raw" else raw
         if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
             return "\"" + value.replace("\"", "\"\"") + "\""
         }
@@ -283,7 +308,7 @@ class SubscriptionController(
         "price"       to "",
         "currency"     to "EUR",
         "billingCycle" to null,
-        "renewalDate"  to LocalDate.now(),
+        "renewalDate"  to LocalDate.now(clock),
         "category"    to null,
         "active"      to true,
         "notes"       to "",

@@ -8,12 +8,14 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
 import org.springframework.util.LinkedMultiValueMap
+import org.springframework.http.client.SimpleClientHttpRequestFactory
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientResponseException
 import org.springframework.web.util.UriComponentsBuilder
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Instant
+import java.time.Duration
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Base64
@@ -83,7 +85,13 @@ class GmailScanService(
     @Value("\${app.base-url:http://localhost:8081}") private val baseUrl: String
 ) {
     private val log = LoggerFactory.getLogger(GmailScanService::class.java)
-    private val rest = RestClient.create()
+    // Timeouts explícitos (M-05): sin ellos una llamada colgada a Google bloqueaba el callback.
+    private val rest = RestClient.builder()
+        .requestFactory(SimpleClientHttpRequestFactory().apply {
+            setConnectTimeout(Duration.ofSeconds(10))
+            setReadTimeout(Duration.ofSeconds(20))
+        })
+        .build()
 
     private val scope = "https://www.googleapis.com/auth/gmail.readonly"
     private val redirectUri: String get() = "$baseUrl/oauth/gmail/callback"

@@ -45,7 +45,7 @@ class CategoryService(
      *
      * @return La entidad guardada con el ID asignado por la base de datos.
      */
-    fun save(category: Category): Category = repo.save(category)
+    fun save(category: Category): Category = repo.save(validated(category))
 
     /**
      * Elimina una categoría por su ID.
@@ -57,9 +57,30 @@ class CategoryService(
      * @throws IllegalStateException si la categoría tiene suscripciones asociadas.
      */
     fun delete(id: Long) {
+        val category = findById(id)
         if (subscriptionRepo.existsByCategoryId(id)) {
             throw IllegalStateException("No se puede eliminar: la categoría tiene suscripciones asociadas.")
         }
-        repo.deleteById(id)
+        repo.delete(category)
+    }
+
+    companion object {
+        private val HEX_COLOR = Regex("^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$")
+
+        /**
+         * Límites de la tabla `categories` (V1) y color hexadecimal estricto: el color se pinta
+         * en atributos `style` de las plantillas, así que no se admite texto arbitrario.
+         * @throws IllegalArgumentException si algo no es válido (400 en web y API).
+         */
+        fun validated(c: Category): Category {
+            val name = c.name.trim()
+            require(name.isNotEmpty()) { "El nombre de la categoría es obligatorio" }
+            require(name.length <= 100) { "El nombre no puede superar 100 caracteres" }
+            val color = c.color.trim()
+            require(HEX_COLOR.matches(color)) { "Color no válido: usa formato #rrggbb" }
+            val icon = c.icon.trim()
+            require(icon.length <= 50) { "El icono no puede superar 50 caracteres" }
+            return c.copy(name = name, color = color, icon = icon)
+        }
     }
 }

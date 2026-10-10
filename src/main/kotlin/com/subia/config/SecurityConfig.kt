@@ -11,11 +11,17 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.annotation.Order
 import org.springframework.http.HttpMethod
+import org.springframework.security.authentication.AccountExpiredException
+import org.springframework.security.authentication.CredentialsExpiredException
+import org.springframework.security.authentication.DisabledException
+import org.springframework.security.authentication.LockedException
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.core.session.SessionRegistry
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.oauth2.jwt.Jwt
@@ -69,20 +75,25 @@ class SecurityConfig(
                 ex.accessDeniedHandler(accessDeniedHandler)
             }
             .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter::class.java)
+            // Límite estricto de /api/auth/* (login, refresh, google). Antes solo funcionaba porque
+            // el filtro se registraba también como filtro global de servlet (ver FilterRegistrationConfig).
+            .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter::class.java)
         return http.build()
     }
 
     @Bean @Order(2)
-    fun webFilterChain(http: HttpSecurity): SecurityFilterChain {
+    fun webFilterChain(http: HttpSecurity, sessionRegistry: SessionRegistry): SecurityFilterChain {
         http
-            .userDetailsService(userDetailsService)
+            // Autenticación usuario/contraseña: el bean [webAuthenticationProvider] (global)
             .authorizeHttpRequests { auth ->
                 auth.requestMatchers(
                     "/login", "/register", "/verify-email", "/verify-pending", "/verify-email-error",
                     "/forgot-password", "/reset-password", "/auth/google/callback",
                     "/oauth/gmail/callback",
                     "/delete-account", "/account-deleted", "/privacidad",
-                    "/css/**", "/js/**", "/images/**", "/error"
+                    "/css/**", "/js/**", "/images/**", "/error",
+                    // Favicons: sin esto las páginas públicas (login, registro) no mostraban el icono
+                    "/favicon.ico", "/favicon-*.png", "/apple-touch-icon.png"
                 ).permitAll()
                 // El POST de borrado de cuenta necesita principal; sin sesión devolvía 500 (B-05)
                 auth.requestMatchers(HttpMethod.POST, "/delete-account").authenticated()
@@ -97,7 +108,15 @@ class SecurityConfig(
                 form.loginPage("/login")
                 form.loginProcessingUrl("/login")
                 form.defaultSuccessUrl("/dashboard", true)
-                form.failureUrl("/login?error")
+                // Motivo concreto para cuenta sin verificar o bloqueada; el resto, mensaje genérico
+                form.failureHandler { request, response, ex ->
+                    val reason = when (ex) {
+                        is org.springframework.security.authentication.DisabledException -> "=unverified"
+                        is org.springframework.security.authentication.LockedException -> "=locked"
+                        else -> ""
+                    }
+                    response.sendRedirect(request.contextPath + "/login?error" + reason)
+                }
             }
             .logout { logout ->
                 logout.logoutUrl("/logout")
@@ -106,28 +125,68 @@ class SecurityConfig(
                 logout.deleteCookies("SESSION")
             }
             .sessionManagement { session ->
+                // Registro respaldado por Spring Session (SessionConfig, ronda 6): el mismo que usa
+                // UserService para caducar las sesiones al restablecer la contraseña o borrar la cuenta.
+                // Una sesión caducada se cierra en su siguiente petición y va a /login?expired.
                 session.maximumSessions(1)
+                    .sessionRegistry(sessionRegistry)
+                    .expiredUrl("/login?expired")
                 session.sessionFixation().newSession()
                 session.invalidSessionUrl("/login?expired")
             }
             .headers { headers ->
                 headers.frameOptions { it.deny() }
+                // El botón de "Iniciar sesión con Google" (GIS) se pinta en un iframe de
+                // accounts.google.com/gsi y hace peticiones a ese mismo origen: con `frame-src 'none'`
+                // y `connect-src 'self'` el navegador lo bloqueaba (A-05). Directivas según la guía
+                // de CSP de Google Identity Services.
                 headers.contentSecurityPolicy { csp ->
                     csp.policyDirectives(
                         "default-src 'self'; " +
                         "script-src 'self' 'unsafe-inline' https://accounts.google.com https://cdn.tailwindcss.com https://cdn.jsdelivr.net; " +
-                        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; " +
+                        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://accounts.google.com/gsi/style; " +
                         "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; " +
                         "img-src 'self' data: https://icon.horse https://*.googleusercontent.com; " +
-                        "connect-src 'self'; " +
-                        "frame-src 'none'; " +
-                        "object-src 'none'"
+                        "connect-src 'self' https://accounts.google.com/gsi/; " +
+                        "frame-src https://accounts.google.com/gsi/; " +
+                        "object-src 'none'; " +
+                        "base-uri 'self'; " +
+                        "form-action 'self' https://accounts.google.com"
                     )
                 }
             }
             .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter::class.java)
         return http.build()
     }
+
+    /**
+     * Proveedor del formLogin web con el orden de comprobaciones de la ronda 4:
+     * cuenta bloqueada → contraseña → email verificado (igual que `TokenService.login`).
+     *
+     * Por defecto Spring comprueba bloqueo Y verificación ANTES de la contraseña, así que
+     * `?error=unverified` revelaba el estado de la cuenta a cualquiera que escribiera el email.
+     * Ahora "sin verificar" solo se indica con la contraseña correcta. El bloqueo se sigue
+     * comprobando antes de la contraseña a propósito: si dependiera de ella, durante el bloqueo se
+     * podrían seguir probando claves y `?error=locked` delataría la correcta.
+     *
+     * Es un @Bean a propósito: así Spring lo usa como proveedor del AuthenticationManager GLOBAL.
+     * Si se añadía solo al chain (`http.authenticationProvider`), Spring seguía creando el
+     * proveedor global por defecto a partir del UserDetailsService y, al fallar el nuestro, lo
+     * probaba como "padre": con contraseña mala volvía a salir `?error=unverified`.
+     */
+    @Bean
+    fun webAuthenticationProvider(): DaoAuthenticationProvider =
+        DaoAuthenticationProvider(userDetailsService).apply {
+            setPasswordEncoder(passwordEncoder())
+            setPreAuthenticationChecks { user ->
+                if (!user.isAccountNonLocked) throw LockedException("Cuenta bloqueada")
+            }
+            setPostAuthenticationChecks { user ->
+                if (!user.isEnabled) throw DisabledException("EMAIL_NOT_VERIFIED")
+                if (!user.isAccountNonExpired) throw AccountExpiredException("Cuenta caducada")
+                if (!user.isCredentialsNonExpired) throw CredentialsExpiredException("Credenciales caducadas")
+            }
+        }
 
     /**
      * Convierte el claim `role` del access token en la autoridad ROLE_<rol>, igual que hace

@@ -9,9 +9,11 @@ import java.util.UUID
 data class RefreshToken(
     @Id @GeneratedValue(strategy = GenerationType.UUID)
     val id: UUID? = null,
+    /** SHA-256 (hex) del token; el valor en claro solo lo tiene el cliente (M-02). */
     @Column(nullable = false, unique = true, columnDefinition = "TEXT")
     val token: String,
-    @Column(nullable = false, length = 64)
+    /** 254 = longitud máxima de `users.email` (V14 amplió la columna, antes 64). */
+    @Column(nullable = false, length = 254)
     val email: String,
     @Column(name = "user_id")
     val userId: Long? = null,

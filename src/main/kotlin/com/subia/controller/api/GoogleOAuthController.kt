@@ -31,11 +31,13 @@ class GoogleOAuthController(
             val email = payload.email
             val googleId = payload.subject
 
-            val user = userService.findOrCreateByGoogle(email, googleId)
+            // Igual que la web: ignora el bloqueo por intentos de contraseña, reinicia el contador
+            // y exige email verificado (ronda 5)
+            val user = userService.loginWithGoogle(email, googleId)
 
-            val pair = tokenService.issueTokenPairForEmail(email)
+            val pair = tokenService.issueTokenPairForEmail(user.email)
 
-            ApiResponse(data = TokenResponse(pair.accessToken, pair.refreshToken, pair.expiresInSeconds))
+            ApiResponse(data = TokenResponse.from(pair))
         } catch (ex: InvalidGoogleTokenException) {
             throw ResponseStatusException(HttpStatus.UNAUTHORIZED, ex.message)
         }

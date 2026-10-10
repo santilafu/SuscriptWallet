@@ -1,0 +1,120 @@
+package com.subia.service
+
+import com.subia.model.BillingCycle
+import com.subia.model.Category
+import com.subia.model.Subscription
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
+import java.math.BigDecimal
+import java.time.LocalDate
+
+class RenewalDatesTest {
+
+    private fun d(s: String): LocalDate = LocalDate.parse(s)
+
+    @Test
+    fun `fecha futura o de hoy no se mueve`() {
+        assertEquals(d("2026-10-10"), RenewalDates.nextRenewal(d("2026-10-10"), BillingCycle.MONTHLY, d("2026-10-10")))
+        assertEquals(d("2026-12-01"), RenewalDates.nextRenewal(d("2026-12-01"), BillingCycle.WEEKLY, d("2026-10-10")))
+    }
+
+    @Test
+    fun `mensual dada de alta en mayo se proyecta al proximo cobro (N-12)`() {
+        assertEquals(d("2026-10-15"), RenewalDates.nextRenewal(d("2026-05-15"), BillingCycle.MONTHLY, d("2026-10-10")))
+        assertEquals(d("2026-11-05"), RenewalDates.nextRenewal(d("2026-05-05"), BillingCycle.MONTHLY, d("2026-10-10")))
+    }
+
+    @Test
+    fun `dia 31 cae el 30 o 28 y vuelve al 31 (siempre desde el ancla)`() {
+        assertEquals(d("2027-02-28"), RenewalDates.nextRenewal(d("2026-01-31"), BillingCycle.MONTHLY, d("2027-02-01")))
+        assertEquals(d("2027-03-31"), RenewalDates.nextRenewal(d("2026-01-31"), BillingCycle.MONTHLY, d("2027-03-01")))
+        assertEquals(d("2026-11-30"), RenewalDates.nextRenewal(d("2026-08-31"), BillingCycle.MONTHLY, d("2026-11-01")))
+    }
+
+    @Test
+    fun `anual pasado avanza al aniversario siguiente`() {
+        assertEquals(d("2027-03-01"), RenewalDates.nextRenewal(d("2024-03-01"), BillingCycle.YEARLY, d("2026-10-10")))
+        // 29 de febrero en año no bisiesto → 28
+        assertEquals(d("2027-02-28"), RenewalDates.nextRenewal(d("2024-02-29"), BillingCycle.YEARLY, d("2026-10-10")))
+    }
+
+    @Test
+    fun `semanal muy antigua avanza en multiplos de 7 dias`() {
+        val next = RenewalDates.nextRenewal(d("2020-01-06"), BillingCycle.WEEKLY, d("2026-10-10"))
+        assertFalse(next.isBefore(d("2026-10-10")))
+        assertTrue(next.isBefore(d("2026-10-17")))
+        assertEquals(0L, java.time.temporal.ChronoUnit.DAYS.between(d("2020-01-06"), next) % 7)
+    }
+
+    @Test
+    fun `prueba vigente, vencida y sin fecha`() {
+        val today = d("2026-10-10")
+        val base = Subscription(
+            name = "X", price = BigDecimal.ONE, billingCycle = BillingCycle.MONTHLY,
+            renewalDate = today, category = Category(id = 1, name = "IA"), isTrial = true
+        )
+        assertTrue(RenewalDates.isActiveTrial(base.copy(trialEndsAt = d("2026-10-10")), today))
+        assertFalse(RenewalDates.isActiveTrial(base.copy(trialEndsAt = d("2026-10-09")), today))
+        assertTrue(RenewalDates.isActiveTrial(base.copy(trialEndsAt = null), today))
+        assertFalse(RenewalDates.isActiveTrial(base.copy(isTrial = false), today))
+    }
+
+    // ── R3-01: conservar el ancla al editar sin tocar la fecha ─────────────────────────────
+
+    private fun keep(anchor: String, cycle: BillingCycle, received: String, today: String, newCycle: BillingCycle = cycle) =
+        RenewalDates.anchorForUpdate(d(anchor), cycle, d(received), newCycle, d(today))
+
+    @Test
+    fun `mensual del 31 vista en noviembre conserva el 31 al guardar la fecha proyectada`() {
+        assertEquals(d("2026-11-30"), RenewalDates.nextRenewal(d("2026-01-31"), BillingCycle.MONTHLY, d("2026-11-10")))
+        assertEquals(d("2026-01-31"), keep("2026-01-31", BillingCycle.MONTHLY, "2026-11-30", "2026-11-10"))
+        // y la serie vuelve al 31 en diciembre
+        assertEquals(d("2026-12-31"), RenewalDates.nextRenewal(d("2026-01-31"), BillingCycle.MONTHLY, d("2026-12-01")))
+    }
+
+    @Test
+    fun `mensual del 30 vista en febrero (28) conserva el 30`() {
+        assertEquals(d("2027-02-28"), RenewalDates.nextRenewal(d("2026-10-30"), BillingCycle.MONTHLY, d("2027-02-05")))
+        assertEquals(d("2026-10-30"), keep("2026-10-30", BillingCycle.MONTHLY, "2027-02-28", "2027-02-05"))
+    }
+
+    @Test
+    fun `anual del 29 de febrero conserva el ancla bisiesta`() {
+        assertEquals(d("2024-02-29"), keep("2024-02-29", BillingCycle.YEARLY, "2027-02-28", "2026-10-10"))
+        assertEquals(d("2028-02-29"), RenewalDates.nextRenewal(d("2024-02-29"), BillingCycle.YEARLY, d("2027-03-01")))
+    }
+
+    @Test
+    fun `semanal conserva el ancla y no cambia la serie`() {
+        // ancla jueves 2026-01-01; hoy sábado 2026-10-10 → próximo jueves 2026-10-15
+        assertEquals(d("2026-10-15"), RenewalDates.nextRenewal(d("2026-01-01"), BillingCycle.WEEKLY, d("2026-10-10")))
+        assertEquals(d("2026-01-01"), keep("2026-01-01", BillingCycle.WEEKLY, "2026-10-15", "2026-10-10"))
+    }
+
+    @Test
+    fun `fecha cambiada a proposito por el usuario se respeta`() {
+        // Otro día del mes
+        assertEquals(d("2026-11-15"), keep("2026-01-31", BillingCycle.MONTHLY, "2026-11-15", "2026-11-10"))
+        // Saltarse un cobro: el día del cobro, mover al ciclo siguiente
+        assertEquals(d("2026-11-15"), keep("2026-01-15", BillingCycle.MONTHLY, "2026-11-15", "2026-10-15"))
+        // Semanal movida un día
+        assertEquals(d("2026-10-16"), keep("2026-01-01", BillingCycle.WEEKLY, "2026-10-16", "2026-10-10"))
+    }
+
+    @Test
+    fun `cambiar el ciclo usa la fecha recibida como nueva ancla`() {
+        assertEquals(d("2026-11-30"),
+            keep("2026-01-31", BillingCycle.MONTHLY, "2026-11-30", "2026-11-10", newCycle = BillingCycle.YEARLY))
+    }
+
+    @Test
+    fun `tolera que la proyeccion se calculara ayer (medianoche o cliente por detras)`() {
+        // El cliente recibió 2026-10-31 el día 31; guarda el 1-nov (el servidor ya proyectaría 30-nov)
+        assertEquals(d("2026-01-31"), keep("2026-01-31", BillingCycle.MONTHLY, "2026-10-31", "2026-11-01"))
+    }
+
+    @Test
+    fun `reenviar el ancla tal cual la deja igual`() {
+        assertEquals(d("2026-01-31"), keep("2026-01-31", BillingCycle.MONTHLY, "2026-01-31", "2026-11-10"))
+    }
+}

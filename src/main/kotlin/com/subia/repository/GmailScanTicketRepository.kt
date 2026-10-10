@@ -8,7 +8,10 @@ import org.springframework.data.repository.query.Param
 import java.time.OffsetDateTime
 
 interface GmailScanTicketRepository : JpaRepository<GmailScanTicket, String> {
-    fun deleteByExpiresAtBefore(cutoff: OffsetDateTime)
+    /** Purga de tickets caducados (bulk, sin cargar entidades). */
+    @Modifying
+    @Query("DELETE FROM GmailScanTicket t WHERE t.expiresAt < :cutoff")
+    fun deleteExpiredBefore(@Param("cutoff") cutoff: OffsetDateTime): Int
     fun deleteByUserId(userId: Long)
 
     /**

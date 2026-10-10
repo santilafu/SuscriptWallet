@@ -9,7 +9,7 @@
     <!-- ── Cabecera ───────────────────────────────────────────────────── -->
     <div class="mb-8">
         <h1 class="text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
-            <i class="bi bi-tag text-accent"></i>
+            <i aria-hidden="true" class="bi bi-tag text-accent"></i>
             <span th:if="${category.id > 0}" th:text="#{cat.form.title.edit}">Editar categoría</span>
             <span th:unless="${category.id > 0}" th:text="#{cat.form.title.new}">Nueva categoría</span>
         </h1>
@@ -29,10 +29,10 @@
 
                     <!-- Nombre -->
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+                        <label for="catName" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
                             <span th:text="#{cat.form.name}">Nombre</span> <span class="text-red-400">*</span>
                         </label>
-                        <input type="text" name="name" required
+                        <input type="text" name="name" id="catName" required maxlength="100"
                                th:value="${category.name}"
                                class="w-full px-3 py-2.5 bg-elevated border border-white/[0.08] rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-all duration-200"
                                th:placeholder="#{cat.form.name.placeholder}"/>
@@ -40,7 +40,7 @@
 
                     <!-- Color -->
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5" th:text="#{cat.form.color}">Color</label>
+                        <label for="colorPicker" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5" th:text="#{cat.form.color}">Color</label>
                         <div class="flex items-center gap-3">
                             <input type="color" name="color" id="colorPicker"
                                    th:value="${category.color}"
@@ -49,26 +49,26 @@
                                    th:value="${category.color}"
                                    pattern="#[0-9a-fA-F]{6}"
                                    placeholder="#7c3aed"
-                                   readonly
+                                   readonly aria-hidden="true" tabindex="-1"
                                    class="flex-1 px-3 py-2.5 bg-elevated border border-white/[0.08] rounded-lg text-sm text-slate-300 font-mono focus:outline-none cursor-default"/>
                         </div>
                     </div>
 
                     <!-- Icono emoji -->
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5" th:text="#{cat.form.icon}">Icono (emoji)</label>
-                        <input type="text" name="icon" maxlength="10"
+                        <label for="catIcon" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5" th:text="#{cat.form.icon}">Icono (emoji)</label>
+                        <input type="text" name="icon" id="catIcon" maxlength="10" aria-describedby="catIconHint"
                                th:value="${category.icon}"
                                class="w-full px-3 py-2.5 bg-elevated border border-white/[0.08] rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-all duration-200"
                                placeholder="🤖"/>
-                        <p class="text-xs text-slate-600 mt-1.5" th:text="#{cat.form.icon.hint}">Opcional. Puedes usar un emoji.</p>
+                        <p id="catIconHint" class="text-xs text-slate-400 mt-1.5" th:text="#{cat.form.icon.hint}">Opcional. Puedes usar un emoji.</p>
                     </div>
                 </div>
 
                 <div class="px-6 py-4 border-t border-white/[0.06] flex items-center gap-3">
                     <button type="submit"
                             class="flex items-center gap-2 px-5 py-2.5 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer shadow-lg shadow-accent/20">
-                        <i class="bi bi-floppy"></i><span th:text="#{cat.form.save}">Guardar</span>
+                        <i aria-hidden="true" class="bi bi-floppy"></i><span th:text="#{cat.form.save}">Guardar</span>
                     </button>
                     <a th:href="@{/categories}"
                        class="px-5 py-2.5 border border-white/[0.1] text-slate-400 hover:text-slate-200 hover:border-white/20 text-sm font-medium rounded-lg transition-all duration-200 no-underline"
@@ -89,7 +89,7 @@
                              id="previewIconBg" style="background: rgba(124,58,237,0.13);">
                             <span id="previewIcon">📁</span>
                         </div>
-                        <div class="font-bold text-slate-100 text-base mb-2" id="previewName">Nombre</div>
+                        <div class="font-bold text-slate-100 text-base mb-2" id="previewName" th:data-placeholder="#{cat.form.name}" th:text="#{cat.form.name}">Nombre</div>
                         <div class="flex items-center gap-2">
                             <span class="w-4 h-4 rounded flex-shrink-0" id="previewSwatch"
                                   style="background: #7c3aed;"></span>
@@ -115,7 +115,7 @@
 
         function updatePreview() {
             const color = colorPicker.value || '#7c3aed';
-            const name  = nameInput.value.trim() || 'Nombre';
+            const name  = nameInput.value.trim() || previewName.getAttribute('data-placeholder') || '';
             const icon  = iconInput.value.trim() || '📁';
 
             colorText.value = color;

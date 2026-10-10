@@ -2,8 +2,8 @@ plugins {
     kotlin("jvm") version "2.1.20"
     kotlin("plugin.spring") version "2.1.20"
     kotlin("plugin.jpa") version "2.1.20"
-    id("org.springframework.boot") version "3.3.5"
-    id("io.spring.dependency-management") version "1.1.6"
+    id("org.springframework.boot") version "3.5.16"
+    id("io.spring.dependency-management") version "1.1.7"
 }
 
 group = "com.subia"
@@ -25,9 +25,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
-    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
     implementation("org.springframework.session:spring-session-jdbc")
-    implementation("com.google.api-client:google-api-client:2.4.0")
+    implementation("com.google.api-client:google-api-client:2.9.1")
     implementation("com.bucket4j:bucket4j-core:8.10.1")
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
@@ -37,6 +36,7 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.security:spring-security-test")
     testImplementation("io.mockk:mockk:1.13.12")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

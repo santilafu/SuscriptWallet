@@ -3,6 +3,7 @@ package com.subia.service
 import com.subia.model.SecurityEvent
 import com.subia.model.SecurityEventType
 import com.subia.repository.SecurityEventRepository
+import com.subia.security.ClientIp
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
@@ -28,12 +29,6 @@ class SecurityEventService(
         securityEventRepository.save(event)
     }
 
-    fun extractIp(request: HttpServletRequest): String {
-        val forwarded = request.getHeader("X-Forwarded-For")
-        return if (!forwarded.isNullOrBlank()) {
-            forwarded.split(",").first().trim()
-        } else {
-            request.remoteAddr ?: "unknown"
-        }
-    }
+    /** IP del cliente acotada a 45 caracteres (tamaño de `security_events.ip_address`). */
+    fun extractIp(request: HttpServletRequest): String = ClientIp.of(request)
 }

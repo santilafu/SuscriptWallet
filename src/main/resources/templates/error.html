@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<!--
+  Página de error genérica (la sirve el BasicErrorController de Spring Boot para 403/404/500…).
+  Sustituye a la "Whitelabel Error Page". Es autónoma a propósito: NO decora el layout, porque
+  en un dispatch de error puede no haber sesión ni token CSRF (el form de logout del navbar
+  fallaría al evaluar ${_csrf.parameterName}). Modelo disponible: status, error, path. Abrir /error a mano da status 999 (sin error real): se muestra "Error".
+-->
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}" class="dark">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title th:text="${status == 999 ? 'Error' : status} + ' — SusCriptWallet'">Error — SusCriptWallet</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            padding: 1rem; background-color: #08091a; color: #e8edf5;
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; -webkit-font-smoothing: antialiased;
+        }
+        .card {
+            width: 100%; max-width: 28rem; text-align: center; padding: 2.5rem 2rem;
+            background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.015) 100%);
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 1.125rem;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.55);
+        }
+        .code { font-size: 3rem; font-weight: 700; letter-spacing: -0.04em; color: #a78bfa; margin: 0 0 0.5rem; }
+        h1 { font-size: 1.125rem; margin: 0 0 0.75rem; }
+        p { font-size: 0.875rem; color: #94a3b8; margin: 0 0 1.75rem; line-height: 1.6; }
+        a.btn {
+            display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.625rem 1.25rem;
+            background: #7c3aed; color: #fff; border-radius: 0.625rem; font-size: 0.875rem;
+            font-weight: 600; text-decoration: none;
+        }
+        a.btn:hover { background: #6d28d9; }
+        a.btn:focus-visible { outline: 2px solid #c4b5fd; outline-offset: 2px; }
+    </style>
+</head>
+<body>
+<main class="card">
+    <p class="code" th:text="${status == 999 ? 'Error' : status}">404</p>
+    <th:block th:switch="${status}">
+        <h1 th:case="404" th:text="#{error.title.404}">Página no encontrada</h1>
+        <h1 th:case="403" th:text="#{error.title.403}">No tienes permiso para ver esta página</h1>
+        <h1 th:case="429" th:text="#{error.title.429}">Demasiados intentos</h1>
+        <h1 th:case="*" th:text="#{error.title.generic}">Algo ha ido mal</h1>
+    </th:block>
+    <p th:if="${status == 429}" th:text="#{error.text.429}">Espera un minuto y vuelve a intentarlo.</p>
+    <p th:unless="${status == 429}" th:text="#{error.text}">Puede que el enlace haya caducado o que la página ya no exista.</p>
+    <a class="btn" th:href="@{/dashboard}" href="/dashboard">
+        <i class="bi bi-arrow-left" aria-hidden="true"></i>
+        <span th:text="#{error.back}">Volver al inicio</span>
+    </a>
+</main>
+</body>
+</html>

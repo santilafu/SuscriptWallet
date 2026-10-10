@@ -47,7 +47,8 @@ class UserServiceTest {
         emailService = mockk(relaxed = true)
         userService = UserService(
             userRepository, passwordResetTokenRepository, subscriptionRepository, refreshTokenRepository,
-            securityEventRepository, gmailScanResultRepository, gmailScanTicketRepository, emailService
+            securityEventRepository, gmailScanResultRepository, gmailScanTicketRepository, emailService,
+            mockk(relaxed = true), mockk(relaxed = true)
         )
     }
 
@@ -64,97 +65,233 @@ class UserServiceTest {
         verify(exactly = 1) { userRepository.deleteById(1L) }
     }
 
+    /**
+     * Simula `handleFailedLogin` cuando el UPDATE atómico deja el contador en [attemptsAfter] y
+     * devuelve el `lockedUntil` que se pidió fijar (null si no se bloqueó).
+     */
+    private fun failedLoginLocking(attemptsAfter: Int): java.time.OffsetDateTime? {
+        every { userRepository.findByEmail("test@example.com") } returns baseUser(failedAttempts = attemptsAfter - 1)
+        every { userRepository.incrementFailedAttempts(1L) } returns 1
+        every { userRepository.findFailedAttempts(1L) } returns attemptsAfter
+        val until = slot<OffsetDateTime>()
+        every { userRepository.extendLock(1L, capture(until)) } returns 1
+
+        userService.handleFailedLogin("test@example.com")
+
+        verify(exactly = 1) { userRepository.incrementFailedAttempts(1L) }
+        // Nunca se reescribe la fila entera (ronda 5)
+        verify(exactly = 0) { userRepository.save(any()) }
+        return if (until.isCaptured) until.captured else null
+    }
+
+    private fun assertLockedAbout(minutes: Long, lockedUntil: OffsetDateTime?, before: OffsetDateTime, after: OffsetDateTime) {
+        assertNotNull(lockedUntil)
+        assertTrue(lockedUntil!!.isAfter(before.plusMinutes(minutes).minusSeconds(5)))
+        assertTrue(lockedUntil.isBefore(after.plusMinutes(minutes).plusSeconds(5)))
+    }
+
+    @Test
+    fun `intento 3 suma el fallo sin bloquear`() {
+        assertNull(failedLoginLocking(3))
+        verify(exactly = 0) { userRepository.extendLock(any(), any()) }
+    }
+
     @Test
     fun `lockout exponencial - intento 4 bloquea 5min`() {
-        val user = baseUser(failedAttempts = 3)
-        val savedSlot = slot<User>()
-        every { userRepository.findByEmail("test@example.com") } returns user
-        every { userRepository.save(capture(savedSlot)) } answers { savedSlot.captured }
-
         val before = OffsetDateTime.now()
-        userService.handleFailedLogin("test@example.com")
-        val after = OffsetDateTime.now()
-
-        val saved = savedSlot.captured
-        assertEquals(4, saved.failedAttempts)
-        assertNotNull(saved.lockedUntil)
-        val lockedUntil = saved.lockedUntil!!
-        assertTrue(lockedUntil.isAfter(before.plusMinutes(4).plusSeconds(55)))
-        assertTrue(lockedUntil.isBefore(after.plusMinutes(5).plusSeconds(5)))
+        val until = failedLoginLocking(4)
+        assertLockedAbout(5, until, before, OffsetDateTime.now())
     }
 
     @Test
     fun `lockout exponencial - intento 5 bloquea 10min`() {
         // Fórmula: min(5 * 2^(n-4), 1440) → n=5: 5 * 2^1 = 10 min
-        val user = baseUser(failedAttempts = 4)
-        val savedSlot = slot<User>()
-        every { userRepository.findByEmail("test@example.com") } returns user
-        every { userRepository.save(capture(savedSlot)) } answers { savedSlot.captured }
-
         val before = OffsetDateTime.now()
-        userService.handleFailedLogin("test@example.com")
-        val after = OffsetDateTime.now()
-
-        val saved = savedSlot.captured
-        assertEquals(5, saved.failedAttempts)
-        val lockedUntil = saved.lockedUntil!!
-        assertTrue(lockedUntil.isAfter(before.plusMinutes(9).plusSeconds(55)))
-        assertTrue(lockedUntil.isBefore(after.plusMinutes(10).plusSeconds(5)))
+        val until = failedLoginLocking(5)
+        assertLockedAbout(10, until, before, OffsetDateTime.now())
     }
 
     @Test
     fun `lockout exponencial - intento 6 bloquea 20min`() {
-        // Fórmula: min(5 * 2^(n-4), 1440) → n=6: 5 * 2^2 = 20 min
-        val user = baseUser(failedAttempts = 5)
-        val savedSlot = slot<User>()
-        every { userRepository.findByEmail("test@example.com") } returns user
-        every { userRepository.save(capture(savedSlot)) } answers { savedSlot.captured }
-
         val before = OffsetDateTime.now()
-        userService.handleFailedLogin("test@example.com")
-        val after = OffsetDateTime.now()
-
-        val saved = savedSlot.captured
-        assertEquals(6, saved.failedAttempts)
-        val lockedUntil = saved.lockedUntil!!
-        assertTrue(lockedUntil.isAfter(before.plusMinutes(19).plusSeconds(55)))
-        assertTrue(lockedUntil.isBefore(after.plusMinutes(20).plusSeconds(5)))
+        val until = failedLoginLocking(6)
+        assertLockedAbout(20, until, before, OffsetDateTime.now())
     }
 
     @Test
-    fun `lockout exponencial - intento 7+ bloquea hasta 1440min`() {
-        // Fórmula: min(5 * 2^(n-4), 1440) — para n=11: 5 * 2^7 = 640, para n=15: 5*2^11 = 10240 → tope 1440
-        // Probamos con n=7 (intento 7): 5 * 2^3 = 40 min
-        val user = baseUser(failedAttempts = 6)
-        val savedSlot = slot<User>()
-        every { userRepository.findByEmail("test@example.com") } returns user
-        every { userRepository.save(capture(savedSlot)) } answers { savedSlot.captured }
-
+    fun `lockout exponencial - intento 7 bloquea 40min y el tope es 1440min`() {
         val before = OffsetDateTime.now()
-        userService.handleFailedLogin("test@example.com")
-        val after = OffsetDateTime.now()
-
-        val saved = savedSlot.captured
-        assertEquals(7, saved.failedAttempts)
-        val lockedUntil = saved.lockedUntil!!
-        // n=7: 5 * 2^3 = 40 min
-        assertTrue(lockedUntil.isAfter(before.plusMinutes(39).plusSeconds(55)))
-        assertTrue(lockedUntil.isBefore(after.plusMinutes(40).plusSeconds(5)))
+        val until = failedLoginLocking(7)
+        assertLockedAbout(40, until, before, OffsetDateTime.now())
+        assertEquals(1440L, UserService.lockMinutes(15))
+        assertEquals(1440L, UserService.lockMinutes(200))
     }
 
     @Test
-    fun `resetFailedAttempts limpia contador y lockedUntil`() {
-        val user = baseUser(failedAttempts = 5).copy(
-            lockedUntil = OffsetDateTime.now().plusMinutes(30)
-        )
-        val savedSlot = slot<User>()
-        every { userRepository.findByEmail("test@example.com") } returns user
-        every { userRepository.save(capture(savedSlot)) } answers { savedSlot.captured }
+    fun `handleFailedLogin con email desconocido no escribe nada`() {
+        every { userRepository.findByEmail("nadie@example.com") } returns null
+        every { userRepository.findFirstByEmailIgnoreCaseOrderByIdAsc("nadie@example.com") } returns null
+
+        userService.handleFailedLogin("nadie@example.com")
+
+        verify(exactly = 0) { userRepository.incrementFailedAttempts(any()) }
+    }
+
+    @Test
+    fun `resetFailedAttempts limpia con un UPDATE de columnas, sin save`() {
+        every { userRepository.findByEmail("test@example.com") } returns baseUser(failedAttempts = 5)
+        every { userRepository.resetFailedAttempts(1L) } returns 1
 
         userService.resetFailedAttempts("test@example.com")
 
-        val saved = savedSlot.captured
-        assertEquals(0, saved.failedAttempts)
-        assertNull(saved.lockedUntil)
+        verify(exactly = 1) { userRepository.resetFailedAttempts(1L) }
+        verify(exactly = 0) { userRepository.save(any()) }
+    }
+
+    @Test
+    fun `findByEmail tolera mayusculas y espacios`() {
+        every { userRepository.findByEmail("Test@Example.com") } returns null
+        every { userRepository.findFirstByEmailIgnoreCaseOrderByIdAsc("Test@Example.com") } returns baseUser()
+
+        assertEquals(1L, userService.findByEmail(" Test@Example.com ")?.id)
+    }
+
+    @Test
+    fun `findByEmail encuentra una cuenta antigua guardada con mayusculas (ronda 4)`() {
+        // Cuenta antigua `Juan@Gmail.com`; el usuario escribe (o el registro normaliza a) minúsculas
+        val legacy = baseUser().copy(id = 7L, email = "Juan@Gmail.com")
+        every { userRepository.findByEmail("juan@gmail.com") } returns null
+        every { userRepository.findFirstByEmailIgnoreCaseOrderByIdAsc("juan@gmail.com") } returns legacy
+
+        assertEquals(7L, userService.findByEmail("juan@gmail.com")?.id)
+    }
+
+    @Test
+    fun `findByEmail prefiere la coincidencia exacta`() {
+        every { userRepository.findByEmail("test@example.com") } returns baseUser()
+
+        assertEquals(1L, userService.findByEmail("test@example.com")?.id)
+        verify(exactly = 0) { userRepository.findFirstByEmailIgnoreCaseOrderByIdAsc(any()) }
+    }
+
+    @Test
+    fun `Google vincula una cuenta sin verificar - la verifica y descarta la contrasena previa`() {
+        // Pre-hijacking: alguien registró este email con su contraseña y nunca lo verificó
+        val pending = baseUser().copy(emailVerified = false, emailVerificationToken = "tok")
+        every { userRepository.findByGoogleId("g-1") } returns null
+        every { userRepository.findByEmail("test@example.com") } returns pending
+        every { userRepository.linkGoogleAndVerify(1L, "g-1") } returns 1
+
+        val result = userService.findOrCreateByGoogle("test@example.com", "g-1")
+
+        verify(exactly = 1) { userRepository.linkGoogleAndVerify(1L, "g-1") }
+        verify(exactly = 0) { userRepository.save(any()) }
+        assertEquals("g-1", result.googleId)
+        assertTrue(result.emailVerified)
+        assertNull(result.passwordHash)
+        assertNull(result.emailVerificationToken)
+    }
+
+    @Test
+    fun `Google vincula una cuenta verificada sin tocar su contrasena`() {
+        every { userRepository.findByGoogleId("g-1") } returns null
+        every { userRepository.findByEmail("test@example.com") } returns baseUser()
+        every { userRepository.linkGoogle(1L, "g-1") } returns 1
+
+        val result = userService.findOrCreateByGoogle("test@example.com", "g-1")
+
+        // Solo se escribe google_id: la contraseña (y el contador) no se tocan
+        verify(exactly = 1) { userRepository.linkGoogle(1L, "g-1") }
+        verify(exactly = 0) { userRepository.linkGoogleAndVerify(any(), any()) }
+        verify(exactly = 0) { userRepository.save(any()) }
+        assertEquals("g-1", result.googleId)
+        assertEquals(baseUser().passwordHash, result.passwordHash)
+    }
+
+    @Test
+    fun `Google con otro googleId no sobrescribe la vinculacion existente (ronda 6)`() {
+        every { userRepository.findByGoogleId("g-nuevo") } returns null
+        every { userRepository.findByEmail("test@example.com") } returns baseUser().copy(googleId = "g-original")
+
+        assertThrows(com.subia.exception.InvalidGoogleTokenException::class.java) {
+            userService.findOrCreateByGoogle("test@example.com", "g-nuevo")
+        }
+        verify(exactly = 0) { userRepository.linkGoogle(any(), any()) }
+        verify(exactly = 0) { userRepository.linkGoogleAndVerify(any(), any()) }
+    }
+
+    @Test
+    fun `loginWithGoogle reinicia el contador de intentos aunque la cuenta este bloqueada`() {
+        val locked = baseUser(failedAttempts = 6).copy(googleId = "g-1", lockedUntil = OffsetDateTime.now().plusHours(1))
+        every { userRepository.findByGoogleId("g-1") } returns locked
+        every { userRepository.resetFailedAttempts(1L) } returns 1
+
+        val result = userService.loginWithGoogle("test@example.com", "g-1")
+
+        assertEquals(1L, result.id)
+        verify(exactly = 1) { userRepository.resetFailedAttempts(1L) }
+    }
+
+    @Test
+    fun `resetPassword verifica el email, desbloquea y revoca los refresh tokens`() {
+        val tokenId = java.util.UUID.randomUUID()
+        val token = com.subia.model.PasswordResetToken(
+            id = tokenId, userId = 1L, token = "reset-tok", expiresAt = OffsetDateTime.now().plusMinutes(30)
+        )
+        val locked = baseUser(failedAttempts = 6).copy(
+            emailVerified = false, lockedUntil = OffsetDateTime.now().plusHours(1)
+        )
+        val activeRefresh = com.subia.model.RefreshToken(
+            id = java.util.UUID.randomUUID(), token = "h", email = "test@example.com",
+            expiresAt = OffsetDateTime.now().plusDays(10)
+        )
+        every { passwordResetTokenRepository.findByToken("reset-tok") } returns token
+        every { passwordResetTokenRepository.markUsedIfUnused(tokenId) } returns 1
+        every { userRepository.findById(1L) } returns java.util.Optional.of(locked)
+        val newHash = slot<String>()
+        every { userRepository.resetPasswordAndUnlock(1L, capture(newHash)) } returns 1
+        every { refreshTokenRepository.findByEmail("test@example.com") } returns listOf(activeRefresh)
+        val savedRefresh = slot<com.subia.model.RefreshToken>()
+        every { refreshTokenRepository.save(capture(savedRefresh)) } answers { savedRefresh.captured }
+
+        userService.resetPassword("reset-tok", "NuevaP@ssw0rd!")
+
+        // Un único UPDATE por columnas (contraseña + verificado + desbloqueo), sin reescribir la fila
+        assertTrue(newHash.captured.startsWith("\$2"))
+        verify(exactly = 0) { userRepository.save(any()) }
+        assertTrue(savedRefresh.captured.revoked)
+    }
+
+    @Test
+    fun `resetPassword rechaza un enlace que otro envio concurrente ya consumio`() {
+        val tokenId = java.util.UUID.randomUUID()
+        val token = com.subia.model.PasswordResetToken(
+            id = tokenId, userId = 1L, token = "reset-tok", expiresAt = OffsetDateTime.now().plusMinutes(30)
+        )
+        every { passwordResetTokenRepository.findByToken("reset-tok") } returns token
+        every { userRepository.findById(1L) } returns java.util.Optional.of(baseUser())
+        every { passwordResetTokenRepository.markUsedIfUnused(tokenId) } returns 0
+
+        assertThrows(com.subia.exception.VerificationTokenException::class.java) {
+            userService.resetPassword("reset-tok", "NuevaP@ssw0rd!")
+        }
+        verify(exactly = 0) { userRepository.resetPasswordAndUnlock(any(), any()) }
+    }
+
+    @Test
+    fun `isResetTokenValid rechaza enlaces desconocidos, usados o caducados (R3-04)`() {
+        fun tok(t: String, used: Boolean = false, mins: Long = 30) = com.subia.model.PasswordResetToken(
+            userId = 1L, token = t, used = used, expiresAt = OffsetDateTime.now().plusMinutes(mins)
+        )
+        every { passwordResetTokenRepository.findByToken("ok") } returns tok("ok")
+        every { passwordResetTokenRepository.findByToken("usado") } returns tok("usado", used = true)
+        every { passwordResetTokenRepository.findByToken("caducado") } returns tok("caducado", mins = -5)
+        every { passwordResetTokenRepository.findByToken("nada") } returns null
+
+        assertTrue(userService.isResetTokenValid("ok"))
+        assertFalse(userService.isResetTokenValid("usado"))
+        assertFalse(userService.isResetTokenValid("caducado"))
+        assertFalse(userService.isResetTokenValid("nada"))
+        assertFalse(userService.isResetTokenValid(""))
     }
 }

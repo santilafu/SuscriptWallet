@@ -2,12 +2,14 @@ package com.subia.controller
 
 import com.subia.model.Category
 import com.subia.service.CategoryService
+import org.springframework.context.MessageSource
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.servlet.mvc.support.RedirectAttributes
+import java.util.Locale
 
 /**
  * Controlador MVC para la gestión de categorías.
@@ -18,7 +20,10 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes
  */
 @Controller
 @RequestMapping("/categories")
-class CategoryController(private val categoryService: CategoryService) {
+class CategoryController(
+    private val categoryService: CategoryService,
+    private val messageSource: MessageSource
+) {
 
     /**
      * Muestra la lista de todas las categorías.
@@ -87,6 +92,7 @@ class CategoryController(private val categoryService: CategoryService) {
         @RequestParam(defaultValue = "#6c757d") color: String,
         @RequestParam(defaultValue = "") icon: String
     ): String {
+        categoryService.findById(id) // 404 si no existe (antes Hibernate intentaba un merge sobre un id inexistente)
         categoryService.save(Category(id = id, name = name, color = color, icon = icon))
         return "redirect:/categories"
     }
@@ -100,11 +106,15 @@ class CategoryController(private val categoryService: CategoryService) {
      * Los atributos flash sobreviven a un único redirect y luego desaparecen.
      */
     @PostMapping("/{id}/delete")
-    fun delete(@PathVariable id: Long, redirectAttributes: RedirectAttributes): String {
+    fun delete(@PathVariable id: Long, redirectAttributes: RedirectAttributes, locale: Locale): String {
         try {
             categoryService.delete(id)
         } catch (e: IllegalStateException) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.message)
+            // Mensaje en el idioma del usuario (antes siempre en castellano)
+            redirectAttributes.addFlashAttribute(
+                "errorMessage",
+                messageSource.getMessage("cat.error.in-use", null, e.message ?: "", locale)
+            )
         }
         return "redirect:/categories"
     }

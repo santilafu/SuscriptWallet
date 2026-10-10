@@ -10,7 +10,10 @@ data class SubscriptionDto(
     val price: BigDecimal,
     val currency: String,
     val billingCycle: String,
+    /** Próxima renovación (>= hoy del servidor), proyectada desde [renewalAnchor]. */
     val renewalDate: LocalDate,
+    /** Fecha guardada de la que parte la serie de cobros (puede ser pasada). */
+    val renewalAnchor: LocalDate = renewalDate,
     val active: Boolean,
     val notes: String,
     val categoryId: Long,

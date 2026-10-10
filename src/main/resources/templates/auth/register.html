@@ -40,13 +40,13 @@
     <div class="flex items-center justify-center gap-1 mb-4">
         <i class="bi bi-globe2 text-slate-500 text-xs mr-1"></i>
         <a href="?lang=es" class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
-           th:classappend="${#locale.language == 'es'} ? 'text-violet-300' : 'text-slate-500 hover:text-slate-200'"
+           th:classappend="${#locale.language == 'es'} ? 'text-violet-300' : 'text-slate-400 hover:text-slate-200'"
            th:styleappend="${#locale.language == 'es'} ? 'background:rgba(124,58,237,0.2);' : ''">ES</a>
         <a href="?lang=en" class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
-           th:classappend="${#locale.language == 'en'} ? 'text-violet-300' : 'text-slate-500 hover:text-slate-200'"
+           th:classappend="${#locale.language == 'en'} ? 'text-violet-300' : 'text-slate-400 hover:text-slate-200'"
            th:styleappend="${#locale.language == 'en'} ? 'background:rgba(124,58,237,0.2);' : ''">EN</a>
         <a href="?lang=fr" class="px-2 py-0.5 rounded text-xs font-medium transition-all duration-200 no-underline"
-           th:classappend="${#locale.language == 'fr'} ? 'text-violet-300' : 'text-slate-500 hover:text-slate-200'"
+           th:classappend="${#locale.language == 'fr'} ? 'text-violet-300' : 'text-slate-400 hover:text-slate-200'"
            th:styleappend="${#locale.language == 'fr'} ? 'background:rgba(124,58,237,0.2);' : ''">FR</a>
     </div>
     <div class="auth-enter text-center mb-8" style="animation-delay:0ms;">
@@ -62,21 +62,27 @@
              class="mb-4 rounded-lg px-4 py-3 text-sm" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171;">
             <i class="bi bi-exclamation-triangle mr-1"></i> <span th:text="#{register.error.weak}">La contraseña no cumple los requisitos.</span>
         </div>
+        <div th:if="${param.error != null and param.error[0] == 'passwordMismatch'}" class="mb-4 rounded-lg px-4 py-3 text-sm" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171;">
+            <i class="bi bi-exclamation-triangle mr-1" aria-hidden="true"></i> <span th:text="#{register.error.mismatch}">Las contraseñas no coinciden.</span>
+        </div>
+        <div th:if="${param.error != null and param.error[0] == 'invalidEmail'}" class="mb-4 rounded-lg px-4 py-3 text-sm" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171;">
+            <i class="bi bi-exclamation-triangle mr-1" aria-hidden="true"></i> <span th:text="#{register.error.email}">El correo electrónico no es válido.</span>
+        </div>
         <form method="POST" th:action="@{/register}" class="space-y-4">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
             <div>
                 <label for="email" class="label" th:text="#{register.email}">Correo electrónico</label>
-                <input type="email" id="email" name="email" required autocomplete="email" class="input-field" placeholder="tu@email.com"/>
+                <input type="email" id="email" name="email" required maxlength="254" autocomplete="email" class="input-field" placeholder="tu@email.com"/>
             </div>
             <div>
                 <label for="password" class="label" th:text="#{register.password}">Contraseña</label>
-                <input type="password" id="password" name="password" required autocomplete="new-password" class="input-field" placeholder="••••••••••"/>
+                <input type="password" id="password" name="password" required minlength="10" maxlength="72" autocomplete="new-password" aria-describedby="pwdRequirements" class="input-field" placeholder="••••••••••"/>
             </div>
             <div>
                 <label for="confirmPassword" class="label" th:text="#{register.confirm}">Confirmar contraseña</label>
-                <input type="password" id="confirmPassword" name="confirmPassword" required autocomplete="new-password" class="input-field" placeholder="••••••••••"/>
+                <input type="password" id="confirmPassword" name="confirmPassword" required maxlength="72" autocomplete="new-password" th:data-mismatch="#{register.error.mismatch}" class="input-field" placeholder="••••••••••"/>
             </div>
-            <div class="requirements-box space-y-1">
+            <div id="pwdRequirements" class="requirements-box space-y-1">
                 <p class="font-medium mb-1" style="color: #cbd5e1;" th:text="#{register.requirements}">Requisitos de contraseña:</p>
                 <p><i class="bi bi-dot mr-1"></i><span th:text="#{register.req.min}">Mínimo 10 caracteres</span></p>
                 <p><i class="bi bi-dot mr-1"></i><span th:text="#{register.req.upper}">Al menos una letra mayúscula</span></p>
@@ -91,5 +97,17 @@
         </p>
     </div>
 </div>
+<script th:inline="none">
+(function () {
+    'use strict';
+    var pwd = document.getElementById('password');
+    var confirmPwd = document.getElementById('confirmPassword');
+    if (!pwd || !confirmPwd) return;
+    var msg = confirmPwd.getAttribute('data-mismatch') || '';
+    function check() { confirmPwd.setCustomValidity(confirmPwd.value && confirmPwd.value !== pwd.value ? msg : ''); }
+    pwd.addEventListener('input', check);
+    confirmPwd.addEventListener('input', check);
+}());
+</script>
 </body>
 </html>
