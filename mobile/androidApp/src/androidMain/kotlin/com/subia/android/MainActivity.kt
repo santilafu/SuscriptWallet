@@ -1,7 +1,10 @@
 package com.subia.android
 
 import android.content.Intent
+import android.content.res.Configuration
+import android.graphics.Color
 import android.os.Bundle
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -36,7 +39,7 @@ class MainActivity : AppCompatActivity() {
         // cambia a postSplashScreenTheme (Theme.SubIA) sin flash de fondo.
         installSplashScreen()
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        activarEdgeToEdge()
         IdiomaApp.sincronizarDesdeAppCompat(this)
         handleGmailDeepLink(intent)
         // Solo en el primer onCreate: tras rotar, el intent original sigue ahí y volvería a
@@ -88,6 +91,26 @@ class MainActivity : AppCompatActivity() {
                 )
             }
         }
+    }
+
+    /**
+     * Edge-to-edge en todas las versiones (en Android 15+ es obligatorio al apuntar a SDK 35+).
+     * Con el estilo por defecto (SystemBarStyle.auto) Android fuerza contraste en la navegación
+     * de 3 botones y pinta un velo de otro tono bajo los botones: se veía una franja distinta de
+     * la NavigationBar y del fondo. Con light/dark explícitos y fondo transparente no hay velo y
+     * la barra inferior de cada pantalla llega hasta abajo. La app sigue el modo oscuro del
+     * sistema (al cambiarlo la Activity se recrea y esto se vuelve a evaluar); el color de los
+     * iconos lo afina después SubIAApp según el destino (el login siempre es oscuro).
+     */
+    private fun activarEdgeToEdge() {
+        val oscuro = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
+        val estilo = if (oscuro) {
+            SystemBarStyle.dark(Color.TRANSPARENT)
+        } else {
+            SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+        }
+        enableEdgeToEdge(statusBarStyle = estilo, navigationBarStyle = estilo)
     }
 
     override fun onNewIntent(intent: Intent) {

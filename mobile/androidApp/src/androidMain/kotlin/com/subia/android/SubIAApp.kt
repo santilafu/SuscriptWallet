@@ -29,11 +29,14 @@ class SubIAApp : Application() {
     override fun onCreate() {
         super.onCreate()
         // MobileAds es prescindible: si su init falla (Play Services, ID inválido), la app
-        // debe seguir arrancando sin anuncios en lugar de crashear.
-        try {
-            MobileAds.initialize(this) {}
-        } catch (e: Throwable) {
-            Log.w("SubIAApp", "Fallo al inicializar MobileAds; se continúa sin anuncios", e)
+        // debe seguir arrancando sin anuncios en lugar de crashear. En segundo plano, como recomienda
+        // AdMob 24+ para no bloquear el arranque en el hilo principal.
+        ambitoApp.launch {
+            try {
+                MobileAds.initialize(this@SubIAApp) {}
+            } catch (e: Throwable) {
+                Log.w("SubIAApp", "Fallo al inicializar MobileAds; se continúa sin anuncios", e)
+            }
         }
         startKoin {
             androidContext(this@SubIAApp)

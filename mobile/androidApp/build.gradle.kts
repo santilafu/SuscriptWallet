@@ -52,6 +52,10 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = true
+            // Reducción de recursos (recomendación de Play "R8: resource shrinking"): quita los
+            // recursos que nadie referencia. La app no carga recursos por nombre (getIdentifier);
+            // si algún día lo hace, protegerlos en res/raw/keep.xml con tools:keep.
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -108,7 +112,10 @@ kotlin {
             implementation(libs.androidx.work.runtime.ktx)
             // Splash screen de Android 12+ con compat para APIs anteriores (sin flash de fondo)
             implementation(libs.androidx.core.splashscreen)
-            implementation("com.google.android.gms:play-services-ads:23.6.0")
+            // 25.2.0: la última que compila con Kotlin 2.1.20 (25.3+ trae metadatos de Kotlin 2.3).
+            // Sigue tocando layoutInDisplayCutoutMode en su AdActivity (aviso de Play de APIs
+            // obsoletas de edge-to-edge): es código del SDK de AdMob, no evitable desde la app.
+            implementation("com.google.android.gms:play-services-ads:25.2.0")
             implementation("androidx.credentials:credentials:1.3.0")
             implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
             implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")

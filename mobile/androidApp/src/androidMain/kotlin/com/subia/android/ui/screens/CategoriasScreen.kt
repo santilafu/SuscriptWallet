@@ -119,10 +119,11 @@ fun CategoriasScreen(
             is CategoriasUiState.Success -> CategoriasList(
                 state.categorias, puedeCrear, Modifier.padding(innerPadding)
             )
-            is CategoriasUiState.Offline -> Column(Modifier.padding(innerPadding)) {
+            is CategoriasUiState.Offline -> Column(Modifier.fillMaxSize().padding(innerPadding)) {
                 // "Sin conexión: no se pueden crear categorías" solo tiene sentido para quien puede.
                 if (puedeCrear) BannerOffline(stringResource(R.string.offline_no_create))
-                CategoriasList(state.categorias, puedeCrear, Modifier)
+                // weight(1f): la lista perezosa dentro de una Column necesita altura acotada.
+                CategoriasList(state.categorias, puedeCrear, Modifier.weight(1f))
             }
             // Mismo componente de error que el resto de pantallas (C-02).
             is CategoriasUiState.Error -> ErrorState(
@@ -179,7 +180,9 @@ fun CategoriasScreen(
 private fun CategoriasList(categorias: List<Category>, puedeCrear: Boolean, modifier: Modifier) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+        // Con el FAB de "Nueva categoría" la última categoría quedaba debajo del botón al llegar
+        // al final: se reserva su alto (56 dp + 16 dp de margen) bajo el último elemento.
+        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = if (puedeCrear) 88.dp else 16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item {
