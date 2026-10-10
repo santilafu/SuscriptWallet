@@ -20,6 +20,9 @@ fun BannerAdView(modifier: Modifier = Modifier) {
                 adUnitId = BANNER_AD_UNIT_ID
                 loadAd(AdRequest.Builder().build())
             }
-        }
+        },
+        // Sin destroy() cada AdView (uno por visita a Inicio/Suscripciones) seguía vivo con su
+        // WebView y sus temporizadores de refresco tras salir de la pantalla.
+        onRelease = { it.destroy() }
     )
 }

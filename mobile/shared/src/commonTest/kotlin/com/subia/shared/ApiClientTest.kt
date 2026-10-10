@@ -3,6 +3,7 @@ package com.subia.shared
 import com.subia.shared.model.ApiResponse
 import com.subia.shared.model.AuthTokens
 import com.subia.shared.network.ApiClient
+import com.subia.shared.network.ApiException
 import com.subia.shared.network.ApiRoutes
 import com.subia.shared.network.NetworkException
 import com.subia.shared.network.SessionExpiredException
@@ -187,6 +188,72 @@ class ApiClientTest {
 
         assertTrue(resultado.exceptionOrNull() is SessionExpiredException)
         assertNull(tokenStorage.getTokens(), "Un refresh rechazado debe borrar los tokens")
+    }
+
+    // ── Ronda 2: login sin token, códigos de error y refresco que no es un rechazo ──────
+
+    private fun clienteCon(tokens: AuthTokens?, engine: MockEngine) =
+        ApiClient(baseUrl = "http://localhost", tokenStorage = InMemoryTokenStorage(tokens), isDebug = false, httpEngine = engine)
+
+    /** El login (POST sin token) debe exponer el código HTTP y el código de negocio del cuerpo. */
+    @Test
+    fun postSinToken_403ConCodigo_devuelveApiExceptionConCodigo() = runTest {
+        val engine = MockEngine { _ ->
+            respond(
+                """{"data":null,"error":{"code":"ACCOUNT_LOCKED","message":"Cuenta bloqueada","details":[]}}""",
+                HttpStatusCode.Forbidden,
+                headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            )
+        }
+        val resultado = clienteCon(null, engine).post<AuthTokens, String>(ApiRoutes.LOGIN, "x", authenticated = false)
+        val error = resultado.exceptionOrNull()
+        assertTrue(error is ApiException, "Debe ser ApiException: $error")
+        assertEquals(403, error.statusCode)
+        assertEquals("ACCOUNT_LOCKED", error.codigo)
+    }
+
+    /** Antes un 401 del login se leía como "respuesta vacía" (error genérico). */
+    @Test
+    fun postSinToken_401_devuelveApiException401() = runTest {
+        val engine = MockEngine { _ -> respondError(HttpStatusCode.Unauthorized) }
+        val error = clienteCon(null, engine).post<AuthTokens, String>(ApiRoutes.LOGIN, "x", authenticated = false).exceptionOrNull()
+        assertTrue(error is ApiException && error.statusCode == 401, "Debe ser ApiException 401: $error")
+    }
+
+    /** Sin red, el login debe informar "sin conexión", no un error desconocido. */
+    @Test
+    fun postSinToken_sinRed_devuelveNetworkException() = runTest {
+        val engine = MockEngine { _ -> throw IllegalStateException("sin red") }
+        val error = clienteCon(null, engine).post<AuthTokens, String>(ApiRoutes.LOGIN, "x", authenticated = false).exceptionOrNull()
+        assertTrue(error is NetworkException, "Debe ser NetworkException: $error")
+    }
+
+    /** Un 429 (límite de /api/auth/refresh por IP) o un 5xx no cierran la sesión. */
+    @Test
+    fun refresh429o503_conservaTokens() = runTest {
+        for (codigo in listOf(HttpStatusCode.TooManyRequests, HttpStatusCode.ServiceUnavailable)) {
+            val engine = MockEngine { request ->
+                if (request.url.encodedPath == ApiRoutes.REFRESH) respondError(codigo)
+                else respondError(HttpStatusCode.Unauthorized)
+            }
+            val tokens = AuthTokens(accessToken = "a", refreshToken = "r")
+            val storage = InMemoryTokenStorage(tokens)
+            val client = ApiClient(baseUrl = "http://localhost", tokenStorage = storage, isDebug = false, httpEngine = engine)
+
+            val error = client.get<String>("/api/test").exceptionOrNull()
+
+            assertTrue(error is NetworkException, "$codigo: debe ser NetworkException: $error")
+            assertEquals(tokens, storage.getTokens(), "$codigo: no debe borrar los tokens")
+        }
+    }
+
+    @Test
+    fun codigoDeError_leeAmbosFormatosYToleraBasura() {
+        assertEquals("FORBIDDEN", ApiClient.codigoDeError("""{"data":null,"error":{"code":"FORBIDDEN","message":"x"}}"""))
+        assertEquals("RATE_LIMIT_EXCEEDED", ApiClient.codigoDeError("""{"code":"RATE_LIMIT_EXCEEDED"}"""))
+        assertNull(ApiClient.codigoDeError(""))
+        assertNull(ApiClient.codigoDeError("<html>502 Bad Gateway</html>"))
+        assertNull(ApiClient.codigoDeError("""{"data":null,"error":null}"""))
     }
 }
 

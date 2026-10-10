@@ -80,6 +80,7 @@ import com.subia.android.ui.theme.ThemeState
 import com.subia.android.util.NotificacionesPermiso
 import com.subia.android.util.openCustomTab
 import com.subia.android.util.toCsv
+import com.subia.android.worker.CacheAvisos
 import com.subia.android.worker.DEFAULT_NOTIFICATION_DAYS_BEFORE
 import com.subia.android.worker.KEY_NOTIFICATION_DAYS_BEFORE
 import com.subia.android.worker.NotificadorAvisos
@@ -88,11 +89,9 @@ import com.subia.shared.model.Subscription
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.Json
 import java.io.OutputStreamWriter
 
 private const val PREFS_NAME_SETTINGS = "subia_cache"
-private const val KEY_SUBSCRIPTIONS = "subscriptions"
 private const val PRIVACY_POLICY_URL = "https://suscriptwallet.onrender.com/privacidad"
 
 private val reminderOptions = listOf(1, 3, 7, 14)
@@ -103,7 +102,6 @@ private val languageOptions = listOf(
     "fr" to R.string.language_fr,
     "pt" to R.string.language_pt
 )
-private val csvJson = Json { ignoreUnknownKeys = true; isLenient = true; coerceInputValues = true }
 
 /**
  * Ajustes de la app. Las acciones de navegación (Categorías, Gmail) y las de un solo toque
@@ -167,12 +165,10 @@ fun SettingsScreen(
         scope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
-                    val subsJson = prefs.getString(KEY_SUBSCRIPTIONS, null).orEmpty()
-                    val suscripciones: List<Subscription> = if (subsJson.isBlank()) {
-                        emptyList()
-                    } else {
-                        csvJson.decodeFromString(subsJson)
-                    }
+                    // La lista más reciente de las dos cachés (pestaña Suscripciones o Inicio):
+                    // antes solo se leía la de Suscripciones y, si el usuario no había entrado
+                    // en esa pestaña, el CSV salía vacío.
+                    val suscripciones: List<Subscription> = CacheAvisos.leerSuscripciones(context).orEmpty()
                     val csv = suscripciones.toCsv()
                     context.contentResolver.openOutputStream(uri)?.use { os ->
                         OutputStreamWriter(os, Charsets.UTF_8).use { writer ->
@@ -337,7 +333,11 @@ fun SettingsScreen(
                 icon = Icons.Outlined.FileDownload,
                 titulo = stringResource(R.string.export_subscriptions),
                 descripcion = stringResource(R.string.export_description),
-                onClick = { exportLauncher.launch("subia_suscripciones.csv") }
+                onClick = {
+                    // Sin selector de documentos en el sistema, launch lanza ActivityNotFoundException.
+                    runCatching { exportLauncher.launch("subia_suscripciones.csv") }
+                        .onFailure { scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.export_error)) } }
+                }
             )
             if (Funciones.GMAIL) {
                 FilaNavegacion(

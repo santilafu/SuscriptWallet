@@ -32,6 +32,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import com.subia.android.widget.actualizarWidgetResumen
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -122,9 +125,15 @@ fun SubIAApp(
     // se limpian tras borrar los tokens (ver AuthViewModel.logout). Un aviso tocado pendiente
     // de abrir tampoco debe abrirse en la sesión del siguiente usuario.
     val contextoApp = context.applicationContext
+    val ambito = rememberCoroutineScope()
     val cerrarSesion: () -> Unit = {
         onSuscripcionDesdeAvisoConsumida()
-        authViewModel.logout(trasBorrarSesion = { ProgramadorAvisos.alCerrarSesion(contextoApp) })
+        authViewModel.logout(trasBorrarSesion = {
+            ProgramadorAvisos.alCerrarSesion(contextoApp)
+            // La caché ya está vacía: el widget deja de mostrar el gasto y los cobros de la
+            // cuenta que acaba de salir (antes seguían ahí hasta el siguiente refresco).
+            ambito.launch { actualizarWidgetResumen(contextoApp) }
+        })
     }
 
     // Toque en un aviso de cobro: abre el detalle de esa suscripción en cuanto haya sesión y el
@@ -288,7 +297,8 @@ fun SubIAApp(
                 SuscripcionDetalleScreen(
                     suscripcionId = route.id,
                     onNavigateToEditar = { id -> navController.navigate(SuscripcionFormRoute(id)) },
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = { navController.popBackStack() },
+                    onSesionExpirada = cerrarSesion
                 )
             }
             composable<SuscripcionFormRoute> { backStackEntry ->
@@ -301,7 +311,7 @@ fun SubIAApp(
                 )
             }
             composable<CategoriasRoute> {
-                CategoriasScreen(onBack = { navController.popBackStack() })
+                CategoriasScreen(onBack = { navController.popBackStack() }, onSesionExpirada = cerrarSesion)
             }
             composable<SettingsRoute> {
                 SettingsScreen(
@@ -356,7 +366,8 @@ fun SubIAApp(
                             Json.encodeToString(item)
                         )
                         navController.navigate(SuscripcionFormRoute())
-                    }
+                    },
+                    onSesionExpirada = cerrarSesion
                 )
             }
         }

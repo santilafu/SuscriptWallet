@@ -35,6 +35,12 @@ class ErroresTipadosTest {
     }
 
     @Test
+    fun crearCategoria_403_esSinPermiso() {
+        // En el backend solo un ADMIN puede crear categorías (son comunes a todos los usuarios).
+        assertEquals(CrearCategoriaError.SinPermiso, CategoriasViewModel.mapearErrorCreacion(ApiException(403, "Forbidden")))
+    }
+
+    @Test
     fun crearCategoria_errorDelServidor_esCreacionFallida() {
         assertEquals(CrearCategoriaError.CreacionFallida, CategoriasViewModel.mapearErrorCreacion(ApiException(500, "x")))
     }

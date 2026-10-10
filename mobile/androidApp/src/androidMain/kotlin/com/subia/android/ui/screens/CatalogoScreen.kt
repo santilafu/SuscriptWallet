@@ -33,6 +33,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -50,6 +51,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.subia.android.R
 import com.subia.android.ui.ServiceLogo
@@ -93,6 +95,7 @@ private fun nombreCategoria(key: String): String = when (key) {
 @Composable
 fun CatalogoScreen(
     onSeleccionarItem: (CatalogItem) -> Unit,
+    onSesionExpirada: () -> Unit = {},
     viewModel: CatalogoViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -109,7 +112,7 @@ fun CatalogoScreen(
             text = if (itemsFiltrados.isEmpty() && uiState is CatalogoUiState.Loading)
                 stringResource(R.string.services_available_loading)
             else
-                stringResource(R.string.services_available, itemsFiltrados.size),
+                pluralStringResource(R.plurals.services_available, itemsFiltrados.size, itemsFiltrados.size),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -187,7 +190,8 @@ fun CatalogoScreen(
                     mensaje = textoErrorRemoto(state.error, R.string.error_load_catalog),
                     onRetry = { viewModel.cargarCatalogo() }
                 )
-                is CatalogoUiState.SesionExpirada -> Unit
+                // Igual que Inicio y Suscripciones: sesión caducada → cierre de sesión y login.
+                is CatalogoUiState.SesionExpirada -> LaunchedEffect(Unit) { onSesionExpirada() }
             }
         }
     }

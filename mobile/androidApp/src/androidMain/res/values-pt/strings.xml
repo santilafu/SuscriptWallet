@@ -51,12 +51,14 @@
     <string name="day_tomorrow">Amanhã</string>
     <plurals name="in_n_days">
         <item quantity="one">Em %d dia</item>
+        <item quantity="many">Em %d dias</item>
         <item quantity="other">Em %d dias</item>
     </plurals>
     <string name="months_chart_title">O que vem em cada mês</string>
     <string name="months_chart_desc">Cobranças previstas por mês: %1$s</string>
     <plurals name="month_charges_count">
         <item quantity="one">%d cobrança</item>
+        <item quantity="many">%d cobranças</item>
         <item quantity="other">%d cobranças</item>
     </plurals>
     <string name="month_no_charges">Nenhuma cobrança prevista este mês</string>
@@ -77,6 +79,7 @@
     <string name="renews_on">Renova: %1$s</string>
     <plurals name="subs_active_count">
         <item quantity="one">%d ativa</item>
+        <item quantity="many">%d ativas</item>
         <item quantity="other">%d ativas</item>
     </plurals>
     <string name="subs_monthly_total">%1$s/mês</string>
@@ -160,7 +163,11 @@
     <string name="create">Criar</string>
 
     <!-- Catalog -->
-    <string name="services_available">%1$d serviços disponíveis</string>
+    <plurals name="services_available">
+        <item quantity="one">%1$d serviço disponível</item>
+        <item quantity="many">%1$d serviços disponíveis</item>
+        <item quantity="other">%1$d serviços disponíveis</item>
+    </plurals>
     <string name="services_available_loading">320+ serviços disponíveis</string>
     <string name="search_service">Pesquisar serviço…</string>
     <string name="all_categories">Todos</string>
@@ -210,6 +217,7 @@
     <string name="no_category">Sem categoria</string>
     <plurals name="category_subs_count">
         <item quantity="one">%d assinatura</item>
+        <item quantity="many">%d assinaturas</item>
         <item quantity="other">%d assinaturas</item>
     </plurals>
     <string name="monthly_label">mensal</string>
@@ -223,7 +231,11 @@
     <!-- Resumo anual partilhável -->
     <string name="resumen_anual_title">O seu ano em assinaturas</string>
     <string name="resumen_anual_total_label">Gasto anual</string>
-    <string name="resumen_anual_subs">%d assinaturas ativas</string>
+    <plurals name="resumen_anual_subs">
+        <item quantity="one">%d assinatura ativa</item>
+        <item quantity="many">%d assinaturas ativas</item>
+        <item quantity="other">%d assinaturas ativas</item>
+    </plurals>
     <string name="resumen_anual_top_service">O seu serviço mais caro</string>
     <string name="resumen_anual_top_category">Onde gasta mais</string>
     <string name="resumen_anual_share">Partilhar o meu resumo</string>
@@ -247,6 +259,7 @@
     <string name="widget_no_charges_week">Sem cobranças esta semana</string>
     <plurals name="widget_more_this_week">
         <item quantity="one">+%d cobrança esta semana</item>
+        <item quantity="many">+%d cobranças esta semana</item>
         <item quantity="other">+%d cobranças esta semana</item>
     </plurals>
     <!-- Identificação pelo Gmail -->
@@ -261,15 +274,19 @@
     <!-- Erros de início de sessão (AuthError do ViewModel) -->
     <string name="auth_error_empty_credentials">O e-mail e a senha são obrigatórios</string>
     <string name="auth_error_bad_credentials">E-mail ou senha incorretos</string>
+    <string name="auth_error_account_locked">Conta bloqueada temporariamente após muitas tentativas falhadas. Tente novamente mais tarde</string>
+    <string name="auth_error_email_not_verified">Verifique o seu e-mail antes de iniciar sessão. Consulte a sua caixa de entrada</string>
+    <string name="auth_error_too_many_attempts">Demasiadas tentativas. Aguarde um minuto e tente novamente</string>
     <string name="auth_error_google_token_empty">Não foi recebido o token do Google</string>
     <string name="auth_error_google_not_verified">Não foi possível verificar a conta Google</string>
     <string name="auth_error_offline">Sem conexão. Verifique a sua rede e tente novamente</string>
     <string name="auth_error_generic">Não foi possível iniciar sessão. Tente novamente</string>
     <!-- Erros do formulário (FormError do ViewModel) -->
     <string name="form_error_name_required">O nome do serviço é obrigatório</string>
-    <string name="form_error_invalid_amount">Tem de ser maior que 0</string>
+    <string name="form_error_invalid_amount">Introduza um valor válido (0 ou mais)</string>
     <string name="form_error_renewal_date_required">A data de renovação é obrigatória</string>
     <string name="form_error_category_required">Selecione uma categoria</string>
+    <string name="form_error_trial_end_required">Indique quando termina o teste gratuito</string>
     <string name="form_error_offline">Sem conexão. Não é possível guardar alterações sem conexão</string>
     <string name="form_error_save_failed">Não foi possível guardar a assinatura. Tente novamente</string>
     <!-- Identificação pelo Gmail -->
@@ -285,11 +302,13 @@
     <string name="gmail_scan_searching">A procurar assinaturas…</string>
     <plurals name="gmail_scan_found">
         <item quantity="one">Encontramos %d assinatura</item>
+        <item quantity="many">Encontramos %d assinaturas</item>
         <item quantity="other">Encontramos %d assinaturas</item>
     </plurals>
     <string name="gmail_scan_item_meta">%1$s · %2$s · visto %3$s</string>
     <plurals name="gmail_scan_add_selected">
         <item quantity="one">Adicionar %d selecionada</item>
+        <item quantity="many">Adicionar %d selecionadas</item>
         <item quantity="other">Adicionar %d selecionadas</item>
     </plurals>
     <string name="gmail_scan_empty">Não encontrámos assinaturas no seu e-mail.</string>
@@ -306,6 +325,7 @@
     <string name="notif_charge_title_tomorrow">%1$s é cobrado amanhã</string>
     <plurals name="notif_charge_title_in_days">
         <item quantity="one">%1$s é cobrado dentro de %2$d dia</item>
+        <item quantity="many">%1$s é cobrado dentro de %2$d dias</item>
         <item quantity="other">%1$s é cobrado dentro de %2$d dias</item>
     </plurals>
     <!-- %1$s valor, %2$s período (notif_every_*), %3$s data -->
@@ -315,6 +335,7 @@
     <string name="notif_trial_title_tomorrow">O seu teste de %1$s termina amanhã</string>
     <plurals name="notif_trial_title_in_days">
         <item quantity="one">O seu teste de %1$s termina dentro de %2$d dia</item>
+        <item quantity="many">O seu teste de %1$s termina dentro de %2$d dias</item>
         <item quantity="other">O seu teste de %1$s termina dentro de %2$d dias</item>
     </plurals>
     <!-- %1$s valor, %2$s período (notif_every_*) -->
@@ -329,6 +350,7 @@
     <string name="notif_every_day">por dia</string>
     <plurals name="notif_summary_title">
         <item quantity="one">%d cobrança próxima</item>
+        <item quantity="many">%d cobranças próximas</item>
         <item quantity="other">%d cobranças próximas</item>
     </plurals>
     <!-- Sprint 3: primeiro uso, lista, formulário, Gmail, login, definições -->
@@ -351,6 +373,7 @@
     <string name="gmail_clear_selection">Limpar seleção</string>
     <plurals name="gmail_added_snackbar">
         <item quantity="one">%d assinatura adicionada</item>
+        <item quantity="many">%d assinaturas adicionadas</item>
         <item quantity="other">%d assinaturas adicionadas</item>
     </plurals>
     <string name="notif_status_title">Avisos neste dispositivo</string>
@@ -379,6 +402,8 @@
     <string name="category_error_name_required">O nome da categoria é obrigatório</string>
     <string name="category_error_offline">Sem conexão. Não é possível criar categorias sem conexão</string>
     <string name="category_error_create_failed">Não foi possível criar a categoria. Tente novamente</string>
+    <string name="category_error_no_permission">Só um administrador pode criar categorias. Escolha uma das existentes</string>
+    <string name="categories_admin_only_hint">As categorias são comuns a todos os utilizadores; só um administrador pode criar novas.</string>
     <string name="google_error_unknown">Não foi possível iniciar sessão com o Google. Tente novamente</string>
     <string name="subscription_not_found_title">Esta assinatura já não existe</string>
     <string name="subscription_not_found_desc">Pode ter sido eliminada noutro dispositivo ou na web.</string>

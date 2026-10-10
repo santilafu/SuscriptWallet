@@ -21,17 +21,19 @@ actual class TokenStorage actual constructor(context: PlatformContext) : TokenSt
         prefs.edit()
             .putString(KEY_ACCESS, tokens.accessToken)
             .putString(KEY_REFRESH, tokens.refreshToken)
+            // Si no llega, se borra: un rol antiguo no debe sobrevivir a un refresco sin él.
+            .apply { if (tokens.role != null) putString(KEY_ROLE, tokens.role) else remove(KEY_ROLE) }
             .apply()
     }
 
     actual override fun getTokens(): AuthTokens? {
         val access = prefs.getString(KEY_ACCESS, null) ?: return null
         val refresh = prefs.getString(KEY_REFRESH, null) ?: return null
-        return AuthTokens(accessToken = access, refreshToken = refresh)
+        return AuthTokens(accessToken = access, refreshToken = refresh, role = prefs.getString(KEY_ROLE, null))
     }
 
     actual override fun clearTokens() {
-        prefs.edit().remove(KEY_ACCESS).remove(KEY_REFRESH).apply()
+        prefs.edit().remove(KEY_ACCESS).remove(KEY_REFRESH).remove(KEY_ROLE).apply()
     }
 
     actual override fun hasTokens(): Boolean =
@@ -40,6 +42,7 @@ actual class TokenStorage actual constructor(context: PlatformContext) : TokenSt
     companion object {
         private const val KEY_ACCESS = "access_token"
         private const val KEY_REFRESH = "refresh_token"
+        private const val KEY_ROLE = "user_role"
         private const val SECURE_PREFS = "subia_secure_prefs"
         private const val FALLBACK_PREFS = "subia_secure_prefs_fallback"
 

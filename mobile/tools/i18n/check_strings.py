@@ -4,7 +4,9 @@ Uso (desde mobile/):  python tools/i18n/check_strings.py
 
 Compara values/strings.xml (español, idioma base) con cada values-XX/strings.xml:
 - mismas claves <string> y <plurals> (ni faltan ni sobran);
-- en cada <plurals>, las cantidades "one" y "other" presentes;
+- en cada <plurals>, las cantidades "one" y "other" presentes; las cantidades CLDR propias de
+  un idioma ("many" en francés y portugués, que Android usa con números como 1 000 000) se
+  aceptan y se comparan con la "other" del español;
 - mismos placeholders (%1$s, %d, %2$d, %%...) en cada texto, para que un String.format
   no reviente en tiempo de ejecución en un idioma concreto;
 - apóstrofos sin escapar (aapt los rechaza o se comen el texto).
@@ -20,6 +22,9 @@ from pathlib import Path
 RES = Path(__file__).resolve().parents[2] / "androidApp" / "src" / "androidMain" / "res"
 BASE = "values"
 IDIOMAS = ["values-en", "values-fr", "values-pt"]
+
+# Cantidades de plural que solo existen en algunos idiomas (el español solo usa one/other).
+CANTIDADES_EXTRA = {"zero", "two", "few", "many"}
 
 # %1$s, %2$d, %d, %s, %.2f ... y el literal %% (cuenta como placeholder para no perderlo).
 PLACEHOLDER = re.compile(r"%(?:\d+\$)?[-#+ 0,(]*\d*(?:\.\d+)?[sdfxXc]|%%")
@@ -53,11 +58,19 @@ def main() -> int:
     for carpeta in IDIOMAS:
         traduccion = cargar(carpeta)
         faltan = sorted(set(base) - set(traduccion))
-        sobran = sorted(set(traduccion) - set(base))
+        # "clave#many" (o few/two/zero) es válida si el plural existe en el idioma base.
+        sobran = sorted(
+            c for c in set(traduccion) - set(base)
+            if not (c.split("#")[-1] in CANTIDADES_EXTRA and f"{c.split('#')[0]}#other" in base)
+        )
         for clave in faltan:
             errores.append(f"{carpeta}: falta '{clave}'")
         for clave in sobran:
             errores.append(f"{carpeta}: sobra '{clave}' (no está en {BASE})")
+        for clave in sorted(set(traduccion) - set(base) - set(sobran)):
+            ref = clave.rsplit("#", 1)[0] + "#other"
+            if placeholders(base[ref]) != placeholders(traduccion[clave]):
+                errores.append(f"{carpeta}: '{clave}' placeholders distintos de '{ref}'")
         for clave in sorted(set(base) & set(traduccion)):
             ph_base, ph_trad = placeholders(base[clave]), placeholders(traduccion[clave])
             # En plurals "one" es habitual omitir el número ("1 día" -> "un día"); solo se

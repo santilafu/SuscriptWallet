@@ -62,9 +62,9 @@ class SubscriptionSerializationTest {
             {
               "id": 99,
               "name": "Disney+",
-              "descripcion": "Streaming familiar",
+              "description": "Streaming familiar",
               "price": 8.99,
-              "moneda": "USD",
+              "currency": "USD",
               "billingCycle": "YEARLY",
               "renewalDate": "2026-12-31",
               "categoryId": 4,
@@ -79,6 +79,7 @@ class SubscriptionSerializationTest {
 
         assertEquals(99L, sub.id)
         assertEquals("Disney+", sub.nombre)
+        assertEquals("Streaming familiar", sub.descripcion)
         assertEquals("USD", sub.moneda)
         assertEquals("YEARLY", sub.periodoFacturacion)
         assertEquals(4L, sub.categoriaId)
@@ -86,6 +87,29 @@ class SubscriptionSerializationTest {
         assertEquals("Compartida", sub.notas)
         assertTrue(sub.esPrueba)
         assertEquals("2026-08-01", sub.fechaFinPrueba)
+    }
+
+    @Test
+    fun legacy_cache_keys_still_parse() {
+        // Cachés escritas por versiones <= 2.17.4 (claves "descripcion"/"moneda").
+        val legacy = """
+            {"name":"Audible","descripcion":"Libros","price":9.99,"moneda":"GBP",
+             "billingCycle":"MONTHLY","renewalDate":"2026-07-01"}
+        """.trimIndent()
+
+        val sub = json.decodeFromString<Subscription>(legacy)
+        assertEquals("GBP", sub.moneda)
+        assertEquals("Libros", sub.descripcion)
+    }
+
+    @Test
+    fun subscription_encodes_backend_keys() {
+        val sub = Subscription(nombre = "X", precio = 1.0, moneda = "USD", descripcion = "d",
+            periodoFacturacion = "MONTHLY", fechaRenovacion = "2026-07-01")
+        val encoded = json.encodeToString(Subscription.serializer(), sub)
+        assertTrue(encoded.contains("\"currency\":\"USD\""))
+        assertTrue(encoded.contains("\"description\":\"d\""))
+        assertFalse(encoded.contains("\"moneda\""))
     }
 
     @Test
@@ -174,5 +198,17 @@ class SubscriptionSerializationTest {
         assertTrue(encoded.contains("\"categoryId\""))
         assertFalse(encoded.contains("\"nombre\""))
         assertFalse(encoded.contains("\"periodoFacturacion\""))
+    }
+
+    @Test
+    fun nueva_suscripcion_request_sends_inactive_state_and_currency() {
+        // Editar una suscripción desactivada no debe reactivarla (el backend asume active=true).
+        val req = NuevaSuscripcionRequest(
+            nombre = "Audible", precio = 9.99, moneda = "USD", periodoFacturacion = "MONTHLY",
+            fechaRenovacion = "2026-09-01", categoriaId = 2, activa = false
+        )
+        val encoded = json.encodeToString(NuevaSuscripcionRequest.serializer(), req)
+        assertTrue(encoded.contains("\"active\":false"))
+        assertTrue(encoded.contains("\"currency\":\"USD\""))
     }
 }

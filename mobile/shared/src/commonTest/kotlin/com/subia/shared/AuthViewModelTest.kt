@@ -64,4 +64,26 @@ class AuthViewModelTest {
     fun mapearErrorGoogle_networkException_devuelveSinConexion() {
         assertEquals(AuthError.SinConexion, AuthViewModel.mapearErrorGoogle(NetworkException("sin red")))
     }
+
+    // ── Códigos de error del backend (ronda 2 de la auditoría) ──────────────────────────
+
+    @Test
+    fun mapearErrorLogin_403CuentaBloqueada_devuelveCuentaBloqueada() {
+        assertEquals(AuthError.CuentaBloqueada, AuthViewModel.mapearErrorLogin(ApiException(403, "Forbidden", "ACCOUNT_LOCKED")))
+    }
+
+    @Test
+    fun mapearErrorLogin_403EmailSinVerificar_devuelveEmailNoVerificado() {
+        assertEquals(AuthError.EmailNoVerificado, AuthViewModel.mapearErrorLogin(ApiException(403, "Forbidden", "EMAIL_NOT_VERIFIED")))
+    }
+
+    @Test
+    fun mapearErrorLogin_429_devuelveDemasiadosIntentos() {
+        assertEquals(AuthError.DemasiadosIntentos, AuthViewModel.mapearErrorLogin(ApiException(429, "Too Many Requests", "RATE_LIMIT_EXCEEDED")))
+    }
+
+    @Test
+    fun mapearErrorGoogle_cuentaBloqueada_noEsGoogleNoVerificado() {
+        assertEquals(AuthError.CuentaBloqueada, AuthViewModel.mapearErrorGoogle(ApiException(403, "Forbidden", "ACCOUNT_LOCKED")))
+    }
 }

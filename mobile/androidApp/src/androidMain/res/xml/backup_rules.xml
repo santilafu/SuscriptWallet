@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copia de seguridad automática (Android 6-11, android:fullBackupContent).
+    Los tokens de sesión NO se respaldan:
+    - subia_secure_prefs: cifrado con una clave del Keystore que no viaja con la copia; al
+      restaurar en otro móvil no se puede descifrar.
+    - subia_secure_prefs_fallback: copia SIN cifrar que TokenStorage usa solo si el Keystore
+      falla; subirla a la nube expondría el refresh token.
+    El resto (preferencias, caché) sí se respalda; tras restaurar hay que iniciar sesión.
+-->
+<full-backup-content>
+    <exclude domain="sharedpref" path="subia_secure_prefs.xml" />
+    <exclude domain="sharedpref" path="subia_secure_prefs_fallback.xml" />
+</full-backup-content>

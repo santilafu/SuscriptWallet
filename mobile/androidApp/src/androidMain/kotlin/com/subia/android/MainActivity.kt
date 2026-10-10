@@ -9,6 +9,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.navigation.compose.rememberNavController
 import com.subia.android.navigation.DashboardRoute
 import com.subia.android.navigation.LoginRoute
@@ -55,12 +56,10 @@ class MainActivity : AppCompatActivity() {
                 val authViewModel: AuthViewModel = koinViewModel()
                 val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
 
-                LaunchedEffect(Unit) { authViewModel.checkSession() }
-
                 // Con sesión (restaurada o tras login): comprobación diaria programada y una
-                // comprobación ahora. NO se cancela al ver isLoggedIn = false: ese es el valor
-                // inicial antes de checkSession() y cancelaba los avisos en cada arranque
-                // (N-01). Solo se cancela en el cierre de sesión explícito (ui/SubIAApp).
+                // comprobación ahora. NO se cancela al ver isLoggedIn = false (antes era el valor
+                // inicial y cancelaba los avisos en cada arranque, N-01): solo en el cierre de
+                // sesión explícito (ui/SubIAApp).
                 LaunchedEffect(isLoggedIn) {
                     if (isLoggedIn) {
                         ProgramadorAvisos.programar(this@MainActivity)
@@ -70,7 +69,11 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 val navController = rememberNavController()
-                val startDestination = if (isLoggedIn) DashboardRoute else LoginRoute
+                // Destino inicial fijo durante la vida de la Activity: el login y el cierre de
+                // sesión navegan explícitamente (onLoginSuccess / SubIAApp). Si dependiera de
+                // isLoggedIn, el NavHost cambiaría de grafo al iniciar sesión y vaciaría la pila
+                // a la vez que onLoginSuccess navega (Inicio duplicado u onboarding saltado).
+                val startDestination = remember { if (authViewModel.isLoggedIn.value) DashboardRoute else LoginRoute }
                 val gmailStatus by gmailReturnStatus.collectAsState()
                 val suscripcionAviso by suscripcionDesdeAviso.collectAsState()
 

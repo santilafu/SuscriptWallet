@@ -20,6 +20,12 @@ sealed interface AuthError {
     data object CredencialesVacias : AuthError
     /** El servidor rechazó las credenciales (401/403). */
     data object CredencialesIncorrectas : AuthError
+    /** Cuenta bloqueada temporalmente por intentos fallidos (403 `ACCOUNT_LOCKED`). */
+    data object CuentaBloqueada : AuthError
+    /** La cuenta no ha verificado su email (403 `EMAIL_NOT_VERIFIED`). */
+    data object EmailNoVerificado : AuthError
+    /** Demasiados intentos en poco tiempo (429): hay que esperar un minuto. */
+    data object DemasiadosIntentos : AuthError
     /** No se recibió idToken de Google. */
     data object TokenGoogleVacio : AuthError
     /** El servidor no pudo verificar la cuenta de Google. */
@@ -51,7 +57,13 @@ class AuthViewModel(
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
-    private val _isLoggedIn = MutableStateFlow(false)
+    /**
+     * Arranca con la sesión real (lectura local, sin red). Antes empezaba en `false` y pasaba a
+     * `true` tras el primer frame: el NavHost se montaba con el login como inicio y luego
+     * cambiaba de grafo, y tras un login ese cambio de grafo competía con la navegación de
+     * `onLoginSuccess` (el onboarding se saltaba o el Inicio quedaba duplicado en la pila).
+     */
+    private val _isLoggedIn = MutableStateFlow(authRepository.hasValidSession())
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
 
     /** Comprueba si hay sesión activa en el almacenamiento seguro (sin red). */
@@ -135,16 +147,29 @@ class AuthViewModel(
         /** Traduce el fallo del login con contraseña al error tipado. */
         fun mapearErrorLogin(error: Throwable): AuthError = when {
             error is NetworkException -> AuthError.SinConexion
-            error is ApiException && (error.statusCode == 401 || error.statusCode == 403) ->
-                AuthError.CredencialesIncorrectas
+            error is ApiException -> errorDeCuenta(error)
+                ?: if (error.statusCode == 401 || error.statusCode == 403) AuthError.CredencialesIncorrectas
+                else AuthError.Desconocido(error.message)
             else -> AuthError.Desconocido(error.message)
         }
 
         /** Traduce el fallo del login con Google al error tipado. */
         fun mapearErrorGoogle(error: Throwable): AuthError = when (error) {
             is NetworkException -> AuthError.SinConexion
-            is ApiException -> AuthError.GoogleNoVerificado
+            is ApiException -> errorDeCuenta(error) ?: AuthError.GoogleNoVerificado
             else -> AuthError.Desconocido(error.message)
+        }
+
+        /**
+         * Motivos concretos que el backend comunica con código (antes llegaban como 500 o se
+         * mostraban como "credenciales incorrectas"): cuenta bloqueada, email sin verificar y
+         * límite de intentos. `null` si el error no es uno de ellos.
+         */
+        private fun errorDeCuenta(error: ApiException): AuthError? = when {
+            error.codigo == "ACCOUNT_LOCKED" -> AuthError.CuentaBloqueada
+            error.codigo == "EMAIL_NOT_VERIFIED" -> AuthError.EmailNoVerificado
+            error.statusCode == 429 || error.codigo == "RATE_LIMIT_EXCEEDED" -> AuthError.DemasiadosIntentos
+            else -> null
         }
     }
 }

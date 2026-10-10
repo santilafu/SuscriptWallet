@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copia en la nube y transferencia entre dispositivos (Android 12+,
+    android:dataExtractionRules). Mismas exclusiones que backup_rules.xml: los tokens de
+    sesión no salen del dispositivo.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="subia_secure_prefs.xml" />
+        <exclude domain="sharedpref" path="subia_secure_prefs_fallback.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="subia_secure_prefs.xml" />
+        <exclude domain="sharedpref" path="subia_secure_prefs_fallback.xml" />
+    </device-transfer>
+</data-extraction-rules>

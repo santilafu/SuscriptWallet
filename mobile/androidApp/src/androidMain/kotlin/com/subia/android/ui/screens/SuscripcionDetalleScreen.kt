@@ -5,6 +5,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.subia.android.util.fechaIsoLegible
 import com.subia.android.util.proximaRenovacionIso
 import com.subia.android.ui.components.EmptyState
+import com.subia.android.ui.components.ErrorState
 import com.subia.android.ui.components.formatearImporte
 import com.subia.android.ui.components.textoErrorSuscripciones
 import androidx.compose.foundation.background
@@ -46,6 +47,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -65,6 +67,8 @@ import com.subia.android.ui.theme.Violet600
 import com.subia.android.ui.theme.success
 import com.subia.android.ui.theme.urgent
 import com.subia.shared.repository.CatalogRepository
+import com.subia.shared.model.Subscription
+import com.subia.shared.viewmodel.SuscripcionesError
 import com.subia.shared.viewmodel.SuscripcionesUiState
 import com.subia.shared.viewmodel.SuscripcionesViewModel
 import org.koin.compose.koinInject
@@ -77,9 +81,13 @@ fun SuscripcionDetalleScreen(
     suscripcionId: Long,
     onNavigateToEditar: (Long) -> Unit,
     onNavigateBack: () -> Unit,
+    onSesionExpirada: () -> Unit = {},
     viewModel: SuscripcionesViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    // Igual que Inicio y Suscripciones: sesión caducada → cierre de sesión y login. Antes el
+    // detalle se quedaba con el indicador de carga para siempre.
+    if (uiState is SuscripcionesUiState.SesionExpirada) LaunchedEffect(Unit) { onSesionExpirada() }
     var mostrarDialogoEliminar by remember { mutableStateOf(false) }
     var eliminando by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -88,11 +96,20 @@ fun SuscripcionDetalleScreen(
     val uriHandler = LocalUriHandler.current
     var cancelUrl by remember { mutableStateOf<String?>(null) }
 
-    val suscripcion = when (val state = uiState) {
+    val encontrada = when (val state = uiState) {
         is SuscripcionesUiState.Success -> state.suscripciones.find { it.id == suscripcionId }
         is SuscripcionesUiState.Offline -> state.suscripciones.find { it.id == suscripcionId }
         else -> null
     }
+    // Un fallo al eliminar pone el estado en Error (sin lista): antes la suscripción
+    // "desaparecía" y el detalle se quedaba con el indicador de carga para siempre. Se sigue
+    // mostrando la última conocida y el error sale en el Snackbar.
+    var ultimaConocida by remember { mutableStateOf<Subscription?>(null) }
+    SideEffect { if (encontrada != null) ultimaConocida = encontrada }
+    val suscripcion = encontrada ?: ultimaConocida.takeIf { uiState is SuscripcionesUiState.Error }
+    // Sin datos y la carga falló (sin red y sin caché): error con reintento, no un spinner eterno.
+    val errorDeCarga = ((uiState as? SuscripcionesUiState.Error)?.error as? SuscripcionesError.CargaFallida)
+        ?.takeIf { suscripcion == null }
 
     // Lista ya cargada (no en carga inicial ni refrescando): si la suscripción no está, no va a
     // aparecer. Pasa al tocar el aviso de una suscripción borrada después: antes el detalle se
@@ -106,7 +123,7 @@ fun SuscripcionDetalleScreen(
     // El texto se resuelve aquí (contexto composable) y el efecto solo lo muestra.
     val mensajeError = (uiState as? SuscripcionesUiState.Error)?.let { textoErrorSuscripciones(it.error) }
     LaunchedEffect(uiState) {
-        if (mensajeError != null) snackbarHostState.showSnackbar(mensajeError)
+        if (mensajeError != null && errorDeCarga == null) snackbarHostState.showSnackbar(mensajeError)
     }
 
     // Busca la URL de cancelación en el catálogo por nombre de servicio
@@ -132,7 +149,13 @@ fun SuscripcionDetalleScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
-        if (suscripcion == null && listaCargada && !eliminando) {
+        if (errorDeCarga != null) {
+            ErrorState(
+                mensaje = textoErrorSuscripciones(errorDeCarga),
+                onRetry = { viewModel.cargar() },
+                modifier = Modifier.padding(innerPadding)
+            )
+        } else if (suscripcion == null && listaCargada && !eliminando) {
             EmptyState(
                 icon = Icons.Outlined.SearchOff,
                 titulo = stringResource(R.string.subscription_not_found_title),
@@ -236,7 +259,8 @@ fun SuscripcionDetalleScreen(
                         // Botón cancelar suscripción — solo si existe URL oficial
                         if (cancelUrl != null) {
                             OutlinedButton(
-                                onClick = { uriHandler.openUri(cancelUrl!!) },
+                                // Sin navegador que abra la URL, openUri lanza: no debe cerrar la app.
+                                onClick = { cancelUrl?.let { url -> runCatching { uriHandler.openUri(url) } } },
                                 modifier = Modifier.fillMaxWidth().height(52.dp),
                                 shape = RoundedCornerShape(14.dp),
                                 // Neutro: abre la web del proveedor, no borra nada aquí. Dos botones

@@ -84,6 +84,7 @@ import com.subia.android.util.proximaRenovacionIso
 import com.subia.android.util.fechaIsoCorta
 import com.subia.shared.model.Category
 import com.subia.shared.model.Subscription
+import com.subia.shared.model.gastoMensualEquivalente
 import com.subia.shared.viewmodel.SuscripcionesUiState
 import com.subia.shared.viewmodel.SuscripcionesViewModel
 import kotlinx.coroutines.launch
@@ -308,11 +309,12 @@ private fun ListaSuscripciones(
 ) {
     // La TopAppBar ya dice "Suscripciones": en vez de repetir el título con un badge, un
     // subtítulo con significado: "7 activas · 47,96 €/mes" (S-05). El gasto mensual se
-    // normaliza igual que en DashboardViewModel (anual / 12) y se agrupa por divisa.
+    // normaliza con el mismo criterio que el Inicio (gastoMensualEquivalente: anual / 12,
+    // semanal × 52 / 12) y se agrupa por divisa. Antes una semanal contaba como mensual.
     val activas = suscripciones.filter { it.activa }
     val totalesMensuales = activas
         .groupBy { it.moneda }
-        .mapValues { (_, subs) -> subs.sumOf { if (it.periodoFacturacion == "YEARLY") it.precio / 12.0 else it.precio } }
+        .mapValues { (_, subs) -> subs.sumOf { it.gastoMensualEquivalente() } }
         .entries
         .sortedBy { entry -> when (entry.key) { "EUR" -> "0"; "USD" -> "1"; else -> "2${entry.key}" } }
     val resumenActivas = pluralStringResource(R.plurals.subs_active_count, activas.size, activas.size)
@@ -464,11 +466,12 @@ private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Un
     // Días restantes de prueba, si procede. Una fecha nula o mal formada (p. ej. creada desde
     // la web) no debe tirar la lista.
     val fechaFinPrueba = sub.fechaFinPrueba
+    // Una prueba ya vencida no lleva insignia: antes salía "Prueba · -12d".
     val diasPrueba: Int? = if (sub.esPrueba && !fechaFinPrueba.isNullOrBlank()) {
         runCatching {
             val hoy = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-            hoy.daysUntil(LocalDate.parse(fechaFinPrueba))
-        }.getOrNull()
+            hoy.daysUntil(LocalDate.parse(fechaFinPrueba.trim()))
+        }.getOrNull()?.takeIf { it >= 0 }
     } else null
 
     Row(

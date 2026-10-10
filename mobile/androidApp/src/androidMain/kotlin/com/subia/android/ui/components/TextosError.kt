@@ -41,6 +41,7 @@ fun textoErrorCrearCategoria(error: CrearCategoriaError): String = stringResourc
     when (error) {
         CrearCategoriaError.NombreVacio -> R.string.category_error_name_required
         CrearCategoriaError.SinConexion -> R.string.category_error_offline
+        CrearCategoriaError.SinPermiso -> R.string.category_error_no_permission
         CrearCategoriaError.CreacionFallida -> R.string.category_error_create_failed
     }
 )

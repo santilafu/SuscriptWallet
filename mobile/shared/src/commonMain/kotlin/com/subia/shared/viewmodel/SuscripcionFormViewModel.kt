@@ -21,11 +21,13 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.subia.shared.model.proximaRenovacion
 import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.todayIn
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
-import kotlinx.datetime.toLocalDateTime
 
 /**
  * Error tipado del formulario. El ViewModel no conoce idiomas: cada plataforma
@@ -34,12 +36,14 @@ import kotlinx.datetime.toLocalDateTime
 sealed interface FormError {
     /** El nombre del servicio está vacío. */
     data object NombreVacio : FormError
-    /** El importe no es un número o no es mayor que cero. */
+    /** El importe no es un número o es negativo. */
     data object PrecioInvalido : FormError
     /** No se ha elegido fecha de renovación. */
     data object FechaRenovacionVacia : FormError
     /** No se ha elegido categoría. */
     data object CategoriaNoSeleccionada : FormError
+    /** "Periodo de prueba" activado sin fecha de fin (la web también la exige). */
+    data object FechaFinPruebaVacia : FormError
     /** Fallo de red al guardar. */
     data object SinConexion : FormError
     /** Cualquier otro fallo del servidor al guardar. */
@@ -47,7 +51,7 @@ sealed interface FormError {
 }
 
 /** Campos del formulario que pueden llevar un error asociado (validación en vivo). */
-enum class Campo { Nombre, Precio, FechaRenovacion, Categoria }
+enum class Campo { Nombre, Precio, FechaRenovacion, FechaFinPrueba, Categoria }
 
 sealed interface FormUiState {
     data object Idle : FormUiState
@@ -69,7 +73,9 @@ sealed interface FormUiState {
 class SuscripcionFormViewModel(
     private val subscriptionRepository: SubscriptionRepository,
     private val catalogRepository: CatalogRepository,
-    private val categoryRepository: CategoryRepository
+    private val categoryRepository: CategoryRepository,
+    /** "Hoy" del móvil (inyectable en tests). */
+    private val hoy: () -> LocalDate = { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<FormUiState>(FormUiState.Idle)
@@ -87,6 +93,21 @@ class SuscripcionFormViewModel(
     val esPrueba = MutableStateFlow(false)
     val fechaFinPrueba = MutableStateFlow<String?>(null)
 
+    /**
+     * Estado activo/inactivo de la suscripción en edición. El formulario no lo muestra, pero hay
+     * que devolverlo en el PUT: si no, el backend la reactivaba (su default es `true`).
+     */
+    private var activa: Boolean = true
+
+    /**
+     * R3-01: ancla guardada en el servidor y fecha/periodo mostrados al abrir la edición. Si el
+     * usuario guarda sin tocar la fecha ni el periodo se reenvía el ANCLA, no la próxima renovación
+     * mostrada: así un cobro del día 31 (o del 29-feb) no pasa a ser del 30 para siempre.
+     */
+    private var anclaCargada: String? = null
+    private var fechaCargada: String? = null
+    private var periodoCargado: String? = null
+
     private val _categorias = MutableStateFlow<List<Category>>(emptyList())
     /** Categorías disponibles para el desplegable de categoría. */
     val categorias: StateFlow<List<Category>> = _categorias.asStateFlow()
@@ -103,8 +124,9 @@ class SuscripcionFormViewModel(
 
     /** Errores por campo, recalculados con cada cambio. Vacío cuando todo es válido. */
     val errores: StateFlow<Map<Campo, FormError>> = combine(
-        nombre, precio, fechaRenovacion, categoriaId
-    ) { n, p, f, c -> validarCampos(n, p, f, c) }
+        combine(nombre, precio, fechaRenovacion) { n, p, f -> Triple(n, p, f) },
+        combine(categoriaId, esPrueba, fechaFinPrueba) { c, e, fp -> Triple(c, e, fp) }
+    ) { (n, p, f), (c, e, fp) -> validarCampos(n, p, f, c, e, fp) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, validarCampos("", "", "", null))
 
     /** `true` cuando no hay errores de validación. El botón Guardar se habilita con esto. */
@@ -218,10 +240,17 @@ class SuscripcionFormViewModel(
     fun cargarParaEditar(suscripcion: Subscription) {
         nombre.value = suscripcion.nombre
         descripcion.value = suscripcion.descripcion
-        precio.value = suscripcion.precio.toString()
+        // "12" y no "12.0" (Double.toString), igual que al prerrellenar desde el catálogo.
+        precio.value = formatearPrecioParaCampo(suscripcion.precio)
         moneda.value = suscripcion.moneda
+        activa = suscripcion.activa
         periodoFacturacion.value = suscripcion.periodoFacturacion
-        fechaRenovacion.value = suscripcion.fechaRenovacion
+        // Próxima renovación calculada con el "hoy" del móvil desde el ancla (R3-02).
+        val proxima = proximaRenovacion(suscripcion, hoy())?.toString() ?: suscripcion.fechaRenovacion
+        fechaRenovacion.value = proxima
+        anclaCargada = suscripcion.fechaAncla?.trim()?.takeIf { it.isNotEmpty() }
+        fechaCargada = proxima
+        periodoCargado = suscripcion.periodoFacturacion
         categoriaId.value = suscripcion.categoriaId
         notas.value = suscripcion.notas
         esPrueba.value = suscripcion.esPrueba
@@ -245,8 +274,7 @@ class SuscripcionFormViewModel(
         val diasPrueba = item.diasPrueba
         if (diasPrueba != null) {
             esPrueba.value = true
-            val hoy = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-            fechaFinPrueba.value = (hoy + DatePeriod(days = diasPrueba)).toString()
+            fechaFinPrueba.value = (hoy() + DatePeriod(days = diasPrueba)).toString()
         }
     }
 
@@ -264,7 +292,10 @@ class SuscripcionFormViewModel(
     fun enviar(esEdicion: Boolean, id: Long? = null) {
         val precioDouble = parsearPrecio(precio.value)
 
-        validar(nombre.value, precio.value, fechaRenovacion.value, categoriaId.value)?.let { error ->
+        validar(
+            nombre.value, precio.value, fechaRenovacion.value, categoriaId.value,
+            esPrueba.value, fechaFinPrueba.value
+        )?.let { error ->
             _uiState.value = FormUiState.Error(error)
             return
         }
@@ -275,8 +306,9 @@ class SuscripcionFormViewModel(
             precio = precioDouble!!,
             moneda = moneda.value,
             periodoFacturacion = periodoFacturacion.value,
-            fechaRenovacion = fechaRenovacion.value,
+            fechaRenovacion = fechaAEnviar(esEdicion),
             categoriaId = categoriaId.value,
+            activa = if (esEdicion) activa else true,
             notas = notas.value.trim(),
             esPrueba = esPrueba.value,
             fechaFinPrueba = if (esPrueba.value) fechaFinPrueba.value else null
@@ -300,6 +332,14 @@ class SuscripcionFormViewModel(
     }
 
     fun resetState() { _uiState.value = FormUiState.Idle }
+
+    /** Fecha del PUT/POST: el ancla original si se edita sin tocar fecha ni periodo (R3-01). */
+    internal fun fechaAEnviar(esEdicion: Boolean): String {
+        val ancla = anclaCargada
+        return if (esEdicion && ancla != null &&
+            fechaRenovacion.value == fechaCargada && periodoFacturacion.value == periodoCargado
+        ) ancla else fechaRenovacion.value
+    }
 
     companion object {
         const val MAX_SUGERENCIAS = 8
@@ -332,12 +372,24 @@ class SuscripcionFormViewModel(
         }
 
         /** Validación por campo: devuelve un mapa con el error de cada campo inválido. */
-        fun validarCampos(nombre: String, precio: String, fechaRenovacion: String, categoriaId: Long?): Map<Campo, FormError> {
+        fun validarCampos(
+            nombre: String,
+            precio: String,
+            fechaRenovacion: String,
+            categoriaId: Long?,
+            esPrueba: Boolean = false,
+            fechaFinPrueba: String? = null
+        ): Map<Campo, FormError> {
             val errores = linkedMapOf<Campo, FormError>()
             if (nombre.isBlank()) errores[Campo.Nombre] = FormError.NombreVacio
             val precioDouble = parsearPrecio(precio)
-            if (precioDouble == null || precioDouble <= 0) errores[Campo.Precio] = FormError.PrecioInvalido
+            // 0 es válido (servicios gratuitos): la API acepta @PositiveOrZero desde la ronda 2.
+            if (precioDouble == null || precioDouble < 0) errores[Campo.Precio] = FormError.PrecioInvalido
             if (fechaRenovacion.isBlank()) errores[Campo.FechaRenovacion] = FormError.FechaRenovacionVacia
+            // Igual que la web: una prueba gratuita sin fecha de fin no se puede guardar. Sin ella
+            // la prueba no avisa de cuándo empieza a cobrarse (el backend usa la fecha de
+            // renovación como fin, pero el usuario no lo ve).
+            if (esPrueba && fechaFinPrueba.isNullOrBlank()) errores[Campo.FechaFinPrueba] = FormError.FechaFinPruebaVacia
             if (categoriaId == null || categoriaId == 0L) errores[Campo.Categoria] = FormError.CategoriaNoSeleccionada
             return errores
         }
@@ -346,8 +398,15 @@ class SuscripcionFormViewModel(
          * Validación pura del formulario. Devuelve el primer [FormError] encontrado
          * (en el orden visual de los campos) o `null` si todo es válido.
          */
-        fun validar(nombre: String, precio: String, fechaRenovacion: String, categoriaId: Long?): FormError? =
-            validarCampos(nombre, precio, fechaRenovacion, categoriaId).values.firstOrNull()
+        fun validar(
+            nombre: String,
+            precio: String,
+            fechaRenovacion: String,
+            categoriaId: Long?,
+            esPrueba: Boolean = false,
+            fechaFinPrueba: String? = null
+        ): FormError? =
+            validarCampos(nombre, precio, fechaRenovacion, categoriaId, esPrueba, fechaFinPrueba).values.firstOrNull()
 
         /** Traduce la excepción del repositorio al error tipado que entiende la UI. */
         fun mapearErrorGuardado(error: Throwable): FormError = when (error) {

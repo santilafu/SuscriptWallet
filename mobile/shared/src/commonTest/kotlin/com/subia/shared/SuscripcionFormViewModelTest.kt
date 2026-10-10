@@ -69,8 +69,10 @@ class SuscripcionFormViewModelTest {
     }
 
     @Test
-    fun validar_precioCero_devuelvePrecioInvalido() {
-        assertEquals(FormError.PrecioInvalido, SuscripcionFormViewModel.validar("Netflix", "0", "2026-11-01", 3L))
+    fun validar_precioCero_esValido_yNegativoNo() {
+        // La API acepta 0 (@PositiveOrZero) para servicios gratuitos.
+        assertNull(SuscripcionFormViewModel.validar("Netflix", "0", "2026-11-01", 3L))
+        assertEquals(FormError.PrecioInvalido, SuscripcionFormViewModel.validar("Netflix", "-1", "2026-11-01", 3L))
     }
 
     @Test
@@ -396,5 +398,25 @@ class SuscripcionFormViewModelTest {
         val resultado = SuscripcionFormViewModel.filtrarCatalogo("spoti", items, null)
         assertEquals(1, resultado.size)
         assertEquals("musica", resultado.first().categoriaKey)
+    }
+
+    // ── Prueba gratuita: fecha de fin obligatoria (igual que la web) ────────────────────
+
+    @Test
+    fun validar_pruebaSinFechaFin_devuelveFechaFinPruebaVacia() {
+        assertEquals(
+            FormError.FechaFinPruebaVacia,
+            SuscripcionFormViewModel.validar("Netflix", "9.99", "2026-11-01", 3L, esPrueba = true, fechaFinPrueba = null)
+        )
+        assertEquals(
+            FormError.FechaFinPruebaVacia,
+            SuscripcionFormViewModel.validar("Netflix", "9.99", "2026-11-01", 3L, esPrueba = true, fechaFinPrueba = " ")
+        )
+    }
+
+    @Test
+    fun validar_pruebaConFechaFin_oSinPrueba_esValido() {
+        assertNull(SuscripcionFormViewModel.validar("Netflix", "9.99", "2026-11-01", 3L, esPrueba = true, fechaFinPrueba = "2026-10-31"))
+        assertNull(SuscripcionFormViewModel.validar("Netflix", "9.99", "2026-11-01", 3L, esPrueba = false, fechaFinPrueba = null))
     }
 }

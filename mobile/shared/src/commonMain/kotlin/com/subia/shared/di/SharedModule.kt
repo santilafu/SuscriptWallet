@@ -44,7 +44,10 @@ fun sharedModule(apiBaseUrl: String, isDebug: Boolean = false) = module {
     viewModel { DashboardViewModel(get(), get(), get(), get()) }
     viewModel { SuscripcionesViewModel(get(), get(), get()) }
     viewModel { SuscripcionFormViewModel(get(), get(), get()) }
-    viewModel { CategoriasViewModel(get()) }
+    viewModel {
+        val auth = get<AuthRepository>()
+        CategoriasViewModel(get(), esAdmin = { auth.esAdmin() })
+    }
     viewModel { CatalogoViewModel(get(), get()) }
     viewModel { GmailScanViewModel(get()) }
 }

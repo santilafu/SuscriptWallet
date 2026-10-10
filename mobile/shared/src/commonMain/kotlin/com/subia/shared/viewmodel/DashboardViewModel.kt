@@ -8,6 +8,7 @@ import com.subia.shared.model.ProximaRenovacion
 import com.subia.shared.model.ProyeccionCobros
 import com.subia.shared.model.Subscription
 import com.subia.shared.model.calcularProyeccionCobros
+import com.subia.shared.model.gastoMensualEquivalente
 import com.subia.shared.network.SessionExpiredException
 import com.subia.shared.repository.CategoryRepository
 import com.subia.shared.repository.DashboardRepository
@@ -207,8 +208,14 @@ class DashboardViewModel(
         }
     }
 
-    /** Publica todos los cálculos derivados de la lista de suscripciones. */
-    private fun publicarDerivados(subs: List<Subscription>, nombreCatMap: Map<Long, String>) {
+    /**
+     * Publica todos los cálculos derivados de la lista de suscripciones. Solo cuentan las
+     * **activas**, igual que el backend (`findByUserIdAndActiveTrue`) y la proyección de cobros:
+     * antes una suscripción desactivada en la web seguía sumando al gasto mensual, al anual, al
+     * top y a las categorías, y el Inicio no cuadraba con "Suscripciones activas".
+     */
+    private fun publicarDerivados(todas: List<Subscription>, nombreCatMap: Map<Long, String>) {
+        val subs = todas.filter { it.activa }
         _totalesPorMoneda.value = calcularTotalesPorMoneda(subs)
         _totalesAnualesPorMoneda.value = calcularTotalesAnualesPorMoneda(subs)
         _gastosPorCategoria.value = calcularGastosPorCategoria(subs, nombreCatMap)
@@ -358,11 +365,6 @@ class DashboardViewModel(
             .sortedByDescending { it.gastoMensual }
             .take(5)
 
-    /** Equivalente mensual de una suscripción según su ciclo (anual /12, trimestral /3, semanal ×52/12). */
-    private fun gastoMensualNormalizado(sub: Subscription): Double = when (sub.periodoFacturacion.uppercase()) {
-        "YEARLY" -> sub.precio / 12.0
-        "QUARTERLY" -> sub.precio / 3.0
-        "WEEKLY" -> sub.precio * 52.0 / 12.0
-        else -> sub.precio
-    }
+    /** Equivalente mensual de una suscripción según su ciclo (ver [gastoMensualEquivalente]). */
+    private fun gastoMensualNormalizado(sub: Subscription): Double = sub.gastoMensualEquivalente()
 }

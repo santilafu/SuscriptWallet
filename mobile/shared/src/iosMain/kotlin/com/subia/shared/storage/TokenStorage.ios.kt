@@ -36,17 +36,20 @@ actual class TokenStorage actual constructor(context: PlatformContext) : TokenSt
     actual override fun saveTokens(tokens: AuthTokens) {
         saveToKeychain(KEY_ACCESS, tokens.accessToken)
         saveToKeychain(KEY_REFRESH, tokens.refreshToken)
+        val role = tokens.role
+        if (role != null) saveToKeychain(KEY_ROLE, role) else deleteFromKeychain(KEY_ROLE)
     }
 
     actual override fun getTokens(): AuthTokens? {
         val access = readFromKeychain(KEY_ACCESS) ?: return null
         val refresh = readFromKeychain(KEY_REFRESH) ?: return null
-        return AuthTokens(accessToken = access, refreshToken = refresh)
+        return AuthTokens(accessToken = access, refreshToken = refresh, role = readFromKeychain(KEY_ROLE))
     }
 
     actual override fun clearTokens() {
         deleteFromKeychain(KEY_ACCESS)
         deleteFromKeychain(KEY_REFRESH)
+        deleteFromKeychain(KEY_ROLE)
     }
 
     actual override fun hasTokens(): Boolean =
@@ -94,5 +97,6 @@ actual class TokenStorage actual constructor(context: PlatformContext) : TokenSt
     companion object {
         private const val KEY_ACCESS = "subia_access_token"
         private const val KEY_REFRESH = "subia_refresh_token"
+        private const val KEY_ROLE = "subia_user_role"
     }
 }

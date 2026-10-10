@@ -157,7 +157,10 @@
     <string name="create">Create</string>
 
     <!-- Catalog -->
-    <string name="services_available">%1$d services available</string>
+    <plurals name="services_available">
+        <item quantity="one">%1$d service available</item>
+        <item quantity="other">%1$d services available</item>
+    </plurals>
     <string name="services_available_loading">320+ services available</string>
     <string name="search_service">Search service…</string>
     <string name="all_categories">All</string>
@@ -220,7 +223,10 @@
     <!-- Shareable yearly summary -->
     <string name="resumen_anual_title">Your year in subscriptions</string>
     <string name="resumen_anual_total_label">Yearly spend</string>
-    <string name="resumen_anual_subs">%d active subscriptions</string>
+    <plurals name="resumen_anual_subs">
+        <item quantity="one">%d active subscription</item>
+        <item quantity="other">%d active subscriptions</item>
+    </plurals>
     <string name="resumen_anual_top_service">Your priciest service</string>
     <string name="resumen_anual_top_category">Where you spend most</string>
     <string name="resumen_anual_share">Share my summary</string>
@@ -258,15 +264,19 @@
     <!-- Login errors (AuthError mapping) -->
     <string name="auth_error_empty_credentials">Email and password are required</string>
     <string name="auth_error_bad_credentials">Incorrect email or password</string>
+    <string name="auth_error_account_locked">Account temporarily locked after too many failed attempts. Try again later</string>
+    <string name="auth_error_email_not_verified">Verify your email before signing in. Check your inbox</string>
+    <string name="auth_error_too_many_attempts">Too many attempts. Wait a minute and try again</string>
     <string name="auth_error_google_token_empty">No Google token was received</string>
     <string name="auth_error_google_not_verified">Your Google account could not be verified</string>
     <string name="auth_error_offline">No connection. Check your network and try again</string>
     <string name="auth_error_generic">Could not sign in. Please try again</string>
     <!-- Form errors (FormError mapping) -->
     <string name="form_error_name_required">The service name is required</string>
-    <string name="form_error_invalid_amount">Must be greater than 0</string>
+    <string name="form_error_invalid_amount">Enter a valid amount (0 or more)</string>
     <string name="form_error_renewal_date_required">The renewal date is required</string>
     <string name="form_error_category_required">Select a category</string>
+    <string name="form_error_trial_end_required">Enter when the free trial ends</string>
     <string name="form_error_offline">No connection. Changes can\'t be saved while offline</string>
     <string name="form_error_save_failed">The subscription could not be saved. Please try again</string>
     <!-- Gmail detection screen -->
@@ -376,6 +386,8 @@
     <string name="category_error_name_required">The category name is required</string>
     <string name="category_error_offline">No connection. Categories cannot be created offline</string>
     <string name="category_error_create_failed">Could not create the category. Please try again</string>
+    <string name="category_error_no_permission">Only an administrator can create categories. Pick one of the existing ones</string>
+    <string name="categories_admin_only_hint">Categories are shared by all users; only an administrator can create new ones.</string>
     <string name="google_error_unknown">Could not sign in with Google. Please try again</string>
     <string name="subscription_not_found_title">This subscription no longer exists</string>
     <string name="subscription_not_found_desc">It may have been deleted on another device or on the web.</string>

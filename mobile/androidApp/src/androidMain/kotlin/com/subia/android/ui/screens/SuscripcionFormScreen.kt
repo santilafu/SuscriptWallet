@@ -171,7 +171,11 @@ fun SuscripcionFormScreen(
 
     // ── Errores por campo: solo tras tocar el campo (no al abrir un formulario vacío) ────
     var tocados by remember { mutableStateOf(setOf<Campo>()) }
-    fun errorDe(campo: Campo): FormError? = errores[campo]?.takeIf { campo in tocados }
+    // La fecha de fin de prueba es la excepción: su campo solo aparece al activar la prueba (o al
+    // editar una prueba antigua sin fecha) y, si no se avisara ya, Guardar quedaría desactivado
+    // sin explicación.
+    fun errorDe(campo: Campo): FormError? =
+        errores[campo]?.takeIf { campo in tocados || campo == Campo.FechaFinPrueba }
     val errorGeneral = (uiState as? FormUiState.Error)?.error
         ?.takeIf { it == FormError.SinConexion || it == FormError.GuardadoFallido }
 
@@ -263,7 +267,7 @@ fun SuscripcionFormScreen(
                 ) {
                     OutlinedTextField(
                         value = nombre,
-                        onValueChange = { formViewModel.nombre.value = it; menuNombreAbierto = true },
+                        onValueChange = { formViewModel.nombre.value = it.take(MAX_NOMBRE); menuNombreAbierto = true },
                         label = { Text(stringResource(R.string.service_name_label)) },
                         leadingIcon = catalogoSeleccionado?.let { item ->
                             {
@@ -325,7 +329,7 @@ fun SuscripcionFormScreen(
 
                 OutlinedTextField(
                     value = descripcion,
-                    onValueChange = { formViewModel.descripcion.value = it },
+                    onValueChange = { formViewModel.descripcion.value = it.take(MAX_DESCRIPCION) },
                     label = { Text(stringResource(R.string.description_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !camposBloqueados,
@@ -490,6 +494,8 @@ fun SuscripcionFormScreen(
                         trailingIcon = {
                             Icon(Icons.Default.CalendarToday, contentDescription = stringResource(R.string.select_trial_end_date))
                         },
+                        isError = errorDe(Campo.FechaFinPrueba) != null,
+                        supportingText = textoDeError(errorDe(Campo.FechaFinPrueba)),
                         interactionSource = fuenteFechaFinPrueba,
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !camposBloqueados,
@@ -546,7 +552,7 @@ fun SuscripcionFormScreen(
 
                 OutlinedTextField(
                     value = notas,
-                    onValueChange = { formViewModel.notas.value = it },
+                    onValueChange = { formViewModel.notas.value = it.take(MAX_NOTAS) },
                     label = { Text(stringResource(R.string.notes_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !camposBloqueados,
@@ -637,6 +643,14 @@ private fun String.aMillisUtc(): Long? = runCatching {
     LocalDate.parse(this).atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()
 }.getOrNull()
 
+/**
+ * Longitudes máximas de la API (`SubscriptionRequestDto`, columnas de `subscriptions`): pasarse
+ * devuelve un 400 y el usuario solo veía "No se ha podido guardar".
+ */
+private const val MAX_NOMBRE = 100
+private const val MAX_DESCRIPCION = 500
+private const val MAX_NOTAS = 1000
+
 /** Milisegundos UTC del DatePicker → ISO sin desplazamiento de zona. */
 private fun Long.aFechaIso(): String =
     Instant.fromEpochMilliseconds(this).toLocalDateTime(TimeZone.UTC).date.toString()
@@ -699,6 +713,7 @@ private fun FormError.stringRes(): Int = when (this) {
     FormError.PrecioInvalido -> R.string.form_error_invalid_amount
     FormError.FechaRenovacionVacia -> R.string.form_error_renewal_date_required
     FormError.CategoriaNoSeleccionada -> R.string.form_error_category_required
+    FormError.FechaFinPruebaVacia -> R.string.form_error_trial_end_required
     FormError.SinConexion -> R.string.form_error_offline
     FormError.GuardadoFallido -> R.string.form_error_save_failed
 }

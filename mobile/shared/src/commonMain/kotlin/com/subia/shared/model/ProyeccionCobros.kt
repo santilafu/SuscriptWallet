@@ -101,7 +101,7 @@ private fun fechaCobro(ancla: LocalDate, ciclo: Ciclo, k: Int): LocalDate =
 
 /** Cobros de una suscripción en [hoy, fin], avanzando ciclos si la fecha de renovación es pasada. */
 internal fun ocurrencias(sub: Subscription, hoy: LocalDate, fin: LocalDate): List<LocalDate> {
-    val ancla = runCatching { LocalDate.parse(sub.fechaRenovacion.trim()) }.getOrNull() ?: return emptyList()
+    val ancla = anclaDe(sub) ?: return emptyList()
     val ciclo = cicloDe(sub.periodoFacturacion)
     // Estimación (por defecto) del primer ciclo >= hoy, para no iterar desde anclas muy antiguas.
     var k = if (ancla >= hoy) 0 else {
@@ -126,10 +126,19 @@ internal fun ocurrencias(sub: Subscription, hoy: LocalDate, fin: LocalDate): Lis
  * ("Renueva: 3 may" en octubre). Devuelve null si la fecha no es una ISO válida.
  */
 fun proximaRenovacion(sub: Subscription, hoy: LocalDate): LocalDate? {
-    val ancla = runCatching { LocalDate.parse(sub.fechaRenovacion.trim()) }.getOrNull() ?: return null
+    val ancla = anclaDe(sub) ?: return null
     if (ancla >= hoy) return ancla
     return ocurrencias(sub, hoy, hoy.plus(2, DateTimeUnit.YEAR)).firstOrNull() ?: ancla
 }
+
+/**
+ * Ancla desde la que se proyecta: la guardada en el servidor (`renewalAnchor`) si llega, para
+ * que el día 31 / 29-feb no se recorte y "hoy" sea el del MÓVIL, no el del servidor (R3-02);
+ * si no, `renewalDate` (backends anteriores). Si el ancla no parsea se usa `renewalDate`.
+ */
+private fun anclaDe(sub: Subscription): LocalDate? =
+    runCatching { LocalDate.parse(sub.anclaRenovacion.trim()) }.getOrNull()
+        ?: runCatching { LocalDate.parse(sub.fechaRenovacion.trim()) }.getOrNull()
 
 /**
  * Calcula la [ProyeccionCobros] de las suscripciones **activas** a partir de [hoy].

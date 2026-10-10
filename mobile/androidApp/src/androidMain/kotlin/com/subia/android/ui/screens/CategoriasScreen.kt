@@ -69,10 +69,14 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun CategoriasScreen(
     onBack: () -> Unit,
+    onSesionExpirada: () -> Unit = {},
     viewModel: CategoriasViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val crearState by viewModel.crearState.collectAsState()
+    // Las categorías son globales y solo un administrador puede crearlas (decisión de producto):
+    // al resto no se le ofrece el botón, que siempre acababa en el aviso de permisos (403).
+    val puedeCrear by viewModel.puedeCrear.collectAsState()
     var mostrarFormulario by remember { mutableStateOf(false) }
     var nombreNueva by remember { mutableStateOf("") }
     val crearDeshabilitado = uiState is CategoriasUiState.Offline
@@ -97,12 +101,14 @@ fun CategoriasScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { if (!crearDeshabilitado) mostrarFormulario = true },
-                containerColor = Violet600,
-                elevation = FloatingActionButtonDefaults.elevation(4.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.new_category), tint = Color.White)
+            if (puedeCrear) {
+                FloatingActionButton(
+                    onClick = { if (!crearDeshabilitado) mostrarFormulario = true },
+                    containerColor = Violet600,
+                    elevation = FloatingActionButtonDefaults.elevation(4.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.new_category), tint = Color.White)
+                }
             }
         }
     ) { innerPadding ->
@@ -111,11 +117,12 @@ fun CategoriasScreen(
                 CircularProgressIndicator()
             }
             is CategoriasUiState.Success -> CategoriasList(
-                state.categorias, Modifier.padding(innerPadding)
+                state.categorias, puedeCrear, Modifier.padding(innerPadding)
             )
             is CategoriasUiState.Offline -> Column(Modifier.padding(innerPadding)) {
-                BannerOffline(stringResource(R.string.offline_no_create))
-                CategoriasList(state.categorias, Modifier)
+                // "Sin conexión: no se pueden crear categorías" solo tiene sentido para quien puede.
+                if (puedeCrear) BannerOffline(stringResource(R.string.offline_no_create))
+                CategoriasList(state.categorias, puedeCrear, Modifier)
             }
             // Mismo componente de error que el resto de pantallas (C-02).
             is CategoriasUiState.Error -> ErrorState(
@@ -123,13 +130,21 @@ fun CategoriasScreen(
                 onRetry = { viewModel.cargarCategorias() },
                 modifier = Modifier.padding(innerPadding)
             )
-            is CategoriasUiState.SesionExpirada -> Unit
+            // Igual que Inicio y Suscripciones: sesión caducada → cierre de sesión y login.
+            is CategoriasUiState.SesionExpirada -> LaunchedEffect(Unit) { onSesionExpirada() }
         }
     }
 
-    if (mostrarFormulario) {
+    // Al cerrar el diálogo se olvida el error anterior: si no, reaparecía al volver a abrirlo.
+    val cerrarFormulario = {
+        mostrarFormulario = false
+        nombreNueva = ""
+        viewModel.resetCrearState()
+    }
+
+    if (mostrarFormulario && puedeCrear) {
         AlertDialog(
-            onDismissRequest = { mostrarFormulario = false },
+            onDismissRequest = cerrarFormulario,
             title = { Text(stringResource(R.string.new_category), fontWeight = FontWeight.Bold) },
             text = {
                 Column {
@@ -154,14 +169,14 @@ fun CategoriasScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { mostrarFormulario = false; nombreNueva = "" }) { Text(stringResource(R.string.cancel)) }
+                TextButton(onClick = cerrarFormulario) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
 }
 
 @Composable
-private fun CategoriasList(categorias: List<Category>, modifier: Modifier) {
+private fun CategoriasList(categorias: List<Category>, puedeCrear: Boolean, modifier: Modifier) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -174,6 +189,14 @@ private fun CategoriasList(categorias: List<Category>, modifier: Modifier) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            if (!puedeCrear) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.categories_admin_only_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             Spacer(Modifier.height(4.dp))
         }
         items(categorias) { cat ->

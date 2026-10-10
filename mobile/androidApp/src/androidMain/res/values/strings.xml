@@ -157,7 +157,10 @@
     <string name="create">Crear</string>
 
     <!-- Catalog -->
-    <string name="services_available">%1$d servicios disponibles</string>
+    <plurals name="services_available">
+        <item quantity="one">%1$d servicio disponible</item>
+        <item quantity="other">%1$d servicios disponibles</item>
+    </plurals>
     <string name="services_available_loading">320+ servicios disponibles</string>
     <string name="search_service">Buscar servicio…</string>
     <string name="all_categories">Todos</string>
@@ -220,7 +223,10 @@
     <!-- Resumen anual compartible -->
     <string name="resumen_anual_title">Tu año en suscripciones</string>
     <string name="resumen_anual_total_label">Gasto anual</string>
-    <string name="resumen_anual_subs">%d suscripciones activas</string>
+    <plurals name="resumen_anual_subs">
+        <item quantity="one">%d suscripción activa</item>
+        <item quantity="other">%d suscripciones activas</item>
+    </plurals>
     <string name="resumen_anual_top_service">Tu servicio más caro</string>
     <string name="resumen_anual_top_category">Donde más gastas</string>
     <string name="resumen_anual_share">Compartir mi resumen</string>
@@ -258,15 +264,19 @@
     <!-- Errores de login (mapeo de AuthError del ViewModel) -->
     <string name="auth_error_empty_credentials">El correo electrónico y la contraseña son obligatorios</string>
     <string name="auth_error_bad_credentials">Correo electrónico o contraseña incorrectos</string>
+    <string name="auth_error_account_locked">Cuenta bloqueada temporalmente por demasiados intentos fallidos. Inténtalo de nuevo más tarde</string>
+    <string name="auth_error_email_not_verified">Verifica tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada</string>
+    <string name="auth_error_too_many_attempts">Demasiados intentos. Espera un minuto y vuelve a probar</string>
     <string name="auth_error_google_token_empty">No se recibió el token de Google</string>
     <string name="auth_error_google_not_verified">No se pudo verificar la cuenta de Google</string>
     <string name="auth_error_offline">Sin conexión. Comprueba tu red e inténtalo de nuevo</string>
     <string name="auth_error_generic">No se pudo iniciar sesión. Inténtalo de nuevo</string>
     <!-- Errores del formulario (mapeo de FormError del ViewModel) -->
     <string name="form_error_name_required">El nombre del servicio es obligatorio</string>
-    <string name="form_error_invalid_amount">Debe ser mayor que 0</string>
+    <string name="form_error_invalid_amount">Introduce un importe válido (0 o más)</string>
     <string name="form_error_renewal_date_required">La fecha de renovación es obligatoria</string>
     <string name="form_error_category_required">Selecciona una categoría</string>
+    <string name="form_error_trial_end_required">Indica cuándo termina la prueba gratuita</string>
     <string name="form_error_offline">Sin conexión. No es posible guardar cambios sin conexión</string>
     <string name="form_error_save_failed">No se ha podido guardar la suscripción. Inténtalo de nuevo</string>
     <!-- Pantalla de detección por Gmail -->
@@ -376,6 +386,8 @@
     <string name="category_error_name_required">El nombre de la categoría es obligatorio</string>
     <string name="category_error_offline">Sin conexión. No es posible crear categorías sin conexión</string>
     <string name="category_error_create_failed">No se ha podido crear la categoría. Inténtalo de nuevo</string>
+    <string name="category_error_no_permission">Solo un administrador puede crear categorías. Elige una de las existentes</string>
+    <string name="categories_admin_only_hint">Las categorías son comunes a todos los usuarios; solo un administrador puede crear nuevas.</string>
     <string name="google_error_unknown">No se pudo iniciar sesión con Google. Inténtalo de nuevo</string>
     <string name="subscription_not_found_title">Esta suscripción ya no existe</string>
     <string name="subscription_not_found_desc">Puede que se haya eliminado desde otro dispositivo o desde la web.</string>

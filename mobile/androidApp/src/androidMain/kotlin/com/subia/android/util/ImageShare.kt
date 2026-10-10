@@ -9,9 +9,12 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
+import android.net.Uri
 import androidx.core.content.FileProvider
 import java.io.File
 import java.io.FileOutputStream
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /** Datos ya localizados para pintar la tarjeta del resumen anual. */
 data class ResumenCompartible(
@@ -31,13 +34,22 @@ data class ResumenCompartible(
  * nativo — robusto y sin depender de APIs de captura de Compose — y lanza el selector de
  * "Compartir" del sistema vía [FileProvider].
  */
-fun compartirResumenAnual(
+suspend fun compartirResumenAnual(
     context: Context,
     datos: ResumenCompartible,
     tituloSelector: String
 ) {
-    val bitmap = generarBitmap(datos)
-    compartirImagen(context, bitmap, "suscriptwallet_resumen.png", tituloSelector)
+    // Pintar 1080×1350 y comprimir a PNG cuesta decenas de ms: fuera del hilo principal para no
+    // congelar la pantalla al pulsar "Compartir". Solo el selector se lanza desde el principal.
+    val uri = withContext(Dispatchers.Default) {
+        val bitmap = generarBitmap(datos)
+        try {
+            withContext(Dispatchers.IO) { guardarPng(context, bitmap, "suscriptwallet_resumen.png") }
+        } finally {
+            bitmap.recycle()
+        }
+    }
+    lanzarSelectorCompartir(context, uri, tituloSelector)
 }
 
 private fun generarBitmap(d: ResumenCompartible): Bitmap {
@@ -108,22 +120,20 @@ private fun generarBitmap(d: ResumenCompartible): Bitmap {
 }
 
 /**
- * Guarda [bitmap] como PNG en la caché de la app y lanza el selector de "Compartir".
- * Usa el [FileProvider] del manifiesto (authority `${applicationId}.fileprovider`).
+ * Guarda [bitmap] como PNG en la caché de la app y devuelve su URI del [FileProvider] del
+ * manifiesto (authority `${applicationId}.fileprovider`). Hace E/S: no llamar en el hilo principal.
  */
-fun compartirImagen(
-    context: Context,
-    bitmap: Bitmap,
-    nombreArchivo: String = "suscriptwallet_resumen.png",
-    tituloSelector: String = "Compartir"
-) {
+private fun guardarPng(context: Context, bitmap: Bitmap, nombreArchivo: String): Uri {
     val imagesDir = File(context.cacheDir, "images").apply { mkdirs() }
     val file = File(imagesDir, nombreArchivo)
     FileOutputStream(file).use { out ->
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
     }
+    return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+}
 
-    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+/** Lanza el selector de "Compartir" del sistema con la imagen PNG de [uri]. */
+private fun lanzarSelectorCompartir(context: Context, uri: Uri, tituloSelector: String) {
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "image/png"
         putExtra(Intent.EXTRA_STREAM, uri)

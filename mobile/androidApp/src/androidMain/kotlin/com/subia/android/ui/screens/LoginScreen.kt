@@ -86,6 +86,14 @@ import com.subia.android.ui.theme.Violet400
 
 private const val WEB_BASE = "https://suscriptwallet.onrender.com"
 
+/**
+ * Abre una página de la web en el navegador. Sin navegador (perfiles de trabajo, móviles
+ * restringidos) startActivity lanza ActivityNotFoundException y cerraba la app.
+ */
+private fun abrirWeb(context: android.content.Context, url: String) {
+    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+}
+
 /** Pantalla de inicio de sesión con email y contraseña, diseño oscuro tipo web. */
 @OptIn(ExperimentalTextApi::class)
 @Composable
@@ -275,7 +283,7 @@ fun LoginScreen(
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                         TextButton(
                             onClick = {
-                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("$WEB_BASE/forgot-password")))
+                                abrirWeb(context, "$WEB_BASE/forgot-password")
                             },
                             contentPadding = PaddingValues(horizontal = 8.dp)
                         ) {
@@ -407,7 +415,7 @@ fun LoginScreen(
                         )
                         TextButton(
                             onClick = {
-                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("$WEB_BASE/register")))
+                                abrirWeb(context, "$WEB_BASE/register")
                             },
                             contentPadding = PaddingValues(horizontal = 4.dp)
                         ) {
@@ -432,6 +440,9 @@ fun LoginScreen(
 private fun authErrorText(error: AuthError): String = when (error) {
     AuthError.CredencialesVacias -> stringResource(R.string.auth_error_empty_credentials)
     AuthError.CredencialesIncorrectas -> stringResource(R.string.auth_error_bad_credentials)
+    AuthError.CuentaBloqueada -> stringResource(R.string.auth_error_account_locked)
+    AuthError.EmailNoVerificado -> stringResource(R.string.auth_error_email_not_verified)
+    AuthError.DemasiadosIntentos -> stringResource(R.string.auth_error_too_many_attempts)
     AuthError.TokenGoogleVacio -> stringResource(R.string.auth_error_google_token_empty)
     AuthError.GoogleNoVerificado -> stringResource(R.string.auth_error_google_not_verified)
     AuthError.SinConexion -> stringResource(R.string.auth_error_offline)

@@ -22,6 +22,7 @@ import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
@@ -34,6 +35,10 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
 
 /**
  * Cliente HTTP centralizado con inyección de token Bearer y refresco automático ante 401.
@@ -93,23 +98,27 @@ class ApiClient(
         path: String,
         body: B,
         authenticated: Boolean = true
-    ): Result<T> = if (authenticated) {
-        authenticatedRequest {
+    ): Result<T> {
+        if (authenticated) return authenticatedRequest {
             client.post(path) {
                 tokenStorage.getTokens()?.let { header(HttpHeaders.Authorization, "Bearer ${it.accessToken}") }
                 contentType(ContentType.Application.Json)
                 setBody(body)
             }
         }
-    } else {
-        runCatching {
-            val resp = client.post(path) {
+        // Sin token (login, Google). Antes no se miraba el código HTTP: un 401/403/429 se leía
+        // como cuerpo vacío ("Respuesta vacía") y el login mostraba el error genérico en lugar de
+        // "credenciales incorrectas" o "cuenta bloqueada"; y un corte de red no era NetworkException.
+        val resp = try {
+            client.post(path) {
                 contentType(ContentType.Application.Json)
                 setBody(body)
             }
-            if (resp.status == HttpStatusCode.NoContent) @Suppress("UNCHECKED_CAST") Unit as T
-            else resp.body<ApiResponse<T>>().data ?: error("Respuesta vacía del servidor")
+        } catch (e: Exception) {
+            relanzarSiCancelada(e)
+            return Result.failure(NetworkException(e.message ?: "Error de red"))
         }
+        return parseResponse(resp)
     }
 
     /** PUT autenticado con cuerpo. */
@@ -187,8 +196,15 @@ class ApiClient(
             return ResultadoRefresco.SinRed
         }
         if (!response.status.isSuccess()) {
-            tokenStorage.clearTokens()
-            return ResultadoRefresco.Rechazado
+            // Solo un rechazo explícito del refresh token cierra la sesión. Un 429 (el backend
+            // limita /api/auth/refresh a 10/min por IP, y con CGNAT muchos móviles comparten IP)
+            // o un 5xx (Render reiniciando, despliegue) no dicen nada de la sesión: antes borraban
+            // los tokens y echaban al usuario al login.
+            if (response.status.value in CODIGOS_REFRESCO_RECHAZADO) {
+                tokenStorage.clearTokens()
+                return ResultadoRefresco.Rechazado
+            }
+            return ResultadoRefresco.SinRed
         }
         val tokens = try {
             response.body<ApiResponse<AuthTokens>>().data
@@ -218,10 +234,41 @@ class ApiClient(
     @PublishedApi
     internal suspend inline fun <reified T> parseResponse(response: HttpResponse): Result<T> {
         if (!response.status.isSuccess())
-            return Result.failure(ApiException(response.status.value, response.status.description))
+            return Result.failure(excepcionDeError(response))
         if (response.status == HttpStatusCode.NoContent)
             @Suppress("UNCHECKED_CAST") return Result.success(Unit as T)
         return runCatching { response.body<ApiResponse<T>>().data ?: error("Respuesta vacía del servidor") }
+    }
+
+    /**
+     * [ApiException] con el código de error del cuerpo (`ACCOUNT_LOCKED`, `EMAIL_NOT_VERIFIED`,
+     * `RATE_LIMIT_EXCEEDED`...) si el servidor lo envía. Nunca falla: sin cuerpo legible, sin código.
+     */
+    @PublishedApi
+    internal suspend fun excepcionDeError(response: HttpResponse): ApiException {
+        val texto = try { response.bodyAsText() } catch (e: Exception) {
+            relanzarSiCancelada(e)
+            ""
+        }
+        return ApiException(response.status.value, response.status.description, codigoDeError(texto))
+    }
+
+    companion object {
+        /** Respuestas del refresh que significan "este refresh token ya no vale". */
+        internal val CODIGOS_REFRESCO_RECHAZADO = setOf(400, 401, 403)
+
+        private val jsonErrores = Json { ignoreUnknownKeys = true; isLenient = true }
+
+        /**
+         * Extrae el código de error de un cuerpo de la API: `{"error":{"code":"X"}}` (ApiResponse)
+         * o `{"code":"X"}` (el filtro de límite de peticiones de /api/auth). `null` si no hay.
+         */
+        fun codigoDeError(cuerpo: String): String? = runCatching {
+            val raiz = jsonErrores.parseToJsonElement(cuerpo).jsonObject
+            val error = raiz["error"]
+            val codigo = if (error is JsonObject) error["code"] else raiz["code"]
+            (codigo as? JsonPrimitive)?.contentOrNull?.takeIf { it.isNotBlank() }
+        }.getOrNull()
     }
 }
 
@@ -234,5 +281,9 @@ class SessionExpiredException : Exception("Sesión expirada. Por favor, inicia s
 /** Error de conectividad o timeout. */
 class NetworkException(message: String) : Exception(message)
 
-/** El servidor devolvió un código de error HTTP. */
-class ApiException(val statusCode: Int, message: String) : Exception("Error $statusCode: $message")
+/**
+ * El servidor devolvió un código de error HTTP. [codigo] es el código de negocio del cuerpo
+ * (`ACCOUNT_LOCKED`, `EMAIL_NOT_VERIFIED`, `FORBIDDEN`, `RATE_LIMIT_EXCEEDED`...) si lo hay.
+ */
+class ApiException(val statusCode: Int, message: String, val codigo: String? = null) :
+    Exception("Error $statusCode: $message")

@@ -25,12 +25,17 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -46,6 +51,8 @@ import com.subia.android.util.ResumenCompartible
 import com.subia.android.util.compartirResumenAnual
 import com.subia.shared.viewmodel.DashboardViewModel
 import com.subia.shared.viewmodel.resumenDisponible
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -82,29 +89,45 @@ fun ResumenAnualScreen(
     val context = LocalContext.current
     val titulo = stringResource(R.string.resumen_anual_title)
     val totalLabel = stringResource(R.string.resumen_anual_total_label)
-    val subsTexto = stringResource(R.string.resumen_anual_subs, numSubs)
+    val subsTexto = pluralStringResource(R.plurals.resumen_anual_subs, numSubs, numSubs)
     val servicioLabel = stringResource(R.string.resumen_anual_top_service)
     val categoriaLabel = stringResource(R.string.resumen_anual_top_category)
     val marca = stringResource(R.string.resumen_anual_brand)
     val tituloSelector = stringResource(R.string.resumen_anual_share)
 
     // Una sola acción de compartir, reutilizada por el icono de la TopAppBar y el botón del cuerpo.
-    val compartir: () -> Unit = {
-        compartirResumenAnual(
-            context = context,
-            datos = ResumenCompartible(
-                titulo = titulo,
-                totalLabel = totalLabel,
-                totalValor = totalValor,
-                subsTexto = subsTexto,
-                servicioLabel = servicioLabel,
-                servicioValor = servicioTop,
-                categoriaLabel = categoriaLabel,
-                categoriaValor = categoriaTop,
-                marca = marca
-            ),
-            tituloSelector = tituloSelector
-        )
+    // La imagen se genera en segundo plano (ver compartirResumenAnual); un segundo toque mientras
+    // tanto se ignora para no abrir dos selectores.
+    val ambito = rememberCoroutineScope()
+    var compartiendo by remember { mutableStateOf(false) }
+    val compartir: () -> Unit = compartir@{
+        if (compartiendo) return@compartir
+        compartiendo = true
+        ambito.launch {
+            try {
+                compartirResumenAnual(
+                    context = context,
+                    datos = ResumenCompartible(
+                        titulo = titulo,
+                        totalLabel = totalLabel,
+                        totalValor = totalValor,
+                        subsTexto = subsTexto,
+                        servicioLabel = servicioLabel,
+                        servicioValor = servicioTop,
+                        categoriaLabel = categoriaLabel,
+                        categoriaValor = categoriaTop,
+                        marca = marca
+                    ),
+                    tituloSelector = tituloSelector
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // Sin espacio en caché o sin app con la que compartir: no debe cerrar la app.
+            } finally {
+                compartiendo = false
+            }
+        }
     }
 
     Scaffold(
