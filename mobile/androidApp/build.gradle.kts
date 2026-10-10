@@ -1,3 +1,7 @@
+import com.android.build.api.artifact.MultipleArtifact
+import com.android.build.api.artifact.SingleArtifact
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.Properties
 
 plugins {
@@ -25,13 +29,16 @@ val keyPass: String = localProps.getProperty("KEY_PASSWORD", "")
 android {
     namespace = "com.subia.android"
     compileSdk = libs.versions.compileSdk.get().toInt()
+    // NDK instalado en el SDK. Sin fijarlo, AGP 8.13 busca su versión por defecto (27.0.12077973),
+    // que no está, y no puede ni hacer strip de las .so ni extraer sus símbolos.
+    ndkVersion = "28.2.13676358"
 
     defaultConfig {
         applicationId = "com.subia.android"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 33
-        versionName = "2.17.5"
+        versionCode = 34
+        versionName = "2.17.6"
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
         buildConfigField("String", "SUBIA_GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
         buildConfigField("boolean", "DEMO", demo.toString())
@@ -61,8 +68,11 @@ android {
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("release")
+            // Símbolos nativos dentro del AAB (BUNDLE-METADATA/com.android.tools.build.debugsymbols)
+            // para que Play no avise de que faltan. SYMBOL_TABLE y no FULL: la única .so de la app
+            // viene ya sin DWARF, así que solo hay tabla de símbolos que aportar (ver más abajo).
             ndk {
-                debugSymbolLevel = "FULL"
+                debugSymbolLevel = "SYMBOL_TABLE"
             }
         }
     }
@@ -82,6 +92,69 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+/**
+ * Tabla de símbolos de las .so que llegan ya "stripped" desde las dependencias.
+ *
+ * AGP solo extrae símbolos de una .so si el strip la encoge; si ya viene sin `.symtab` ni
+ * `.debug_*` la descarta ("the native debug metadata has already been stripped") y el AAB
+ * sale sin símbolos aunque `debugSymbolLevel` esté puesto. Es lo que pasa con la única .so de
+ * la app, libandroidx.graphics.path.so (androidx.graphics:graphics-path, vía Compose), y por
+ * eso Play avisaba. Para esas .so la tabla de símbolos es la propia .so (solo le queda
+ * `.dynsym`), que es lo mismo que daría `objcopy --strip-debug`: se publica como
+ * `<abi>/<lib>.so.sym` en el artefacto que AGP mete en el AAB y en native-debug-symbols.zip.
+ * Las .so que sí traen símbolos se dejan a AGP, para no duplicar entradas.
+ */
+abstract class TablaSimbolosSoPrecompiladasTask : DefaultTask() {
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val librerias: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val salida: DirectoryProperty
+
+    @TaskAction
+    fun generar() {
+        val destino = salida.get().asFile
+        destino.deleteRecursively()
+        destino.mkdirs()
+        librerias.get().asFile.walkTopDown()
+            .filter { it.isFile && it.name.endsWith(".so") && !traeSimbolos(it) }
+            .forEach { so -> so.copyTo(File(destino, "${so.parentFile.name}/${so.name}.sym")) }
+    }
+
+    /** true si el ELF tiene `.symtab` o `.debug_*` (entonces AGP sí extrae sus símbolos). */
+    private fun traeSimbolos(so: File): Boolean {
+        val b = ByteBuffer.wrap(so.readBytes())
+        if (b.limit() < 0x40 || b.getInt(0) != 0x7F454C46) return true // no es ELF: que decida AGP
+        val es64 = b.get(4).toInt() == 2
+        b.order(if (b.get(5).toInt() == 1) ByteOrder.LITTLE_ENDIAN else ByteOrder.BIG_ENDIAN)
+        val inicioSecciones = if (es64) b.getLong(0x28).toInt() else b.getInt(0x20)
+        val tamSeccion = b.getShort(if (es64) 0x3A else 0x2E).toInt() and 0xFFFF
+        val numSecciones = b.getShort(if (es64) 0x3C else 0x30).toInt() and 0xFFFF
+        val indiceNombres = b.getShort(if (es64) 0x3E else 0x32).toInt() and 0xFFFF
+        val cabeceraNombres = inicioSecciones + indiceNombres * tamSeccion
+        val tablaNombres = if (es64) b.getLong(cabeceraNombres + 0x18).toInt() else b.getInt(cabeceraNombres + 0x10)
+        return (0 until numSecciones).any { i ->
+            var p = tablaNombres + b.getInt(inicioSecciones + i * tamSeccion)
+            val nombre = StringBuilder()
+            while (b.get(p).toInt() != 0) nombre.append(b.get(p++).toInt().toChar())
+            nombre.toString().let { it == ".symtab" || it.startsWith(".debug") || it.startsWith(".zdebug") }
+        }
+    }
+}
+
+androidComponents {
+    onVariants(selector().withBuildType("release")) { variant ->
+        val nombreVariante = variant.name.replaceFirstChar { it.uppercase() }
+        val tarea = tasks.register<TablaSimbolosSoPrecompiladasTask>("tablaSimbolosSoPrecompiladas$nombreVariante") {
+            librerias.set(variant.artifacts.get(SingleArtifact.MERGED_NATIVE_LIBS))
+        }
+        variant.artifacts.use(tarea)
+            .wiredWith(TablaSimbolosSoPrecompiladasTask::salida)
+            .toAppendTo(MultipleArtifact.NATIVE_SYMBOL_TABLES)
     }
 }
 
