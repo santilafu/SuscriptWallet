@@ -37,8 +37,8 @@ android {
         applicationId = "com.subia.android"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 34
-        versionName = "2.17.6"
+        versionCode = 35
+        versionName = "2.17.7"
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
         buildConfigField("String", "SUBIA_GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
         buildConfigField("boolean", "DEMO", demo.toString())
