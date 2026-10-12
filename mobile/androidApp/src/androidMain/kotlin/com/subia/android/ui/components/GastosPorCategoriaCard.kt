@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -31,6 +32,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -159,12 +161,17 @@ private fun FilaCategoria(nombre: String, gasto: GastoCategoria, fraccion: Float
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(Modifier.width(6.dp))
+            // Ancho mínimo (no fijo) para que la columna quede alineada: con la fuente del sistema
+            // ampliada, "37 %" no cabía en 36 dp y se partía en dos líneas ("37" / "%").
             Text(
                 text = "${gasto.porcentaje} %",
                 style = MaterialTheme.typography.labelMedium.tabular,
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.width(36.dp)
+                textAlign = TextAlign.End,
+                maxLines = 1,
+                softWrap = false,
+                modifier = Modifier.widthIn(min = 36.dp)
             )
         }
         Spacer(Modifier.height(6.dp))

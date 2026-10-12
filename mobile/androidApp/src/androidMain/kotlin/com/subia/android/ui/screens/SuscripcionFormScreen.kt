@@ -18,9 +18,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -67,11 +69,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -79,6 +86,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.toSize
 import androidx.navigation.NavController
 import com.subia.android.ui.conRecorteLateral
 import com.subia.android.R
@@ -263,8 +271,22 @@ fun SuscripcionFormScreen(
                 // ── Información del servicio ────────────────────────────────────────
                 SeccionFormulario(stringResource(R.string.service_info_section), primera = true)
 
-                // Nombre con autocompletado: desplegable solo mientras hay sugerencias.
-                val mostrarSugerencias = menuNombreAbierto && sugerencias.isNotEmpty()
+                // Nombre con autocompletado: desplegable solo mientras hay sugerencias y cabe
+                // al menos una. Material limita la altura del menú al hueco libre (ventana visible
+                // menos 48 dp de margen) por encima o por debajo del campo; en horizontal con el
+                // teclado abierto ese hueco es de unos 15 dp y el menú salía como una franja vacía.
+                val density = LocalDensity.current
+                val view = LocalView.current
+                var limitesNombre by remember { mutableStateOf<Rect?>(null) }
+                val alturaTeclado = WindowInsets.ime.getBottom(density) // recompone al abrir/cerrar el teclado
+                val cabeUnaSugerencia = remember(limitesNombre, alturaTeclado) {
+                    val campo = limitesNombre ?: return@remember true
+                    val ventana = android.graphics.Rect().also { view.rootView.getWindowVisibleDisplayFrame(it) }
+                    val margen = with(density) { MARGEN_MENU.toPx() }
+                    val hueco = maxOf(campo.top - (ventana.top + margen), (ventana.bottom - margen) - campo.bottom)
+                    hueco >= with(density) { ALTO_MINIMO_MENU.toPx() }
+                }
+                val mostrarSugerencias = menuNombreAbierto && sugerencias.isNotEmpty() && cabeUnaSugerencia
                 var nombreTuvoFoco by remember { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
                     expanded = mostrarSugerencias,
@@ -295,6 +317,7 @@ fun SuscripcionFormScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .menuAnchor(MenuAnchorType.PrimaryEditable, !camposBloqueados)
+                            .onGloballyPositioned { limitesNombre = Rect(it.positionInWindow(), it.size.toSize()) }
                             .onFocusChanged {
                                 if (it.isFocused) nombreTuvoFoco = true
                                 else if (nombreTuvoFoco) tocados = tocados + Campo.Nombre
@@ -655,6 +678,11 @@ private fun String.aMillisUtc(): Long? = runCatching {
 private const val MAX_NOMBRE = 100
 private const val MAX_DESCRIPCION = 500
 private const val MAX_NOTAS = 1000
+
+/** Margen vertical que Material deja entre el menú y el borde de la ventana (MenuVerticalMargin). */
+private val MARGEN_MENU = 48.dp
+/** Una fila de sugerencia (48 dp) más el relleno vertical del menú (8 dp arriba y abajo). */
+private val ALTO_MINIMO_MENU = 64.dp
 
 /** Milisegundos UTC del DatePicker → ISO sin desplazamiento de zona. */
 private fun Long.aFechaIso(): String =
