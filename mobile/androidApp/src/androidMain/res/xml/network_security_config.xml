@@ -3,7 +3,10 @@
     Configuración de red de producción: solo HTTPS.
     El tráfico en claro (http://10.0.2.2:8081 del emulador) se habilita únicamente en
     builds de depuración mediante el fichero homónimo de src/androidDebug/res/xml,
-    que sustituye a este en esa variante.
+    que sustituye a este en esa variante, y en la demo release (-Psubia.demo=true) mediante
+    el de src/androidDemo/res/xml, limitado al host 10.0.2.2.
+    El motor HTTP de Ktor en Android es `Android` (HttpURLConnection), que sí aplica esta
+    política; CIO la ignoraba.
 -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="false">

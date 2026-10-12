@@ -93,6 +93,13 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    // La demo habla con el backend local en claro (http://10.0.2.2:8081). El motor HTTP respeta la
+    // NetworkSecurityPolicy, y la release de producción la prohíbe, así que solo la demo recibe una
+    // network_security_config.xml que permite cleartext hacia 10.0.2.2 (y nada más). El directorio
+    // se añade al source set release únicamente con -Psubia.demo=true: en la release normal no existe.
+    if (demo) {
+        sourceSets.getByName("release").res.srcDir("src/androidDemo/res")
+    }
 }
 
 /**

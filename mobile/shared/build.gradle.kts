@@ -48,7 +48,7 @@ kotlin {
             implementation(libs.multiplatform.settings.coroutines)
         }
         androidMain.dependencies {
-            implementation(libs.ktor.client.cio)
+            implementation(libs.ktor.client.android)
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.androidx.security.crypto)
             implementation(libs.koin.android)

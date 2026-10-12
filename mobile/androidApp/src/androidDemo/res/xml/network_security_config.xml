@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Configuración de red SOLO para la variante demo en release (-Psubia.demo=true, capturas de
+    Play): este directorio (src/androidDemo/res) se añade al source set release únicamente cuando
+    demo == true (ver androidApp/build.gradle.kts), por lo que no existe en la release de producción.
+    Permite HTTP en claro solo hacia el backend local del emulador (10.0.2.2); cualquier otro host
+    sigue exigiendo HTTPS.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>
