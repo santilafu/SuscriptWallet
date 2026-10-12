@@ -13,6 +13,9 @@ val localProps = Properties().apply {
 val apiBaseUrl: String = localProps.getProperty("API_BASE_URL", "http://10.0.2.2:8081")
 
 kotlin {
+    // Silencia el aviso "expect/actual classes are in Beta" (KT-61573) de PlatformContext y TokenStorage.
+    compilerOptions { freeCompilerArgs.add("-Xexpect-actual-classes") }
+
     androidTarget {
         compilations.all {
             kotlinOptions { jvmTarget = "17" }
