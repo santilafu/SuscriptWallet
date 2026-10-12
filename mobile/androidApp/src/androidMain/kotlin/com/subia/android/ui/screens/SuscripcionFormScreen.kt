@@ -49,10 +49,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -78,6 +80,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.subia.android.ui.conRecorteLateral
 import com.subia.android.R
 import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.components.formatearImporte
@@ -226,8 +229,10 @@ fun SuscripcionFormScreen(
     )
 
     Scaffold(
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets.conRecorteLateral(),
         topBar = {
             TopAppBar(
+                windowInsets = TopAppBarDefaults.windowInsets.conRecorteLateral(),
                 title = { Text(stringResource(if (esEdicion) R.string.edit_subscription else R.string.new_subscription)) },
                 navigationIcon = {
                     IconButton(onClick = intentarSalir) {

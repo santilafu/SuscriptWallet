@@ -20,6 +20,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
@@ -180,10 +181,11 @@ fun SubIAApp(
         // Sin las barras del shell (login, onboarding, formularios…) cada pantalla gestiona sus
         // propios insets: si el Scaffold raíz también los aplicase, su fondo asomaría tras la
         // barra de estado y las pantallas con TopAppBar propia tendrían el hueco duplicado.
-        contentWindowInsets = if (seccionActual != null) ScaffoldDefaults.contentWindowInsets else WindowInsets(0),
+        contentWindowInsets = if (seccionActual != null) ScaffoldDefaults.contentWindowInsets.conRecorteLateral() else WindowInsets(0),
         topBar = {
             if (seccionActual != null) {
                 TopAppBar(
+                    windowInsets = TopAppBarDefaults.windowInsets.conRecorteLateral(),
                     title = {
                         // La TopAppBar dice dónde estás; la marca solo vive en Login y en la
                         // tarjeta compartible del resumen anual.
@@ -209,6 +211,7 @@ fun SubIAApp(
         bottomBar = {
             if (seccionActual != null) {
                 NavigationBar(
+                    windowInsets = NavigationBarDefaults.windowInsets.conRecorteLateral(),
                     containerColor = MaterialTheme.colorScheme.surface,
                     tonalElevation = 3.dp
                 ) {

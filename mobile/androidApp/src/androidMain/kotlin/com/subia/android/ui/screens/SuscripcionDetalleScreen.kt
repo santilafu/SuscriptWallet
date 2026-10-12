@@ -2,6 +2,7 @@ package com.subia.android.ui.screens
 
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
+import com.subia.android.ui.conRecorteLateral
 import com.subia.android.util.fechaIsoLegible
 import com.subia.android.util.proximaRenovacionIso
 import com.subia.android.ui.components.EmptyState
@@ -40,11 +41,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -137,8 +140,10 @@ fun SuscripcionDetalleScreen(
     }
 
     Scaffold(
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets.conRecorteLateral(),
         topBar = {
             TopAppBar(
+                windowInsets = TopAppBarDefaults.windowInsets.conRecorteLateral(),
                 title = { Text(stringResource(R.string.detail)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
