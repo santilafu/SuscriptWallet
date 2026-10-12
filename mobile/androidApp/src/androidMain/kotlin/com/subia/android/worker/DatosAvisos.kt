@@ -1,6 +1,7 @@
 package com.subia.android.worker
 
 import android.content.Context
+import androidx.core.content.edit
 import com.subia.shared.model.Subscription
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -67,10 +68,10 @@ internal object RegistroAvisos {
     /** `commit` (síncrono): el worker puede terminar y el proceso morir justo después. */
     fun guardar(context: Context, claves: Set<String>) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putStringSet(KEY_AVISADOS, HashSet(claves)).commit()
+            .edit(commit = true) { putStringSet(KEY_AVISADOS, HashSet(claves)) }
     }
 
     fun borrar(context: Context) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().clear().commit()
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit(commit = true) { clear() }
     }
 }

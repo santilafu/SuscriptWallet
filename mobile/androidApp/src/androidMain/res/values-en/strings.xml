@@ -30,17 +30,13 @@
     <string name="monthly">Monthly</string>
     <string name="yearly">Yearly</string>
     <string name="weekly">Weekly</string>
-    <string name="monthly_currency">Monthly (%1$s)</string>
-    <string name="yearly_currency">Yearly (%1$s)</string>
     <string name="active_subscriptions">Active subscriptions</string>
     <string name="view_subscriptions">View subscriptions</string>
-    <string name="upcoming_renewals">Upcoming renewals</string>
     <string name="no_upcoming_renewals">No upcoming renewals</string>
     <string name="hero_monthly_label">Monthly spend</string>
     <string name="hero_per_year">%1$s per year</string>
     <string name="this_month">This month</string>
     <string name="tira_title">Next 14 days</string>
-    <string name="tira_next_charge">Next charge</string>
     <string name="tira_no_charge">no charges</string>
     <string name="tira_open_sub">Open %1$s</string>
     <string name="tira_empty">No charges in the next two weeks</string>
@@ -67,8 +63,6 @@
 
     <!-- Subscriptions list -->
     <string name="add">Add</string>
-    <string name="no_subscriptions">No subscriptions</string>
-    <string name="tap_to_add_first">Tap + to add your first one</string>
     <string name="all_filter">All</string>
     <string name="no_subscriptions_in_category">No subscriptions in this category</string>
     <string name="renews_on">Renews: %1$s</string>
@@ -82,20 +76,10 @@
     <!-- Subscription form -->
     <string name="edit_subscription">Edit subscription</string>
     <string name="new_subscription">New subscription</string>
-    <string name="choose_from_catalog">Choose from catalog</string>
-    <string name="auto_fill_fields">Auto-fill fields</string>
-    <string name="collapse">Collapse</string>
-    <string name="expand">Expand</string>
-    <string name="category">Category</string>
     <string name="select_category">Select a category</string>
-    <string name="loading_services">Loading services…</string>
-    <string name="service">Service</string>
-    <string name="select_category_first">Choose a category first</string>
-    <string name="select_service">Select a service</string>
     <string name="period_year">year</string>
     <string name="period_week">wk</string>
     <string name="period_month">mo</string>
-    <string name="apply_selection">Apply selection</string>
     <string name="service_info_section">Service information</string>
     <string name="service_name_label">Service name *</string>
     <string name="description_label">Description</string>
@@ -212,14 +196,12 @@
         <item quantity="one">%d subscription</item>
         <item quantity="other">%d subscriptions</item>
     </plurals>
-    <string name="monthly_label">monthly</string>
     <!-- Appearance / Material You -->
     <string name="appearance">Appearance</string>
     <string name="dynamic_color">Dynamic color (Material You)</string>
     <string name="dynamic_color_desc">Adapt the app colors to your wallpaper.</string>
     <!-- Error and empty states -->
     <string name="error_title">Something went wrong</string>
-    <string name="add_first_subscription">Add my first subscription</string>
     <!-- Shareable yearly summary -->
     <string name="resumen_anual_title">Your year in subscriptions</string>
     <string name="resumen_anual_total_label">Yearly spend</string>
@@ -372,7 +354,6 @@
     <string name="view_tutorial_desc">Go over the basics in three screens</string>
     <string name="password_show">Show password</string>
     <string name="password_hide">Hide password</string>
-    <string name="tomorrow">tomorrow</string>
 
     <!-- Errores al hablar con el servidor (ViewModels de shared con ErrorRemoto) -->
     <string name="error_offline">No connection. Check your network and try again</string>

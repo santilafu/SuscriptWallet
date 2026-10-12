@@ -5,6 +5,7 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.LocaleList
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.edit
 
 /**
  * Idioma elegido en Ajustes para el código que corre fuera de una Activity (worker de avisos,
@@ -24,7 +25,7 @@ object IdiomaApp {
     /** Guarda el idioma elegido ("" = el del sistema). Llamar al cambiarlo en Ajustes. */
     fun guardar(context: Context, tag: String) {
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putString(KEY_TAG, tag).apply()
+            .edit { putString(KEY_TAG, tag) }
     }
 
     /**

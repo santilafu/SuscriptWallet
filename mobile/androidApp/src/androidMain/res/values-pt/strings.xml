@@ -33,17 +33,13 @@
     <string name="monthly">Mensal</string>
     <string name="yearly">Anual</string>
     <string name="weekly">Semanal</string>
-    <string name="monthly_currency">Mensal (%1$s)</string>
-    <string name="yearly_currency">Anual (%1$s)</string>
     <string name="active_subscriptions">Assinaturas ativas</string>
     <string name="view_subscriptions">Ver assinaturas</string>
-    <string name="upcoming_renewals">Próximas renovações</string>
     <string name="no_upcoming_renewals">Não tem renovações próximas</string>
     <string name="hero_monthly_label">Gasto mensal</string>
     <string name="hero_per_year">%1$s por ano</string>
     <string name="this_month">Este mês</string>
     <string name="tira_title">Próximos 14 dias</string>
-    <string name="tira_next_charge">Próxima cobrança</string>
     <string name="tira_no_charge">sem cobranças</string>
     <string name="tira_open_sub">Abrir %1$s</string>
     <string name="tira_empty">Nenhuma cobrança nestas duas semanas</string>
@@ -72,8 +68,6 @@
 
     <!-- Subscriptions list -->
     <string name="add">Adicionar</string>
-    <string name="no_subscriptions">Sem assinaturas</string>
-    <string name="tap_to_add_first">Toque em + para adicionar a primeira</string>
     <string name="all_filter">Todas</string>
     <string name="no_subscriptions_in_category">Não há assinaturas nesta categoria</string>
     <string name="renews_on">Renova: %1$s</string>
@@ -88,20 +82,10 @@
     <!-- Subscription form -->
     <string name="edit_subscription">Editar assinatura</string>
     <string name="new_subscription">Nova assinatura</string>
-    <string name="choose_from_catalog">Escolher do catálogo</string>
-    <string name="auto_fill_fields">Preenche os campos automaticamente</string>
-    <string name="collapse">Recolher</string>
-    <string name="expand">Expandir</string>
-    <string name="category">Categoria</string>
     <string name="select_category">Selecione uma categoria</string>
-    <string name="loading_services">A carregar serviços…</string>
-    <string name="service">Serviço</string>
-    <string name="select_category_first">Escolha primeiro uma categoria</string>
-    <string name="select_service">Selecione um serviço</string>
     <string name="period_year">ano</string>
     <string name="period_week">sem.</string>
     <string name="period_month">mês</string>
-    <string name="apply_selection">Aplicar seleção</string>
     <string name="service_info_section">Informação do serviço</string>
     <string name="service_name_label">Nome do serviço *</string>
     <string name="description_label">Descrição</string>
@@ -220,14 +204,12 @@
         <item quantity="many">%d assinaturas</item>
         <item quantity="other">%d assinaturas</item>
     </plurals>
-    <string name="monthly_label">mensal</string>
     <!-- Aparência / Material You -->
     <string name="appearance">Aparência</string>
     <string name="dynamic_color">Cor dinâmica (Material You)</string>
     <string name="dynamic_color_desc">Adapta as cores da app ao seu papel de parede.</string>
     <!-- Estados de erro e vazio -->
     <string name="error_title">Ocorreu um erro</string>
-    <string name="add_first_subscription">Adicionar a minha primeira assinatura</string>
     <!-- Resumo anual partilhável -->
     <string name="resumen_anual_title">O seu ano em assinaturas</string>
     <string name="resumen_anual_total_label">Gasto anual</string>
@@ -388,7 +370,6 @@
     <string name="view_tutorial_desc">Reveja o essencial em três passos</string>
     <string name="password_show">Mostrar senha</string>
     <string name="password_hide">Ocultar senha</string>
-    <string name="tomorrow">amanhã</string>
 
     <!-- Errores al hablar con el servidor (ViewModels de shared con ErrorRemoto) -->
     <string name="error_offline">Sem conexão. Verifique a sua rede e tente novamente</string>

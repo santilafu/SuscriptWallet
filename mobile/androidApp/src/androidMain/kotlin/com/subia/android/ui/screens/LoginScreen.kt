@@ -2,7 +2,6 @@ package com.subia.android.ui.screens
 
 import android.app.Activity
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -70,6 +69,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import com.subia.android.R
 import com.subia.android.auth.GoogleSignInHelper
 import com.subia.android.auth.GoogleSignInResult
@@ -91,7 +91,7 @@ private const val WEB_BASE = "https://suscriptwallet.onrender.com"
  * restringidos) startActivity lanza ActivityNotFoundException y cerraba la app.
  */
 private fun abrirWeb(context: android.content.Context, url: String) {
-    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri())) }
 }
 
 /** Pantalla de inicio de sesión con email y contraseña, diseño oscuro tipo web. */

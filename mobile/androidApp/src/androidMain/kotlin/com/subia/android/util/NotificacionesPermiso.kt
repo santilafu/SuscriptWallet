@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.edit
 import androidx.core.content.ContextCompat
 import com.subia.android.worker.NotificadorAvisos
 
@@ -50,7 +51,7 @@ object NotificacionesPermiso {
 
     fun marcarPedidoAlGuardar(context: Context) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putBoolean(KEY_PEDIDO_AL_GUARDAR, true).apply()
+            .edit { putBoolean(KEY_PEDIDO_AL_GUARDAR, true) }
     }
 
     /** Abre los ajustes de notificaciones de la app en el sistema (para permisos denegados). */
@@ -63,12 +64,10 @@ object NotificacionesPermiso {
             Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
                 .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
                 .putExtra(Settings.EXTRA_CHANNEL_ID, NotificadorAvisos.CHANNEL_ID)
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        } else {
+            // minSdk 26: ACTION_APP_NOTIFICATION_SETTINGS existe siempre.
             Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
                 .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-        } else {
-            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                .setData(android.net.Uri.fromParts("package", context.packageName, null))
         }
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         runCatching { context.startActivity(intent) }

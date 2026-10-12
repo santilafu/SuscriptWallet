@@ -10,6 +10,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.ActivityCompat
+import androidx.core.content.edit
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
@@ -286,7 +287,7 @@ fun SettingsScreen(
                         selected = selectedDays == dias,
                         onClick = {
                             selectedDays = dias
-                            prefs.edit().putInt(KEY_NOTIFICATION_DAYS_BEFORE, dias).apply()
+                            prefs.edit { putInt(KEY_NOTIFICATION_DAYS_BEFORE, dias) }
                             // Con un umbral mayor, lo que ya entra en la nueva ventana se avisa
                             // ahora en vez de perderse (N-18). apply basta: el worker corre en
                             // este proceso y lee la copia en memoria de las preferencias.

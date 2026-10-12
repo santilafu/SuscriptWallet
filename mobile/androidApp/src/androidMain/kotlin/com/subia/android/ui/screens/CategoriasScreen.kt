@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.toColorInt
 import com.subia.android.ui.conRecorteLateral
 import com.subia.android.R
 import com.subia.android.ui.components.ErrorState
@@ -216,7 +217,7 @@ private fun CategoriasList(categorias: List<Category>, puedeCrear: Boolean, modi
 @Composable
 private fun CategoriaCard(cat: Category) {
     val colorStr = cat.color.trimStart('#')
-    val colorInt = try { android.graphics.Color.parseColor("#$colorStr") } catch (e: Exception) { android.graphics.Color.GRAY }
+    val colorInt = try { "#$colorStr".toColorInt() } catch (e: Exception) { android.graphics.Color.GRAY }
     val color = Color(colorInt)
 
     Card(

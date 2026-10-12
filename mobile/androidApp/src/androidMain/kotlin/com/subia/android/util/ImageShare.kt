@@ -11,6 +11,7 @@ import android.graphics.Shader
 import android.graphics.Typeface
 import android.net.Uri
 import androidx.core.content.FileProvider
+import androidx.core.graphics.createBitmap
 import java.io.File
 import java.io.FileOutputStream
 import kotlinx.coroutines.Dispatchers
@@ -55,7 +56,7 @@ suspend fun compartirResumenAnual(
 private fun generarBitmap(d: ResumenCompartible): Bitmap {
     val w = 1080
     val h = 1350
-    val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+    val bitmap = createBitmap(w, h)
     val canvas = Canvas(bitmap)
 
     // Fondo degradado índigo → violet (misma paleta de marca).

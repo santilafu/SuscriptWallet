@@ -192,19 +192,19 @@ kotlin {
             implementation(libs.androidx.work.runtime.ktx)
             // Splash screen de Android 12+ con compat para APIs anteriores (sin flash de fondo)
             implementation(libs.androidx.core.splashscreen)
-            // 25.2.0: la última que compila con Kotlin 2.1.20 (25.3+ trae metadatos de Kotlin 2.3).
+            // play-services-ads 25.2.0: la última que compila con Kotlin 2.1.20 (25.3+ trae metadatos de Kotlin 2.3).
             // Sigue tocando layoutInDisplayCutoutMode en su AdActivity (aviso de Play de APIs
             // obsoletas de edge-to-edge): es código del SDK de AdMob, no evitable desde la app.
-            implementation("com.google.android.gms:play-services-ads:25.2.0")
-            implementation("androidx.credentials:credentials:1.3.0")
-            implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
-            implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
-            implementation("androidx.appcompat:appcompat:1.7.0")
+            implementation(libs.play.services.ads)
+            implementation(libs.androidx.credentials)
+            implementation(libs.androidx.credentials.play.services.auth)
+            implementation(libs.googleid)
+            implementation(libs.androidx.appcompat)
             // Widget de pantalla de inicio (Jetpack Glance)
-            implementation("androidx.glance:glance-appwidget:1.1.1")
-            implementation("androidx.glance:glance-material3:1.1.1")
+            implementation(libs.androidx.glance.appwidget)
+            implementation(libs.androidx.glance.material3)
             // Chrome Custom Tabs para el consentimiento OAuth de Gmail
-            implementation("androidx.browser:browser:1.8.0")
+            implementation(libs.androidx.browser)
         }
     }
 }

@@ -236,7 +236,7 @@ adaptive = """<?xml version="1.0" encoding="utf-8"?>
     <monochrome android:drawable="@drawable/ic_launcher_monochrome" />
 </adaptive-icon>
 """
-for n in ("ic_launcher.xml", "ic_launcher_round.xml"):
+for n in ("ic_launcher.xml",):
     with open(os.path.join(res, "mipmap-anydpi-v26", n), "w", encoding="utf-8") as f:
         f.write(adaptive)
 print("recursos escritos")

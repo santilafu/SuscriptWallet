@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- targetCellWidth/Height y previewLayout solo los usa Android 12+; en 8-11 se ignoran sin efecto. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="UnusedAttribute"
     android:minWidth="180dp"
     android:minHeight="80dp"
     android:targetCellWidth="3"

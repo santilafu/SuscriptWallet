@@ -2,6 +2,7 @@
 <!-- Vista previa estática del widget en el selector del launcher (API 31+, W-02).
      Mismo contenido que pinta Glance: gasto del mes y próximo cobro. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -20,6 +21,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="83,98 €"
+        tools:ignore="HardcodedText"
         android:textColor="#5B21B6"
         android:textSize="26sp"
         android:textStyle="bold" />
@@ -29,6 +31,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:text="Netflix · 12,99 €"
+        tools:ignore="HardcodedText"
         android:textColor="#5B21B6"
         android:textSize="12sp" />
 </LinearLayout>

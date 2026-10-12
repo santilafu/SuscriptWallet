@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">SuscriptWallet</string>
 
     <!-- Navigation -->
@@ -28,19 +28,15 @@
 
     <!-- Dashboard -->
     <string name="monthly">Mensual</string>
-    <string name="yearly">Anual</string>
+    <string name="yearly" tools:ignore="Typos">Anual</string>
     <string name="weekly">Semanal</string>
-    <string name="monthly_currency">Mensual (%1$s)</string>
-    <string name="yearly_currency">Anual (%1$s)</string>
     <string name="active_subscriptions">Suscripciones activas</string>
     <string name="view_subscriptions">Ver suscripciones</string>
-    <string name="upcoming_renewals">Próximas renovaciones</string>
     <string name="no_upcoming_renewals">No tienes renovaciones próximas</string>
     <string name="hero_monthly_label">Gasto mensual</string>
     <string name="hero_per_year">%1$s al año</string>
     <string name="this_month">Este mes</string>
     <string name="tira_title">Próximos 14 días</string>
-    <string name="tira_next_charge">Próximo cobro</string>
     <string name="tira_no_charge">sin cobros</string>
     <string name="tira_open_sub">Abrir %1$s</string>
     <string name="tira_empty">Ningún cobro en estas dos semanas</string>
@@ -67,8 +63,6 @@
 
     <!-- Subscriptions list -->
     <string name="add">Añadir</string>
-    <string name="no_subscriptions">Sin suscripciones</string>
-    <string name="tap_to_add_first">Toca + para añadir la primera</string>
     <string name="all_filter">Todas</string>
     <string name="no_subscriptions_in_category">No hay suscripciones en esta categoría</string>
     <string name="renews_on">Renueva: %1$s</string>
@@ -82,20 +76,10 @@
     <!-- Subscription form -->
     <string name="edit_subscription">Editar suscripción</string>
     <string name="new_subscription">Nueva suscripción</string>
-    <string name="choose_from_catalog">Elegir del catálogo</string>
-    <string name="auto_fill_fields">Rellena los campos automáticamente</string>
-    <string name="collapse">Contraer</string>
-    <string name="expand">Expandir</string>
-    <string name="category">Categoría</string>
     <string name="select_category">Selecciona una categoría</string>
-    <string name="loading_services">Cargando servicios…</string>
-    <string name="service">Servicio</string>
-    <string name="select_category_first">Primero elige una categoría</string>
-    <string name="select_service">Selecciona un servicio</string>
     <string name="period_year">año</string>
     <string name="period_week">sem.</string>
     <string name="period_month">mes</string>
-    <string name="apply_selection">Aplicar selección</string>
     <string name="service_info_section">Información del servicio</string>
     <string name="service_name_label">Nombre del servicio *</string>
     <string name="description_label">Descripción</string>
@@ -165,7 +149,7 @@
     <string name="search_service">Buscar servicio…</string>
     <string name="all_categories">Todos</string>
     <string name="no_results">Sin resultados</string>
-    <string name="annual_savings">-%1$d%% anual</string>
+    <string name="annual_savings" tools:ignore="Typos">-%1$d%% anual</string>
 
     <!-- Catalog category names -->
     <string name="cat_ia">IA</string>
@@ -212,17 +196,15 @@
         <item quantity="one">%d suscripción</item>
         <item quantity="other">%d suscripciones</item>
     </plurals>
-    <string name="monthly_label">mensual</string>
     <!-- Apariencia / Material You -->
     <string name="appearance">Apariencia</string>
     <string name="dynamic_color">Color dinámico (Material You)</string>
     <string name="dynamic_color_desc">Adapta los colores de la app a tu fondo de pantalla.</string>
     <!-- Estados de error y vacío -->
     <string name="error_title">Algo ha ido mal</string>
-    <string name="add_first_subscription">Añadir mi primera suscripción</string>
     <!-- Resumen anual compartible -->
     <string name="resumen_anual_title">Tu año en suscripciones</string>
-    <string name="resumen_anual_total_label">Gasto anual</string>
+    <string name="resumen_anual_total_label" tools:ignore="Typos">Gasto anual</string>
     <plurals name="resumen_anual_subs">
         <item quantity="one">%d suscripción activa</item>
         <item quantity="other">%d suscripciones activas</item>
@@ -239,7 +221,7 @@
     <string name="onb1_title">Todas tus suscripciones, en un sitio</string>
     <string name="onb1_desc">Netflix, ChatGPT, la luz, el móvil, el seguro… Añádelos en segundos desde un catálogo con más de 300 servicios.</string>
     <string name="onb2_title">Descubre cuánto gastas de verdad</string>
-    <string name="onb2_desc">Tu gasto mensual y anual, claro y a la vista. El número te va a sorprender.</string>
+    <string name="onb2_desc" tools:ignore="Typos">Tu gasto mensual y anual, claro y a la vista. El número te va a sorprender.</string>
     <string name="onb3_title">Nunca más un cobro por sorpresa</string>
     <string name="onb3_desc">Te avisamos antes de cada renovación y antes de que acabe una prueba gratis, para cancelar a tiempo.</string>
     <!-- Widget -->
@@ -303,7 +285,7 @@
     <string name="gmail_scan_adding">Añadiendo…</string>
     <string name="gmail_scan_done">Listo</string>
     <string name="cycle_monthly">mensual</string>
-    <string name="cycle_yearly">anual</string>
+    <string name="cycle_yearly" tools:ignore="Typos">anual</string>
     <string name="cycle_weekly">semanal</string>
     <!-- Notificaciones de renovación (RenovacionWorker) -->
     <string name="notif_channel_name">Renovaciones de suscripciones</string>
@@ -372,7 +354,6 @@
     <string name="view_tutorial_desc">Repasa lo básico en tres pantallas</string>
     <string name="password_show">Mostrar contraseña</string>
     <string name="password_hide">Ocultar contraseña</string>
-    <string name="tomorrow">mañana</string>
 
     <!-- Errores al hablar con el servidor (ViewModels de shared con ErrorRemoto) -->
     <string name="error_offline">Sin conexión. Comprueba tu red e inténtalo de nuevo</string>

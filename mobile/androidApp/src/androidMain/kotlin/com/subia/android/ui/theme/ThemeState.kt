@@ -1,6 +1,7 @@
 package com.subia.android.ui.theme
 
 import android.content.Context
+import androidx.core.content.edit
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -28,8 +29,6 @@ object ThemeState {
     fun setDynamicColor(context: Context, enabled: Boolean) {
         dynamicColor = enabled
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit()
-            .putBoolean(KEY_DYNAMIC_COLOR, enabled)
-            .apply()
+            .edit { putBoolean(KEY_DYNAMIC_COLOR, enabled) }
     }
 }
