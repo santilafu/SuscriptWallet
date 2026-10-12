@@ -1,5 +1,6 @@
 package com.subia.android.navigation
 
+import com.subia.shared.viewmodel.DestinoInicial
 import kotlinx.serialization.Serializable
 
 // Rutas de navegación con type-safety (Navigation Compose 2.8+)
@@ -18,3 +19,10 @@ import kotlinx.serialization.Serializable
 @Serializable object ResumenAnualRoute
 @Serializable object OnboardingRoute
 @Serializable object GmailScanRoute
+
+/** Ruta del grafo para el destino inicial decidido en shared ([com.subia.shared.viewmodel.destinoInicial]). */
+fun DestinoInicial.ruta(): Any = when (this) {
+    DestinoInicial.LOGIN -> LoginRoute
+    DestinoInicial.ONBOARDING -> OnboardingRoute
+    DestinoInicial.INICIO -> DashboardRoute
+}

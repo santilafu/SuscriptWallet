@@ -2,7 +2,10 @@ package com.subia.android.util
 
 import android.content.Context
 
-/** Persiste si el usuario ya ha visto el onboarding (se muestra una sola vez tras el primer login). */
+/**
+ * Persiste si el usuario ya ha terminado (o saltado) el onboarding. Se consulta al arrancar con
+ * sesión y tras el login: mientras no esté marcado, el onboarding vuelve a aparecer.
+ */
 object OnboardingPrefs {
     private const val PREFS = "subia_cache"
     private const val KEY = "onboarding_completed"
@@ -14,14 +17,6 @@ object OnboardingPrefs {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
             .putBoolean(KEY, true)
-            .apply()
-    }
-
-    /** Vuelve a marcar el onboarding como no visto ("Ver tutorial de nuevo" en Ajustes). */
-    fun reset(context: Context) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit()
-            .putBoolean(KEY, false)
             .apply()
     }
 }

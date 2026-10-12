@@ -14,14 +14,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.navigation.compose.rememberNavController
-import com.subia.android.navigation.DashboardRoute
-import com.subia.android.navigation.LoginRoute
+import com.subia.android.navigation.ruta
 import com.subia.android.ui.SubIAApp
 import com.subia.android.ui.theme.SubIATheme
 import com.subia.android.ui.theme.ThemeState
 import com.subia.android.util.IdiomaApp
+import com.subia.android.util.OnboardingPrefs
 import com.subia.android.worker.ProgramadorAvisos
 import com.subia.shared.viewmodel.AuthViewModel
+import com.subia.shared.viewmodel.destinoInicial
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -76,7 +77,14 @@ class MainActivity : AppCompatActivity() {
                 // sesión navegan explícitamente (onLoginSuccess / SubIAApp). Si dependiera de
                 // isLoggedIn, el NavHost cambiaría de grafo al iniciar sesión y vaciaría la pila
                 // a la vez que onLoginSuccess navega (Inicio duplicado u onboarding saltado).
-                val startDestination = remember { if (authViewModel.isLoggedIn.value) DashboardRoute else LoginRoute }
+                // Con sesión y el onboarding sin terminar (salió de él con "atrás") se arranca
+                // en el onboarding, igual que haría el login (misma decisión: destinoInicial).
+                val startDestination = remember {
+                    destinoInicial(
+                        sesionIniciada = authViewModel.isLoggedIn.value,
+                        onboardingCompletado = OnboardingPrefs.isCompleted(this)
+                    ).ruta()
+                }
                 val gmailStatus by gmailReturnStatus.collectAsState()
                 val suscripcionAviso by suscripcionDesdeAviso.collectAsState()
 

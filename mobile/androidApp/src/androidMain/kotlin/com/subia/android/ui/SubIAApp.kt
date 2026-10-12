@@ -60,6 +60,7 @@ import com.subia.android.navigation.SettingsRoute
 import com.subia.android.navigation.SuscripcionDetalleRoute
 import com.subia.android.navigation.SuscripcionFormRoute
 import com.subia.android.navigation.SuscripcionesRoute
+import com.subia.android.navigation.ruta
 import com.subia.android.ui.screens.CatalogoScreen
 import com.subia.android.ui.screens.CategoriasScreen
 import com.subia.android.ui.screens.DashboardScreen
@@ -74,6 +75,7 @@ import com.subia.android.ui.screens.SuscripcionesScreen
 import com.subia.android.util.OnboardingPrefs
 import com.subia.android.worker.ProgramadorAvisos
 import com.subia.shared.viewmodel.AuthViewModel
+import com.subia.shared.viewmodel.destinoInicial
 import com.subia.shared.viewmodel.GmailScanViewModel
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -258,8 +260,11 @@ fun SubIAApp(
             composable<LoginRoute> {
                 LoginScreen(
                     onLoginSuccess = {
-                        // Primer login: mostrar onboarding una sola vez; después, directo al dashboard.
-                        val destino = if (OnboardingPrefs.isCompleted(context)) DashboardRoute else OnboardingRoute
+                        // Primer login: onboarding hasta que se termine o se salte; después, Inicio.
+                        val destino = destinoInicial(
+                            sesionIniciada = true,
+                            onboardingCompletado = OnboardingPrefs.isCompleted(context)
+                        ).ruta()
                         navController.navigate(destino) {
                             popUpTo(LoginRoute) { inclusive = true }
                         }
@@ -321,10 +326,9 @@ fun SubIAApp(
                     onBack = { navController.popBackStack() },
                     onNavigateToCategorias = { navController.navigate(CategoriasRoute) },
                     onDetectGmail = { navController.navigate(GmailScanRoute) },
-                    onVerTutorial = {
-                        OnboardingPrefs.reset(context)
-                        navController.navigate(OnboardingRoute)
-                    },
+                    // Repetir el tutorial no desmarca el flag: si se sale con "atrás" se vuelve a
+                    // Ajustes y el siguiente arranque sigue siendo Inicio (el flag se lee al arrancar).
+                    onVerTutorial = { navController.navigate(OnboardingRoute) },
                     onLogout = cerrarSesion
                 )
             }
