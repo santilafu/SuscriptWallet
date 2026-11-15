@@ -3,11 +3,13 @@ package com.subia.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.subia.model.BillingCycle
+import com.subia.model.CatalogItem
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.math.BigDecimal
 
 /**
  * Tests del catálogo estático: integridad de los datos (nombres únicos, dominios en minúsculas,
@@ -56,7 +58,8 @@ class CatalogServiceTest {
                 assertFalse(item.domain.isNullOrBlank(), "$name necesita dominio para el logo")
             }
         // Las alarmas tienen cuota fija y las suscripciones clásicas no cambian.
-        assertFalse(service.getAllItems().first { it.name == "Securitas Direct" }.variablePrice)
+        // (Securitas Direct se llama Verisure desde abril de 2026.)
+        assertFalse(service.getAllItems().first { it.name == "Verisure (antes Securitas Direct)" }.variablePrice)
         assertFalse(service.getAllItems().first { it.name == "Netflix Estándar" }.variablePrice)
     }
 
@@ -85,6 +88,91 @@ class CatalogServiceTest {
         assertEquals(grouped.getValue("transporte"), service.getItemsForCategory("Transporte"))
         // Nombre desconocido → todo el catálogo ordenado por nombre.
         assertEquals(service.getAllItems(), service.getItemsForCategory("Lo que sea"))
+    }
+
+    // ── Revisión de precios de noviembre de 2026 ────────────────────────────
+
+    @Test
+    fun `todos los precios son positivos y estan en euros`() {
+        // Los servicios que cobran en dólares se guardan ya convertidos a EUR (ver KDoc de CatalogService).
+        service.getAllItems().forEach { item ->
+            assertTrue(item.price > BigDecimal.ZERO, "precio no positivo: ${item.name}")
+            assertEquals("EUR", item.currency, "moneda distinta de EUR: ${item.name}")
+            item.priceAnnual?.let { assertTrue(it > BigDecimal.ZERO, "anual no positivo: ${item.name}") }
+        }
+    }
+
+    @Test
+    fun `el precio anual de un plan mensual sale mas barato que doce mensualidades`() {
+        service.getAllItems()
+            .filter { it.billingCycle == BillingCycle.MONTHLY && it.priceAnnual != null }
+            .forEach { item ->
+                val twelve = item.price.multiply(BigDecimal(12))
+                assertTrue(item.priceAnnual!! < twelve, "${item.name}: anual ${item.priceAnnual} ≥ 12 × ${item.price}")
+            }
+    }
+
+    @Test
+    fun `las filas de prueba son copias exactas de su fila original`() {
+        val prueba = grouped.getValue("prueba")
+        assertEquals(CatalogService.TRIALS.size, prueba.size)
+        CatalogService.TRIALS.forEach { (originKey, name, days) ->
+            val original = grouped.getValue(originKey).first { it.name == name }
+            val trial = prueba.first { it.name == name }
+            assertEquals(original.copy(categoryKey = "prueba", trialDays = days), trial, name)
+        }
+    }
+
+    @Test
+    fun `iconUrl si existe es https`() {
+        service.getAllItems().mapNotNull { it.iconUrl }.forEach { url ->
+            assertTrue(url.startsWith("https://"), "iconUrl sin https: $url")
+        }
+    }
+
+    @Test
+    fun `ningun servicio usa dominios de la lista negra`() {
+        // youcam.com es una web para adultos (el editor YouCam es de perfectcorp.com) y
+        // splice.com es una empresa de samples de música (el editor de vídeo es spliceapp.com).
+        val blacklist = listOf("youcam.com", "splice.com")
+        service.getAllItems().forEach { item ->
+            assertFalse(item.domain in blacklist, "dominio en lista negra: ${item.name} → ${item.domain}")
+            blacklist.forEach { bad ->
+                val host = item.cancelUrl?.substringAfter("://")?.substringBefore('/')?.removePrefix("www.")
+                assertFalse(host == bad, "cancelUrl en lista negra: ${item.name} → ${item.cancelUrl}")
+            }
+        }
+    }
+
+    @Test
+    fun `los servicios principales tienen su precio verificado de noviembre de 2026`() {
+        val streaming = grouped.getValue("streaming")
+        fun price(name: String, list: List<CatalogItem> = streaming) =
+            list.first { it.name == name }.price
+        assertEquals(BigDecimal("8.99"), price("Netflix con anuncios"))
+        assertEquals(BigDecimal("15.99"), price("YouTube Premium"))
+        assertEquals(BigDecimal("10.99"), price("Disney+"))
+        assertEquals(BigDecimal("11.99"), price("Spotify Premium", grouped.getValue("musica")))
+    }
+
+    @Test
+    fun `los nombres antiguos de planes renombrados conservan logo y enlace de baja`() {
+        val domains = service.getDomainMap()
+        assertEquals("hbomax.com", domains["Max"])
+        assertEquals("tv.apple.com", domains["Apple TV+"])
+        assertEquals("verisure.es", domains["Securitas Direct"])
+        assertEquals(service.getCancelUrlMap()["Cursor Premium"], service.getCancelUrlMap()["Cursor Pro"])
+        // Todos los nombres nuevos existen de verdad en el catálogo.
+        val names = service.getAllItems().map { it.name }.toSet()
+        CatalogService.RENAMED_SERVICES.values.forEach { assertTrue(it in names, "renombrado inexistente: $it") }
+    }
+
+    @Test
+    fun `el mapa de iconos solo contiene servicios con iconUrl`() {
+        val icons = service.getIconUrlMap()
+        assertTrue(icons.isNotEmpty())
+        assertEquals("https://www.google.com/s2/favicons?domain=midjourney.com&sz=128", icons["Midjourney Standard"])
+        assertNull(icons["Netflix Estándar"])
     }
 
     @Test

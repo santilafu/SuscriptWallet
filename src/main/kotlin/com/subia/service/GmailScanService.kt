@@ -513,12 +513,32 @@ class GmailScanService(
             "mutuamadrilena.es"    to "mutua.es",
             "lineadirecta.es"      to "lineadirecta.com",
             "sanitas.com"          to "sanitas.es",
-            "segurcaixaadeslas.es" to "adeslas.es",
+            "adeslas.es"           to "segurcaixaadeslas.es",
             "axa.com"              to "axa.es",
             "allianz.com"          to "allianz.es",
-            // Alarmas
-            "securitasdirect.com"  to "securitasdirect.es",
-            "verisure.es"          to "securitasdirect.es"
+            "catalanaoccidente.com" to "occident.com",
+            // Alarmas (Securitas Direct se llama Verisure desde abril de 2026)
+            "securitasdirect.com"  to "verisure.es",
+            "securitasdirect.es"   to "verisure.es",
+            "prosegur.es"          to "movistarproseguralarmas.es",
+            "movistarprosegur.es"  to "movistarproseguralarmas.es",
+            // Dominios antiguos de servicios que cambiaron de dominio en el catálogo (revisión de
+            // noviembre de 2026): sus correos pueden seguir llegando desde el dominio de antes.
+            "eniplenitude.com"     to "eniplenitude.es",
+            "openai.com"           to "chatgpt.com",
+            "x.ai"                 to "grok.com",
+            "max.com"              to "hbomax.com",
+            "amazon.com"           to "amazon.es",
+            "audible.com"          to "audible.es",
+            "notion.so"            to "notion.com",
+            "railway.app"          to "railway.com",
+            "neon.tech"            to "neon.com",
+            "tutanota.com"         to "tuta.com",
+            "tutanota.de"          to "tuta.com",
+            "vivagym.es"           to "vivagym.com",
+            "ubisoftplus.com"      to "ubisoft.com",
+            "frontendmasters.com"  to "master.dev",
+            "getmimo.com"          to "mimo.org"
         )
 
         /** El asunto tiene que parecer un correo de facturación para fiarnos de la marca que contenga. */
@@ -540,8 +560,9 @@ class GmailScanService(
             Regex("""\bmutua madrile[ñn]a\b""", RegexOption.IGNORE_CASE) to "mutua.es",
             Regex("""\bl[ií]nea directa\b""", RegexOption.IGNORE_CASE)   to "lineadirecta.com",
             Regex("""\bsanitas\b""", RegexOption.IGNORE_CASE)            to "sanitas.es",
-            Regex("""\badeslas\b""", RegexOption.IGNORE_CASE)            to "adeslas.es",
-            Regex("""\bsecuritas direct\b""", RegexOption.IGNORE_CASE)   to "securitasdirect.es"
+            Regex("""\badeslas\b""", RegexOption.IGNORE_CASE)            to "segurcaixaadeslas.es",
+            Regex("""\bsecuritas direct\b""", RegexOption.IGNORE_CASE)   to "verisure.es",
+            Regex("""\bverisure\b""", RegexOption.IGNORE_CASE)           to "verisure.es"
         )
     }
 }

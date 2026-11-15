@@ -203,7 +203,7 @@ class GmailScanServiceTest {
         "movistar.es" to listOf(bill("Movistar", "movistar.es", "telecos", "60.00")),
         "mapfre.es" to listOf(bill("Mapfre", "mapfre.es", "seguros", "450.00", BillingCycle.YEARLY)),
         "sanitas.es" to listOf(bill("Sanitas", "sanitas.es", "seguros", "60.00")),
-        "securitasdirect.es" to listOf(bill("Securitas Direct", "securitasdirect.es", "hogar", "45.00"))
+        "verisure.es" to listOf(bill("Verisure (antes Securitas Direct)", "verisure.es", "hogar", "54.99"))
     )
 
     @Test
@@ -216,7 +216,8 @@ class GmailScanServiceTest {
     @Test
     fun `matchDomain casa un subdominio de un alias (comunicaciones endesaclientes)`() {
         assertEquals("Endesa", service.matchDomain("comunicaciones.endesaclientes.com", billsByDomain)?.value?.first()?.name)
-        assertEquals("Securitas Direct", service.matchDomain("info.verisure.es", billsByDomain)?.value?.first()?.name)
+        // Securitas Direct pasó a llamarse Verisure: sus correos desde el dominio antiguo siguen casando.
+        assertEquals("Verisure (antes Securitas Direct)", service.matchDomain("info.securitasdirect.es", billsByDomain)?.value?.first()?.name)
     }
 
     // ── Recibos recurrentes: detección por asunto ───────────────────────────
