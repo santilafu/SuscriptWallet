@@ -42,6 +42,10 @@
     <string name="tira_no_charge">aucun prélèvement</string>
     <string name="tira_open_sub">Ouvrir %1$s</string>
     <string name="tira_empty">Aucun prélèvement ces deux prochaines semaines</string>
+    <string name="tira_title_month">Prélèvements en %1$s</string>
+    <string name="tira_mode_14_days">14 jours</string>
+    <string name="tira_mode_month">Ce mois-ci</string>
+    <string name="tira_already_charged">déjà prélevé</string>
     <string name="day_today">Aujourd\'hui</string>
     <string name="day_tomorrow">Demain</string>
     <plurals name="in_n_days">
@@ -208,6 +212,10 @@
     <string name="no_category_data">Aucune donnée de catégorie</string>
     <string name="others">Autres</string>
     <string name="category_monthly_equiv">Équivalent mensuel par catégorie</string>
+    <string name="category_show_expenses">afficher ses dépenses</string>
+    <string name="category_hide_expenses">masquer ses dépenses</string>
+    <string name="a11y_expanded">Développée</string>
+    <string name="a11y_collapsed">Réduite</string>
     <string name="no_category">Sans catégorie</string>
     <plurals name="category_subs_count">
         <item quantity="one">%d abonnement</item>

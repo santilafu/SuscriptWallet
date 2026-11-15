@@ -16,8 +16,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
@@ -47,34 +50,44 @@ import kotlinx.datetime.LocalDate
 private val AnchoDia = 48.dp
 private val AltoZonaLogos = 64.dp
 
+/** Opacidad de los días ya pasados en la vista mensual: se leen como "ya cobrado". */
+private const val ALFA_DIA_PASADO = 0.45f
+
 /**
- * "Tira de cobros": calendario horizontal de 14 días (hoy → +13). Cada día es una columna
- * estrecha con el día de la semana, el número y los logos de los servicios que cobran ese
- * día posados encima, con el importe del día debajo. Hoy va en `primary`; el día del
- * próximo cobro lleva un anillo `primary`. Tocar un logo abre la suscripción.
+ * "Tira de cobros": calendario horizontal de días. En la vista de 14 días va de hoy a +13; en
+ * la de "Este mes", del 1 al último día del mes, con los días anteriores a [hoy] atenuados (ya
+ * cobrados). Cada día es una columna estrecha con el día de la semana, el número y los logos de
+ * los servicios que cobran ese día posados encima, con el importe del día debajo. Hoy va en
+ * `primary`; el día del próximo cobro lleva un anillo `primary`. Tocar un logo abre la suscripción.
  *
  * Semántica: cada columna se lee como "Jueves 9: Netflix 12,99 €, Spotify 9,99 €".
+ *
+ * @param estadoLista posición de la tira; la vista mensual la crea ya desplazada hasta hoy.
  */
 @Composable
 fun TiraCobros(
     dias: List<DiaCobros>,
+    hoy: LocalDate,
     proximoCobro: CobroPrevisto?,
     onOpenSuscripcion: (Long) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    estadoLista: LazyListState = rememberLazyListState()
 ) {
     val fechaProximo: LocalDate? = proximoCobro?.fecha
-    // Sin ningún cobro en los 14 días la tira se queda en calendario (día + número): 80 dp de
-    // puntos vacíos se leían como contenido que no ha cargado.
+    // Sin ningún cobro en los días mostrados la tira se queda en calendario (día + número): 80 dp
+    // de puntos vacíos se leían como contenido que no ha cargado.
     val compacta = dias.none { it.tieneCobros }
     LazyRow(
         modifier = modifier,
+        state = estadoLista,
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         contentPadding = PaddingValues(horizontal = 10.dp)
     ) {
-        itemsIndexed(dias, key = { _, dia -> dia.fecha.toString() }) { indice, dia ->
+        items(dias, key = { dia -> dia.fecha.toString() }) { dia ->
             DiaColumna(
                 dia = dia,
-                esHoy = indice == 0,
+                esHoy = dia.fecha == hoy,
+                esPasado = dia.fecha < hoy,
                 esProximo = dia.tieneCobros && dia.fecha == fechaProximo,
                 compacta = compacta,
                 onOpenSuscripcion = onOpenSuscripcion
@@ -87,6 +100,7 @@ fun TiraCobros(
 private fun DiaColumna(
     dia: DiaCobros,
     esHoy: Boolean,
+    esPasado: Boolean,
     esProximo: Boolean,
     compacta: Boolean,
     onOpenSuscripcion: (Long) -> Unit
@@ -94,13 +108,15 @@ private fun DiaColumna(
     val colores = MaterialTheme.colorScheme
     val sinCobros = stringResource(R.string.tira_no_charge)
     val hoyTexto = stringResource(R.string.day_today)
-    val descripcion = remember(dia, esHoy, sinCobros, hoyTexto) {
+    val yaCobrado = stringResource(R.string.tira_already_charged)
+    val descripcion = remember(dia, esHoy, esPasado, sinCobros, hoyTexto, yaCobrado) {
         val cabecera = buildString {
             if (esHoy) append(hoyTexto).append(", ")
             append(nombreDiaSemanaLargo(dia.fecha)).append(' ').append(dia.fecha.dayOfMonth)
         }
         val detalle = if (dia.tieneCobros) {
-            dia.cobros.joinToString(", ") { "${it.nombre} ${formatearImporte(it.importe, it.moneda)}" }
+            dia.cobros.joinToString(", ") { "${it.nombre} ${formatearImporte(it.importe, it.moneda)}" } +
+                if (esPasado) ", $yaCobrado" else ""
         } else sinCobros
         "$cabecera: $detalle"
     }
@@ -108,6 +124,7 @@ private fun DiaColumna(
     Column(
         modifier = Modifier
             .width(AnchoDia)
+            .then(if (esPasado) Modifier.alpha(ALFA_DIA_PASADO) else Modifier)
             .semantics(mergeDescendants = true) { contentDescription = descripcion },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -157,12 +174,12 @@ private fun DiaColumna(
                 0 -> Box(Modifier.size(4.dp).background(colores.surfaceVariant, CircleShape))
                 1 -> LogoPulsable(dia.cobros[0], 34.dp, onOpenSuscripcion)
                 2 -> {
-                    LogoPulsable(dia.cobros[0], 28.dp, onOpenSuscripcion)
+                    LogoPulsable(dia.cobros[0], 28.dp, onOpenSuscripcion, ZonaTactilApilada)
                     Box(Modifier.height(2.dp))
-                    LogoPulsable(dia.cobros[1], 28.dp, onOpenSuscripcion)
+                    LogoPulsable(dia.cobros[1], 28.dp, onOpenSuscripcion, ZonaTactilApilada)
                 }
                 else -> {
-                    LogoPulsable(dia.cobros[0], 28.dp, onOpenSuscripcion)
+                    LogoPulsable(dia.cobros[0], 28.dp, onOpenSuscripcion, ZonaTactilApilada)
                     Box(Modifier.height(2.dp))
                     Box(
                         modifier = Modifier
@@ -211,12 +228,20 @@ private fun DiaColumna(
     }
 }
 
+/**
+ * Con dos logos apilados, dos cajas de 44 dp no caben en los 64 dp de la zona y el segundo logo
+ * salía recortado (visto en la vista mensual, con dos cobros el mismo día): cada caja mide 31 dp
+ * y Compose sigue ampliando la zona táctil efectiva hasta 48 dp.
+ */
+private val ZonaTactilApilada = 31.dp
+
 /** Logo con zona táctil de 44 dp (se superpone 2 dp a cada lado de la columna) y feedback de presión. */
 @Composable
 private fun LogoPulsable(
     cobro: CobroPrevisto,
     tamano: androidx.compose.ui.unit.Dp,
-    onOpenSuscripcion: (Long) -> Unit
+    onOpenSuscripcion: (Long) -> Unit,
+    zonaTactil: androidx.compose.ui.unit.Dp = 44.dp
 ) {
     val interaccion = remember { MutableInteractionSource() }
     val pulsado by interaccion.collectIsPressedAsState()
@@ -224,7 +249,7 @@ private fun LogoPulsable(
     val abrir = stringResource(R.string.tira_open_sub, cobro.nombre)
     Box(
         modifier = Modifier
-            .size(44.dp)
+            .size(zonaTactil)
             .clip(RoundedCornerShape(12.dp))
             .clickable(interactionSource = interaccion, indication = null, role = Role.Button) {
                 onOpenSuscripcion(cobro.suscripcionId)

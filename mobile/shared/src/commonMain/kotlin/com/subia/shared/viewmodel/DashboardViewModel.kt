@@ -5,12 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.subia.shared.cache.CacheRepository
 import com.subia.shared.model.DashboardSummary
 import com.subia.shared.model.Periodicidad
+import com.subia.shared.model.PeriodoCobro
 import com.subia.shared.model.ProximaRenovacion
 import com.subia.shared.model.ProyeccionCobros
 import com.subia.shared.model.Subscription
 import com.subia.shared.model.calcularProyeccionCobros
 import com.subia.shared.model.equivalenteMensualInterno
 import com.subia.shared.model.ordenDivisa
+import com.subia.shared.model.periodoCobro
 import com.subia.shared.model.totalAnualInterno
 import com.subia.shared.network.SessionExpiredException
 import com.subia.shared.repository.CategoryRepository
@@ -44,7 +46,22 @@ data class GastoCategoria(
     val gastoMensual: Double,
     val numSuscripciones: Int,
     /** Porcentaje (0..100) sobre el total mensual de la misma divisa. */
-    val porcentaje: Int
+    val porcentaje: Int,
+    /** Gastos de la categoría, de mayor a menor equivalente mensual (lo que se despliega al tocarla). */
+    val gastos: List<GastoDeCategoria> = emptyList()
+)
+
+/**
+ * Un gasto dentro de una categoría del Inicio: lo que cuesta al mes ([equivalenteMensual], con la
+ * regla de redondeo de [Periodicidad]) y lo que se paga en cada cobro ([precio] cada [periodo]).
+ */
+data class GastoDeCategoria(
+    val suscripcionId: Long,
+    val nombre: String,
+    val moneda: String,
+    val precio: Double,
+    val periodo: PeriodoCobro,
+    val equivalenteMensual: Double
 )
 
 sealed interface DashboardUiState {
@@ -335,7 +352,19 @@ class DashboardViewModel(
                         moneda = moneda,
                         gastoMensual = Periodicidad.aCifraVisible(gasto),
                         numSuscripciones = lista.size,
-                        porcentaje = if (total > 0) (gasto.toDouble() / total * 100.0 + 0.5).toInt().coerceIn(0, 100) else 0
+                        porcentaje = if (total > 0) (gasto.toDouble() / total * 100.0 + 0.5).toInt().coerceIn(0, 100) else 0,
+                        gastos = lista
+                            .map { sub ->
+                                GastoDeCategoria(
+                                    suscripcionId = sub.id,
+                                    nombre = sub.nombre,
+                                    moneda = sub.moneda,
+                                    precio = sub.precio,
+                                    periodo = sub.periodoCobro(),
+                                    equivalenteMensual = Periodicidad.aCifraVisible(sub.equivalenteMensualInterno())
+                                )
+                            }
+                            .sortedWith(compareByDescending<GastoDeCategoria> { it.equivalenteMensual }.thenBy { it.nombre })
                     )
                 }
                 .sortedWith(

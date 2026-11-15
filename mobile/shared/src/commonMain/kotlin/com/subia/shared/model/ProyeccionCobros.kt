@@ -47,6 +47,9 @@ data class GastoCategoriaMes(
  * - [totalMesCompleto]: "Este mes pagas", lo que vence en el mes natural ENTERO (del día 1 al
  *   último, incluidos los cobros ya pasados), por divisa y con la regla de redondeo de [Periodicidad].
  * - [porCategoriaMesActual]: cobros del mes 0 agrupados por categoría y divisa, de mayor a menor.
+ * - [diasMes]: día a día del mes natural de [hoy] COMPLETO (del 1 al último), también los días ya
+ *   pasados con lo que se cobró. Es la vista "Este mes" de la tira; sumada con [totalDeDias] da
+ *   exactamente [totalMesCompleto] (misma serie de fechas y misma regla de redondeo).
  */
 data class ProyeccionCobros(
     val hoy: LocalDate,
@@ -55,7 +58,8 @@ data class ProyeccionCobros(
     val totalMesActual: Map<String, Double>,
     val totalMesSiguiente: Map<String, Double>,
     val porCategoriaMesActual: List<GastoCategoriaMes>,
-    val totalMesCompleto: Map<String, Double> = emptyMap()
+    val totalMesCompleto: Map<String, Double> = emptyMap(),
+    val diasMes: List<DiaCobros> = emptyList()
 ) {
     /** Primer cobro de la tira (hoy incluido), o null si no hay ninguno en 14 días. */
     val proximoCobro: CobroPrevisto? get() = dias.firstOrNull { it.tieneCobros }?.cobros?.firstOrNull()
@@ -156,23 +160,7 @@ fun calcularProyeccionCobros(subs: List<Subscription>, hoy: LocalDate): Proyecci
     val inicioMes = LocalDate(hoy.year, hoy.month, 1)
     val finHorizonte = inicioMes.plus(ProyeccionCobros.MESES_HORIZONTE, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)
 
-    val cobros = subs.asSequence()
-        .filter { it.activa }
-        .flatMap { sub ->
-            ocurrencias(sub, hoy, finHorizonte).map { fecha ->
-                CobroPrevisto(
-                    suscripcionId = sub.id,
-                    nombre = sub.nombre,
-                    importe = sub.precio,
-                    moneda = sub.moneda,
-                    fecha = fecha,
-                    categoriaId = sub.categoriaId,
-                    periodoFacturacion = sub.periodoFacturacion
-                )
-            }
-        }
-        .sortedWith(compareBy<CobroPrevisto> { it.fecha }.thenByDescending { it.importe })
-        .toList()
+    val cobros = cobrosPrevistos(subs, hoy, finHorizonte)
 
     val dias = (0 until ProyeccionCobros.DIAS_TIRA).map { i ->
         val fecha = hoy.plus(i, DateTimeUnit.DAY)
@@ -200,8 +188,61 @@ fun calcularProyeccionCobros(subs: List<Subscription>, hoy: LocalDate): Proyecci
         totalMesActual = meses[0].totalPorMoneda,
         totalMesSiguiente = meses[1].totalPorMoneda,
         porCategoriaMesActual = porCategoria,
-        totalMesCompleto = totalMesCompleto(subs, inicioMes)
+        totalMesCompleto = totalMesCompleto(subs, inicioMes),
+        diasMes = cobrosDelMes(subs, hoy)
     )
+}
+
+/**
+ * Cobros de las suscripciones activas en [desde, hasta], en orden cronológico y, el mismo día,
+ * de mayor a menor importe.
+ */
+private fun cobrosPrevistos(subs: List<Subscription>, desde: LocalDate, hasta: LocalDate): List<CobroPrevisto> =
+    subs.asSequence()
+        .filter { it.activa }
+        .flatMap { sub ->
+            ocurrencias(sub, desde, hasta).map { fecha ->
+                CobroPrevisto(
+                    suscripcionId = sub.id,
+                    nombre = sub.nombre,
+                    importe = sub.precio,
+                    moneda = sub.moneda,
+                    fecha = fecha,
+                    categoriaId = sub.categoriaId,
+                    periodoFacturacion = sub.periodoFacturacion
+                )
+            }
+        }
+        .sortedWith(compareBy<CobroPrevisto> { it.fecha }.thenByDescending { it.importe })
+        .toList()
+
+/**
+ * Días del mes natural de [hoy], del 1 al último, con los cobros de cada uno (también los de los
+ * días ya pasados). Usa la misma serie que [totalMesCompleto] ([ocurrencias] desde el día 1),
+ * así que la vista mensual de la tira y "Este mes pagas" no pueden contradecirse.
+ */
+fun cobrosDelMes(subs: List<Subscription>, hoy: LocalDate): List<DiaCobros> {
+    val inicioMes = LocalDate(hoy.year, hoy.month, 1)
+    val finMes = inicioMes.plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)
+    val porFecha = cobrosPrevistos(subs, inicioMes, finMes).groupBy { it.fecha }
+    return (0 until inicioMes.daysUntil(finMes) + 1).map { i ->
+        val fecha = inicioMes.plus(i, DateTimeUnit.DAY)
+        DiaCobros(fecha, porFecha[fecha].orEmpty())
+    }
+}
+
+/**
+ * Total por divisa de los cobros de [dias], sumado en diezmilésimas y redondeado al final con
+ * [Periodicidad] (la misma regla que [totalMesCompleto]). Orden EUR, USD, resto alfabético.
+ */
+fun totalDeDias(dias: List<DiaCobros>): Map<String, Double> {
+    val internos = mutableMapOf<String, Long>()
+    for (cobro in dias.asSequence().flatMap { it.cobros }) {
+        internos[cobro.moneda] = (internos[cobro.moneda] ?: 0L) + Periodicidad.aDiezmilesimas(cobro.importe)
+    }
+    return internos.entries
+        .sortedWith(compareBy { ordenDivisa(it.key) })
+        .associate { it.key to Periodicidad.aCifraVisible(it.value) }
 }
 
 /**

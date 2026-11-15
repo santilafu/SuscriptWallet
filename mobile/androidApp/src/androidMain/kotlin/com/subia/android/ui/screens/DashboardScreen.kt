@@ -1,21 +1,41 @@
 package com.subia.android.ui.screens
 
+import android.view.HapticFeedbackConstants
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -38,14 +58,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -55,6 +83,13 @@ import com.subia.android.R
 import com.subia.android.ui.BannerAdView
 import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.components.CobrosPorMesCard
+import com.subia.android.ui.components.EaseOutFuerte
+import com.subia.android.ui.components.EntradaEscalonada
+import com.subia.android.ui.components.MovimientoUnaVez
+import com.subia.android.ui.components.animacionesActivas
+import com.subia.android.ui.components.escalaDiferida
+import com.subia.android.ui.components.nombreMesEnFrase
+import com.subia.android.ui.components.rememberEscalaPulsacion
 import com.subia.android.ui.components.ErrorState
 import com.subia.android.ui.components.textoErrorRemoto
 import com.subia.android.ui.components.GastosPorCategoriaCard
@@ -69,13 +104,17 @@ import com.subia.android.ui.theme.GradientBrandDeepMid
 import com.subia.android.ui.theme.GradientBrandDeepStart
 import com.subia.android.ui.theme.Warning
 import com.subia.android.ui.theme.urgent
+import com.subia.android.util.InicioPrefs
 import com.subia.android.widget.actualizarWidgetResumen
 import com.subia.shared.model.DashboardSummary
 import com.subia.shared.model.ProximaRenovacion
 import com.subia.shared.model.ProyeccionCobros
+import com.subia.shared.model.totalDeDias
 import com.subia.shared.viewmodel.DashboardUiState
 import com.subia.shared.viewmodel.DashboardViewModel
 import com.subia.shared.viewmodel.GastoCategoria
+import com.subia.shared.viewmodel.resumenDisponible
+import kotlinx.coroutines.delay
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.daysUntil
 import org.koin.compose.viewmodel.koinViewModel
@@ -139,8 +178,11 @@ fun DashboardScreen(
                 is DashboardUiState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                     CircularProgressIndicator()
                 }
-                is DashboardUiState.Success -> contenido(state.resumen)
-                is DashboardUiState.Refreshing -> contenido(state.resumen)
+                // Una sola rama para los dos estados con datos: con dos ramas, pasar de
+                // Refreshing (caché) a Success recreaba el contenido entero (se perdía el
+                // scroll y la entrada animada se cortaba a medias).
+                is DashboardUiState.Success, is DashboardUiState.Refreshing ->
+                    state.resumenDisponible?.let { contenido(it) }
                 is DashboardUiState.Offline -> Column {
                     BannerOffline(stringResource(R.string.offline_data))
                     val cacheado = state.resumenCacheado
@@ -182,67 +224,119 @@ private fun DashboardContent(
         ?.let { formatearImporte(it.value, it.key, decimales = 0) }
         ?: resumen.gastoAnual.takeIf { it > 0 }?.let { formatearImporte(it, "EUR", decimales = 0) }
 
+    // Entrada escalonada y cuenta de la cifra: solo la primera vez que se pinta el Inicio en
+    // este proceso (ni al volver atrás ni al girar) y nunca con las animaciones del sistema
+    // desactivadas. Las tarjetas que se componen después (al hacer scroll) ya no entran animadas:
+    // la "ventana" se cierra en cuanto ha pasado la primera pintada.
+    val activas = animacionesActivas()
+    val animarEntrada = remember { activas && MovimientoUnaVez.reclamar(CLAVE_ENTRADA_INICIO) }
+    val ventana = remember { VentanaEntrada(abierta = animarEntrada) }
+    // Progreso (0..1) de la cuenta de la cifra del hero. Vive aquí y no en el hero: cuando llegan
+    // los totales calculados en el cliente el hero se vuelve a crear y la cuenta no debe reiniciarse.
+    val cuenta = remember { Animatable(if (animarEntrada) 0f else 1f) }
+    if (animarEntrada) {
+        LaunchedEffect(Unit) {
+            delay(VENTANA_ENTRADA_MS)
+            ventana.abierta = false
+        }
+        LaunchedEffect(Unit) { cuenta.animateTo(1f, tween(CUENTA_CIFRA_MS, easing = EaseOutFuerte)) }
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        var orden = 0
+
         // 1. Gasto mensual: lo más importante, arriba (D-01). Una tarjeta por divisa.
+        val ordenHero = orden++
         item {
-            if (totalesPorMoneda.isEmpty()) {
-                HeroGastoMensual(
-                    moneda = "EUR",
-                    mensual = resumen.gastoMensual,
-                    anual = resumen.gastoAnual,
-                    proyeccion = proyeccion
-                )
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    totalesPorMoneda.forEach { (moneda, total) ->
-                        HeroGastoMensual(
-                            moneda = moneda,
-                            mensual = total,
-                            anual = totalesAnualesPorMoneda[moneda] ?: total * 12.0,
-                            proyeccion = proyeccion
-                        )
+            EntradaEscalonada(ordenHero, ventana.abierta) {
+                if (totalesPorMoneda.isEmpty()) {
+                    HeroGastoMensual(
+                        moneda = "EUR",
+                        mensual = resumen.gastoMensual,
+                        anual = resumen.gastoAnual,
+                        proyeccion = proyeccion,
+                        progresoCifra = { cuenta.value }
+                    )
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        totalesPorMoneda.forEach { (moneda, total) ->
+                            HeroGastoMensual(
+                                moneda = moneda,
+                                mensual = total,
+                                anual = totalesAnualesPorMoneda[moneda] ?: total * 12.0,
+                                proyeccion = proyeccion,
+                                progresoCifra = { cuenta.value }
+                            )
+                        }
                     }
                 }
             }
         }
 
         // 2. Acceso a la lista con el contador en tinta neutra (el ámbar queda solo para avisos, D-03).
-        item { SuscripcionesActivasRow(resumen.totalSuscripciones, onNavigateToSuscripciones) }
+        val ordenActivas = orden++
+        item {
+            EntradaEscalonada(ordenActivas, ventana.abierta) {
+                SuscripcionesActivasRow(resumen.totalSuscripciones, onNavigateToSuscripciones)
+            }
+        }
 
         if (pruebasPorVencer.isNotEmpty()) {
-            item { PruebasPorVencerCard(pruebasPorVencer) }
+            val ordenPruebas = orden++
+            item { EntradaEscalonada(ordenPruebas, ventana.abierta) { PruebasPorVencerCard(pruebasPorVencer) } }
         }
 
         // 3. Tira de cobros (sustituye a "Próximas renovaciones").
+        val ordenTira = orden++
         item {
-            if (proyeccion != null) {
-                TiraCobrosCard(proyeccion, onNavigateToDetalle)
-            } else {
-                SinCobrosCard()
+            EntradaEscalonada(ordenTira, ventana.abierta) {
+                if (proyeccion != null) {
+                    TiraCobrosCard(proyeccion, onNavigateToDetalle)
+                } else {
+                    SinCobrosCard()
+                }
             }
         }
 
         // 4. Qué te viene cada mes.
         if (proyeccion != null) {
+            val ordenMeses = orden++
             item {
-                CobrosPorMesCard(
-                    meses = proyeccion.meses,
-                    moneda = monedaPrincipal,
-                    onOpenSuscripcion = onNavigateToDetalle
-                )
+                EntradaEscalonada(ordenMeses, ventana.abierta) {
+                    CobrosPorMesCard(
+                        meses = proyeccion.meses,
+                        moneda = monedaPrincipal,
+                        onOpenSuscripcion = onNavigateToDetalle
+                    )
+                }
             }
         }
 
-        item { GastosPorCategoriaCard(gastos = gastosPorCategoria) }
+        val ordenCategorias = orden++
+        item { EntradaEscalonada(ordenCategorias, ventana.abierta) { GastosPorCategoriaCard(gastos = gastosPorCategoria) } }
 
         // Última tarjeta: acceso al resumen anual compartible (R-02).
-        item { TuAnioCard(totalAnualTexto = totalAnualTexto, onVerResumen = onNavigateToResumenAnual) }
+        val ordenAnio = orden
+        item {
+            EntradaEscalonada(ordenAnio, ventana.abierta) {
+                TuAnioCard(totalAnualTexto = totalAnualTexto, onVerResumen = onNavigateToResumenAnual)
+            }
+        }
     }
 }
+
+/** La entrada del Inicio solo se ve una vez por proceso (ver [MovimientoUnaVez]). */
+private const val CLAVE_ENTRADA_INICIO = "inicio_entrada"
+
+/** Tiempo tras la primera pintada en el que una tarjeta recién compuesta aún entra animada. */
+private const val VENTANA_ENTRADA_MS = 400L
+
+/** Si las tarjetas que se componen ahora deben entrar animadas. No es estado de Compose a propósito. */
+private class VentanaEntrada(var abierta: Boolean)
 
 /**
  * Hero del Dashboard. Dos cifras distintas que no deben confundirse:
@@ -258,7 +352,8 @@ private fun HeroGastoMensual(
     moneda: String,
     mensual: Double,
     anual: Double,
-    proyeccion: ProyeccionCobros?
+    proyeccion: ProyeccionCobros?,
+    progresoCifra: () -> Float = { 1f }
 ) {
     val etiqueta = stringResource(R.string.hero_monthly_label)
     val importe = formatearImporte(mensual, moneda)
@@ -299,13 +394,7 @@ private fun HeroGastoMensual(
             style = MaterialTheme.typography.labelLarge
         )
         Spacer(Modifier.height(2.dp))
-        Text(
-            text = importe,
-            color = Color.White,
-            style = MaterialTheme.typography.displaySmall.tabular,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1
-        )
+        CifraContando(valor = mensual, moneda = moneda, progreso = progresoCifra)
         Text(
             text = anualTexto,
             color = Color.White,
@@ -336,6 +425,27 @@ private fun HeroGastoMensual(
 /** Escala de fuente del sistema a partir de la cual las cifras del hero se apilan. */
 private const val ESCALA_FUENTE_APILAR = 1.5f
 
+/** Duración de la cuenta de la cifra principal: más larga que una interacción porque se ve una vez. */
+private const val CUENTA_CIFRA_MS = 750
+
+/**
+ * Cifra principal del hero. Mientras [progreso] (0..1) no llega a 1 muestra `valor × progreso`
+ * (la cuenta desde 0 con ease-out fuerte de la primera carga); después, [valor] exacto. La lectura
+ * de [progreso] ocurre aquí dentro, así que en cada frame de la cuenta solo se recompone este
+ * texto, no el hero ni la pantalla. TalkBack lee siempre la cifra final (descripción del hero).
+ */
+@Composable
+private fun CifraContando(valor: Double, moneda: String, progreso: () -> Float) {
+    val p = progreso()
+    Text(
+        text = formatearImporte(if (p >= 1f) valor else valor * p, moneda),
+        color = Color.White,
+        style = MaterialTheme.typography.displaySmall.tabular,
+        fontWeight = FontWeight.Bold,
+        maxLines = 1
+    )
+}
+
 @Composable
 private fun MiniCifra(etiqueta: String, valor: String, modifier: Modifier = Modifier) {
     Column(modifier) {
@@ -359,11 +469,15 @@ private fun MiniCifra(etiqueta: String, valor: String, modifier: Modifier = Modi
 
 @Composable
 private fun SuscripcionesActivasRow(total: Int, onClick: () -> Unit) {
+    // Escala 0,97 al pulsar (además del ripple), leída en la capa gráfica.
+    val interaccion = remember { MutableInteractionSource() }
+    val escala = rememberEscalaPulsacion(interaccion)
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .escalaDiferida(escala)
             .border(1.dp, MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick),
+            .clickable(interactionSource = interaccion, indication = LocalIndication.current, onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -399,12 +513,24 @@ private fun SuscripcionesActivasRow(total: Int, onClick: () -> Unit) {
 }
 
 /**
- * Tarjeta de la tira de cobros: título, línea del próximo cobro con urgencia en texto e icono
- * ("Netflix · Mañana · 12,99 €", D-04) y la tira de 14 días a sangre dentro de la tarjeta.
+ * Tarjeta de la tira de cobros con dos vistas, elegidas con el selector de la cabecera:
+ * - "14 días": línea del próximo cobro con urgencia en texto e icono ("Netflix · Mañana ·
+ *   12,99 €", D-04) y la tira de hoy a +13.
+ * - "Este mes": el mes natural entero (del 1 al último, como "Este mes pagas"), con el número
+ *   de cobros y el total del mes, los días pasados atenuados y la tira ya desplazada hasta hoy.
+ * La elección se recuerda (rememberSaveable + [InicioPrefs]). El cambio es un fundido corto con
+ * un desplazamiento de 16 dp desde el lado del segmento elegido; la altura se anima, no salta.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TiraCobrosCard(proyeccion: ProyeccionCobros, onNavigateToDetalle: (Long) -> Unit) {
+    val context = LocalContext.current
     val proximo = proyeccion.proximoCobro
+    var modoMes by rememberSaveable { mutableStateOf(InicioPrefs.tiraEnModoMes(context)) }
+    // Una proyección sin días del mes (no debería pasar) se queda en la vista de 14 días.
+    val vistaMes = modoMes && proyeccion.diasMes.isNotEmpty()
+    val desplazamiento = with(LocalDensity.current) { 16.dp.roundToPx() }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -414,30 +540,173 @@ private fun TiraCobrosCard(proyeccion: ProyeccionCobros, onNavigateToDetalle: (L
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(Modifier.padding(vertical = 16.dp)) {
-            Column(Modifier.padding(horizontal = 16.dp)) {
-                Text(
-                    text = stringResource(R.string.tira_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(Modifier.height(4.dp))
-                if (proximo != null) {
-                    ProximoCobroLinea(proximo.nombre, proximo.importe, proximo.moneda, proyeccion.hoy, proximo.fecha)
-                } else {
+            // Título y selector en una fila; si no caben (letra grande, francés) el selector baja.
+            FlowRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Crossfade(
+                    targetState = vistaMes,
+                    animationSpec = tween(150),
+                    label = "tituloTira",
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)
+                        .padding(end = 12.dp)
+                ) { mes ->
                     Text(
-                        text = stringResource(R.string.tira_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = if (mes) {
+                            stringResource(R.string.tira_title_month, nombreMesEnFrase(proyeccion.hoy.monthNumber))
+                        } else {
+                            stringResource(R.string.tira_title)
+                        },
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
+                SelectorModoTira(
+                    modoMes = vistaMes,
+                    onCambiar = { mes ->
+                        modoMes = mes
+                        InicioPrefs.guardarTiraEnModoMes(context, mes)
+                    },
+                    modifier = Modifier.align(Alignment.CenterVertically)
+                )
             }
-            Spacer(Modifier.height(14.dp))
-            TiraCobros(
-                dias = proyeccion.dias,
-                proximoCobro = proximo,
-                onOpenSuscripcion = onNavigateToDetalle
-            )
+            Spacer(Modifier.height(4.dp))
+
+            AnimatedContent(
+                targetState = vistaMes,
+                transitionSpec = {
+                    // Hacia "Este mes" (segmento derecho) lo nuevo llega desde la derecha, y al revés.
+                    val lado = if (targetState) 1 else -1
+                    (fadeIn(tween(200, delayMillis = 50, easing = EaseOutFuerte)) +
+                        slideInHorizontally(tween(240, easing = EaseOutFuerte)) { lado * desplazamiento })
+                        .togetherWith(fadeOut(tween(110)))
+                        .using(SizeTransform(clip = false) { _, _ -> tween(240, easing = EaseOutFuerte) })
+                },
+                label = "modoTira"
+            ) { mes ->
+                Column {
+                    Column(Modifier.padding(horizontal = 16.dp)) {
+                        if (mes) {
+                            ResumenMesLinea(proyeccion)
+                        } else if (proximo != null) {
+                            ProximoCobroLinea(proximo.nombre, proximo.importe, proximo.moneda, proyeccion.hoy, proximo.fecha)
+                        } else {
+                            Text(
+                                text = stringResource(R.string.tira_empty),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(14.dp))
+                    if (mes) {
+                        // Arranca en hoy con el día anterior a la vista: se nota que hay días pasados a la izquierda.
+                        val estado = rememberLazyListState(
+                            initialFirstVisibleItemIndex = (proyeccion.hoy.dayOfMonth - 2).coerceAtLeast(0)
+                        )
+                        TiraCobros(
+                            dias = proyeccion.diasMes,
+                            hoy = proyeccion.hoy,
+                            proximoCobro = proximo,
+                            onOpenSuscripcion = onNavigateToDetalle,
+                            estadoLista = estado
+                        )
+                    } else {
+                        TiraCobros(
+                            dias = proyeccion.dias,
+                            hoy = proyeccion.hoy,
+                            proximoCobro = proximo,
+                            onOpenSuscripcion = onNavigateToDetalle
+                        )
+                    }
+                }
+            }
         }
+    }
+}
+
+/**
+ * "5 cobros · 61,96 €": cobros del mes entero y su total, la misma cifra que "Este mes pagas"
+ * del hero ([totalDeDias] sobre los días del mes coincide con `totalMesCompleto`).
+ */
+@Composable
+private fun ResumenMesLinea(proyeccion: ProyeccionCobros) {
+    val numCobros = remember(proyeccion) { proyeccion.diasMes.sumOf { it.cobros.size } }
+    val totales = remember(proyeccion) { totalDeDias(proyeccion.diasMes) }
+    val texto = if (numCobros == 0) {
+        stringResource(R.string.month_no_charges)
+    } else {
+        pluralStringResource(R.plurals.month_charges_count, numCobros, numCobros) + " · " +
+            totales.entries.joinToString(" · ") { formatearImporte(it.value, it.key) }
+    }
+    Text(
+        text = texto,
+        style = MaterialTheme.typography.bodyMedium.tabular,
+        fontWeight = FontWeight.Medium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+}
+
+/**
+ * Selector segmentado "14 días | Este mes": pastilla pequeña de 40 dp (Compose amplía la zona
+ * táctil de cada segmento hasta 48 dp) con semántica de pestañas y estado seleccionado. El
+ * segmento elegido cambia de color en 180 ms; el fondo se pinta en `drawBehind`.
+ */
+@Composable
+private fun SelectorModoTira(modoMes: Boolean, onCambiar: (Boolean) -> Unit, modifier: Modifier = Modifier) {
+    val view = LocalView.current
+    val elegir = { mes: Boolean ->
+        if (mes != modoMes) {
+            view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+            onCambiar(mes)
+        }
+    }
+    Row(
+        modifier = modifier
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(3.dp)
+            .selectableGroup()
+    ) {
+        SegmentoModo(stringResource(R.string.tira_mode_14_days), seleccionado = !modoMes) { elegir(false) }
+        SegmentoModo(stringResource(R.string.tira_mode_month), seleccionado = modoMes) { elegir(true) }
+    }
+}
+
+@Composable
+private fun SegmentoModo(texto: String, seleccionado: Boolean, onClick: () -> Unit) {
+    val colores = MaterialTheme.colorScheme
+    val fondo by animateColorAsState(
+        targetValue = if (seleccionado) colores.primaryContainer else colores.primaryContainer.copy(alpha = 0f),
+        animationSpec = tween(180, easing = EaseOutFuerte),
+        label = "fondoSegmento"
+    )
+    val tinta by animateColorAsState(
+        targetValue = if (seleccionado) colores.onPrimaryContainer else colores.onSurfaceVariant,
+        animationSpec = tween(180, easing = EaseOutFuerte),
+        label = "tintaSegmento"
+    )
+    Box(
+        modifier = Modifier
+            .clip(CircleShape)
+            .drawBehind { drawRect(fondo) }
+            .selectable(selected = seleccionado, role = Role.Tab, onClick = onClick)
+            .heightIn(min = 34.dp)
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = texto,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = if (seleccionado) FontWeight.SemiBold else FontWeight.Medium,
+            color = tinta,
+            maxLines = 1
+        )
     }
 }
 

@@ -42,6 +42,10 @@
     <string name="tira_no_charge">no charges</string>
     <string name="tira_open_sub">Open %1$s</string>
     <string name="tira_empty">No charges in the next two weeks</string>
+    <string name="tira_title_month">Charges in %1$s</string>
+    <string name="tira_mode_14_days">14 days</string>
+    <string name="tira_mode_month">This month</string>
+    <string name="tira_already_charged">already charged</string>
     <string name="day_today">Today</string>
     <string name="day_tomorrow">Tomorrow</string>
     <plurals name="in_n_days">
@@ -203,6 +207,10 @@
     <string name="no_category_data">No category data</string>
     <string name="others">Others</string>
     <string name="category_monthly_equiv">Monthly equivalent per category</string>
+    <string name="category_show_expenses">show its expenses</string>
+    <string name="category_hide_expenses">hide its expenses</string>
+    <string name="a11y_expanded">Expanded</string>
+    <string name="a11y_collapsed">Collapsed</string>
     <string name="no_category">No category</string>
     <plurals name="category_subs_count">
         <item quantity="one">%d subscription</item>

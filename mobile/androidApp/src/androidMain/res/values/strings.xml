@@ -42,6 +42,10 @@
     <string name="tira_no_charge">sin cobros</string>
     <string name="tira_open_sub">Abrir %1$s</string>
     <string name="tira_empty">Ningún cobro en estas dos semanas</string>
+    <string name="tira_title_month">Cobros de %1$s</string>
+    <string name="tira_mode_14_days">14 días</string>
+    <string name="tira_mode_month">Este mes</string>
+    <string name="tira_already_charged">ya cobrado</string>
     <string name="day_today">Hoy</string>
     <string name="day_tomorrow">Mañana</string>
     <plurals name="in_n_days">
@@ -203,6 +207,10 @@
     <string name="no_category_data">Sin datos de categorías</string>
     <string name="others">Otros</string>
     <string name="category_monthly_equiv">Equivalente mensual por categoría</string>
+    <string name="category_show_expenses">ver sus gastos</string>
+    <string name="category_hide_expenses">ocultar sus gastos</string>
+    <string name="a11y_expanded">Desplegada</string>
+    <string name="a11y_collapsed">Plegada</string>
     <string name="no_category">Sin categoría</string>
     <plurals name="category_subs_count">
         <item quantity="one">%d suscripción</item>

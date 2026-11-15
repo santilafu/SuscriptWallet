@@ -90,6 +90,13 @@ fun nombreMesCorto(mes: Int): String =
 fun nombreMesLargo(mes: Int): String =
     Month.of(mes).getDisplayName(JavaTextStyle.FULL, Locale.getDefault()).sinPuntoYCapital()
 
+/**
+ * Mes completo con la mayúscula que le toca dentro de una frase (1..12): "noviembre",
+ * "novembre", "novembro", pero "November" en inglés. Para "Cobros de noviembre".
+ */
+fun nombreMesEnFrase(mes: Int): String =
+    Month.of(mes).getDisplayName(JavaTextStyle.FULL, Locale.getDefault())
+
 /** Fecha corta localizada sin año: "9 oct" / "Oct 9". */
 fun formatearFechaCorta(fecha: LocalDate): String {
     val locale = Locale.getDefault()
