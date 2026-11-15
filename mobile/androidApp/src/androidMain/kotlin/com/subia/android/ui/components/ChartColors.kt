@@ -3,6 +3,9 @@ package com.subia.android.ui.components
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.sp
 
 /**
  * Colores de datos del Dashboard. Forma "énfasis" de la skill dataviz: un único acento
@@ -24,4 +27,19 @@ object ChartColors {
     /** Pista vacía bajo una barra / línea base: un paso fuera de la superficie. */
     val pista: Color
         @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+}
+
+/** Hasta dónde crecen las etiquetas de los gráficos con la fuente grande del sistema. */
+private const val ESCALA_MAXIMA_ETIQUETAS = 1.2f
+
+/**
+ * Tamaño de las etiquetas pequeñas de los gráficos (meses, importe sobre la barra, importe del
+ * día): siguen a la fuente del sistema solo hasta 1,2×. Con fuente 1,5× los 12 meses se
+ * montaban ("NovDicEne…") y los importes no cabían en su columna. La cifra completa sigue en
+ * TalkBack y en la lista de cobros de debajo, que sí crecen sin límite.
+ */
+@Composable
+fun tamEtiquetaGrafico(base: Float): TextUnit {
+    val escala = LocalDensity.current.fontScale
+    return (base * minOf(escala, ESCALA_MAXIMA_ETIQUETAS) / escala).sp
 }

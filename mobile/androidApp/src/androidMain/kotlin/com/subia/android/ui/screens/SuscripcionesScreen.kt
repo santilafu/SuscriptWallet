@@ -503,7 +503,9 @@ private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Un
         ServiceLogo(nombre = sub.nombre, size = 44.dp, contentDescription = null)
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
-            Text(sub.nombre, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            // Dos líneas: con fuente grande la cifra de la derecha deja poco ancho y el nombre
+            // se quedaba en "Gimnasi…".
+            Text(sub.nombre, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(
                 detalleCobro,
                 style = MaterialTheme.typography.bodySmall,

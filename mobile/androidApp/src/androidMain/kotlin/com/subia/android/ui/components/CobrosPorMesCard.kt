@@ -229,8 +229,8 @@ private fun BarraMes(
     val descripcion = "$etiqueta: ${formatearImporte(valor, moneda)}"
 
     Column(
+        // Sin clip: recortaba la etiqueta de importe, más ancha que la columna ("115 €" se leía "15").
         modifier = modifier
-            .clip(RoundedCornerShape(6.dp))
             .clickable(role = Role.Button, onClick = onClick)
             .semantics { contentDescription = descripcion; selected = seleccionada; role = Role.Button }
             .padding(bottom = 2.dp),
@@ -247,7 +247,7 @@ private fun BarraMes(
                     Text(
                         text = formatearImporteCompacto(valor, moneda),
                         style = MaterialTheme.typography.labelSmall.tabular,
-                        fontSize = 11.sp,
+                        fontSize = tamEtiquetaGrafico(11f),
                         fontWeight = FontWeight.SemiBold,
                         color = colores.onSurface,
                         maxLines = 1,
@@ -274,7 +274,7 @@ private fun BarraMes(
         Text(
             text = etiqueta,
             style = MaterialTheme.typography.labelSmall,
-            fontSize = 11.sp,
+            fontSize = tamEtiquetaGrafico(11f),
             fontWeight = if (seleccionada || esMesActual) FontWeight.SemiBold else FontWeight.Normal,
             color = when {
                 seleccionada -> colores.onSurface

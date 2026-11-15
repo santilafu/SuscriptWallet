@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -199,12 +200,13 @@ private fun DiaColumna(
         Text(
             text = importeTexto,
             style = MaterialTheme.typography.labelSmall.tabular,
-            fontSize = 11.sp,
+            fontSize = tamEtiquetaGrafico(11f),
             fontWeight = if (esProximo) FontWeight.SemiBold else FontWeight.Medium,
             color = if (esProximo) colores.primary else colores.onSurface,
             maxLines = 1,
             textAlign = TextAlign.Center,
-            modifier = Modifier.height(16.dp)
+            // Alto mínimo, no fijo: con fuente grande la línea mide más de 16 dp y se cortaba por abajo.
+            modifier = Modifier.heightIn(min = 16.dp)
         )
     }
 }
