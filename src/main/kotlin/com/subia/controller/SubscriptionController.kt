@@ -4,6 +4,7 @@ import com.subia.model.BillingCycle
 import com.subia.model.Subscription
 import com.subia.repository.UserRepository
 import com.subia.service.CategoryService
+import com.subia.service.Periodicidad
 import com.subia.service.SubscriptionService
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.format.annotation.DateTimeFormat
@@ -68,17 +69,18 @@ class SubscriptionController(
      *
      * Pasa al template:
      * - "categories": lista de categorías para el selector.
-     * - "billingCycles": todos los valores del enum para el selector de ciclo.
+     * - "periodicidadActual": valor preseleccionado del desplegable de periodicidad ("" = ninguno).
      * - "sub": mapa con valores vacíos (el template comparte lógica con el formulario de edición).
      */
     @GetMapping("/new")
     fun newForm(model: Model): String {
         model.addAttribute("categories", categoryService.findAll())
-        model.addAttribute("billingCycles", BillingCycle.values())
         model.addAttribute("currencies", com.subia.model.Currencies.SUPPORTED)
         model.addAttribute("sub", emptyForm())
         // La plantilla distinguía alta/edición con `instanceof T(...)`, prohibido en Thymeleaf 3.1.3
         model.addAttribute("isEntity", false)
+        // Sin opción preseleccionada: el usuario debe elegir la periodicidad.
+        model.addAttribute("periodicidadActual", "")
         return "subscriptions/form"
     }
 
@@ -96,7 +98,8 @@ class SubscriptionController(
         @RequestParam(defaultValue = "") description: String,
         @RequestParam price: BigDecimal,
         @RequestParam(defaultValue = "EUR") currency: String,
-        @RequestParam billingCycle: BillingCycle,
+        @RequestParam(required = false) periodicidad: String?,
+        @RequestParam(required = false) billingCycle: BillingCycle?,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) renewalDate: LocalDate,
         @RequestParam categoryId: Long,
         @RequestParam(defaultValue = "false") active: Boolean,
@@ -108,10 +111,11 @@ class SubscriptionController(
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "trialEndsAt is required when isTrial is true")
         val userId = resolveUserId(userDetails)
         val category = categoryService.findById(categoryId)
+        val (cycle, intervalo) = periodicidadRecibida(periodicidad, billingCycle, stored = null)
         subscriptionService.save(
             Subscription(
                 name = name, description = description, price = price, currency = currency,
-                billingCycle = billingCycle, renewalDate = renewalDate, category = category,
+                billingCycle = cycle, intervaloMeses = intervalo, renewalDate = renewalDate, category = category,
                 active = active, notes = notes, isTrial = isTrial, trialEndsAt = trialEndsAt
             ),
             userId
@@ -130,10 +134,11 @@ class SubscriptionController(
         model: Model
     ): String {
         val userId = resolveUserId(userDetails)
-        model.addAttribute("sub", subscriptionService.findById(id, userId).projected())
+        val sub = subscriptionService.findById(id, userId).projected()
+        model.addAttribute("sub", sub)
         model.addAttribute("isEntity", true)
+        model.addAttribute("periodicidadActual", valorPeriodicidad(sub))
         model.addAttribute("categories", categoryService.findAll())
-        model.addAttribute("billingCycles", BillingCycle.values())
         model.addAttribute("currencies", com.subia.model.Currencies.SUPPORTED)
         return "subscriptions/form"
     }
@@ -152,7 +157,8 @@ class SubscriptionController(
         @RequestParam(defaultValue = "") description: String,
         @RequestParam price: BigDecimal,
         @RequestParam(defaultValue = "EUR") currency: String,
-        @RequestParam billingCycle: BillingCycle,
+        @RequestParam(required = false) periodicidad: String?,
+        @RequestParam(required = false) billingCycle: BillingCycle?,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) renewalDate: LocalDate,
         @RequestParam categoryId: Long,
         @RequestParam(defaultValue = "false") active: Boolean,
@@ -166,15 +172,17 @@ class SubscriptionController(
         // verify ownership
         val stored = subscriptionService.findById(id, userId)
         val category = categoryService.findById(categoryId)
+        // Antes la entidad se reconstruía sin intervalo y un trimestral volvía a mensual.
+        val (cycle, intervalo) = periodicidadRecibida(periodicidad, billingCycle, stored)
         // R3-01: el formulario muestra la próxima renovación proyectada; si vuelve sin tocar se
         // conserva el ancla guardada (día 31, 29-feb…) en vez de guardar el día recortado.
         val renewal = com.subia.service.RenewalDates.anchorForUpdate(
-            stored, renewalDate, billingCycle, LocalDate.now(clock)
+            stored, renewalDate, cycle, intervalo, LocalDate.now(clock)
         )
         subscriptionService.save(
             Subscription(
                 id = id, name = name, description = description, price = price, currency = currency,
-                billingCycle = billingCycle, renewalDate = renewal, category = category,
+                billingCycle = cycle, intervaloMeses = intervalo, renewalDate = renewal, category = category,
                 active = active, notes = notes, isTrial = isTrial, trialEndsAt = trialEndsAt,
                 userId = userId
             )
@@ -291,6 +299,37 @@ class SubscriptionController(
      */
     private fun Subscription.projected(): Subscription =
         copy(renewalDate = com.subia.service.RenewalDates.nextRenewal(this, LocalDate.now(clock)))
+
+    /**
+     * Periodicidad que envía el formulario web, ya resuelta con [Periodicidad.resolver].
+     *
+     * El desplegable manda un único parámetro `periodicidad`: `WEEKLY` o el número de meses
+     * (`1`, `2`, `3`, `6`, `12`). Un solo valor evita tener que sincronizar dos campos con
+     * JavaScript. Si no llega (un formulario antiguo abierto durante un despliegue), se usa
+     * `billingCycle` con la misma regla que la API: al editar con el mismo ciclo se conserva el
+     * intervalo guardado.
+     *
+     * @throws IllegalArgumentException si el valor no es válido (la web responde 400).
+     */
+    private fun periodicidadRecibida(
+        periodicidad: String?,
+        billingCycle: BillingCycle?,
+        stored: Subscription?
+    ): Pair<BillingCycle, Int> {
+        val valor = periodicidad?.trim().orEmpty()
+        if (valor.isEmpty()) {
+            requireNotNull(billingCycle) { "La periodicidad es obligatoria" }
+            return Periodicidad.resolver(billingCycle, null, stored)
+        }
+        if (valor == BillingCycle.WEEKLY.name) return Periodicidad.resolver(BillingCycle.WEEKLY, 1)
+        val meses = requireNotNull(valor.toIntOrNull()) { "Periodicidad no válida: ${valor.take(10)}" }
+        return Periodicidad.resolver(BillingCycle.MONTHLY, meses)
+    }
+
+    /** Valor del desplegable de periodicidad que corresponde a una suscripción guardada. */
+    private fun valorPeriodicidad(sub: Subscription): String =
+        if (sub.billingCycle == BillingCycle.WEEKLY) BillingCycle.WEEKLY.name
+        else Periodicidad.mesesPorCobro(sub.billingCycle, sub.intervaloMeses).toString()
 
     private fun csvEscape(raw: String): String {
         // Inyección de fórmulas: Excel/LibreOffice ejecutan celdas que empiezan por = + - @

@@ -35,9 +35,25 @@ class DashboardService(
     private val clock: Clock
 ) {
 
-    // Factores de conversión de los gastos semanales (los mensuales/anuales usan Periodicidad)
-    private val WEEKLY_FACTOR = BigDecimal("4.33")   // semanas promedio por mes
-    private val WEEKS_IN_YEAR = BigDecimal("52")
+    companion object {
+        // Factores de conversión de los gastos semanales (los mensuales/anuales usan Periodicidad)
+        private val WEEKLY_FACTOR = BigDecimal("4.33")   // semanas promedio por mes
+        private val WEEKS_IN_YEAR = BigDecimal("52")
+
+        /**
+         * Equivalente mensual de una suscripción (escala interna, sin redondear a céntimos: eso
+         * se hace solo en las cifras finales, ver [Periodicidad]).
+         * MONTHLY/YEARLY: importe / meses por cobro (un anual con 12 da lo mismo que el antiguo /12).
+         * WEEKLY: importe × 4,33.
+         *
+         * Es público para que la API (`SubscriptionDto.equivalenteMensual`) y el gráfico de la web
+         * usen EXACTAMENTE la misma fórmula que los totales del dashboard.
+         */
+        fun equivalenteMensual(s: Subscription): BigDecimal = when (s.billingCycle) {
+            BillingCycle.WEEKLY -> s.price.multiply(WEEKLY_FACTOR)
+            else -> Periodicidad.equivalenteMensual(s.price, Periodicidad.mesesPorCobro(s.billingCycle, s.intervaloMeses))
+        }
+    }
 
     /**
      * Construye y devuelve el [DashboardDto] filtrado por userId.
@@ -86,6 +102,9 @@ class DashboardService(
         val topSubscriptions = inCurrency
             .sortedByDescending { toMonthly(it) }
             .take(5)
+        // Equivalente mensual de cada una (mismo orden): el gráfico de barras lo pinta tal cual en
+        // vez de recalcularlo en JavaScript, que no conocía el intervalo de meses.
+        val topMonthly = topSubscriptions.map { Periodicidad.aCifraVisible(toMonthly(it)) }
 
         val upcomingRenewals = renewingWithin(active, today, 30)
         val alertRenewals = upcomingRenewals.filter { !it.renewalDate.isAfter(today.plusDays(7)) }
@@ -99,6 +118,7 @@ class DashboardService(
             totalMonthly, totalYearly, spendByCategory,
             upcomingRenewals, alertRenewals, alertTrials,
             monthlyByCurrency, yearlyByCurrency, topSubscriptions,
+            topMonthly = topMonthly,
             selectedCurrency = chosen,
             currencySymbol = Currencies.symbol(chosen),
             availableCurrencies = availableCurrencies
@@ -163,15 +183,8 @@ class DashboardService(
     private fun mainCurrency(monthlyByCurrency: Map<String, BigDecimal>): String =
         monthlyByCurrency.maxByOrNull { it.value }?.key ?: "EUR"
 
-    /**
-     * Convierte el precio de una suscripción a su equivalente mensual (escala interna, sin
-     * redondear a céntimos: eso se hace solo en las cifras finales, ver [Periodicidad]).
-     * MONTHLY/YEARLY: importe / meses por cobro (un anual con 12 da lo mismo que el antiguo /12).
-     */
-    private fun toMonthly(s: Subscription): BigDecimal = when (s.billingCycle) {
-        BillingCycle.WEEKLY -> s.price.multiply(WEEKLY_FACTOR)
-        else -> Periodicidad.equivalenteMensual(s.price, Periodicidad.mesesPorCobro(s.billingCycle, s.intervaloMeses))
-    }
+    /** Equivalente mensual a escala interna; ver [equivalenteMensual]. */
+    private fun toMonthly(s: Subscription): BigDecimal = equivalenteMensual(s)
 
     /**
      * Convierte el precio de una suscripción a su equivalente anual.

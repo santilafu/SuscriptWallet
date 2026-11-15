@@ -6,6 +6,8 @@ import com.subia.dto.api.SubscriptionRequestDto
 import com.subia.model.Subscription
 import com.subia.repository.UserRepository
 import com.subia.service.CategoryService
+import com.subia.service.DashboardService
+import com.subia.service.Periodicidad
 import com.subia.service.SubscriptionService
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -56,9 +58,11 @@ class ApiSubscriptionController(
     ): ApiResponse<SubscriptionDto> {
         val userId = resolveUserId(jwt)
         val category = categoryService.findById(req.categoryId)
+        // Sin intervaloMeses (apps antiguas) se deduce del ciclo: YEARLY → 12, MONTHLY → 1.
+        val (cycle, intervalo) = Periodicidad.resolver(req.billingCycle, req.intervaloMeses)
         val sub = Subscription(
             name = req.name, description = req.description, price = req.price,
-            currency = req.currency, billingCycle = req.billingCycle,
+            currency = req.currency, billingCycle = cycle, intervaloMeses = intervalo,
             renewalDate = req.renewalDate, active = req.active, notes = req.notes,
             category = category,
             isTrial = req.isTrial,
@@ -77,12 +81,15 @@ class ApiSubscriptionController(
         // Verify ownership
         val stored = subscriptionService.findById(id, userId)
         val category = categoryService.findById(req.categoryId)
+        // Antes la entidad se reconstruía sin intervalo y un trimestral volvía a 1. Sin el campo
+        // (apps antiguas) y con el mismo ciclo se conserva el guardado.
+        val (cycle, intervalo) = Periodicidad.resolver(req.billingCycle, req.intervaloMeses, stored)
         // R3-01: si el cliente devuelve la fecha proyectada sin tocarla, se conserva el ancla
         // guardada (día 31, 29-feb…) en vez de moverla al día recortado.
-        val renewal = RenewalDates.anchorForUpdate(stored, req.renewalDate, req.billingCycle, LocalDate.now(clock))
+        val renewal = RenewalDates.anchorForUpdate(stored, req.renewalDate, cycle, intervalo, LocalDate.now(clock))
         val sub = Subscription(
             id = id, name = req.name, description = req.description, price = req.price,
-            currency = req.currency, billingCycle = req.billingCycle,
+            currency = req.currency, billingCycle = cycle, intervaloMeses = intervalo,
             renewalDate = renewal, active = req.active, notes = req.notes,
             category = category,
             isTrial = req.isTrial,
@@ -147,7 +154,10 @@ class ApiSubscriptionController(
             categoryName = cat?.name ?: "Sin categoría",
             categoryColor = cat?.color ?: "#64748b",
             categoryIcon = cat?.icon ?: "📦",
-            isTrial = isTrial, trialEndsAt = trialEndsAt?.toString()
+            isTrial = isTrial, trialEndsAt = trialEndsAt?.toString(),
+            // Normalizado por si la entidad no pasó por la validación (YEARLY + 1 → 12).
+            intervaloMeses = Periodicidad.normalizar(billingCycle, intervaloMeses).second,
+            equivalenteMensual = Periodicidad.aCifraVisible(DashboardService.equivalenteMensual(this))
         )
     }
 }

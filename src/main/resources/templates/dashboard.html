@@ -317,17 +317,13 @@ var chartAnim = reduceMotion ? false : { duration: 700, easing: 'easeOutQuart' }
     const names   = [];
     const amounts = [];
     const colors  = [];
-    // Mismo criterio que DashboardService.toMonthly (anual / 12, semanal x 4.33).
-    function toMonthly(price, cycle) {
-        if (cycle === 'YEARLY') return Math.round(price / 12 * 100) / 100;
-        if (cycle === 'WEEKLY') return Math.round(price * 4.33 * 100) / 100;
-        return price;
-    }
     const palette = ['rgba(124,58,237,0.85)','rgba(34,197,94,0.75)','rgba(245,158,11,0.75)','rgba(239,68,68,0.75)','rgba(6,182,212,0.75)'];
 
+    // El equivalente mensual llega calculado por DashboardService (topMonthly, mismo orden que
+    // topSubscriptions): así cuadra con los totales y tiene en cuenta el intervalo de meses.
     /*[# th:each="s, i : ${dashboard.topSubscriptions}"]*/
     names.push(/*[[${s.name}]]*/ '');
-    amounts.push(toMonthly(/*[[${s.price}]]*/ 0, /*[[${s.billingCycle.name()}]]*/ 'MONTHLY'));
+    amounts.push(Number(/*[[${dashboard.topMonthly[i.index]}]]*/ 0));
     var ci = /*[[${i.index}]]*/ 0;
     colors.push(palette[ci] || '#94a3b8');
     /*[/]*/

@@ -1,6 +1,7 @@
 package com.subia.service
 
 import com.subia.model.BillingCycle
+import com.subia.model.Subscription
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -62,6 +63,37 @@ object Periodicidad {
             intervaloMeses == MESES_EN_ANIO -> BillingCycle.YEARLY to MESES_EN_ANIO
             else -> BillingCycle.MONTHLY to intervaloMeses
         }
+    }
+
+    /**
+     * Periodicidad que hay que GUARDAR a partir de lo que envía un cliente (API o web), ya
+     * normalizada. Existe para no romper las apps publicadas (≤ 2.17.8), que no conocen
+     * `intervaloMeses` y siempre envían solo MONTHLY/YEARLY/WEEKLY:
+     *
+     * - Con [intervaloRecibido] → manda el intervalo y el ciclo se deriva de él (12 → YEARLY,
+     *   1/2/3/6 → MONTHLY). Solo WEEKLY se respeta tal cual (su intervalo se valida y se ignora).
+     * - Sin intervalo y editando ([guardado] != null) con el MISMO ciclo que el guardado → se
+     *   conserva el intervalo guardado: una app antigua que edita un gasto trimestral recibe y
+     *   reenvía MONTHLY, y no debe convertirlo en mensual.
+     * - Sin intervalo en un alta, o con el ciclo cambiado → se deduce del ciclo
+     *   (MONTHLY → 1, YEARLY → 12, WEEKLY → 1).
+     *
+     * @throws IllegalArgumentException si [intervaloRecibido] no es uno de [VALORES_PERMITIDOS]
+     *   (la API y la web lo convierten en un 400).
+     */
+    fun resolver(
+        cicloRecibido: BillingCycle,
+        intervaloRecibido: Int?,
+        guardado: Subscription? = null
+    ): Pair<BillingCycle, Int> = when {
+        intervaloRecibido != null && cicloRecibido == BillingCycle.WEEKLY ->
+            normalizar(BillingCycle.WEEKLY, intervaloRecibido)
+        // Se parte de MONTHLY para que el intervalo mande: YEARLY + 1 sería "anual" en
+        // normalizar (regla de clientes antiguos), pero aquí el cliente SÍ ha enviado el 1.
+        intervaloRecibido != null -> normalizar(BillingCycle.MONTHLY, intervaloRecibido)
+        guardado != null && guardado.billingCycle == cicloRecibido ->
+            normalizar(guardado.billingCycle, guardado.intervaloMeses)
+        else -> normalizar(cicloRecibido, 1)
     }
 
     /**

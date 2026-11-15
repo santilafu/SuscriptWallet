@@ -121,8 +121,11 @@
                     <div class="flex items-baseline gap-1.5 mb-4">
                         <span class="text-[1.35rem] font-bold tabular-num" style="color:#e8edf5;letter-spacing:-0.03em;"
                               th:text="${s.currency + ' ' + #numbers.formatDecimal(s.price, 1, 2)}"></span>
+                        <!-- MONTHLY con 2, 3 o 6 meses usa sub.billing.months{N}; el resto, su ciclo. -->
                         <span class="text-xs" style="color:#8291a8;"
-                              th:text="#{${'sub.billing.' + #strings.toLowerCase(s.billingCycle)}}"></span>
+                              th:text="#{${s.billingCycle.name() == 'MONTHLY' and s.intervaloMeses != 1
+                                            ? 'sub.billing.months' + s.intervaloMeses
+                                            : 'sub.billing.' + #strings.toLowerCase(s.billingCycle)}}"></span>
                     </div>
 
                     <!-- Meta: categoría + fecha -->

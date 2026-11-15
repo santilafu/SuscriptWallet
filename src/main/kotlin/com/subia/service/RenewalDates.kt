@@ -54,31 +54,55 @@ object RenewalDates {
      * tal cual en el PUT (sin que el usuario toque la fecha), guardarla movía el ancla al 30 para
      * siempre (y un anual del 29-feb al 28-feb).
      *
-     * Regla: si el ciclo no cambia y la fecha recibida es exactamente la que el servidor habría
-     * proyectado desde el ancla guardada (hoy, o ayer para cubrir el paso de medianoche y un
-     * cliente cuya zona horaria va por detrás), es la misma serie de cobros → se conserva el
-     * ancla. Cualquier otra fecha es un cambio deliberado del usuario y se respeta. La única
-     * ambigüedad (elegir a propósito justo la fecha proyectada) no cambia los cobros futuros.
+     * Regla: si la periodicidad (ciclo e intervalo de meses) no cambia y la fecha recibida es
+     * exactamente la que el servidor habría proyectado desde el ancla guardada (hoy, o ayer para
+     * cubrir el paso de medianoche y un cliente cuya zona horaria va por detrás), es la misma
+     * serie de cobros → se conserva el ancla. Cualquier otra fecha es un cambio deliberado del
+     * usuario y se respeta. La única ambigüedad (elegir a propósito justo la fecha proyectada) no
+     * cambia los cobros futuros.
+     *
+     * Si cambia el ciclo O el intervalo (p. ej. mensual → trimestral) la serie de cobros es otra
+     * y la fecha recibida se toma como nueva ancla.
      *
      * No se tolera "mañana": el día de un cobro, mover la fecha al ciclo siguiente (saltarse un
      * cobro) es un cambio deliberado que debe respetarse.
+     *
+     * Los intervalos van al final con valor por defecto 1 para que las llamadas antiguas sigan
+     * igual (YEARLY + 1 se normaliza a 12, ver [Periodicidad.normalizar]).
      */
     fun anchorForUpdate(
         storedAnchor: LocalDate,
         storedCycle: BillingCycle,
         receivedDate: LocalDate,
         receivedCycle: BillingCycle,
-        today: LocalDate
+        today: LocalDate,
+        storedIntervalo: Int = 1,
+        receivedIntervalo: Int = 1
     ): LocalDate {
-        if (receivedCycle != storedCycle || receivedDate == storedAnchor) return receivedDate
-        val sameSeries = receivedDate == nextRenewal(storedAnchor, storedCycle, today) ||
-            receivedDate == nextRenewal(storedAnchor, storedCycle, today.minusDays(1))
+        // Se comparan las parejas normalizadas: YEARLY+1 y YEARLY+12 son la misma periodicidad.
+        val samePeriodicity = Periodicidad.normalizar(storedCycle, storedIntervalo) ==
+            Periodicidad.normalizar(receivedCycle, receivedIntervalo)
+        if (!samePeriodicity || receivedDate == storedAnchor) return receivedDate
+        val sameSeries = receivedDate == nextRenewal(storedAnchor, storedCycle, today, storedIntervalo) ||
+            receivedDate == nextRenewal(storedAnchor, storedCycle, today.minusDays(1), storedIntervalo)
         return if (sameSeries) storedAnchor else receivedDate
     }
 
-    /** [anchorForUpdate] a partir de la suscripción guardada. */
-    fun anchorForUpdate(stored: Subscription, receivedDate: LocalDate, receivedCycle: BillingCycle, today: LocalDate): LocalDate =
-        anchorForUpdate(stored.renewalDate, stored.billingCycle, receivedDate, receivedCycle, today)
+    /**
+     * [anchorForUpdate] a partir de la suscripción guardada. [receivedCycle] y
+     * [receivedIntervalo] deben ser los que se van a guardar (ya resueltos con
+     * [Periodicidad.resolver]).
+     */
+    fun anchorForUpdate(
+        stored: Subscription,
+        receivedDate: LocalDate,
+        receivedCycle: BillingCycle,
+        receivedIntervalo: Int,
+        today: LocalDate
+    ): LocalDate = anchorForUpdate(
+        stored.renewalDate, stored.billingCycle, receivedDate, receivedCycle, today,
+        storedIntervalo = stored.intervaloMeses, receivedIntervalo = receivedIntervalo
+    )
 
     /**
      * true si la suscripción está en una prueba gratuita que sigue vigente hoy. Una prueba

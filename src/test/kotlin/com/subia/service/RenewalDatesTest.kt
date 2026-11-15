@@ -175,4 +175,47 @@ class RenewalDatesTest {
         // Serie: 20-ene, 20-abr, 20-jul, 20-oct
         assertEquals(d("2026-10-20"), RenewalDates.nextRenewal(trimestral, d("2026-10-10")))
     }
+
+    // ── anchorForUpdate con intervalo de meses (sprint 2) ────────────────────────────────
+
+    @Test
+    fun `cambiar el intervalo usa la fecha recibida como nueva ancla`() {
+        // Mensual del 31 vista el 10-nov → proyectada 30-nov; el usuario la pasa a trimestral sin
+        // tocar la fecha: es otra serie de cobros y el 30-nov pasa a ser el ancla.
+        assertEquals(d("2026-11-30"), RenewalDates.anchorForUpdate(
+            d("2026-01-31"), BillingCycle.MONTHLY, d("2026-11-30"), BillingCycle.MONTHLY, d("2026-11-10"),
+            storedIntervalo = 1, receivedIntervalo = 3
+        ))
+    }
+
+    @Test
+    fun `trimestral sin cambios conserva el ancla con su propia proyeccion`() {
+        // Serie trimestral del 31: 31-ene, 30-abr, 31-jul, 31-oct, 31-ene… Hoy 10-nov → 31-ene-2027.
+        // Antes se proyectaba como mensual (30-nov) y no se reconocía la fecha.
+        assertEquals(d("2027-01-31"), RenewalDates.nextRenewal(d("2026-01-31"), BillingCycle.MONTHLY, d("2026-11-10"), 3))
+        assertEquals(d("2026-01-31"), RenewalDates.anchorForUpdate(
+            d("2026-01-31"), BillingCycle.MONTHLY, d("2027-01-31"), BillingCycle.MONTHLY, d("2026-11-10"),
+            storedIntervalo = 3, receivedIntervalo = 3
+        ))
+    }
+
+    @Test
+    fun `anual guardado con 12 y recibido con el valor por defecto es la misma periodicidad`() {
+        assertEquals(d("2024-02-29"), RenewalDates.anchorForUpdate(
+            d("2024-02-29"), BillingCycle.YEARLY, d("2027-02-28"), BillingCycle.YEARLY, d("2026-10-10"),
+            storedIntervalo = 12
+        ))
+    }
+
+    @Test
+    fun `sobrecarga con la suscripcion guardada usa su intervalo`() {
+        val trimestral = Subscription(
+            name = "Seguro", price = BigDecimal("90.00"), billingCycle = BillingCycle.MONTHLY,
+            renewalDate = d("2026-01-31"), category = Category(id = 1, name = "Seguros"), intervaloMeses = 3
+        )
+        assertEquals(d("2026-01-31"),
+            RenewalDates.anchorForUpdate(trimestral, d("2027-01-31"), BillingCycle.MONTHLY, 3, d("2026-11-10")))
+        assertEquals(d("2027-01-31"),
+            RenewalDates.anchorForUpdate(trimestral, d("2027-01-31"), BillingCycle.MONTHLY, 6, d("2026-11-10")))
+    }
 }

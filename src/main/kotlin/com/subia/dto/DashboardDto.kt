@@ -31,6 +31,8 @@ data class DashboardDto(
     val monthlyByCurrency: Map<String, BigDecimal> = emptyMap(),
     val yearlyByCurrency: Map<String, BigDecimal> = emptyMap(),
     val topSubscriptions: List<Subscription> = emptyList(),
+    /** Equivalente mensual (2 decimales) de cada elemento de [topSubscriptions], en el mismo orden. */
+    val topMonthly: List<BigDecimal> = emptyList(),
     /** Divisa actualmente seleccionada para los totales y gráficos (ISO 4217). */
     val selectedCurrency: String = "EUR",
     /** Símbolo de [selectedCurrency] para mostrar en la UI. */

@@ -195,17 +195,20 @@
                     </div>
 
                     <div>
-                        <label for="fieldBillingCycle" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                        <label for="fieldPeriodicidad" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
                             <span th:text="#{form.field.cycle}">Ciclo</span> <span class="text-red-400">*</span>
                         </label>
-                        <select name="billingCycle" id="fieldBillingCycle" required
+                        <!-- Un único valor por opción: WEEKLY o los meses entre cobros (1, 2, 3, 6, 12).
+                             SubscriptionController lo traduce a billingCycle + intervaloMeses. -->
+                        <select name="periodicidad" id="fieldPeriodicidad" required
                                 class="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none transition-all duration-200">
                             <option value="" th:text="#{form.field.select}">— Seleccionar —</option>
-                            <option th:each="cycle : ${billingCycles}"
-                                    th:value="${cycle}"
-                                    th:text="${cycle.name() == 'MONTHLY'} ? #{form.billing.monthly} : (${cycle.name() == 'YEARLY'} ? #{form.billing.yearly} : #{form.billing.weekly})"
-                                    th:selected="${isEntity and sub.billingCycle == cycle}">
-                            </option>
+                            <option value="WEEKLY" th:selected="${periodicidadActual == 'WEEKLY'}" th:text="#{form.billing.weekly}">Semanal</option>
+                            <option value="1"  th:selected="${periodicidadActual == '1'}"  th:text="#{form.billing.monthly}">Mensual</option>
+                            <option value="2"  th:selected="${periodicidadActual == '2'}"  th:text="#{form.billing.months2}">Cada 2 meses</option>
+                            <option value="3"  th:selected="${periodicidadActual == '3'}"  th:text="#{form.billing.months3}">Trimestral</option>
+                            <option value="6"  th:selected="${periodicidadActual == '6'}"  th:text="#{form.billing.months6}">Semestral</option>
+                            <option value="12" th:selected="${periodicidadActual == '12'}" th:text="#{form.billing.yearly}">Anual</option>
                         </select>
                     </div>
                 </div>
@@ -450,7 +453,7 @@ var i18n = {
     var fieldDesc      = document.getElementById('fieldDescription');
     var fieldPrice     = document.getElementById('fieldPrice');
     var fieldCurrency  = document.getElementById('fieldCurrency');
-    var fieldCycle     = document.getElementById('fieldBillingCycle');
+    var fieldCycle     = document.getElementById('fieldPeriodicidad');
     var fieldCategoryId= document.getElementById('fieldCategoryId');
 
     if (!catSelect) return;
@@ -458,6 +461,10 @@ var i18n = {
     function cycleName(cycle) {
         return (i18n.cycleName[cycle] || cycle).toLowerCase();
     }
+
+    // El catálogo solo trae MONTHLY/YEARLY/WEEKLY: se traduce al valor del desplegable de
+    // periodicidad (meses entre cobros, o WEEKLY).
+    var periodicidadDeCiclo = { MONTHLY: '1', YEARLY: '12', WEEKLY: 'WEEKLY' };
 
     catSelect.addEventListener('change', function () {
         var categoryId = this.value;
@@ -506,7 +513,9 @@ var i18n = {
             if (fieldDesc)       fieldDesc.value       = item.description || '';
             if (fieldPrice)      fieldPrice.value      = item.price.toFixed(2);
             if (fieldCurrency)   { fieldCurrency.value = item.currency; updatePriceSymbol(); }
-            if (fieldCycle)      fieldCycle.value      = item.billingCycle;
+            if (fieldCycle && periodicidadDeCiclo[item.billingCycle]) {
+                fieldCycle.value = periodicidadDeCiclo[item.billingCycle];
+            }
             if (fieldCategoryId) fieldCategoryId.value = catSelect.value;
 
             if (item.trialDays) {

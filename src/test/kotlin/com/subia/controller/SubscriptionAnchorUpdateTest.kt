@@ -68,7 +68,8 @@ class SubscriptionAnchorUpdateTest {
         val details = org.springframework.security.core.userdetails.User("u@example.com", "x", emptyList())
         controller.update(
             details, 7, name = "Netflix", description = "", price = BigDecimal("12.99"), currency = "EUR",
-            billingCycle = cycle, renewalDate = LocalDate.parse(received), categoryId = 3, active = true,
+            // Sin `periodicidad`: formulario antiguo, se usa billingCycle (ver SubscriptionPeriodicidadControllerTest)
+            periodicidad = null, billingCycle = cycle, renewalDate = LocalDate.parse(received), categoryId = 3, active = true,
             notes = "", isTrial = false, trialEndsAt = null
         )
         return saved.captured.renewalDate

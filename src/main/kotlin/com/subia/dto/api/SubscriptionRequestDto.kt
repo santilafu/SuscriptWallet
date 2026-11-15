@@ -29,5 +29,11 @@ data class SubscriptionRequestDto(
     @field:NotNull val categoryId: Long,
     val isTrial: Boolean = false,
     /** yyyy-MM-dd; vacío o null = sin fecha. Se parsea en el controlador (formato malo → 400). */
-    val trialEndsAt: String? = null
+    val trialEndsAt: String? = null,
+    /**
+     * Cada cuántos meses se cobra: 1, 2, 3, 6 o 12 (otro valor → 400). OPCIONAL porque las apps
+     * publicadas (≤ 2.17.8) no lo envían; si falta se deduce del ciclo o se conserva el guardado
+     * (ver `Periodicidad.resolver`). Si llega, manda él y `billingCycle` se deriva.
+     */
+    val intervaloMeses: Int? = null
 )

@@ -21,5 +21,12 @@ data class SubscriptionDto(
     val categoryColor: String,
     val categoryIcon: String,
     val isTrial: Boolean = false,
-    val trialEndsAt: String? = null
+    val trialEndsAt: String? = null,
+    /**
+     * Cada cuántos meses se cobra (1, 2, 3, 6 o 12; 1 en las semanales). [billingCycle] sigue
+     * siendo solo MONTHLY/YEARLY/WEEKLY (derivado) para que las apps antiguas lo entiendan.
+     */
+    val intervaloMeses: Int = 1,
+    /** Gasto mensual equivalente (2 decimales), igual que suma el dashboard: 90 € trimestral → 30.00. */
+    val equivalenteMensual: BigDecimal = BigDecimal.ZERO
 )

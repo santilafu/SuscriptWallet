@@ -1,6 +1,8 @@
 package com.subia.service
 
 import com.subia.model.BillingCycle
+import com.subia.model.Category
+import com.subia.model.Subscription
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
@@ -88,5 +90,57 @@ class PeriodicidadTest {
         assertEquals(12, Periodicidad.mesesPorCobro(BillingCycle.YEARLY, 1))
         assertEquals(2, Periodicidad.mesesPorCobro(BillingCycle.MONTHLY, 2))
         assertThrows(IllegalArgumentException::class.java) { Periodicidad.mesesPorCobro(BillingCycle.WEEKLY, 1) }
+    }
+
+    // ── resolver: lo que envía el cliente (sprint 2) ─────────────────────────────────────
+
+    private fun guardado(ciclo: BillingCycle, intervalo: Int) = Subscription(
+        id = 1, name = "Seguro", price = bd("90.00"), billingCycle = ciclo, intervaloMeses = intervalo,
+        renewalDate = java.time.LocalDate.parse("2026-01-20"), category = Category(id = 1, name = "Seguros")
+    )
+
+    @Test
+    fun `alta sin intervalo lo deduce del ciclo`() {
+        assertEquals(BillingCycle.MONTHLY to 1, Periodicidad.resolver(BillingCycle.MONTHLY, null))
+        assertEquals(BillingCycle.YEARLY to 12, Periodicidad.resolver(BillingCycle.YEARLY, null))
+        assertEquals(BillingCycle.WEEKLY to 1, Periodicidad.resolver(BillingCycle.WEEKLY, null))
+    }
+
+    @Test
+    fun `con intervalo manda el intervalo y el ciclo se deriva`() {
+        assertEquals(BillingCycle.MONTHLY to 3, Periodicidad.resolver(BillingCycle.MONTHLY, 3))
+        assertEquals(BillingCycle.YEARLY to 12, Periodicidad.resolver(BillingCycle.MONTHLY, 12))
+        // El cliente SÍ envió 1: es mensual aunque diga YEARLY
+        assertEquals(BillingCycle.MONTHLY to 1, Periodicidad.resolver(BillingCycle.YEARLY, 1))
+        assertEquals(BillingCycle.WEEKLY to 1, Periodicidad.resolver(BillingCycle.WEEKLY, 1))
+    }
+
+    @Test
+    fun `intervalo no permitido lanza IllegalArgumentException`() {
+        listOf(0, -1, 4, 13).forEach { malo ->
+            assertThrows(IllegalArgumentException::class.java) { Periodicidad.resolver(BillingCycle.MONTHLY, malo) }
+        }
+        assertThrows(IllegalArgumentException::class.java) { Periodicidad.resolver(BillingCycle.WEEKLY, 0) }
+    }
+
+    @Test
+    fun `edicion sin intervalo y mismo ciclo conserva el guardado`() {
+        // App antigua que edita un trimestral: recibe y reenvía MONTHLY
+        assertEquals(BillingCycle.MONTHLY to 3,
+            Periodicidad.resolver(BillingCycle.MONTHLY, null, guardado(BillingCycle.MONTHLY, 3)))
+    }
+
+    @Test
+    fun `edicion sin intervalo y ciclo cambiado lo deduce del nuevo ciclo`() {
+        assertEquals(BillingCycle.YEARLY to 12,
+            Periodicidad.resolver(BillingCycle.YEARLY, null, guardado(BillingCycle.MONTHLY, 3)))
+        assertEquals(BillingCycle.MONTHLY to 1,
+            Periodicidad.resolver(BillingCycle.MONTHLY, null, guardado(BillingCycle.YEARLY, 12)))
+    }
+
+    @Test
+    fun `edicion con intervalo usa el recibido aunque el ciclo coincida`() {
+        assertEquals(BillingCycle.MONTHLY to 6,
+            Periodicidad.resolver(BillingCycle.MONTHLY, 6, guardado(BillingCycle.MONTHLY, 3)))
     }
 }
