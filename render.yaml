@@ -4,12 +4,33 @@ services:
     env: docker
     plan: free
     region: frankfurt
+    # Ojo: comprobar tras cada push que Render ha desplegado el último commit.
+    # Si el Auto-Deploy no salta, lanzar "Manual Deploy" en el panel.
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
+      # Obligatorias: sin ellas el perfil prod no arranca o no funciona.
+      # sync: false = el valor se pone a mano en el panel de Render, nunca aquí.
       - key: AIVEN_DB_PASSWORD
         sync: false
       - key: JWT_SECRET
         sync: false
-      - key: APP_AUTH_PASSWORD
+      - key: GOOGLE_CLIENT_ID
         sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: APP_BASE_URL
+        sync: false
+      # Opcionales.
+      - key: AIVEN_DB_USER
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM_EMAIL
+        sync: false
+      - key: APP_TIMEZONE
+        value: Europe/Madrid

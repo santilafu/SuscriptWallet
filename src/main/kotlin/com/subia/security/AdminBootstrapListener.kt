@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional
 @Component
 class AdminBootstrapListener(
     private val userRepository: UserRepository,
-    @Value("\${app.admin.email:santilafu.dev@gmail.com}") private val adminEmail: String,
+    @Value("\${app.admin.email:}") private val adminEmail: String,
     @Value("\${app.admin.password:}") private val adminPassword: String
 ) : ApplicationListener<ApplicationReadyEvent> {
 
@@ -26,6 +26,11 @@ class AdminBootstrapListener(
     override fun onApplicationEvent(event: ApplicationReadyEvent) {
         if (adminPassword.isBlank()) {
             log.warn("app.admin.password no configurado — saltando bootstrap de admin")
+            return
+        }
+        // Sin valor por defecto en el código (dato personal): si falta ADMIN_EMAIL no se crea nada.
+        if (adminEmail.isBlank()) {
+            log.warn("app.admin.email no configurado — saltando bootstrap de admin")
             return
         }
 
