@@ -13,8 +13,9 @@ import java.math.RoundingMode
  * Cada suscripción guarda `intervaloMeses`: 1 mensual, 2 bimestral, 3 trimestral, 6 semestral
  * o 12 anual ([VALORES_PERMITIDOS]). El `billingCycle` pasa a ser DERIVADO de ese intervalo
  * (12 → YEARLY, el resto → MONTHLY) para que las apps antiguas, que solo conocen MONTHLY/YEARLY,
- * sigan viendo un ciclo que entienden. WEEKLY es un caso aparte: guarda intervalo 1 y lo ignora
- * (sus cálculos siguen en [DashboardService] y [RenewalDates] como hasta ahora).
+ * sigan viendo un ciclo que entienden. WEEKLY es un caso aparte: guarda intervalo 1 y lo ignora;
+ * su equivalente mensual es importe × 52 / 12 ([equivalenteMensualSemanal], el mismo factor que
+ * la app) y su total anual, importe × 52 ([totalAnualSemanal]).
  *
  * ## Regla de redondeo (dinero)
  * - Siempre [BigDecimal], nunca Double.
@@ -31,11 +32,13 @@ object Periodicidad {
     val VALORES_PERMITIDOS: Set<Int> = setOf(1, 2, 3, 6, 12)
 
     const val MESES_EN_ANIO = 12
+    const val SEMANAS_EN_ANIO = 52
     const val ESCALA_INTERNA = 4
     const val ESCALA_VISIBLE = 2
     val REDONDEO: RoundingMode = RoundingMode.HALF_UP
 
     private val DOCE = BigDecimal(MESES_EN_ANIO)
+    private val CINCUENTA_Y_DOS = BigDecimal(SEMANAS_EN_ANIO)
 
     /** true si [intervaloMeses] es uno de los [VALORES_PERMITIDOS]. */
     fun esValido(intervaloMeses: Int): Boolean = intervaloMeses in VALORES_PERMITIDOS
@@ -120,6 +123,19 @@ object Periodicidad {
         require(esValido(intervaloMeses)) { "Periodicidad no válida: $intervaloMeses" }
         return importe.multiply(DOCE).divide(BigDecimal(intervaloMeses), ESCALA_INTERNA, REDONDEO)
     }
+
+    /**
+     * Equivalente mensual de un gasto SEMANAL = importe × 52 / 12, a escala interna (4 decimales).
+     * Es exactamente 52/12 (4,3333… semanas por mes), el mismo factor que usa la app; antes el
+     * backend usaba 4,33 y la web daba unos céntimos menos que la app con los mismos datos.
+     * Se multiplica ANTES de dividir para no arrastrar el redondeo de 4,3333.
+     */
+    fun equivalenteMensualSemanal(importe: BigDecimal): BigDecimal =
+        importe.multiply(CINCUENTA_Y_DOS).divide(DOCE, ESCALA_INTERNA, REDONDEO)
+
+    /** Total anual de un gasto SEMANAL = importe × 52, a escala interna (4 decimales). */
+    fun totalAnualSemanal(importe: BigDecimal): BigDecimal =
+        importe.multiply(CINCUENTA_Y_DOS).setScale(ESCALA_INTERNA, REDONDEO)
 
     /** Redondeo de una cifra final para mostrarla o devolverla: 2 decimales HALF_UP. */
     fun aCifraVisible(importe: BigDecimal): BigDecimal = importe.setScale(ESCALA_VISIBLE, REDONDEO)

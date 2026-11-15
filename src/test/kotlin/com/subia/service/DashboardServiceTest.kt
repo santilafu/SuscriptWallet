@@ -123,11 +123,14 @@ class DashboardServiceTest {
         assertEquals(BigDecimal("120.00"), dash.totalYearly)
     }
 
-    /** Cálculo de antes de la periodicidad, copiado tal cual, como referencia. */
+    /**
+     * Cálculo de antes de la periodicidad, como referencia. Única diferencia con el original: el
+     * semanal ya usa 52 / 12 en vez de 4,33 (factor unificado con la app).
+     */
     private fun antiguoMensual(s: Subscription): BigDecimal = when (s.billingCycle) {
         BillingCycle.MONTHLY -> s.price
         BillingCycle.YEARLY -> s.price.divide(BigDecimal("12"), 4, java.math.RoundingMode.HALF_UP)
-        BillingCycle.WEEKLY -> s.price.multiply(BigDecimal("4.33"))
+        BillingCycle.WEEKLY -> s.price.multiply(BigDecimal("52")).divide(BigDecimal("12"), 4, java.math.RoundingMode.HALF_UP)
     }
 
     private fun antiguoAnual(s: Subscription): BigDecimal = when (s.billingCycle) {
@@ -154,9 +157,26 @@ class DashboardServiceTest {
         val antesAnual = subs.sumOf { antiguoAnual(it) }.setScale(2, java.math.RoundingMode.HALF_UP)
         assertEquals(antesMensual, dash.totalMonthly)
         assertEquals(antesAnual, dash.totalYearly)
-        // Cifras a mano: 12,99 + 8,3325 + 2,9583 + 21,65 + 0,0058 = 45,9366 → 45,94
-        assertEquals(BigDecimal("45.94"), dash.totalMonthly)
+        // Cifras a mano: 12,99 + 8,3325 + 2,9583 + 21,6667 (5 × 52 / 12) + 0,0058 = 45,9533 → 45,95
+        assertEquals(BigDecimal("45.95"), dash.totalMonthly)
         // 155,88 + 99,99 + 35,50 + 260 + 0,07 = 551,44
         assertEquals(BigDecimal("551.44"), dash.totalYearly)
+    }
+
+    @Test
+    fun `un semanal usa exactamente 52 entre 12 semanas por mes y 52 al anio`() {
+        // 18,84 € a la semana: 18,84 × 52 / 12 = 81,64 exacto; con el antiguo 4,33 salían 81,5772 → 81,58.
+        // 18,85 € a la semana: 81,6833 → 81,68 (4,33 daba 81,6205 → 81,62).
+        every { repo.findByUserIdAndActiveTrue(7) } returns listOf(
+            sub(1, "2026-10-20", price = "18.85", cycle = BillingCycle.WEEKLY)
+        )
+
+        val dash = service.getDashboard(7)
+
+        assertEquals(BigDecimal("81.68"), dash.totalMonthly)
+        // Anual = importe × 52, coherente con mensual × 12 antes de redondear (81,6833 × 12 = 980,20)
+        assertEquals(BigDecimal("980.20"), dash.totalYearly)
+        assertEquals(BigDecimal("81.68"), dash.topMonthly.single())
+        assertEquals(0, BigDecimal("81.6833").compareTo(DashboardService.equivalenteMensual(dash.topSubscriptions.single())))
     }
 }

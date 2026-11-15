@@ -36,21 +36,17 @@ class DashboardService(
 ) {
 
     companion object {
-        // Factores de conversión de los gastos semanales (los mensuales/anuales usan Periodicidad)
-        private val WEEKLY_FACTOR = BigDecimal("4.33")   // semanas promedio por mes
-        private val WEEKS_IN_YEAR = BigDecimal("52")
-
         /**
          * Equivalente mensual de una suscripción (escala interna, sin redondear a céntimos: eso
          * se hace solo en las cifras finales, ver [Periodicidad]).
          * MONTHLY/YEARLY: importe / meses por cobro (un anual con 12 da lo mismo que el antiguo /12).
-         * WEEKLY: importe × 4,33.
+         * WEEKLY: importe × 52 / 12 (el mismo factor que la app; ver [Periodicidad.equivalenteMensualSemanal]).
          *
          * Es público para que la API (`SubscriptionDto.equivalenteMensual`) y el gráfico de la web
          * usen EXACTAMENTE la misma fórmula que los totales del dashboard.
          */
         fun equivalenteMensual(s: Subscription): BigDecimal = when (s.billingCycle) {
-            BillingCycle.WEEKLY -> s.price.multiply(WEEKLY_FACTOR)
+            BillingCycle.WEEKLY -> Periodicidad.equivalenteMensualSemanal(s.price)
             else -> Periodicidad.equivalenteMensual(s.price, Periodicidad.mesesPorCobro(s.billingCycle, s.intervaloMeses))
         }
     }
@@ -189,9 +185,10 @@ class DashboardService(
     /**
      * Convierte el precio de una suscripción a su equivalente anual.
      * MONTHLY/YEARLY: importe × 12 / meses por cobro (exacto, porque todos dividen a 12).
+     * WEEKLY: importe × 52, coherente con el mensual (importe × 52 / 12) × 12.
      */
     private fun toYearly(s: Subscription): BigDecimal = when (s.billingCycle) {
-        BillingCycle.WEEKLY -> s.price.multiply(WEEKS_IN_YEAR)
+        BillingCycle.WEEKLY -> Periodicidad.totalAnualSemanal(s.price)
         else -> Periodicidad.totalAnual(s.price, Periodicidad.mesesPorCobro(s.billingCycle, s.intervaloMeses))
     }
 }

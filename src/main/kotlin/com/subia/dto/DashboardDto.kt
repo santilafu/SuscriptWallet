@@ -11,7 +11,7 @@ import java.math.BigDecimal
  * directamente al template Thymeleaf, que solo tiene que mostrar los valores.
  *
  * @property totalMonthly     Suma del gasto mensual equivalente de todas las suscripciones activas.
- *                            Las anuales se dividen entre 12 y las semanales se multiplican por 4,33.
+ *                            Las anuales se dividen entre 12 y las semanales se multiplican por 52 / 12.
  * @property totalYearly      Suma del gasto anual equivalente de todas las suscripciones activas.
  * @property spendByCategory  Gasto mensual agrupado por categoría, ordenado de mayor a menor.
  *                            Clave: objeto [Category]; valor: gasto mensual equivalente.

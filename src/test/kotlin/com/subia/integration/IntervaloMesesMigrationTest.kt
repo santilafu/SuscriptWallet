@@ -48,11 +48,15 @@ class IntervaloMesesMigrationTest {
 
     private data class Fila(val id: Long, val price: BigDecimal, val cycle: BillingCycle, val intervalo: Int)
 
-    /** Cálculo del dashboard ANTERIOR a la periodicidad, copiado tal cual, como referencia. */
+    /**
+     * Cálculo del dashboard ANTERIOR a la periodicidad, como referencia. Única diferencia con el
+     * original: el semanal ya usa 52 / 12 en vez de 4,33 (factor unificado con la app después de
+     * V15; no depende de la migración).
+     */
     private fun antiguoMensual(f: Fila): BigDecimal = when (f.cycle) {
         BillingCycle.MONTHLY -> f.price
         BillingCycle.YEARLY -> f.price.divide(BigDecimal("12"), 4, RoundingMode.HALF_UP)
-        BillingCycle.WEEKLY -> f.price.multiply(BigDecimal("4.33"))
+        BillingCycle.WEEKLY -> f.price.multiply(BigDecimal("52")).divide(BigDecimal("12"), 4, RoundingMode.HALF_UP)
     }
 
     private fun antiguoAnual(f: Fila): BigDecimal = when (f.cycle) {

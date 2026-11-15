@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout}">
-<head><title th:text="#{form.title.new}">Suscripción</title></head>
+<head><title th:text="${isEntity and sub.id > 0} ? #{form.title.edit} : #{form.title.new}">Suscripción</title></head>
 <body>
 <div layout:fragment="content">
 
@@ -106,7 +106,7 @@
         <div class="enter glass-card rounded-xl overflow-hidden" style="animation-delay:160ms">
 
             <!-- PASO 1: Nombre, descripción, categoría -->
-            <div id="wizard-step-1" class="p-6">
+            <div id="wizard-step-1" class="p-4 sm:p-6">
                 <h2 class="text-base font-semibold text-slate-200 mb-5 flex items-center gap-2">
                     <span class="w-6 h-6 rounded-full text-xs flex items-center justify-center font-bold"
                           style="background:rgba(124,58,237,0.2); color:#a78bfa;">1</span>
@@ -158,7 +158,7 @@
             </div>
 
             <!-- PASO 2: Precio, moneda, ciclo -->
-            <div id="wizard-step-2" class="p-6" style="display:none;">
+            <div id="wizard-step-2" class="p-4 sm:p-6" style="display:none;">
                 <h2 class="text-base font-semibold text-slate-200 mb-5 flex items-center gap-2">
                     <span class="w-6 h-6 rounded-full text-xs flex items-center justify-center font-bold"
                           style="background:rgba(124,58,237,0.2); color:#a78bfa;">2</span>
@@ -213,7 +213,7 @@
                     </div>
                 </div>
 
-                <div class="flex justify-between mt-6">
+                <div class="flex flex-wrap justify-between gap-3 mt-6">
                     <button type="button" onclick="wizardGoTo(1)"
                             class="flex items-center gap-2 px-5 py-2.5 border border-white/[0.1] text-slate-400 hover:text-slate-200 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer">
                         <i aria-hidden="true" class="bi bi-arrow-left"></i><span th:text="#{form.btn.prev}">Anterior</span>
@@ -227,7 +227,7 @@
             </div>
 
             <!-- PASO 3: Fecha renovación, estado, notas -->
-            <div id="wizard-step-3" class="p-6" style="display:none;">
+            <div id="wizard-step-3" class="p-4 sm:p-6" style="display:none;">
                 <h2 class="text-base font-semibold text-slate-200 mb-5 flex items-center gap-2">
                     <span class="w-6 h-6 rounded-full text-xs flex items-center justify-center font-bold"
                           style="background:rgba(124,58,237,0.2); color:#a78bfa;">3</span>
@@ -288,19 +288,22 @@
                            th:value="${isEntity and sub.trialEndsAt != null ? sub.trialEndsAt : ''}">
                 </div>
 
-                <div class="flex justify-between mt-6">
+                <!-- En móvil (375 px) los tres botones no caben en una fila: flex-wrap baja
+                     Cancelar/Guardar a la segunda línea, alineados a la derecha, en vez de
+                     sacar Guardar de la tarjeta. -->
+                <div class="flex flex-wrap items-center justify-between gap-3 mt-6">
                     <button type="button" onclick="wizardGoTo(2)"
-                            class="flex items-center gap-2 px-5 py-2.5 border border-white/[0.1] text-slate-400 hover:text-slate-200 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer">
+                            class="flex items-center gap-2 px-4 sm:px-5 py-2.5 border border-white/[0.1] text-slate-400 hover:text-slate-200 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer">
                         <i aria-hidden="true" class="bi bi-arrow-left"></i><span th:text="#{form.btn.prev}">Anterior</span>
                     </button>
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3 ml-auto">
                         <a th:href="@{/subscriptions}"
-                           class="px-5 py-2.5 border border-white/[0.1] text-slate-400 hover:text-slate-200 text-sm font-medium rounded-lg transition-all duration-200 no-underline"
+                           class="px-4 sm:px-5 py-2.5 border border-white/[0.1] text-slate-400 hover:text-slate-200 text-sm font-medium rounded-lg transition-all duration-200 no-underline"
                            th:text="#{form.btn.cancel}">
                             Cancelar
                         </a>
                         <button type="submit" id="subSubmit"
-                                class="flex items-center gap-2 px-5 py-2.5 text-white text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer"
+                                class="flex items-center gap-2 px-4 sm:px-5 py-2.5 text-white text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer"
                                 style="background-color:#7c3aed;">
                             <i aria-hidden="true" class="bi bi-floppy"></i><span th:text="#{form.btn.save}">Guardar</span>
                         </button>

@@ -12,7 +12,10 @@
                 <span th:text="#{sub.title}">Suscripciones</span>
             </h1>
             <p class="text-sm mt-1" style="color:#8291a8;">
-                <span id="resultCount" th:text="${subscriptions.size()}"></span> <span th:text="#{nav.subscriptions}">suscripciones</span>
+                <!-- Recuento con singular/plural del idioma; el JS lo rehace al filtrar con los data-* -->
+                <span id="resultCount" th:text="#{sub.count(${subscriptions.size()})}"
+                      th:data-zero="#{sub.count(0)}" th:data-one="#{sub.count(1)}"
+                      th:data-other="#{sub.count.other}"></span>
             </p>
         </div>
         <a th:href="@{/subscriptions/new}"
@@ -26,7 +29,7 @@
          class="mb-6 p-3 rounded-lg text-sm flex items-center gap-2"
          style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);color:#86efac;">
         <i aria-hidden="true" class="bi bi-check-circle"></i>
-        <span th:text="#{sub.imported(${param.imported[0]})}">Añadimos 0 suscripciones detectadas en tu Gmail.</span>
+        <span th:text="${param.imported[0] == '1'} ? #{sub.imported.one} : #{sub.imported(${param.imported[0]})}">Añadimos 0 suscripciones detectadas en tu Gmail.</span>
     </div>
 
     <div class="glass-card rounded-xl p-4 mb-6">
@@ -307,7 +310,12 @@
             if (show) visible++;
         });
 
-        if (resultCount) resultCount.textContent = visible;
+        if (resultCount) {
+            const ds = resultCount.dataset;
+            resultCount.textContent = visible === 0 ? ds.zero
+                : visible === 1 ? ds.one
+                : (ds.other || '{0}').replace('{0}', visible);
+        }
         if (noResults) noResults.style.display = (visible === 0 && cards.length > 0) ? 'block' : 'none';
     }
     window.applyFilters = applyFilters;

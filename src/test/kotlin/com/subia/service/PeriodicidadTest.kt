@@ -34,6 +34,30 @@ class PeriodicidadTest {
     }
 
     @Test
+    fun `semanal fija el factor 52 entre 12 y no 4,33`() {
+        // 10 € a la semana: 10 × 52 / 12 = 43,3333 (con 4,33 serían 43,30)
+        assertEquals(bd("43.3333"), Periodicidad.equivalenteMensualSemanal(bd("10.00")))
+        assertEquals(bd("43.33"), Periodicidad.aCifraVisible(Periodicidad.equivalenteMensualSemanal(bd("10.00"))))
+        // 3 € a la semana: 13,00 exacto (52 × 3 / 12); con 4,33 serían 12,99
+        assertEquals(bd("13.00"), Periodicidad.aCifraVisible(Periodicidad.equivalenteMensualSemanal(bd("3.00"))))
+        // Se multiplica antes de dividir: 1 € → 4,3333 (escala 4, HALF_UP), no 4,33 × 1
+        assertEquals(bd("4.3333"), Periodicidad.equivalenteMensualSemanal(bd("1.00")))
+        // 0,02 € → 0,0867 (0,08666… redondeado HALF_UP a 4 decimales)
+        assertEquals(bd("0.0867"), Periodicidad.equivalenteMensualSemanal(bd("0.02")))
+    }
+
+    @Test
+    fun `semanal anual es importe por 52 y coincide con el mensual por 12`() {
+        assertEquals(bd("520.0000"), Periodicidad.totalAnualSemanal(bd("10.00")))
+        assertEquals(bd("980.20"), Periodicidad.aCifraVisible(Periodicidad.totalAnualSemanal(bd("18.85"))))
+        // 3 € → 13,00 al mes × 12 = 156,00 = 3 × 52
+        assertEquals(
+            Periodicidad.aCifraVisible(Periodicidad.equivalenteMensualSemanal(bd("3.00"))).multiply(bd("12")),
+            Periodicidad.aCifraVisible(Periodicidad.totalAnualSemanal(bd("3.00")))
+        )
+    }
+
+    @Test
     fun `90 euros trimestral son 30 al mes y 360 al anio`() {
         assertEquals(bd("30.00"), Periodicidad.aCifraVisible(Periodicidad.equivalenteMensual(bd("90.00"), 3)))
         assertEquals(bd("360.00"), Periodicidad.aCifraVisible(Periodicidad.totalAnual(bd("90.00"), 3)))

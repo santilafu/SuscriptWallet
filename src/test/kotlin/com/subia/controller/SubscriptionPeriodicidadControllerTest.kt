@@ -171,7 +171,8 @@ class SubscriptionPeriodicidadControllerTest {
         val dto = api.getById(jwt, 7).data!!
         assertEquals("WEEKLY", dto.billingCycle)
         assertEquals(1, dto.intervaloMeses)
-        assertEquals(BigDecimal("43.30"), dto.equivalenteMensual)
+        // 10 × 52 / 12 = 43,3333 → 43,33 (con el antiguo 4,33 daba 43,30)
+        assertEquals(BigDecimal("43.33"), dto.equivalenteMensual)
     }
 
     // ── Web ─────────────────────────────────────────────────────────────────────────────
