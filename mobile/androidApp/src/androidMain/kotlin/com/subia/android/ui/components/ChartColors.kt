@@ -30,7 +30,7 @@ object ChartColors {
 }
 
 /** Hasta dónde crecen las etiquetas de los gráficos con la fuente grande del sistema. */
-private const val ESCALA_MAXIMA_ETIQUETAS = 1.2f
+internal const val ESCALA_MAXIMA_ETIQUETAS = 1.2f
 
 /**
  * Tamaño de las etiquetas pequeñas de los gráficos (meses, importe sobre la barra, importe del
@@ -39,7 +39,18 @@ private const val ESCALA_MAXIMA_ETIQUETAS = 1.2f
  * TalkBack y en la lista de cobros de debajo, que sí crecen sin límite.
  */
 @Composable
-fun tamEtiquetaGrafico(base: Float): TextUnit {
+fun tamEtiquetaGrafico(base: Float): TextUnit = tamConTope(base, ESCALA_MAXIMA_ETIQUETAS)
+
+/**
+ * Tamaño [base] (sp) que sigue a la fuente del sistema solo hasta [tope]×. Para textos que viven
+ * en una caja de ancho fijo (columna de la tira, círculo del día, etiqueta de la barra inferior).
+ */
+@Composable
+fun tamConTope(base: Float, tope: Float): TextUnit {
     val escala = LocalDensity.current.fontScale
-    return (base * minOf(escala, ESCALA_MAXIMA_ETIQUETAS) / escala).sp
+    return (base * minOf(escala, tope) / escala).sp
 }
+
+/** Escala de la fuente del sistema limitada a [1, tope]: para que una caja crezca con su texto topado. */
+@Composable
+fun escalaFuenteConTope(tope: Float): Float = LocalDensity.current.fontScale.coerceIn(1f, tope)

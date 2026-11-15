@@ -49,6 +49,10 @@ import kotlinx.datetime.LocalDate
 
 private val AnchoDia = 48.dp
 private val AltoZonaLogos = 64.dp
+private val TamCirculoDia = 32.dp
+
+/** Tope del número del día y de su círculo. */
+private const val ESCALA_MAXIMA_NUMERO_DIA = 1.3f
 
 /** Opacidad de los días ya pasados en la vista mensual: se leen como "ya cobrado". */
 private const val ALFA_DIA_PASADO = 0.45f
@@ -121,9 +125,13 @@ private fun DiaColumna(
         "$cabecera: $detalle"
     }
 
+    // La columna crece con la fuente hasta el mismo tope que el importe (1,2×): con 48 dp fijos
+    // el importe a fuente 1,5× perdía el "€". El número de hoy y su círculo crecen hasta 1,3×.
+    val anchoColumna = AnchoDia * escalaFuenteConTope(ESCALA_MAXIMA_ETIQUETAS)
+    val tamCirculo = TamCirculoDia * escalaFuenteConTope(ESCALA_MAXIMA_NUMERO_DIA)
     Column(
         modifier = Modifier
-            .width(AnchoDia)
+            .width(maxOf(anchoColumna, tamCirculo))
             .then(if (esPasado) Modifier.alpha(ALFA_DIA_PASADO) else Modifier)
             .semantics(mergeDescendants = true) { contentDescription = descripcion },
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -146,13 +154,15 @@ private fun DiaColumna(
             else -> Modifier
         }
         Box(
-            modifier = Modifier.size(32.dp).then(fondoNumero),
+            modifier = Modifier.size(tamCirculo).then(fondoNumero),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = dia.fecha.dayOfMonth.toString(),
                 style = MaterialTheme.typography.bodyMedium.tabular,
-                fontSize = 15.sp,
+                // Topado: sin tope, a 1,5× el "15" se salía del círculo relleno de hoy.
+                fontSize = tamConTope(15f, ESCALA_MAXIMA_NUMERO_DIA),
+                maxLines = 1,
                 fontWeight = if (esHoy || esProximo) FontWeight.Bold else FontWeight.Medium,
                 color = when {
                     esHoy -> colores.onPrimary

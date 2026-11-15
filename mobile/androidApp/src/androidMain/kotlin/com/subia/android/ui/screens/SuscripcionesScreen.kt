@@ -1,5 +1,6 @@
 package com.subia.android.ui.screens
 
+import android.content.res.Configuration
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -61,7 +62,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -327,6 +330,12 @@ private fun ListaSuscripciones(
         resumenActivas + " · " + stringResource(R.string.subs_monthly_total, totalTexto)
     }
 
+    // En horizontal la lista es ancha y baja: el "+" flotante caía encima del importe de la
+    // primera fila (no solo de la última, que ya cubre el hueco inferior). Se le reserva su propia
+    // calle a la derecha de las filas: 56 dp del botón + 16 dp de su margen. Los chips y el
+    // resumen siguen a todo el ancho (quedan arriba, lejos del botón).
+    val horizontal = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val margenFilas = Modifier.padding(start = 16.dp, end = if (horizontal) 16.dp + CalleFab else 16.dp)
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 96.dp),
@@ -399,11 +408,11 @@ private fun ListaSuscripciones(
                     SuscripcionCard(sub, onNavigateToDetalle)
                 }
                 if (onEliminar == null) {
-                    Box(Modifier.padding(horizontal = 16.dp).animateItem()) { fila() }
+                    Box(margenFilas.animateItem()) { fila() }
                 } else {
                     FilaDeslizable(
                         onEliminar = { onEliminar(sub) },
-                        modifier = Modifier.padding(horizontal = 16.dp).animateItem(),
+                        modifier = margenFilas.animateItem(),
                         content = fila
                     )
                 }
@@ -465,6 +474,12 @@ private fun FilaDeslizable(
     )
 }
 
+/** Desde esta escala de fuente la cifra mensual de la tarjeta va bajo el nombre (ver [SuscripcionCard]). */
+private const val ESCALA_FUENTE_TARJETA_APILADA = 1.3f
+
+/** Calle derecha de la lista en horizontal para que el botón "+" no tape filas. */
+private val CalleFab = 72.dp
+
 @Composable
 private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Unit, modifier: Modifier = Modifier) {
     // Días restantes de prueba, si procede. Una fecha nula o mal formada (p. ej. creada desde
@@ -490,6 +505,10 @@ private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Un
     val detalleCobro = if (periodo.esMensual) renueva
     else importeCadaPeriodo(sub.precio, sub.moneda, periodo) + " · " + renueva
 
+    // Con fuente grande la cifra de la derecha se comía media fila: nombre y detalle se partían
+    // en tres o cuatro líneas y cada tarjeta medía el doble. Ahí la cifra baja bajo el nombre y
+    // el texto usa todo el ancho; el logo y el relleno encogen un poco.
+    val fuenteGrande = LocalDensity.current.fontScale >= ESCALA_FUENTE_TARJETA_APILADA
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -497,15 +516,18 @@ private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Un
             .background(MaterialTheme.colorScheme.surface)
             .border(1.dp, MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(14.dp))
             .clickable { onNavigateToDetalle(sub.id) }
-            .padding(horizontal = 14.dp, vertical = 14.dp),
+            .padding(horizontal = 14.dp, vertical = if (fuenteGrande) 10.dp else 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        ServiceLogo(nombre = sub.nombre, size = 44.dp, contentDescription = null)
-        Spacer(Modifier.width(14.dp))
+        ServiceLogo(nombre = sub.nombre, size = if (fuenteGrande) 40.dp else 44.dp, contentDescription = null)
+        Spacer(Modifier.width(if (fuenteGrande) 12.dp else 14.dp))
         Column(Modifier.weight(1f)) {
             // Dos líneas: con fuente grande la cifra de la derecha deja poco ancho y el nombre
             // se quedaba en "Gimnasi…".
             Text(sub.nombre, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            if (fuenteGrande) {
+                Text(mensualTexto, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            }
             Text(
                 detalleCobro,
                 style = MaterialTheme.typography.bodySmall,
@@ -521,12 +543,14 @@ private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Un
                 )
             }
         }
-        Spacer(Modifier.width(8.dp))
-        Text(
-            mensualTexto,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        if (!fuenteGrande) {
+            Spacer(Modifier.width(8.dp))
+            Text(
+                mensualTexto,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
         Icon(
             Icons.Default.ChevronRight,
             contentDescription = null,

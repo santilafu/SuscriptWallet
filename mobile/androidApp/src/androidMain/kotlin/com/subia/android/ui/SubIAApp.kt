@@ -1,5 +1,7 @@
 package com.subia.android.ui
 
+import com.subia.android.ui.components.tamConTope
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.core.view.WindowCompat
 import androidx.compose.ui.platform.LocalView
@@ -82,6 +84,9 @@ import kotlinx.serialization.json.Json
 import org.koin.compose.viewmodel.koinViewModel
 
 private data class NavItem(val route: Any, val icon: ImageVector, val labelRes: Int)
+
+/** Tope de crecimiento de las etiquetas de la barra inferior con la fuente grande del sistema. */
+private const val ESCALA_MAXIMA_ETIQUETA_NAV = 1.3f
 
 /** Clave del SavedStateHandle de la lista: nº de suscripciones añadidas desde Gmail. */
 private const val KEY_GMAIL_ADDED = "gmail_added"
@@ -230,7 +235,22 @@ fun SubIAApp(
                                 }
                             },
                             icon = { Icon(item.icon, contentDescription = label) },
-                            label = { Text(label) },
+                            // Una sola línea, como piden las guías de M3: con fuente 1,5× "Suscripciones"
+                            // se partía en dos. La etiqueta crece con la fuente hasta 1,3× y, si aun así
+                            // no cabe (pantallas estrechas), se recorta con "…"; el icono conserva el
+                            // nombre completo para TalkBack.
+                            label = {
+                                Text(
+                                    text = label,
+                                    fontSize = tamConTope(
+                                        MaterialTheme.typography.labelMedium.fontSize.value,
+                                        ESCALA_MAXIMA_ETIQUETA_NAV
+                                    ),
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.colorScheme.primary,
                                 selectedTextColor = MaterialTheme.colorScheme.primary,

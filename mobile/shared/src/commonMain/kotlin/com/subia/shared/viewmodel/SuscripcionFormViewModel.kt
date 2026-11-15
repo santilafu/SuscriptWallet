@@ -13,6 +13,7 @@ import com.subia.shared.network.NetworkException
 import com.subia.shared.repository.CatalogRepository
 import com.subia.shared.repository.CategoryRepository
 import com.subia.shared.repository.SubscriptionRepository
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -243,9 +244,34 @@ class SuscripcionFormViewModel(
     fun seleccionarServicioDelCatalogo(item: CatalogItem) {
         prerellenarDesdeCatalogo(item, BillingCycle.fromWire(item.periodoFacturacion))
         _catalogoSeleccionado.value = item
+        aplicarCategoriaDelCatalogo(item)
+    }
 
-        val categoriaEncontrada = buscarCategoriaDeClave(item.categoriaKey, _categorias.value)
-        categoriaEncontrada?.let { categoriaId.value = it.id }
+    /** Espera pendiente de las categorías para asignar la del último servicio elegido. */
+    private var esperaCategoria: Job? = null
+
+    /**
+     * Asigna la categoría del usuario que corresponde a [CatalogItem.categoriaKey].
+     *
+     * Desde la pestaña Catálogo, la pantalla aplica el servicio en su primera composición, cuando
+     * el `init` aún no ha recibido las categorías: con la lista vacía no se encontraba nada y la
+     * categoría quedaba sin elegir. Si aún no han llegado, se asigna al llegar, salvo que el
+     * usuario ya haya elegido una; y si el formulario estaba "sin cambios", lo sigue estando.
+     */
+    private fun aplicarCategoriaDelCatalogo(item: CatalogItem) {
+        esperaCategoria?.cancel()
+        if (_categorias.value.isNotEmpty()) {
+            buscarCategoriaDeClave(item.categoriaKey, _categorias.value)?.let { categoriaId.value = it.id }
+            return
+        }
+        esperaCategoria = viewModelScope.launch {
+            val categorias = _categorias.first { it.isNotEmpty() }
+            if (categoriaId.value != null) return@launch
+            val encontrada = buscarCategoriaDeClave(item.categoriaKey, categorias) ?: return@launch
+            val sinCambios = huella() == huellaInicial.value
+            categoriaId.value = encontrada.id
+            if (sinCambios) marcarComoSinCambios()
+        }
     }
 
     /**

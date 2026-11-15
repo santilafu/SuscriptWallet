@@ -22,6 +22,7 @@ import io.ktor.http.content.ByteArrayContent
 import io.ktor.http.HttpHeaders
 import io.ktor.http.headersOf
 import io.ktor.http.HttpStatusCode
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -287,6 +288,45 @@ class SuscripcionFormViewModelTest {
         assertTrue("\"price\":9.5" in cuerpo, "Se esperaba el precio editado en el cuerpo: $cuerpo")
     }
 
+    /**
+     * Carrera real del alta desde el catálogo: la pantalla aplica el servicio en su primera
+     * composición, antes de que el ViewModel reciba las categorías. La categoría debe quedar
+     * preseleccionada en cuanto lleguen, sin marcar el formulario como modificado.
+     */
+    @Test
+    fun seleccionarServicioDelCatalogo_antesDeQueLleguenLasCategorias_laPreseleccionaAlLlegar() = runTest {
+        val categoriasListas = CompletableDeferred<Unit>()
+        val vm = crearViewModel(
+            respuestas = mapOf("/categories" to RESPUESTA_CATEGORIAS),
+            esperaCategorias = categoriasListas
+        )
+        vm.seleccionarServicioDelCatalogo(NETFLIX_STREAMING)
+        vm.marcarComoSinCambios()
+        assertNull(vm.categoriaId.value, "Las categorías aún no han llegado")
+
+        categoriasListas.complete(Unit)
+
+        assertEquals(9L, vm.categoriaId.first { it != null })
+        assertFalse(vm.hayCambios.first { !it }, "Aplicar la categoría del catálogo no es un cambio del usuario")
+    }
+
+    /** Si el usuario elige una categoría mientras llegan, la suya manda. */
+    @Test
+    fun seleccionarServicioDelCatalogo_categoriaElegidaAntesDeLlegar_noSeSobrescribe() = runTest {
+        val categoriasListas = CompletableDeferred<Unit>()
+        val vm = crearViewModel(
+            respuestas = mapOf("/categories" to RESPUESTA_CATEGORIAS),
+            esperaCategorias = categoriasListas
+        )
+        vm.seleccionarServicioDelCatalogo(NETFLIX_STREAMING)
+        vm.seleccionarCategoria(4L)
+
+        categoriasListas.complete(Unit)
+        vm.categorias.first { it.isNotEmpty() }
+
+        assertEquals(4L, vm.categoriaId.value)
+    }
+
     @Test
     fun cargarParaEditar_porId_precargaLosCamposYNoMarcaCambios() = runTest {
         val vm = crearViewModel(respuestas = mapOf(
@@ -322,12 +362,15 @@ class SuscripcionFormViewModelTest {
      */
     private fun crearViewModel(
         respuestas: Map<String, String> = emptyMap(),
+        // Retiene la respuesta de /categories hasta completarse (para reproducir la carrera).
+        esperaCategorias: CompletableDeferred<Unit>? = null,
         onRequest: (String) -> Unit = {},
         onRequestBody: (String) -> Unit = {}
     ): SuscripcionFormViewModel {
         val engine = MockEngine { request ->
             val path = request.url.encodedPath
             onRequest(path)
+            if (path.endsWith("/categories")) esperaCategorias?.await()
             when (val body = request.body) {
                 is TextContent -> onRequestBody(body.text)
                 is ByteArrayContent -> onRequestBody(body.bytes().decodeToString())
@@ -355,6 +398,13 @@ class SuscripcionFormViewModelTest {
             hoy = { LocalDate(2026, 10, 15) }
         )
     }
+
+    private val NETFLIX_STREAMING = CatalogItem(
+        id = 1, nombre = "Netflix", precioMensual = 12.99, periodoFacturacion = "MONTHLY", categoriaKey = "streaming"
+    )
+
+    private val RESPUESTA_CATEGORIAS =
+        """{"data":[{"id":4,"name":"Hogar y suministros"},{"id":9,"name":"Streaming"}]}"""
 
     private object TokensFijos : TokenStorageProvider {
         private val tokens = AuthTokens(accessToken = "a", refreshToken = "r")
