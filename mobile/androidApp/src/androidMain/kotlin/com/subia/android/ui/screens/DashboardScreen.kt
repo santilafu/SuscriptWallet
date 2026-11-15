@@ -32,7 +32,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
@@ -93,6 +92,7 @@ import com.subia.android.ui.components.rememberEscalaPulsacion
 import com.subia.android.ui.components.ErrorState
 import com.subia.android.ui.components.textoErrorRemoto
 import com.subia.android.ui.components.GastosPorCategoriaCard
+import com.subia.android.ui.components.CalendarioCobros
 import com.subia.android.ui.components.TiraCobros
 import com.subia.android.ui.components.formatearFechaMedia
 import com.subia.android.ui.components.formatearImporte
@@ -517,7 +517,8 @@ private fun SuscripcionesActivasRow(total: Int, onClick: () -> Unit) {
  * - "14 días": línea del próximo cobro con urgencia en texto e icono ("Netflix · Mañana ·
  *   12,99 €", D-04) y la tira de hoy a +13.
  * - "Este mes": el mes natural entero (del 1 al último, como "Este mes pagas"), con el número
- *   de cobros y el total del mes, los días pasados atenuados y la tira ya desplazada hasta hoy.
+ *   de cobros y el total del mes y un calendario de lunes a domingo ([CalendarioCobros]) con
+ *   la lista de cobros del día elegido debajo.
  * La elección se recuerda (rememberSaveable + [InicioPrefs]). El cambio es un fundido corto con
  * un desplazamiento de 16 dp desde el lado del segmento elegido; la altura se anima, no salta.
  */
@@ -589,7 +590,8 @@ private fun TiraCobrosCard(proyeccion: ProyeccionCobros, onNavigateToDetalle: (L
                 },
                 label = "modoTira"
             ) { mes ->
-                Column {
+                // En "Este mes" ocupa todo el ancho para centrar el calendario (de ancho topado).
+                Column(if (mes) Modifier.fillMaxWidth() else Modifier) {
                     Column(Modifier.padding(horizontal = 16.dp)) {
                         if (mes) {
                             ResumenMesLinea(proyeccion)
@@ -605,16 +607,14 @@ private fun TiraCobrosCard(proyeccion: ProyeccionCobros, onNavigateToDetalle: (L
                     }
                     Spacer(Modifier.height(14.dp))
                     if (mes) {
-                        // Arranca en hoy con el día anterior a la vista: se nota que hay días pasados a la izquierda.
-                        val estado = rememberLazyListState(
-                            initialFirstVisibleItemIndex = (proyeccion.hoy.dayOfMonth - 2).coerceAtLeast(0)
-                        )
-                        TiraCobros(
+                        // El mes entero a la vista, sin desplazarse (de 4 a 6 semanas).
+                        CalendarioCobros(
                             dias = proyeccion.diasMes,
                             hoy = proyeccion.hoy,
-                            proximoCobro = proximo,
                             onOpenSuscripcion = onNavigateToDetalle,
-                            estadoLista = estado
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .padding(horizontal = 12.dp)
                         )
                     } else {
                         TiraCobros(

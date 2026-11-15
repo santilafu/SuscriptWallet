@@ -46,6 +46,8 @@
     <string name="tira_mode_14_days">14 días</string>
     <string name="tira_mode_month">Este mes</string>
     <string name="tira_already_charged">ya cobrado</string>
+    <string name="calendar_no_more_charges">Ya no quedan cobros este mes</string>
+    <string name="calendar_view_charges">ver cobros del día</string>
     <string name="day_today">Hoy</string>
     <string name="day_tomorrow">Mañana</string>
     <plurals name="in_n_days">

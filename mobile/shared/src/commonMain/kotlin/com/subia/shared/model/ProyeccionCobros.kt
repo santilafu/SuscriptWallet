@@ -15,8 +15,13 @@ data class CobroPrevisto(
     val moneda: String,
     val fecha: LocalDate,
     val categoriaId: Long?,
-    val periodoFacturacion: String
-)
+    val periodoFacturacion: String,
+    /** Intervalo en meses del gasto (ver [Periodicidad]); con [periodoFacturacion] da [periodo]. */
+    val intervaloMeses: Int = 1
+) {
+    /** Cada cuánto se cobra, para textos como "12,99 € al mes" o "90 € cada 3 meses". */
+    val periodo: PeriodoCobro get() = PeriodoCobro.de(periodoFacturacion, intervaloMeses)
+}
 
 /** Cobros previstos para un día de la tira. */
 data class DiaCobros(val fecha: LocalDate, val cobros: List<CobroPrevisto>) {
@@ -209,7 +214,8 @@ private fun cobrosPrevistos(subs: List<Subscription>, desde: LocalDate, hasta: L
                     moneda = sub.moneda,
                     fecha = fecha,
                     categoriaId = sub.categoriaId,
-                    periodoFacturacion = sub.periodoFacturacion
+                    periodoFacturacion = sub.periodoFacturacion,
+                    intervaloMeses = sub.intervaloMeses
                 )
             }
         }
