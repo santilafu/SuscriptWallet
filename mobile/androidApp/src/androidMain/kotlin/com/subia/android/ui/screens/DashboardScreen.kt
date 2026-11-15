@@ -44,6 +44,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -244,9 +245,13 @@ private fun DashboardContent(
 }
 
 /**
- * Hero del Dashboard: gasto mensual normalizado en `displaySmall` con cifras tabulares, su
- * equivalente anual y, si hay proyección, lo que viene este mes y el siguiente. Único gradiente
- * de la pantalla (tonos 600/700) con todo el texto en blanco al 100 % (D-02).
+ * Hero del Dashboard. Dos cifras distintas que no deben confundirse:
+ * - "Gasto mensual medio" (grande, `displaySmall` tabular): suma de equivalentes mensuales; un
+ *   trimestral de 90 € cuenta 30 € todos los meses. Debajo, su total anual.
+ * - "Este mes pagas" (abajo, con el mes siguiente al lado): lo que vence en el mes natural
+ *   ENTERO, incluidos los cobros ya pasados; el trimestral suma 90 € solo en su mes. Antes era
+ *   "Este mes" con lo que quedaba desde hoy (`totalMesActual`, que sigue usando el widget).
+ * Único gradiente de la pantalla (tonos 600/700) con todo el texto en blanco al 100 % (D-02).
  */
 @Composable
 private fun HeroGastoMensual(
@@ -258,9 +263,25 @@ private fun HeroGastoMensual(
     val etiqueta = stringResource(R.string.hero_monthly_label)
     val importe = formatearImporte(mensual, moneda)
     val anualTexto = stringResource(R.string.hero_per_year, formatearImporte(anual, moneda, decimales = 0))
-    val esteMes = proyeccion?.totalMesActual?.get(moneda) ?: 0.0
+    val esteMes = proyeccion?.totalMesCompleto?.get(moneda) ?: 0.0
     val mesSiguiente = proyeccion?.totalMesSiguiente?.get(moneda) ?: 0.0
     val nombreMesSiguiente = proyeccion?.meses?.getOrNull(1)?.let { nombreMesLargo(it.mes) }
+    val etiquetaEsteMes = stringResource(R.string.this_month)
+    val esteMesTexto = formatearImporte(esteMes, moneda)
+    val mesSiguienteTexto = formatearImporte(mesSiguiente, moneda)
+    val conMeses = proyeccion != null && nombreMesSiguiente != null
+
+    // TalkBack lee el hero de una vez y con etiquetas: "Gasto mensual medio: 45,30 €. 544 € al
+    // año. Este mes pagas: 30,00 €. Diciembre: 12,99 €." (la divisa la verbaliza el lector).
+    val etiquetaConMoneda = if (moneda == "EUR") etiqueta else "$etiqueta $moneda"
+    val descripcion = buildList {
+        add(stringResource(R.string.a11y_label_value, etiquetaConMoneda, importe))
+        add(anualTexto)
+        if (conMeses) {
+            add(stringResource(R.string.a11y_label_value, etiquetaEsteMes, esteMesTexto))
+            add(stringResource(R.string.a11y_label_value, nombreMesSiguiente.orEmpty(), mesSiguienteTexto))
+        }
+    }.joinToString(". ", postfix = ".")
 
     Column(
         modifier = Modifier
@@ -269,7 +290,7 @@ private fun HeroGastoMensual(
             .background(Brush.linearGradient(listOf(GradientBrandDeepStart, GradientBrandDeepMid, GradientBrandDeepEnd)))
             .padding(horizontal = 20.dp, vertical = 18.dp)
             .semantics(mergeDescendants = true) {
-                contentDescription = "$etiqueta $moneda: $importe, $anualTexto"
+                contentDescription = descripcion
             }
     ) {
         Text(
@@ -291,34 +312,39 @@ private fun HeroGastoMensual(
             style = MaterialTheme.typography.bodyMedium.tabular
         )
 
-        if (proyeccion != null && nombreMesSiguiente != null) {
+        if (conMeses) {
             Spacer(Modifier.height(14.dp))
             HorizontalDivider(color = Color.White.copy(alpha = 0.25f))
             Spacer(Modifier.height(12.dp))
-            Row(Modifier.fillMaxWidth()) {
-                MiniCifra(
-                    etiqueta = stringResource(R.string.this_month),
-                    valor = formatearImporte(esteMes, moneda),
-                    modifier = Modifier.weight(1f)
-                )
-                MiniCifra(
-                    etiqueta = nombreMesSiguiente,
-                    valor = formatearImporte(mesSiguiente, moneda),
-                    modifier = Modifier.weight(1f)
-                )
+            // Con fuente muy grande, dos columnas de media anchura recortaban las cifras: se
+            // apilan una debajo de otra.
+            if (LocalDensity.current.fontScale >= ESCALA_FUENTE_APILAR) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    MiniCifra(etiqueta = etiquetaEsteMes, valor = esteMesTexto)
+                    MiniCifra(etiqueta = nombreMesSiguiente.orEmpty(), valor = mesSiguienteTexto)
+                }
+            } else {
+                Row(Modifier.fillMaxWidth()) {
+                    MiniCifra(etiqueta = etiquetaEsteMes, valor = esteMesTexto, modifier = Modifier.weight(1f))
+                    MiniCifra(etiqueta = nombreMesSiguiente.orEmpty(), valor = mesSiguienteTexto, modifier = Modifier.weight(1f))
+                }
             }
         }
     }
 }
 
+/** Escala de fuente del sistema a partir de la cual las cifras del hero se apilan. */
+private const val ESCALA_FUENTE_APILAR = 1.5f
+
 @Composable
 private fun MiniCifra(etiqueta: String, valor: String, modifier: Modifier = Modifier) {
     Column(modifier) {
+        // Hasta 2 líneas: "Este mes pagas" (o "Ce mois-ci, vous payez") no debe cortarse.
         Text(
             text = etiqueta,
             color = Color.White,
             style = MaterialTheme.typography.labelMedium,
-            maxLines = 1,
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )
         Text(

@@ -9,6 +9,13 @@ import com.subia.android.ui.components.EmptyState
 import com.subia.android.ui.components.ErrorState
 import com.subia.android.ui.components.formatearImporte
 import com.subia.android.ui.components.textoErrorSuscripciones
+import com.subia.android.ui.components.textoPeriodo
+import com.subia.shared.model.Periodicidad
+import com.subia.shared.model.PeriodoCobro
+import com.subia.shared.model.equivalenteMensualInterno
+import com.subia.shared.model.periodoCobro
+import com.subia.shared.model.totalAnualInterno
+import java.util.Locale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -226,8 +233,25 @@ fun SuscripcionDetalleScreen(
                 ) {
                     DetalleRow(stringResource(R.string.amount), formatearImporte(suscripcion.precio, suscripcion.moneda))
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
-                    DetalleRow(stringResource(R.string.billing), periodoCiclo(suscripcion.periodoFacturacion))
+                    val periodo = suscripcion.periodoCobro()
+                    DetalleRow(stringResource(R.string.billing), nombrePeriodo(periodo))
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
+                    // Si no se cobra cada mes, cuánto supone al mes y al año (mismas cifras que el
+                    // Inicio). En la anual se omite el total anual: es el propio importe.
+                    if (!periodo.esMensual) {
+                        DetalleRow(
+                            stringResource(R.string.hero_monthly_label),
+                            formatearImporte(Periodicidad.aCifraVisible(suscripcion.equivalenteMensualInterno()), suscripcion.moneda)
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
+                        if (periodo != PeriodoCobro.PorMeses(12)) {
+                            DetalleRow(
+                                stringResource(R.string.resumen_anual_total_label),
+                                formatearImporte(Periodicidad.aCifraVisible(suscripcion.totalAnualInterno()), suscripcion.moneda)
+                            )
+                            HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
+                        }
+                    }
                     DetalleRow(stringResource(R.string.next_renewal), fechaIsoLegible(proximaRenovacionIso(suscripcion)))
                     if (suscripcion.descripcion.isNotBlank()) {
                         HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
@@ -367,10 +391,15 @@ private fun DetalleRow(etiqueta: String, valor: String) {
     }
 }
 
+/**
+ * Nombre del periodo como valor de la fila "Facturación": "Mensual", "Anual", "Semanal" o
+ * "Cada 3 meses". Los intermedios y los ciclos antiguos (quincenal, diario) reutilizan la frase
+ * de [textoPeriodo] con mayúscula inicial; antes un ciclo desconocido salía en crudo ("BIWEEKLY").
+ */
 @Composable
-private fun periodoCiclo(ciclo: String): String = when (ciclo) {
-    "MONTHLY" -> stringResource(R.string.monthly)
-    "YEARLY" -> stringResource(R.string.yearly)
-    "WEEKLY" -> stringResource(R.string.weekly)
-    else -> ciclo
+private fun nombrePeriodo(periodo: PeriodoCobro): String = when (periodo) {
+    PeriodoCobro.PorMeses(1) -> stringResource(R.string.monthly)
+    PeriodoCobro.PorMeses(12) -> stringResource(R.string.yearly)
+    PeriodoCobro.Semanal -> stringResource(R.string.weekly)
+    else -> textoPeriodo(periodo).replaceFirstChar { it.titlecase(Locale.getDefault()) }
 }

@@ -33,9 +33,11 @@
     <string name="active_subscriptions">Suscripciones activas</string>
     <string name="view_subscriptions">Ver suscripciones</string>
     <string name="no_upcoming_renewals">No tienes renovaciones próximas</string>
-    <string name="hero_monthly_label">Gasto mensual</string>
+    <string name="hero_monthly_label">Gasto mensual medio</string>
     <string name="hero_per_year">%1$s al año</string>
-    <string name="this_month">Este mes</string>
+    <string name="this_month">Este mes pagas</string>
+    <!-- Etiqueta y cifra leídas por TalkBack en el hero del Inicio -->
+    <string name="a11y_label_value">%1$s: %2$s</string>
     <string name="tira_title">Próximos 14 días</string>
     <string name="tira_no_charge">sin cobros</string>
     <string name="tira_open_sub">Abrir %1$s</string>
@@ -322,9 +324,13 @@
     <string name="notif_every_month">al mes</string>
     <string name="notif_every_year">al año</string>
     <string name="notif_every_week">a la semana</string>
-    <string name="notif_every_quarter">al trimestre</string>
     <string name="notif_every_two_weeks">cada dos semanas</string>
     <string name="notif_every_day">al día</string>
+    <!-- "cada 2, 3 o 6 meses"; los notif_every_* también los usan la lista y el detalle -->
+    <plurals name="notif_every_n_months">
+        <item quantity="one">cada %d mes</item>
+        <item quantity="other">cada %d meses</item>
+    </plurals>
     <plurals name="notif_summary_title">
         <item quantity="one">%d cobro próximo</item>
         <item quantity="other">%d cobros próximos</item>

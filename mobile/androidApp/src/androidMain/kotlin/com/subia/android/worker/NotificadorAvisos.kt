@@ -13,12 +13,14 @@ import androidx.core.app.NotificationManagerCompat
 import com.subia.android.MainActivity
 import com.subia.android.R
 import com.subia.android.ui.components.formatearImporte
+import com.subia.android.ui.components.textoPeriodo
 import com.subia.android.ui.theme.Violet600
 import com.subia.android.util.NotificacionesPermiso
 import com.subia.shared.model.AvisoRenovacion
 import com.subia.shared.model.Subscription
 import com.subia.shared.model.TipoAviso
 import com.subia.shared.model.idNotificacion
+import com.subia.shared.model.periodoCobro
 import com.subia.shared.model.proximaRenovacion
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
@@ -152,7 +154,8 @@ object NotificadorAvisos {
         val locale = res.configuration.locales[0] ?: Locale.getDefault()
         val sub = aviso.suscripcion
         val importe = formatearImporte(sub.precio, sub.moneda, decimalesDe(sub.moneda), locale)
-        val periodo = context.getString(periodoRes(sub.periodoFacturacion))
+        // Con el intervalo del gasto: "cada 3 meses", no "al mes", para un trimestral.
+        val periodo = textoPeriodo(res, sub.periodoCobro())
         val fecha = fechaAviso(aviso.fecha, locale)
         val dias = aviso.diasRestantes.coerceAtLeast(0)
         return when (aviso.tipo) {
@@ -252,16 +255,6 @@ object NotificadorAvisos {
     /** Decimales propios de la divisa (JPY = 0); 2 si no es un código ISO válido. */
     private fun decimalesDe(moneda: String): Int =
         runCatching { Currency.getInstance(moneda).defaultFractionDigits }.getOrNull()?.takeIf { it >= 0 } ?: 2
-
-    /** Mismo criterio de ciclos que la proyección de cobros de shared (`cicloDe`). */
-    private fun periodoRes(periodo: String): Int = when (periodo.trim().uppercase()) {
-        "YEARLY", "ANNUAL", "ANNUALLY" -> R.string.notif_every_year
-        "QUARTERLY" -> R.string.notif_every_quarter
-        "WEEKLY" -> R.string.notif_every_week
-        "BIWEEKLY" -> R.string.notif_every_two_weeks
-        "DAILY" -> R.string.notif_every_day
-        else -> R.string.notif_every_month
-    }
 
     /**
      * "jueves 15 oct" / "Thursday, Oct 15" en el idioma de la app; con año si no es el actual

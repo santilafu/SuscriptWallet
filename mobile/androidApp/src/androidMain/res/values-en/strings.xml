@@ -33,9 +33,11 @@
     <string name="active_subscriptions">Active subscriptions</string>
     <string name="view_subscriptions">View subscriptions</string>
     <string name="no_upcoming_renewals">No upcoming renewals</string>
-    <string name="hero_monthly_label">Monthly spend</string>
+    <string name="hero_monthly_label">Average monthly spend</string>
     <string name="hero_per_year">%1$s per year</string>
-    <string name="this_month">This month</string>
+    <string name="this_month">You pay this month</string>
+    <!-- Etiqueta y cifra leídas por TalkBack en el hero del Inicio -->
+    <string name="a11y_label_value">%1$s: %2$s</string>
     <string name="tira_title">Next 14 days</string>
     <string name="tira_no_charge">no charges</string>
     <string name="tira_open_sub">Open %1$s</string>
@@ -322,9 +324,13 @@
     <string name="notif_every_month">per month</string>
     <string name="notif_every_year">per year</string>
     <string name="notif_every_week">per week</string>
-    <string name="notif_every_quarter">per quarter</string>
     <string name="notif_every_two_weeks">every two weeks</string>
     <string name="notif_every_day">per day</string>
+    <!-- "cada 2, 3 o 6 meses"; los notif_every_* también los usan la lista y el detalle -->
+    <plurals name="notif_every_n_months">
+        <item quantity="one">every %d month</item>
+        <item quantity="other">every %d months</item>
+    </plurals>
     <plurals name="notif_summary_title">
         <item quantity="one">%d upcoming charge</item>
         <item quantity="other">%d upcoming charges</item>

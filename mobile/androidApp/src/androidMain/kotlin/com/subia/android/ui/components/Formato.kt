@@ -1,10 +1,12 @@
 package com.subia.android.ui.components
 
+import android.content.res.Resources
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import com.subia.android.R
+import com.subia.shared.model.PeriodoCobro
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.toJavaLocalDate
 import java.text.NumberFormat
@@ -99,19 +101,69 @@ fun formatearFechaCorta(fecha: LocalDate): String {
 fun formatearFechaMedia(fecha: LocalDate): String =
     fecha.toJavaLocalDate().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault()))
 
-/** Sufijo corto del ciclo de cobro ("mes", "año", "sem."); en el catálogo `price` es el precio de ese ciclo. */
+/**
+ * Sufijo corto del ciclo de cobro ("mes", "año", "sem.", "3 meses"); en el catálogo `price` es
+ * el precio de ese ciclo. [intervaloMeses] solo cuenta en los ciclos por meses (ver [PeriodoCobro]).
+ */
 @Composable
-fun sufijoPeriodo(ciclo: String): String = when (ciclo) {
-    "YEARLY" -> stringResource(R.string.period_year)
-    "WEEKLY" -> stringResource(R.string.period_week)
-    else -> stringResource(R.string.period_month)
-}
+fun sufijoPeriodo(ciclo: String, intervaloMeses: Int = 1): String =
+    when (val periodo = PeriodoCobro.de(ciclo, intervaloMeses)) {
+        PeriodoCobro.Semanal -> stringResource(R.string.period_week)
+        is PeriodoCobro.PorMeses -> when (periodo.meses) {
+            1 -> stringResource(R.string.period_month)
+            12 -> stringResource(R.string.period_year)
+            else -> pluralStringResource(R.plurals.frequency_n_months, periodo.meses, periodo.meses)
+        }
+        // El catálogo solo trae MONTHLY, YEARLY y WEEKLY; se mantiene el "mes" de siempre.
+        PeriodoCobro.Quincenal, PeriodoCobro.Diario -> stringResource(R.string.period_month)
+    }
 
 /** Importe para celdas estrechas: los importes redondos van sin decimales ("30 €", "450 €"). */
 fun formatearImporteCorto(valor: Double, moneda: String): String =
     formatearImporte(valor, moneda, if (valor % 1.0 == 0.0) 0 else 2)
 
-/** "12,99 €/mes" o "450 €/año" para celdas estrechas (ver [formatearImporteCorto]). */
+/** "12,99 €/mes", "450 €/año" o "90 €/3 meses" para celdas estrechas (ver [formatearImporteCorto]). */
 @Composable
-fun importeConPeriodo(valor: Double, moneda: String, ciclo: String): String =
-    formatearImporteCorto(valor, moneda) + "/" + sufijoPeriodo(ciclo)
+fun importeConPeriodo(valor: Double, moneda: String, ciclo: String, intervaloMeses: Int = 1): String =
+    formatearImporteCorto(valor, moneda) + "/" + sufijoPeriodo(ciclo, intervaloMeses)
+
+/**
+ * Texto de un recurso: un string fijo o un plural con su cantidad. Permite que la versión
+ * Compose y la de las notificaciones (sin Compose) de [textoPeriodo] compartan el mismo reparto.
+ */
+private class RecursoTexto(val id: Int, val cantidad: Int? = null)
+
+private fun recursoPeriodo(periodo: PeriodoCobro): RecursoTexto = when (periodo) {
+    PeriodoCobro.Semanal -> RecursoTexto(R.string.notif_every_week)
+    PeriodoCobro.Quincenal -> RecursoTexto(R.string.notif_every_two_weeks)
+    PeriodoCobro.Diario -> RecursoTexto(R.string.notif_every_day)
+    is PeriodoCobro.PorMeses -> when (periodo.meses) {
+        1 -> RecursoTexto(R.string.notif_every_month)
+        12 -> RecursoTexto(R.string.notif_every_year)
+        // 2, 3 y 6: "cada 3 meses". Plural porque en algunos idiomas cambia con el número.
+        else -> RecursoTexto(R.plurals.notif_every_n_months, periodo.meses)
+    }
+}
+
+/** Periodo en una frase, tras un importe: "al mes", "cada 3 meses", "al año", "a la semana". */
+@Composable
+fun textoPeriodo(periodo: PeriodoCobro): String {
+    val recurso = recursoPeriodo(periodo)
+    val cantidad = recurso.cantidad
+    return if (cantidad == null) stringResource(recurso.id) else pluralStringResource(recurso.id, cantidad, cantidad)
+}
+
+/**
+ * Igual que la versión Compose, para textos fuera de pantalla (notificaciones). Recibe los
+ * [Resources] del idioma de la app, que en segundo plano puede no ser el del sistema.
+ */
+fun textoPeriodo(resources: Resources, periodo: PeriodoCobro): String {
+    val recurso = recursoPeriodo(periodo)
+    val cantidad = recurso.cantidad
+    return if (cantidad == null) resources.getString(recurso.id) else resources.getQuantityString(recurso.id, cantidad, cantidad)
+}
+
+/** "90,00 € cada 3 meses", "9,99 € al mes", "5,00 € a la semana". */
+@Composable
+fun importeCadaPeriodo(valor: Double, moneda: String, periodo: PeriodoCobro): String =
+    formatearImporte(valor, moneda) + " " + textoPeriodo(periodo)

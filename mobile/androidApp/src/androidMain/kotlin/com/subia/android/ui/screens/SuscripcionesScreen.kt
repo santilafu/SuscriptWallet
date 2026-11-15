@@ -77,14 +77,17 @@ import com.subia.android.ui.ServiceLogo
 import com.subia.android.ui.components.ErrorState
 import com.subia.android.ui.components.textoErrorSuscripciones
 import com.subia.android.ui.components.formatearImporte
+import com.subia.android.ui.components.importeCadaPeriodo
 import com.subia.android.ui.theme.Violet600
 import com.subia.android.ui.theme.urgent
 import com.subia.android.util.fechaIsoLegible
 import com.subia.android.util.proximaRenovacionIso
 import com.subia.android.util.fechaIsoCorta
 import com.subia.shared.model.Category
+import com.subia.shared.model.Periodicidad
 import com.subia.shared.model.Subscription
-import com.subia.shared.model.gastoMensualEquivalente
+import com.subia.shared.model.equivalenteMensualInterno
+import com.subia.shared.model.periodoCobro
 import com.subia.shared.viewmodel.SuscripcionesUiState
 import com.subia.shared.viewmodel.SuscripcionesViewModel
 import kotlinx.coroutines.launch
@@ -308,13 +311,14 @@ private fun ListaSuscripciones(
     onEliminar: ((Subscription) -> Unit)?
 ) {
     // La TopAppBar ya dice "Suscripciones": en vez de repetir el título con un badge, un
-    // subtítulo con significado: "7 activas · 47,96 €/mes" (S-05). El gasto mensual se
-    // normaliza con el mismo criterio que el Inicio (gastoMensualEquivalente: anual / 12,
-    // semanal × 52 / 12) y se agrupa por divisa. Antes una semanal contaba como mensual.
+    // subtítulo con significado: "7 activas · 47,96 €/mes" (S-05). Es el "Gasto mensual medio"
+    // del Inicio: suma de equivalentes mensuales (importe / intervalo; semanal × 52 / 12) por
+    // divisa. Se suma en diezmilésimas y solo el total se redondea a céntimos (regla de
+    // Periodicidad): sumar Doubles ya redondeados podía desviarse un céntimo del Inicio.
     val activas = suscripciones.filter { it.activa }
     val totalesMensuales = activas
         .groupBy { it.moneda }
-        .mapValues { (_, subs) -> subs.sumOf { it.gastoMensualEquivalente() } }
+        .mapValues { (_, subs) -> Periodicidad.aCifraVisible(subs.sumOf { it.equivalenteMensualInterno() }) }
         .entries
         .sortedBy { entry -> when (entry.key) { "EUR" -> "0"; "USD" -> "1"; else -> "2${entry.key}" } }
     val resumenActivas = pluralStringResource(R.plurals.subs_active_count, activas.size, activas.size)
@@ -474,6 +478,18 @@ private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Un
         }.getOrNull()?.takeIf { it >= 0 }
     } else null
 
+    // A la derecha, siempre lo que cuesta al mes ("30,00 €/mes"), para comparar filas de un
+    // vistazo. Debajo del nombre, lo que se paga de verdad en cada cobro ("90,00 € cada 3 meses"),
+    // salvo en las mensuales: ahí sería la misma cifra dos veces.
+    val periodo = sub.periodoCobro()
+    val mensualTexto = stringResource(
+        R.string.subs_monthly_total,
+        formatearImporte(Periodicidad.aCifraVisible(sub.equivalenteMensualInterno()), sub.moneda)
+    )
+    val renueva = stringResource(R.string.renews_on, fechaIsoCorta(proximaRenovacionIso(sub)))
+    val detalleCobro = if (periodo.esMensual) renueva
+    else importeCadaPeriodo(sub.precio, sub.moneda, periodo) + " · " + renueva
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -489,8 +505,7 @@ private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Un
         Column(Modifier.weight(1f)) {
             Text(sub.nombre, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
-                periodoCiclo(sub.periodoFacturacion) + " · " +
-                    stringResource(R.string.renews_on, fechaIsoCorta(proximaRenovacionIso(sub))),
+                detalleCobro,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -506,7 +521,7 @@ private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Un
         }
         Spacer(Modifier.width(8.dp))
         Text(
-            formatearImporte(sub.precio, sub.moneda),
+            mensualTexto,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
         )
@@ -517,12 +532,4 @@ private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Un
             modifier = Modifier.padding(start = 4.dp)
         )
     }
-}
-
-@Composable
-private fun periodoCiclo(ciclo: String): String = when (ciclo) {
-    "MONTHLY" -> stringResource(R.string.monthly)
-    "YEARLY" -> stringResource(R.string.yearly)
-    "WEEKLY" -> stringResource(R.string.weekly)
-    else -> ciclo
 }
