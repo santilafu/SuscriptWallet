@@ -182,6 +182,7 @@
     <string name="cat_seguros">Insurance</string>
     <string name="cat_telecos">Telecom</string>
     <string name="cat_transporte">Transport</string>
+    <string name="cat_belleza">Beauty</string>
     <string name="price_approx_prefix">≈ %1$s</string>
     <string name="price_approx_label">Estimated amount</string>
     <string name="price_adjust_hint">Estimated amount: adjust it to your latest bill</string>

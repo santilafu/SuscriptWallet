@@ -47,6 +47,7 @@ class CatalogServiceTest {
         assertTrue(grouped.getValue("telecos").size >= 15)
         assertTrue(grouped.getValue("seguros").size >= 20)
         assertTrue(grouped.getValue("transporte").size >= 6)
+        assertTrue(grouped.getValue("belleza").size >= 4)
     }
 
     @Test

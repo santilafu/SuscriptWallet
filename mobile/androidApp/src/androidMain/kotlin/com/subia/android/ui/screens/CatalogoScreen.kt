@@ -88,6 +88,7 @@ private fun nombreCategoria(key: String): String = when (key) {
     "seguros"     -> stringResource(R.string.cat_seguros)
     "telecos"     -> stringResource(R.string.cat_telecos)
     "transporte"  -> stringResource(R.string.cat_transporte)
+    "belleza"     -> stringResource(R.string.cat_belleza)
     else          -> key.replaceFirstChar { it.uppercaseChar() }
 }
 

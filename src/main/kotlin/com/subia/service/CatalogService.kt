@@ -17,7 +17,7 @@ import java.math.BigDecimal
  * Claves de categoría disponibles (ver [CategoryMappingService.NAME_TO_KEY]):
  *   "ia", "streaming", "musica", "software", "cloud", "gaming", "seguridad",
  *   "noticias", "salud", "desarrollo", "finanzas", "educacion", "creatividad", "citas",
- *   "hogar", "telecos", "seguros", "transporte" y "prueba" (derivada, ver [TRIALS]).
+ *   "hogar", "telecos", "seguros", "transporte", "belleza" y "prueba" (derivada, ver [TRIALS]).
  *
  * Recibos recurrentes (luz, gas, agua, telecos, seguros…): el precio es un importe
  * orientativo y el item lleva `variablePrice = true` para que la UI lo indique.
@@ -543,6 +543,18 @@ class CatalogService {
             CatalogItem("Bip&Drive (Via-T)", BigDecimal("18.15"), "EUR", BillingCycle.YEARLY, "Cuota anual del dispositivo Via-T para peajes (15 € + IVA) — los peajes se cobran aparte", "transporte", domain = "bipdrive.com", cancelUrl = "https://www.bipdrive.com/", variablePrice = true),
             CatalogItem("Pagatelia (Via-T)", BigDecimal("6.15"), "EUR", BillingCycle.YEARLY, "Cuota anual del dispositivo Via-T para peajes (Fórmula Fácil/Frecuente) — los peajes se cobran aparte", "transporte", domain = "pagatelia.com", cancelUrl = "https://www.pagatelia.com/", variablePrice = true),
             CatalogItem("Parking / garaje",       BigDecimal("90.00"),  "EUR", BillingCycle.MONTHLY, "Plaza de garaje en alquiler o abono mensual de parking — importe orientativo",                               "transporte", variablePrice = true)
+        ),
+
+        // ── Belleza (cajas de cosmética por suscripción) ────────────────────────
+        // Fuentes en docs/catalogo/revision-2026-11/belleza.md. Solo planes mensuales y anuales:
+        // los de 3 y 6 meses de LOOKFANTASTIC se dejan fuera a propósito.
+        // Blissim lleva iconUrl porque icon.horse solo devuelve su favicon de 32 px; el de
+        // Google es el mismo logo a 128 px (y está permitido por la CSP de la web).
+        "belleza" to listOf(
+            CatalogItem("Blissim", BigDecimal("16.90"), "EUR", BillingCycle.MONTHLY, "Blissim — caja mensual de 5 productos de belleza, envío incluido en España peninsular y sin permanencia", "belleza", domain = "blissim.es", cancelUrl = "https://www.blissim.es/", iconUrl = "https://www.google.com/s2/favicons?domain=blissim.es&sz=128"),
+            CatalogItem("LOOKFANTASTIC Beauty Box", BigDecimal("20.00"), "EUR", BillingCycle.MONTHLY, "LOOKFANTASTIC Beauty Box — caja mensual de belleza, pago mensual sin permanencia", "belleza", domain = "lookfantastic.es", cancelUrl = "https://www.lookfantastic.es/"),
+            CatalogItem("LOOKFANTASTIC Beauty Box 12 meses", BigDecimal("17.00"), "EUR", BillingCycle.MONTHLY, "LOOKFANTASTIC Beauty Box — caja mensual de belleza, pago mensual con compromiso de 12 meses", "belleza", domain = "lookfantastic.es", cancelUrl = "https://www.lookfantastic.es/"),
+            CatalogItem("LOOKFANTASTIC Beauty Box Anual", BigDecimal("200.00"), "EUR", BillingCycle.YEARLY, "LOOKFANTASTIC Beauty Box — 12 cajas mensuales de belleza con un único pago anual", "belleza", domain = "lookfantastic.es", cancelUrl = "https://www.lookfantastic.es/")
         )
     )
 

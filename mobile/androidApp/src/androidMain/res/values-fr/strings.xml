@@ -187,6 +187,7 @@
     <string name="cat_seguros">Assurances</string>
     <string name="cat_telecos">Télécoms</string>
     <string name="cat_transporte">Transports</string>
+    <string name="cat_belleza">Beauté</string>
     <string name="price_approx_prefix">≈ %1$s</string>
     <string name="price_approx_label">Montant indicatif</string>
     <string name="price_adjust_hint">Montant indicatif : ajustez-le à votre dernière facture</string>

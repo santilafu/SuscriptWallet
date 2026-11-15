@@ -36,6 +36,12 @@ class CategoryMappingServiceTest {
     }
 
     @Test
+    fun `keyFor traduce la categoria Belleza sembrada en V16`() {
+        assertEquals("belleza", CategoryMappingService.keyFor("Belleza"))
+        assertEquals("Belleza", CategoryMappingService.KEY_TO_NAME["belleza"])
+    }
+
+    @Test
     fun `keyFor ignora espacios alrededor y devuelve null para nombres desconocidos`() {
         assertEquals("seguros", CategoryMappingService.keyFor("  Seguros "))
         assertNull(CategoryMappingService.keyFor("Mi categoría personal"))

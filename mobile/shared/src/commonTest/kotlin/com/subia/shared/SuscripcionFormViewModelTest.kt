@@ -371,7 +371,8 @@ class SuscripcionFormViewModelTest {
         Category(id = 2, nombre = "Hogar y suministros"),
         Category(id = 3, nombre = "Telecomunicaciones"),
         Category(id = 4, nombre = "Noticias y Lectura"),
-        Category(id = 5, nombre = "Seguros")
+        Category(id = 5, nombre = "Seguros"),
+        Category(id = 6, nombre = "Belleza")
     )
 
     @Test
@@ -385,6 +386,8 @@ class SuscripcionFormViewModelTest {
     fun buscarCategoriaDeClave_nombreIgualALaClave() {
         assertEquals(5L, SuscripcionFormViewModel.buscarCategoriaDeClave("seguros", categoriasSembradas)?.id)
         assertEquals(1L, SuscripcionFormViewModel.buscarCategoriaDeClave("streaming", categoriasSembradas)?.id)
+        // Sembrada en V16 del backend.
+        assertEquals(6L, SuscripcionFormViewModel.buscarCategoriaDeClave("belleza", categoriasSembradas)?.id)
     }
 
     @Test

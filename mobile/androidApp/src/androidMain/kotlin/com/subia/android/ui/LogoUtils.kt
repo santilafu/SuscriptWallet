@@ -169,6 +169,10 @@ fun getLogoDomain(nombre: String): String {
         "bicing" in n -> "bicing.barcelona"
         "uber one" in n -> "uber.com"
         "via-t" in n -> "bipdrive.com"
+        // Belleza: las suscripciones guardadas solo tienen nombre, así que sin esto el
+        // Inicio y la lista mostrarían la inicial aunque el catálogo tenga el dominio.
+        "blissim" in n -> "blissim.es"
+        "lookfantastic" in n -> "lookfantastic.es"
         else -> ""
     }
 }

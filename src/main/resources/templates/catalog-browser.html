@@ -96,6 +96,10 @@
                 <button type="button" class="filter-pill px-3 py-1 rounded-full text-xs font-medium border cursor-pointer" aria-pressed="false"
                         data-cat="transporte" onclick="setCatalogCat(this, 'transporte')"
                         th:text="'🚌 ' + #{catalog.chip.transporte}">🚌 Transporte</button>
+                <!-- V16: cosmética, cajas de belleza y peluquería/depilación recurrentes -->
+                <button type="button" class="filter-pill px-3 py-1 rounded-full text-xs font-medium border cursor-pointer" aria-pressed="false"
+                        data-cat="belleza" onclick="setCatalogCat(this, 'belleza')"
+                        th:text="'💄 ' + #{catalog.chip.belleza}">💄 Belleza</button>
                 <button type="button" class="filter-pill filter-pill-trial px-3 py-1 rounded-full text-xs font-medium border cursor-pointer" aria-pressed="false"
                         data-cat="prueba" onclick="setCatalogCat(this, 'prueba')"
                         th:text="'🆓 ' + #{catalog.chip.prueba}">🆓 Pruebas gratuitas</button>

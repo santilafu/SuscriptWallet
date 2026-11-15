@@ -531,7 +531,8 @@ class SuscripcionFormViewModel(
             "prueba gratuita" to "prueba", "finanzas" to "finanzas", "educacion" to "educacion",
             "creatividad y foto" to "creatividad", "citas y social" to "citas",
             "hogar y suministros" to "hogar", "seguros" to "seguros",
-            "telecomunicaciones" to "telecos", "transporte" to "transporte"
+            "telecomunicaciones" to "telecos", "transporte" to "transporte",
+            "belleza" to "belleza"
         )
 
         /**
