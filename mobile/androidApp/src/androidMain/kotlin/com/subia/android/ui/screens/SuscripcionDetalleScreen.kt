@@ -236,22 +236,19 @@ fun SuscripcionDetalleScreen(
                     val periodo = suscripcion.periodoCobro()
                     DetalleRow(stringResource(R.string.billing), nombrePeriodo(periodo))
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
-                    // Si no se cobra cada mes, cuánto supone al mes y al año (mismas cifras que el
-                    // Inicio). En la anual se omite el total anual: es el propio importe.
-                    if (!periodo.esMensual) {
-                        DetalleRow(
-                            stringResource(R.string.hero_monthly_label),
-                            formatearImporte(Periodicidad.aCifraVisible(suscripcion.equivalenteMensualInterno()), suscripcion.moneda)
-                        )
-                        HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
-                        if (periodo != PeriodoCobro.PorMeses(12)) {
-                            DetalleRow(
-                                stringResource(R.string.resumen_anual_total_label),
-                                formatearImporte(Periodicidad.aCifraVisible(suscripcion.totalAnualInterno()), suscripcion.moneda)
-                            )
-                            HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
-                        }
-                    }
+                    // Cuánto supone al mes y al año (mismas cifras que el Inicio), sea cual sea la
+                    // periodicidad: también en la mensual y la anual, para que todos los gastos
+                    // muestren las mismas filas (395 € al mes → 395,00 € y 4.740,00 €).
+                    DetalleRow(
+                        stringResource(R.string.hero_monthly_label),
+                        formatearImporte(Periodicidad.aCifraVisible(suscripcion.equivalenteMensualInterno()), suscripcion.moneda)
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
+                    DetalleRow(
+                        stringResource(R.string.resumen_anual_total_label),
+                        formatearImporte(Periodicidad.aCifraVisible(suscripcion.totalAnualInterno()), suscripcion.moneda)
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
                     DetalleRow(stringResource(R.string.next_renewal), fechaIsoLegible(proximaRenovacionIso(suscripcion)))
                     if (suscripcion.descripcion.isNotBlank()) {
                         HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)

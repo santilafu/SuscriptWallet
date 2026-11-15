@@ -146,6 +146,22 @@ class PeriodicidadTest {
         assertEquals(2_600_000L, sub(5.0, "WEEKLY").totalAnualInterno()) // 5 × 52 = 260
     }
 
+    /**
+     * Filas "Gasto mensual medio" y "Gasto anual" del detalle: se muestran con TODAS las
+     * periodicidades, también la mensual (Alquiler de 395 €) y la anual.
+     */
+    @Test
+    fun detalle_mensualMedioYAnual_conCualquierPeriodicidad() {
+        fun filas(s: Subscription) =
+            Periodicidad.aCifraVisible(s.equivalenteMensualInterno()) to Periodicidad.aCifraVisible(s.totalAnualInterno())
+        assertEquals(395.0 to 4740.0, filas(sub(395.0)))                        // mensual
+        assertEquals(30.0 to 360.0, filas(sub(60.0, intervalo = 2)))             // cada 2 meses
+        assertEquals(30.0 to 360.0, filas(sub(90.0, intervalo = 3)))             // cada 3 meses
+        assertEquals(10.0 to 120.0, filas(sub(60.0, intervalo = 6)))             // cada 6 meses
+        assertEquals(10.0 to 120.0, filas(sub(120.0, "YEARLY", intervalo = 12))) // anual
+        assertEquals(21.67 to 260.0, filas(sub(5.0, "WEEKLY")))                  // semanal, 52/12
+    }
+
     // ── Serialización ────────────────────────────────────────────────────────
 
     private val json = Json { ignoreUnknownKeys = true; isLenient = true; coerceInputValues = true }
