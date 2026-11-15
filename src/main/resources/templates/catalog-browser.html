@@ -119,10 +119,11 @@
                     <!-- Logo -->
                     <div class="w-10 h-10 rounded-xl flex-shrink-0 bg-elevated flex items-center justify-center overflow-hidden border border-white/[0.06]">
                         <img th:if="${item.domain != null}"
-                             th:src="'https://icon.horse/icon/' + ${item.domain}"
+                             th:src="${item.iconUrl != null} ? ${item.iconUrl} : ('https://icon.horse/icon/' + ${item.domain})"
+                             th:attr="data-domain=${item.domain},data-icon=${item.iconUrl}"
                              class="w-8 h-8 object-contain"
                              th:alt="${item.name}"
-                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                             onerror="subiaLogoFallback(this)">
                         <span th:text="${item.name.substring(0,1).toUpperCase()}"
                               th:style="${item.domain != null} ? 'display:none' : 'display:flex'"
                               class="w-full h-full items-center justify-center text-sm font-bold text-accent"></span>

@@ -70,6 +70,38 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 
+    <!--
+      Cascada de logos, igual que la app Android (ServiceLogo): iconUrl del catálogo →
+      icon.horse → favicon de Google → inicial. Va en el <head> porque una imagen puede fallar
+      antes de que se lea un script del final del <body>. Cada <img> de logo lleva
+      data-domain (y data-icon si el catálogo tiene iconUrl) y onerror="subiaLogoFallback(this)".
+      Al agotar las fuentes se oculta y se muestra la inicial (el elemento hermano siguiente).
+    -->
+    <script>
+        function subiaLogoFallback(img) {
+            var domain = img.getAttribute('data-domain');
+            var icon = img.getAttribute('data-icon');
+            var sources = [];
+            if (icon) sources.push(icon);
+            if (domain) {
+                sources.push('https://icon.horse/icon/' + encodeURIComponent(domain));
+                sources.push('https://www.google.com/s2/favicons?domain=' + encodeURIComponent(domain) + '&sz=128');
+            }
+            // La fuente 0 es el src inicial que pinta el servidor; avanzamos a la siguiente
+            // saltando repetidas (un iconUrl puede ser ya el favicon de Google).
+            var step = parseInt(img.getAttribute('data-logo-step') || '0', 10) + 1;
+            while (step < sources.length && sources.indexOf(sources[step]) < step) step++;
+            img.setAttribute('data-logo-step', String(step));
+            if (step < sources.length) {
+                img.src = sources[step];
+                return;
+            }
+            img.onerror = null;
+            img.style.display = 'none';
+            if (img.nextElementSibling) img.nextElementSibling.style.display = 'flex';
+        }
+    </script>
+
     <style>
         /* ── Variables CSS ───────────────────────────────────────────────────── */
         :root {

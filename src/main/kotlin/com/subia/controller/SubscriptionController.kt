@@ -59,6 +59,8 @@ class SubscriptionController(
             .associate { it.id to java.time.temporal.ChronoUnit.DAYS.between(today, it.trialEndsAt) })
         model.addAttribute("categories", categoryService.findAll())
         model.addAttribute("serviceDomains", catalogService.getDomainMap())
+        // URL directa del logo (si el catálogo la tiene): la web la prueba antes que icon.horse.
+        model.addAttribute("serviceIcons", catalogService.getIconUrlMap())
         model.addAttribute("cancelUrls", catalogService.getCancelUrlMap())
         return "subscriptions/list"
     }

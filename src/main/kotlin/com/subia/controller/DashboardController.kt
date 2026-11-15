@@ -47,6 +47,8 @@ class DashboardController(
             ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado")
         model.addAttribute("dashboard", dashboardService.getDashboard(userId, currency))
         model.addAttribute("serviceDomains", catalogService.getDomainMap())
+        // URL directa del logo (si el catálogo la tiene): la web la prueba antes que icon.horse.
+        model.addAttribute("serviceIcons", catalogService.getIconUrlMap())
         model.addAttribute("currencySymbols", com.subia.model.Currencies.SUPPORTED)
         return "dashboard"
     }

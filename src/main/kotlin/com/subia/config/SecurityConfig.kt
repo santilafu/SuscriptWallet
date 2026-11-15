@@ -140,13 +140,15 @@ class SecurityConfig(
                 // accounts.google.com/gsi y hace peticiones a ese mismo origen: con `frame-src 'none'`
                 // y `connect-src 'self'` el navegador lo bloqueaba (A-05). Directivas según la guía
                 // de CSP de Google Identity Services.
+                // img-src: los logos usan icon.horse y, como respaldo, el favicon de Google
+                // (www.google.com/s2/favicons redirige a t0…t3.gstatic.com).
                 headers.contentSecurityPolicy { csp ->
                     csp.policyDirectives(
                         "default-src 'self'; " +
                         "script-src 'self' 'unsafe-inline' https://accounts.google.com https://cdn.tailwindcss.com https://cdn.jsdelivr.net; " +
                         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://accounts.google.com/gsi/style; " +
                         "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; " +
-                        "img-src 'self' data: https://icon.horse https://*.googleusercontent.com; " +
+                        "img-src 'self' data: https://icon.horse https://www.google.com https://*.gstatic.com https://*.googleusercontent.com; " +
                         "connect-src 'self' https://accounts.google.com/gsi/; " +
                         "frame-src https://accounts.google.com/gsi/; " +
                         "object-src 'none'; " +
