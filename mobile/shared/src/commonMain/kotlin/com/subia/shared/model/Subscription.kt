@@ -35,7 +35,18 @@ data class Subscription(
      * del 31 al 30 y, si el servidor va un día por delante del móvil, se salta el cobro de "hoy"
      * local. Los backends anteriores no lo envían (null → se usa [fechaRenovacion]).
      */
-    @SerialName("renewalAnchor") val fechaAncla: String? = null
+    @SerialName("renewalAnchor") val fechaAncla: String? = null,
+    /**
+     * Cada cuántos meses se cobra (1, 2, 3, 6 o 12). Default 1 para leer cachés y backends
+     * anteriores al campo; no se usa tal cual sino a través de [mesesPorCobro], que trata un
+     * YEARLY con 1 como anual (12) y deja los semanales con su cálculo propio.
+     */
+    @SerialName("intervaloMeses") val intervaloMeses: Int = 1,
+    /**
+     * Equivalente mensual calculado por el backend (2 decimales). Solo informativo: la app
+     * calcula con [equivalenteMensualInterno] para funcionar igual con la caché y sin red.
+     */
+    @SerialName("equivalenteMensual") val equivalenteMensual: Double? = null
 ) {
     /** Ancla para proyectar: [fechaAncla] si llega, si no [fechaRenovacion]. */
     val anclaRenovacion: String
@@ -60,19 +71,21 @@ data class NuevaSuscripcionRequest(
     @SerialName("active") val activa: Boolean = true,
     @SerialName("notes") val notas: String = "",
     @SerialName("isTrial")     val esPrueba: Boolean = false,
-    @SerialName("trialEndsAt") val fechaFinPrueba: String? = null
+    @SerialName("trialEndsAt") val fechaFinPrueba: String? = null,
+    /**
+     * Cada cuántos meses se cobra (1, 2, 3, 6 o 12). SIN valor por defecto a propósito: el Json
+     * no codifica los valores por defecto, así que con `= 1` el mensual nunca viajaría y el
+     * backend conservaría el intervalo guardado (no se podría volver de trimestral a mensual).
+     * Además obliga a cada llamada a decidir el intervalo. En WEEKLY el backend lo ignora.
+     */
+    @SerialName("intervaloMeses") val intervaloMeses: Int
 )
 
 /**
- * Equivalente mensual del importe según el ciclo (anual / 12, trimestral / 3, semanal × 52 / 12).
- * Único criterio para el Inicio, la lista y el resumen anual: la lista trataba una semanal
- * como si fuera mensual y su total no coincidía con el del Inicio.
+ * Equivalente mensual del importe (importe / intervalo; semanal × 52 / 12…) con 4 decimales,
+ * según la regla de [Periodicidad]. Único criterio para el Inicio, la lista y el resumen anual:
+ * la lista trataba una semanal como si fuera mensual y su total no coincidía con el del Inicio.
+ * Para SUMAR varios gastos usa [equivalenteMensualInterno] y redondea al final con
+ * [Periodicidad.aCifraVisible]; para mostrar uno solo, redondea este valor a 2 decimales.
  */
-fun Subscription.gastoMensualEquivalente(): Double = when (periodoFacturacion.trim().uppercase()) {
-    "YEARLY", "ANNUAL", "ANNUALLY" -> precio / 12.0
-    "QUARTERLY" -> precio / 3.0
-    "WEEKLY" -> precio * 52.0 / 12.0
-    "BIWEEKLY" -> precio * 26.0 / 12.0
-    "DAILY" -> precio * 365.0 / 12.0
-    else -> precio
-}
+fun Subscription.gastoMensualEquivalente(): Double = Periodicidad.aImporte(equivalenteMensualInterno())

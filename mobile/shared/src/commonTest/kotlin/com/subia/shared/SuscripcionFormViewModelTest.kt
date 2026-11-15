@@ -28,6 +28,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.LocalDate
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -348,7 +349,10 @@ class SuscripcionFormViewModelTest {
         return SuscripcionFormViewModel(
             subscriptionRepository = SubscriptionRepository(api),
             catalogRepository = CatalogRepository(api),
-            categoryRepository = CategoryRepository(api)
+            categoryRepository = CategoryRepository(api),
+            // "Hoy" fijo: con el reloj real, la renovación del 3-nov-2026 de los fixtures pasó a
+            // proyectarse al 3-dic en cuanto llegó esa fecha y el test empezó a fallar.
+            hoy = { LocalDate(2026, 10, 15) }
         )
     }
 

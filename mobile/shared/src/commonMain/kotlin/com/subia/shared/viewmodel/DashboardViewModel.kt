@@ -4,11 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.subia.shared.cache.CacheRepository
 import com.subia.shared.model.DashboardSummary
+import com.subia.shared.model.Periodicidad
 import com.subia.shared.model.ProximaRenovacion
 import com.subia.shared.model.ProyeccionCobros
 import com.subia.shared.model.Subscription
 import com.subia.shared.model.calcularProyeccionCobros
-import com.subia.shared.model.gastoMensualEquivalente
+import com.subia.shared.model.equivalenteMensualInterno
+import com.subia.shared.model.ordenDivisa
+import com.subia.shared.model.totalAnualInterno
 import com.subia.shared.network.SessionExpiredException
 import com.subia.shared.repository.CategoryRepository
 import com.subia.shared.repository.DashboardRepository
@@ -89,7 +92,12 @@ class DashboardViewModel(
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
     private val _totalesPorMoneda = MutableStateFlow<Map<String, Double>>(emptyMap())
-    /** Mapa de divisa → gasto mensual normalizado. Se calcula en el cliente a partir de la lista de suscripciones. */
+    /**
+     * "Gasto mensual medio": mapa de divisa → suma de los equivalentes mensuales (importe /
+     * intervalo; un trimestral de 90 € suma 30 €), con 2 decimales. Se calcula en el cliente a
+     * partir de la lista de suscripciones. No es lo que se paga este mes: eso es
+     * [totalesMesCompletoPorMoneda].
+     */
     val totalesPorMoneda: StateFlow<Map<String, Double>> = _totalesPorMoneda.asStateFlow()
 
     private val _gastosPorCategoria = MutableStateFlow<Map<String, Double>>(emptyMap())
@@ -105,10 +113,18 @@ class DashboardViewModel(
 
     private val _totalesAnualesPorMoneda = MutableStateFlow<Map<String, Double>>(emptyMap())
     /**
-     * Mapa de divisa → gasto anual total (gasto mensual × 12).
+     * Mapa de divisa → gasto anual total (importe × 12 / intervalo por gasto, 2 decimales).
      * El orden de salida es: EUR primero, USD segundo, resto por orden alfabético.
      */
     val totalesAnualesPorMoneda: StateFlow<Map<String, Double>> = _totalesAnualesPorMoneda.asStateFlow()
+
+    private val _totalesMesCompletoPorMoneda = MutableStateFlow<Map<String, Double>>(emptyMap())
+    /**
+     * "Este mes pagas": mapa de divisa → suma de lo que vence en el mes natural entero (del día
+     * 1 al último, incluidos los cobros ya pasados). Es [ProyeccionCobros.totalMesCompleto];
+     * un trimestral solo suma en los meses en que cobra. Orden EUR, USD, resto alfabético.
+     */
+    val totalesMesCompletoPorMoneda: StateFlow<Map<String, Double>> = _totalesMesCompletoPorMoneda.asStateFlow()
 
     private val _pruebasPorVencer = MutableStateFlow<List<ProximaRenovacion>>(emptyList())
     /**
@@ -222,56 +238,15 @@ class DashboardViewModel(
         _gastosPorCategoriaDetalle.value = calcularGastosPorCategoriaDetalle(subs, nombreCatMap)
         _pruebasPorVencer.value = calcularPruebasPorVencer(subs)
         _topSuscripciones.value = calcularTopSuscripciones(subs)
-        _proyeccion.value = calcularProyeccionCobros(subs, hoy())
+        val proyeccion = calcularProyeccionCobros(subs, hoy())
+        _proyeccion.value = proyeccion
+        _totalesMesCompletoPorMoneda.value = proyeccion.totalMesCompleto
     }
 
     private fun hoy(): LocalDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
     /** Refresca los datos (p.ej. tras pull-to-refresh). */
     fun refrescar() = cargarEstadisticas()
-
-    /**
-     * Agrupa las suscripciones por divisa sumando el gasto mensual normalizado.
-     * Las suscripciones anuales se dividen entre 12 para obtener el equivalente mensual.
-     * El orden de salida es: EUR primero, USD segundo, resto por orden alfabético.
-     */
-    internal fun calcularTotalesPorMoneda(subs: List<Subscription>): Map<String, Double> {
-        val result = mutableMapOf<String, Double>()
-        for (sub in subs) {
-            result[sub.moneda] = (result[sub.moneda] ?: 0.0) + gastoMensualNormalizado(sub)
-        }
-        return result.entries
-            .sortedWith(compareBy { entry ->
-                when (entry.key) {
-                    "EUR" -> "0"
-                    "USD" -> "1"
-                    else -> "2${entry.key}"
-                }
-            })
-            .associate { it.key to it.value }
-    }
-
-    /**
-     * Agrupa las suscripciones por divisa sumando el gasto **anual** total (gasto mensual × 12).
-     * Las suscripciones anuales se usan directamente; las mensuales se multiplican por 12.
-     * El orden de salida es: EUR primero, USD segundo, resto por orden alfabético.
-     */
-    internal fun calcularTotalesAnualesPorMoneda(subs: List<Subscription>): Map<String, Double> {
-        val result = mutableMapOf<String, Double>()
-        for (sub in subs) {
-            val anual = gastoMensualNormalizado(sub) * 12.0
-            result[sub.moneda] = (result[sub.moneda] ?: 0.0) + anual
-        }
-        return result.entries
-            .sortedWith(compareBy { entry ->
-                when (entry.key) {
-                    "EUR" -> "0"
-                    "USD" -> "1"
-                    else -> "2${entry.key}"
-                }
-            })
-            .associate { it.key to it.value }
-    }
 
     /**
      * Filtra las suscripciones en período de prueba gratuita que vencen en los próximos 7 días
@@ -295,76 +270,107 @@ class DashboardViewModel(
             .sortedBy { it.diasRestantes }
     }
 
-    /**
-     * Agrupa las suscripciones por nombre de categoría y divisa, sumando el gasto mensual normalizado.
-     * Si una categoría tiene gastos en varias divisas, aparece como entradas separadas
-     * del tipo "NombreCategoria (EUR)", "NombreCategoria (USD)", etc.
-     * Las categorías sin nombre se omiten.
-     * El resultado se ordena de mayor a menor gasto.
-     */
-    internal fun calcularGastosPorCategoria(
-        subs: List<Subscription>,
-        nombreCategoria: Map<Long, String> = emptyMap()
-    ): Map<String, Double> {
-        val result = mutableMapOf<String, Double>()
-        for (sub in subs) {
-            val catId = sub.categoriaId ?: continue
-            val catNombre = nombreCategoria[catId] ?: "Categoría $catId"
-            val clave = "$catNombre (${sub.moneda})"
-            result[clave] = (result[clave] ?: 0.0) + gastoMensualNormalizado(sub)
+    companion object {
+        /**
+         * "Gasto mensual medio" por divisa: suma de los equivalentes mensuales internos
+         * (diezmilésimas, ver [Periodicidad]) redondeada a 2 decimales al final. Un trimestral de
+         * 10 € suma 3,3333 y tres de ellos dan 10,00, no 9,99.
+         * El orden de salida es: EUR primero, USD segundo, resto por orden alfabético.
+         */
+        internal fun calcularTotalesPorMoneda(subs: List<Subscription>): Map<String, Double> =
+            sumarPorMonedaVisible(subs) { it.equivalenteMensualInterno() }
+
+        /**
+         * Gasto **anual** por divisa: suma de importe × 12 / intervalo de cada gasto (no
+         * mensual × 12: con 10 € trimestral eso daría 39,96 en vez de 40,00), redondeada al final.
+         * El orden de salida es: EUR primero, USD segundo, resto por orden alfabético.
+         */
+        internal fun calcularTotalesAnualesPorMoneda(subs: List<Subscription>): Map<String, Double> =
+            sumarPorMonedaVisible(subs) { it.totalAnualInterno() }
+
+        /**
+         * Agrupa las suscripciones por nombre de categoría y divisa, sumando el gasto mensual normalizado.
+         * Si una categoría tiene gastos en varias divisas, aparece como entradas separadas
+         * del tipo "NombreCategoria (EUR)", "NombreCategoria (USD)", etc.
+         * Las categorías sin nombre se omiten.
+         * El resultado se ordena de mayor a menor gasto.
+         */
+        internal fun calcularGastosPorCategoria(
+            subs: List<Subscription>,
+            nombreCategoria: Map<Long, String> = emptyMap()
+        ): Map<String, Double> {
+            val internos = mutableMapOf<String, Long>()
+            for (sub in subs) {
+                val catId = sub.categoriaId ?: continue
+                val catNombre = nombreCategoria[catId] ?: "Categoría $catId"
+                val clave = "$catNombre (${sub.moneda})"
+                internos[clave] = (internos[clave] ?: 0L) + sub.equivalenteMensualInterno()
+            }
+            return internos.entries
+                .sortedByDescending { it.value }
+                .associate { it.key to Periodicidad.aCifraVisible(it.value) }
         }
-        return result.entries
-            .sortedByDescending { it.value }
-            .associate { it.key to it.value }
-    }
 
-    /**
-     * Desglose tipado por categoría y divisa del gasto mensual normalizado, con el porcentaje
-     * sobre el total de su divisa. Las suscripciones sin categoría se agrupan bajo `categoriaId = null`
-     * con nombre vacío (la UI pone la etiqueta localizada). Orden: EUR primero y, dentro, de mayor a menor.
-     */
-    internal fun calcularGastosPorCategoriaDetalle(
-        subs: List<Subscription>,
-        nombreCategoria: Map<Long, String> = emptyMap()
-    ): List<GastoCategoria> {
-        val activas = subs.filter { it.activa }
-        val totalPorMoneda = activas.groupBy { it.moneda }
-            .mapValues { (_, lista) -> lista.sumOf { gastoMensualNormalizado(it) } }
-        return activas
-            .groupBy { it.categoriaId to it.moneda }
-            .map { (clave, lista) ->
-                val (catId, moneda) = clave
-                val gasto = lista.sumOf { gastoMensualNormalizado(it) }
-                val total = totalPorMoneda[moneda] ?: 0.0
-                GastoCategoria(
-                    categoriaId = catId,
-                    nombre = catId?.let { nombreCategoria[it] ?: "Categoría $it" } ?: "",
-                    moneda = moneda,
-                    gastoMensual = gasto,
-                    numSuscripciones = lista.size,
-                    porcentaje = if (total > 0) (gasto / total * 100.0 + 0.5).toInt().coerceIn(0, 100) else 0
+        /**
+         * Desglose tipado por categoría y divisa del gasto mensual normalizado, con el porcentaje
+         * sobre el total de su divisa. Las suscripciones sin categoría se agrupan bajo `categoriaId = null`
+         * con nombre vacío (la UI pone la etiqueta localizada). Orden: EUR primero y, dentro, de mayor a menor.
+         */
+        internal fun calcularGastosPorCategoriaDetalle(
+            subs: List<Subscription>,
+            nombreCategoria: Map<Long, String> = emptyMap()
+        ): List<GastoCategoria> {
+            val activas = subs.filter { it.activa }
+            val totalPorMoneda = activas.groupBy { it.moneda }
+                .mapValues { (_, lista) -> lista.sumOf { it.equivalenteMensualInterno() } }
+            return activas
+                .groupBy { it.categoriaId to it.moneda }
+                .map { (clave, lista) ->
+                    val (catId, moneda) = clave
+                    val gasto = lista.sumOf { it.equivalenteMensualInterno() }
+                    val total = totalPorMoneda[moneda] ?: 0L
+                    GastoCategoria(
+                        categoriaId = catId,
+                        nombre = catId?.let { nombreCategoria[it] ?: "Categoría $it" } ?: "",
+                        moneda = moneda,
+                        gastoMensual = Periodicidad.aCifraVisible(gasto),
+                        numSuscripciones = lista.size,
+                        porcentaje = if (total > 0) (gasto.toDouble() / total * 100.0 + 0.5).toInt().coerceIn(0, 100) else 0
+                    )
+                }
+                .sortedWith(
+                    compareBy<GastoCategoria> { ordenDivisa(it.moneda) }.thenByDescending { it.gastoMensual }
                 )
+        }
+
+        /**
+         * Devuelve las 5 suscripciones con mayor gasto mensual normalizado (importe / intervalo,
+         * 2 decimales), idéntico al cálculo usado en [calcularTotalesPorMoneda].
+         */
+        internal fun calcularTopSuscripciones(subs: List<Subscription>): List<TopSuscripcion> =
+            subs
+                .map { sub ->
+                    TopSuscripcion(
+                        nombre = sub.nombre,
+                        gastoMensual = Periodicidad.aCifraVisible(sub.equivalenteMensualInterno()),
+                        moneda = sub.moneda
+                    )
+                }
+                .sortedByDescending { it.gastoMensual }
+                .take(5)
+
+        /** Suma por divisa los importes internos que da [interno] y redondea cada total al final. */
+        private fun sumarPorMonedaVisible(
+            subs: List<Subscription>,
+            interno: (Subscription) -> Long
+        ): Map<String, Double> {
+            val internos = mutableMapOf<String, Long>()
+            for (sub in subs) {
+                internos[sub.moneda] = (internos[sub.moneda] ?: 0L) + interno(sub)
             }
-            .sortedWith(
-                compareBy<GastoCategoria> {
-                    when (it.moneda) { "EUR" -> "0"; "USD" -> "1"; else -> "2${it.moneda}" }
-                }.thenByDescending { it.gastoMensual }
-            )
+            return internos.entries
+                .sortedWith(compareBy { ordenDivisa(it.key) })
+                .associate { it.key to Periodicidad.aCifraVisible(it.value) }
+        }
     }
-
-    /**
-     * Devuelve las 5 suscripciones con mayor gasto mensual normalizado.
-     * Las anuales se dividen entre 12 para obtener el equivalente mensual,
-     * idéntico al cálculo usado en [calcularTotalesPorMoneda].
-     */
-    internal fun calcularTopSuscripciones(subs: List<Subscription>): List<TopSuscripcion> =
-        subs
-            .map { sub ->
-                TopSuscripcion(nombre = sub.nombre, gastoMensual = gastoMensualNormalizado(sub), moneda = sub.moneda)
-            }
-            .sortedByDescending { it.gastoMensual }
-            .take(5)
-
-    /** Equivalente mensual de una suscripción según su ciclo (ver [gastoMensualEquivalente]). */
-    private fun gastoMensualNormalizado(sub: Subscription): Double = sub.gastoMensualEquivalente()
 }

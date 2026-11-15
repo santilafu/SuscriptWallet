@@ -186,7 +186,8 @@ class SubscriptionSerializationTest {
             precio = 9.99,
             periodoFacturacion = "MONTHLY",
             fechaRenovacion = "2026-09-01",
-            categoriaId = 2
+            categoriaId = 2,
+            intervaloMeses = 1
         )
 
         val encoded = json.encodeToString(NuevaSuscripcionRequest.serializer(), req)
@@ -205,7 +206,7 @@ class SubscriptionSerializationTest {
         // Editar una suscripción desactivada no debe reactivarla (el backend asume active=true).
         val req = NuevaSuscripcionRequest(
             nombre = "Audible", precio = 9.99, moneda = "USD", periodoFacturacion = "MONTHLY",
-            fechaRenovacion = "2026-09-01", categoriaId = 2, activa = false
+            fechaRenovacion = "2026-09-01", categoriaId = 2, activa = false, intervaloMeses = 1
         )
         val encoded = json.encodeToString(NuevaSuscripcionRequest.serializer(), req)
         assertTrue(encoded.contains("\"active\":false"))

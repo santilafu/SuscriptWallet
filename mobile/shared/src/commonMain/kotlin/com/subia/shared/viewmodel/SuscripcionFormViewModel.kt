@@ -6,7 +6,9 @@ import com.subia.shared.model.BillingCycle
 import com.subia.shared.model.CatalogItem
 import com.subia.shared.model.Category
 import com.subia.shared.model.NuevaSuscripcionRequest
+import com.subia.shared.model.Periodicidad
 import com.subia.shared.model.Subscription
+import com.subia.shared.model.mesesPorCobro
 import com.subia.shared.network.NetworkException
 import com.subia.shared.repository.CatalogRepository
 import com.subia.shared.repository.CategoryRepository
@@ -86,6 +88,13 @@ class SuscripcionFormViewModel(
     val precio = MutableStateFlow("")
     val moneda = MutableStateFlow("EUR")
     val periodoFacturacion = MutableStateFlow("MONTHLY")
+    /**
+     * Cada cuántos meses se cobra (1, 2, 3, 6 o 12). Para cambiarlo usa [seleccionarIntervalo],
+     * que deriva también [periodoFacturacion] (12 → YEARLY, el resto → MONTHLY). Si la UI cambia
+     * [periodoFacturacion] directamente (selector antiguo), lo que se envía y los valores en vivo
+     * usan [intervaloCoherente], así que nunca viaja una pareja contradictoria (YEARLY + 1).
+     */
+    val intervaloMeses = MutableStateFlow(1)
     val fechaRenovacion = MutableStateFlow("")
     /** Id de la categoría asignada a la suscripción (campo real del formulario). */
     val categoriaId = MutableStateFlow<Long?>(null)
@@ -107,6 +116,7 @@ class SuscripcionFormViewModel(
     private var anclaCargada: String? = null
     private var fechaCargada: String? = null
     private var periodoCargado: String? = null
+    private var intervaloCargado: Int? = null
 
     private val _categorias = MutableStateFlow<List<Category>>(emptyList())
     /** Categorías disponibles para el desplegable de categoría. */
@@ -145,6 +155,27 @@ class SuscripcionFormViewModel(
     ) { texto, items, elegido -> filtrarCatalogo(texto, items, elegido) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
+    // ── Importe en vivo según la periodicidad ──────────────────────────────
+
+    /**
+     * Equivalente mensual (2 decimales) del importe tecleado con la periodicidad elegida:
+     * 90 € cada 3 meses → 30.0. `null` si el importe no es válido. Misma regla que el Inicio
+     * ([Periodicidad]); un semanal usa × 52 / 12.
+     */
+    val equivalenteMensualEnVivo: StateFlow<Double?> =
+        combine(precio, periodoFacturacion, intervaloMeses) { p, periodo, intervalo ->
+            calcularEnVivo(p) { importe -> Periodicidad.equivalenteMensualInterno(importe, periodo, intervaloCoherente(periodo, intervalo)) }
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /**
+     * Total anual (2 decimales) del importe tecleado con la periodicidad elegida:
+     * 90 € cada 3 meses → 360.0. `null` si el importe no es válido.
+     */
+    val totalAnualEnVivo: StateFlow<Double?> =
+        combine(precio, periodoFacturacion, intervaloMeses) { p, periodo, intervalo ->
+            calcularEnVivo(p) { importe -> Periodicidad.totalAnualInterno(importe, periodo, intervaloCoherente(periodo, intervalo)) }
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
     // ── Cambios sin guardar ────────────────────────────────────────────────
 
     private val huellaInicial = MutableStateFlow(huella())
@@ -152,7 +183,7 @@ class SuscripcionFormViewModel(
     @Suppress("UNCHECKED_CAST")
     private val huellaActual: Flow<String> = combine(
         listOf(
-            nombre, descripcion, precio, moneda, periodoFacturacion,
+            nombre, descripcion, precio, moneda, periodoFacturacion, intervaloMeses,
             fechaRenovacion, categoriaId, notas, esPrueba, fechaFinPrueba
         ) as List<Flow<Any?>>
     ) { valores -> valores.joinToString("\u0001") }
@@ -177,9 +208,32 @@ class SuscripcionFormViewModel(
     }
 
     private fun huella(): String = listOf(
-        nombre.value, descripcion.value, precio.value, moneda.value, periodoFacturacion.value,
+        nombre.value, descripcion.value, precio.value, moneda.value, periodoFacturacion.value, intervaloMeses.value,
         fechaRenovacion.value, categoriaId.value, notas.value, esPrueba.value, fechaFinPrueba.value
     ).joinToString("\u0001")
+
+    /**
+     * Elige la periodicidad (1, 2, 3, 6 o 12 meses) y deriva el ciclo como el backend:
+     * 12 → YEARLY; 1, 2, 3 y 6 → MONTHLY. Un valor no permitido se ignora.
+     */
+    fun seleccionarIntervalo(meses: Int) {
+        if (!Periodicidad.esValido(meses)) return
+        intervaloMeses.value = meses
+        periodoFacturacion.value = Periodicidad.cicloDeIntervalo(meses)
+    }
+
+    /**
+     * Elige el ciclo con el selector de ciclo (MONTHLY/YEARLY/WEEKLY) y ajusta el intervalo para
+     * que la pareja sea coherente ([intervaloCoherente]): YEARLY → 12, WEEKLY → 1 y MONTHLY
+     * conserva un intervalo de 1, 2, 3 o 6 meses.
+     */
+    fun seleccionarPeriodo(periodo: String) {
+        periodoFacturacion.value = periodo
+        intervaloMeses.value = intervaloCoherente(periodo, intervaloMeses.value)
+    }
+
+    /** Intervalo que se envía y con el que se calcula: el elegido, coherente con el ciclo. */
+    private fun intervaloEfectivo(): Int = intervaloCoherente(periodoFacturacion.value, intervaloMeses.value)
 
     /**
      * Aplica un servicio del catálogo al formulario: nombre, precio, ciclo, moneda, prueba y
@@ -245,6 +299,10 @@ class SuscripcionFormViewModel(
         moneda.value = suscripcion.moneda
         activa = suscripcion.activa
         periodoFacturacion.value = suscripcion.periodoFacturacion
+        // mesesPorCobro: un YEARLY de un backend antiguo (sin el campo, intervalo 1) se carga
+        // como 12; un semanal no va por meses → 1 (el backend lo ignora).
+        intervaloMeses.value = suscripcion.mesesPorCobro() ?: 1
+        intervaloCargado = intervaloEfectivo()
         // Próxima renovación calculada con el "hoy" del móvil desde el ancla (R3-02).
         val proxima = proximaRenovacion(suscripcion, hoy())?.toString() ?: suscripcion.fechaRenovacion
         fechaRenovacion.value = proxima
@@ -269,6 +327,7 @@ class SuscripcionFormViewModel(
         val precioElegido = item.precioPara(cicloElegido)
         precioElegido?.let { precio.value = formatearPrecioParaCampo(it) }
         periodoFacturacion.value = cicloElegido.wire
+        intervaloMeses.value = if (cicloElegido == BillingCycle.YEARLY) Periodicidad.MESES_EN_ANIO else 1
         moneda.value = item.moneda
         _catalogoSeleccionado.value = item
         val diasPrueba = item.diasPrueba
@@ -311,7 +370,8 @@ class SuscripcionFormViewModel(
             activa = if (esEdicion) activa else true,
             notas = notas.value.trim(),
             esPrueba = esPrueba.value,
-            fechaFinPrueba = if (esPrueba.value) fechaFinPrueba.value else null
+            fechaFinPrueba = if (esPrueba.value) fechaFinPrueba.value else null,
+            intervaloMeses = intervaloEfectivo()
         )
 
         viewModelScope.launch {
@@ -333,16 +393,44 @@ class SuscripcionFormViewModel(
 
     fun resetState() { _uiState.value = FormUiState.Idle }
 
-    /** Fecha del PUT/POST: el ancla original si se edita sin tocar fecha ni periodo (R3-01). */
+    /**
+     * Fecha del PUT/POST: el ancla original si se edita sin tocar fecha, periodo ni intervalo
+     * (R3-01). Cambiar el intervalo (p. ej. de mensual a trimestral) es un cambio deliberado:
+     * la serie nueva parte de la fecha que se ve en el formulario.
+     */
     internal fun fechaAEnviar(esEdicion: Boolean): String {
         val ancla = anclaCargada
         return if (esEdicion && ancla != null &&
-            fechaRenovacion.value == fechaCargada && periodoFacturacion.value == periodoCargado
+            fechaRenovacion.value == fechaCargada && periodoFacturacion.value == periodoCargado &&
+            intervaloEfectivo() == intervaloCargado
         ) ancla else fechaRenovacion.value
     }
 
     companion object {
         const val MAX_SUGERENCIAS = 8
+
+        /**
+         * Intervalo coherente con el ciclo del formulario. Aquí manda el último selector tocado:
+         * - YEARLY → 12 y WEEKLY (y los otros por días) → 1, elija lo que elija el intervalo.
+         * - MONTHLY (o desconocido) → el intervalo si es 1, 2, 3 o 6; un 12 que quedó de un
+         *   anual, o un valor no permitido, pasa a 1 (el usuario ha elegido "mensual").
+         * Distinto de [Periodicidad.mesesPorCobro], que interpreta datos del servidor.
+         */
+        fun intervaloCoherente(periodo: String, intervalo: Int): Int = when (periodo.trim().uppercase()) {
+            "YEARLY", "ANNUAL", "ANNUALLY" -> Periodicidad.MESES_EN_ANIO
+            "WEEKLY", "BIWEEKLY", "DAILY" -> 1
+            "QUARTERLY" -> 3
+            else -> if (Periodicidad.esValido(intervalo) && intervalo != Periodicidad.MESES_EN_ANIO) intervalo else 1
+        }
+
+        /**
+         * Cifra visible (2 decimales) del cálculo [interno] sobre el importe tecleado, o `null`
+         * si el importe no es un número válido (vacío, negativo o fuera de rango).
+         */
+        private fun calcularEnVivo(textoPrecio: String, interno: (Double) -> Long): Double? {
+            val importe = parsearPrecio(textoPrecio)?.takeIf { it >= 0 } ?: return null
+            return runCatching { Periodicidad.aCifraVisible(interno(importe)) }.getOrNull()
+        }
 
         /**
          * Convierte el texto del importe a número aceptando coma o punto decimal y espacios.

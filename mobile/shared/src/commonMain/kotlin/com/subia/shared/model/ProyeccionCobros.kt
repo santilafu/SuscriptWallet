@@ -43,6 +43,9 @@ data class GastoCategoriaMes(
  * - [dias]: día a día desde [hoy] (índice 0) durante [DIAS_TIRA] días.
  * - [meses]: mes natural a mes natural desde el mes de [hoy] (índice 0) durante [MESES_HORIZONTE] meses.
  * - [totalMesActual] / [totalMesSiguiente]: suma de los cobros de los meses 0 y 1, por divisa.
+ *   OJO: el mes 0 solo cuenta desde [hoy] (lo que QUEDA por pagar este mes).
+ * - [totalMesCompleto]: "Este mes pagas", lo que vence en el mes natural ENTERO (del día 1 al
+ *   último, incluidos los cobros ya pasados), por divisa y con la regla de redondeo de [Periodicidad].
  * - [porCategoriaMesActual]: cobros del mes 0 agrupados por categoría y divisa, de mayor a menor.
  */
 data class ProyeccionCobros(
@@ -51,7 +54,8 @@ data class ProyeccionCobros(
     val meses: List<MesCobros>,
     val totalMesActual: Map<String, Double>,
     val totalMesSiguiente: Map<String, Double>,
-    val porCategoriaMesActual: List<GastoCategoriaMes>
+    val porCategoriaMesActual: List<GastoCategoriaMes>,
+    val totalMesCompleto: Map<String, Double> = emptyMap()
 ) {
     /** Primer cobro de la tira (hoy incluido), o null si no hay ninguno en 14 días. */
     val proximoCobro: CobroPrevisto? get() = dias.firstOrNull { it.tieneCobros }?.cobros?.firstOrNull()
@@ -81,13 +85,17 @@ internal fun ordenDivisa(moneda: String): String = when (moneda) {
 /** Longitud del ciclo en meses (anual = 12, trimestral = 3, mensual = 1) o en días (semanal = 7). */
 private data class Ciclo(val meses: Int = 0, val dias: Int = 0)
 
-private fun cicloDe(periodo: String): Ciclo = when (periodo.trim().uppercase()) {
-    "YEARLY", "ANNUAL", "ANNUALLY" -> Ciclo(meses = 12)
-    "QUARTERLY" -> Ciclo(meses = 3)
-    "WEEKLY" -> Ciclo(dias = 7)
-    "BIWEEKLY" -> Ciclo(dias = 14)
-    "DAILY" -> Ciclo(dias = 1)
-    else -> Ciclo(meses = 1)
+/**
+ * Ciclo de cobro de [sub]: cada [Periodicidad.mesesPorCobro] meses (intervalo del gasto, con la
+ * interpretación robusta de YEARLY sin campo) o, si no va por meses, cada 7/14/1 días.
+ */
+private fun cicloDe(sub: Subscription): Ciclo {
+    sub.mesesPorCobro()?.let { return Ciclo(meses = it) }
+    return when (sub.periodoFacturacion.trim().uppercase()) {
+        "BIWEEKLY" -> Ciclo(dias = 14)
+        "DAILY" -> Ciclo(dias = 1)
+        else -> Ciclo(dias = 7) // WEEKLY
+    }
 }
 
 /**
@@ -102,7 +110,7 @@ private fun fechaCobro(ancla: LocalDate, ciclo: Ciclo, k: Int): LocalDate =
 /** Cobros de una suscripción en [hoy, fin], avanzando ciclos si la fecha de renovación es pasada. */
 internal fun ocurrencias(sub: Subscription, hoy: LocalDate, fin: LocalDate): List<LocalDate> {
     val ancla = anclaDe(sub) ?: return emptyList()
-    val ciclo = cicloDe(sub.periodoFacturacion)
+    val ciclo = cicloDe(sub)
     // Estimación (por defecto) del primer ciclo >= hoy, para no iterar desde anclas muy antiguas.
     var k = if (ancla >= hoy) 0 else {
         if (ciclo.meses > 0) ancla.monthsUntil(hoy) / ciclo.meses else ancla.daysUntil(hoy) / ciclo.dias
@@ -191,6 +199,27 @@ fun calcularProyeccionCobros(subs: List<Subscription>, hoy: LocalDate): Proyecci
         meses = meses,
         totalMesActual = meses[0].totalPorMoneda,
         totalMesSiguiente = meses[1].totalPorMoneda,
-        porCategoriaMesActual = porCategoria
+        porCategoriaMesActual = porCategoria,
+        totalMesCompleto = totalMesCompleto(subs, inicioMes)
     )
+}
+
+/**
+ * "Este mes pagas": suma, por divisa, de los cobros de las suscripciones activas que vencen
+ * en el mes natural que empieza en [inicioMes], del día 1 al último (también los ya pasados).
+ * Un trimestral cuenta solo en los meses en que le toca cobrar. Se suma en diezmilésimas y se
+ * redondea al final ([Periodicidad]) para no arrastrar errores de coma flotante.
+ */
+private fun totalMesCompleto(subs: List<Subscription>, inicioMes: LocalDate): Map<String, Double> {
+    val finMes = inicioMes.plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)
+    val internos = mutableMapOf<String, Long>()
+    for (sub in subs) {
+        if (!sub.activa) continue
+        val cobros = ocurrencias(sub, inicioMes, finMes).size
+        if (cobros == 0) continue
+        internos[sub.moneda] = (internos[sub.moneda] ?: 0L) + Periodicidad.aDiezmilesimas(sub.precio) * cobros
+    }
+    return internos.entries
+        .sortedWith(compareBy { ordenDivisa(it.key) })
+        .associate { it.key to Periodicidad.aCifraVisible(it.value) }
 }
