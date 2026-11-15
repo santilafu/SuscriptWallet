@@ -213,7 +213,12 @@
     <string name="spending_by_category">Dépenses par catégorie</string>
     <string name="no_category_data">Aucune donnée de catégorie</string>
     <string name="others">Autres</string>
-    <string name="category_monthly_equiv">Équivalent mensuel par catégorie</string>
+    <string name="category_view_month">Ce mois-ci</string>
+    <string name="category_view_year">Par an</string>
+    <string name="category_subtitle_month">Ce qui est prélevé ce mois-ci</string>
+    <string name="category_subtitle_year">Total annuel par catégorie</string>
+    <string name="category_month_empty">Aucun prélèvement ce mois-ci</string>
+    <string name="category_view_selector">Vue des dépenses par catégorie</string>
     <string name="category_show_expenses">afficher ses dépenses</string>
     <string name="category_hide_expenses">masquer ses dépenses</string>
     <string name="a11y_expanded">Développée</string>

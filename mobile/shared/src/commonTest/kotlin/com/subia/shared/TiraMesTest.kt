@@ -2,10 +2,11 @@ package com.subia.shared
 
 import com.subia.shared.model.PeriodoCobro
 import com.subia.shared.model.Subscription
+import com.subia.shared.model.VistaCategorias
 import com.subia.shared.model.calcularProyeccionCobros
 import com.subia.shared.model.cobrosDelMes
+import com.subia.shared.model.gastosPorCategoria
 import com.subia.shared.model.totalDeDias
-import com.subia.shared.viewmodel.DashboardViewModel
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -150,24 +151,39 @@ class TiraMesTest {
     // ── Desglose por gasto de "Gasto por categoría" ─────────────────────────
 
     @Test
-    fun categoria_traeSusGastosConEquivalenteMensualYPeriodo_deMayorAMenor() {
+    fun categoria_traeSusGastosConImporteDelAnioYPeriodo_deMayorAMenor() {
         val subs = listOf(
             sub("2026-11-01", precio = 9.99, id = 1, categoriaId = 7),
             sub("2026-11-01", intervalo = 3, precio = 90.0, id = 2, categoriaId = 7),
             sub("2026-11-01", periodo = "WEEKLY", precio = 5.0, id = 3, categoriaId = 7),
             sub("2026-11-01", precio = 4.0, id = 4, categoriaId = null)
         )
-        val detalle = DashboardViewModel.calcularGastosPorCategoriaDetalle(subs, mapOf(7L to "Hogar"))
+        val detalle = gastosPorCategoria(subs, d("2026-11-15"), VistaCategorias.AL_ANIO, mapOf(7L to "Hogar"))
         val hogar = detalle.single { it.categoriaId == 7L }
         assertEquals(listOf(2L, 3L, 1L), hogar.gastos.map { it.suscripcionId })
-        assertEquals(30.0, hogar.gastos[0].equivalenteMensual)
+        assertEquals(360.0, hogar.gastos[0].importe)
         assertEquals(PeriodoCobro.PorMeses(3), hogar.gastos[0].periodo)
         assertEquals(90.0, hogar.gastos[0].precio)
-        assertEquals(21.67, hogar.gastos[1].equivalenteMensual) // 5 × 52 / 12 = 21,666…
+        assertEquals(260.0, hogar.gastos[1].importe) // 5 × 52
         assertEquals(PeriodoCobro.Semanal, hogar.gastos[1].periodo)
+        assertEquals(119.88, hogar.gastos[2].importe)
         assertEquals(PeriodoCobro.PorMeses(1), hogar.gastos[2].periodo)
         // La suma de los gastos coincide (al céntimo) con la cifra de la categoría.
-        assertEquals(hogar.gastoMensual, hogar.gastos.sumOf { it.equivalenteMensual }, 0.011)
+        assertEquals(hogar.total, hogar.gastos.sumOf { it.importe }, 0.011)
         assertEquals(listOf(4L), detalle.single { it.categoriaId == null }.gastos.map { it.suscripcionId })
+    }
+
+    @Test
+    fun categoria_esteMes_semanalSumaSusCobrosDelMes_ySuDesgloseCuadraConElCalendario() {
+        val subs = listOf(
+            sub("2026-11-01", precio = 9.99, id = 1, categoriaId = 7),
+            sub("2026-11-02", periodo = "WEEKLY", precio = 5.0, id = 3, categoriaId = 7)
+        )
+        val hoy = d("2026-11-15")
+        val hogar = gastosPorCategoria(subs, hoy, VistaCategorias.ESTE_MES).single()
+        assertEquals(listOf(3L, 1L), hogar.gastos.map { it.suscripcionId })
+        assertEquals(listOf(25.0, 9.99), hogar.gastos.map { it.importe }) // 5 lunes × 5 €
+        assertEquals(listOf(5, 1), hogar.gastos.map { it.numCobros })
+        assertEquals(totalDeDias(cobrosDelMes(subs, hoy))["EUR"], hogar.total)
     }
 }

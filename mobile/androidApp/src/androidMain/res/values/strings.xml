@@ -208,7 +208,12 @@
     <string name="spending_by_category">Gasto por categoría</string>
     <string name="no_category_data">Sin datos de categorías</string>
     <string name="others">Otros</string>
-    <string name="category_monthly_equiv">Equivalente mensual por categoría</string>
+    <string name="category_view_month">Este mes</string>
+    <string name="category_view_year">Al año</string>
+    <string name="category_subtitle_month">Lo que se cobra este mes</string>
+    <string name="category_subtitle_year">Total al año por categoría</string>
+    <string name="category_month_empty">Este mes no tienes cobros</string>
+    <string name="category_view_selector">Vista del gasto por categoría</string>
     <string name="category_show_expenses">ver sus gastos</string>
     <string name="category_hide_expenses">ocultar sus gastos</string>
     <string name="a11y_expanded">Desplegada</string>

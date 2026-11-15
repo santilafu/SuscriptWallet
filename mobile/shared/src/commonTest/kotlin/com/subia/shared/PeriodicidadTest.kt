@@ -3,11 +3,14 @@ package com.subia.shared
 import com.subia.shared.model.NuevaSuscripcionRequest
 import com.subia.shared.model.Periodicidad
 import com.subia.shared.model.Subscription
+import com.subia.shared.model.VistaCategorias
 import com.subia.shared.model.equivalenteMensualInterno
 import com.subia.shared.model.gastoMensualEquivalente
+import com.subia.shared.model.gastosPorCategoria
 import com.subia.shared.model.mesesPorCobro
 import com.subia.shared.model.totalAnualInterno
 import com.subia.shared.viewmodel.DashboardViewModel
+import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -259,8 +262,9 @@ class PeriodicidadTest {
         assertEquals(30.0, categorias["Seguros (EUR)"])
         assertEquals(10.0, categorias["Música (EUR)"])
 
-        val detalle = DashboardViewModel.calcularGastosPorCategoriaDetalle(subs)
-        assertEquals(listOf(30.0, 10.0), detalle.map { it.gastoMensual })
+        // Tarjeta "Gasto por categoría", vista "Al año": 90 € trimestral = 360 €, 10 € mensual = 120 €.
+        val detalle = gastosPorCategoria(subs, LocalDate.parse("2026-10-15"), VistaCategorias.AL_ANIO)
+        assertEquals(listOf(360.0, 120.0), detalle.map { it.total })
         assertEquals(listOf(75, 25), detalle.map { it.porcentaje })
 
         val top = DashboardViewModel.calcularTopSuscripciones(listOf(sub(10.0, intervalo = 3), sub(5.0)))

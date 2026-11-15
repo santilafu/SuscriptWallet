@@ -208,7 +208,12 @@
     <string name="spending_by_category">Spending by category</string>
     <string name="no_category_data">No category data</string>
     <string name="others">Others</string>
-    <string name="category_monthly_equiv">Monthly equivalent per category</string>
+    <string name="category_view_month">This month</string>
+    <string name="category_view_year">Per year</string>
+    <string name="category_subtitle_month">What gets charged this month</string>
+    <string name="category_subtitle_year">Yearly total per category</string>
+    <string name="category_month_empty">No charges this month</string>
+    <string name="category_view_selector">Spending by category view</string>
     <string name="category_show_expenses">show its expenses</string>
     <string name="category_hide_expenses">hide its expenses</string>
     <string name="a11y_expanded">Expanded</string>

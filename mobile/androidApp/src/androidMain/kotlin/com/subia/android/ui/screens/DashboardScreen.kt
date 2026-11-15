@@ -107,12 +107,12 @@ import com.subia.android.ui.theme.urgent
 import com.subia.android.util.InicioPrefs
 import com.subia.android.widget.actualizarWidgetResumen
 import com.subia.shared.model.DashboardSummary
+import com.subia.shared.model.GastoCategoria
 import com.subia.shared.model.ProximaRenovacion
 import com.subia.shared.model.ProyeccionCobros
 import com.subia.shared.model.totalDeDias
 import com.subia.shared.viewmodel.DashboardUiState
 import com.subia.shared.viewmodel.DashboardViewModel
-import com.subia.shared.viewmodel.GastoCategoria
 import com.subia.shared.viewmodel.resumenDisponible
 import kotlinx.coroutines.delay
 import kotlinx.datetime.LocalDate
@@ -141,7 +141,8 @@ fun DashboardScreen(
     val uiState by viewModel.uiState.collectAsState()
     val totalesPorMoneda by viewModel.totalesPorMoneda.collectAsState()
     val totalesAnualesPorMoneda by viewModel.totalesAnualesPorMoneda.collectAsState()
-    val gastosPorCategoria by viewModel.gastosPorCategoriaDetalle.collectAsState()
+    val gastosCategoriaMes by viewModel.gastosCategoriaMes.collectAsState()
+    val gastosCategoriaAnio by viewModel.gastosCategoriaAnio.collectAsState()
     val pruebasPorVencer by viewModel.pruebasPorVencer.collectAsState()
     val proyeccion by viewModel.proyeccion.collectAsState()
     val context = LocalContext.current
@@ -159,7 +160,8 @@ fun DashboardScreen(
             resumen = resumen,
             totalesPorMoneda = totalesPorMoneda,
             totalesAnualesPorMoneda = totalesAnualesPorMoneda,
-            gastosPorCategoria = gastosPorCategoria,
+            gastosCategoriaMes = gastosCategoriaMes,
+            gastosCategoriaAnio = gastosCategoriaAnio,
             pruebasPorVencer = pruebasPorVencer,
             proyeccion = proyeccion,
             onNavigateToSuscripciones = onNavigateToSuscripciones,
@@ -208,7 +210,8 @@ private fun DashboardContent(
     resumen: DashboardSummary,
     totalesPorMoneda: Map<String, Double>,
     totalesAnualesPorMoneda: Map<String, Double>,
-    gastosPorCategoria: List<GastoCategoria>,
+    gastosCategoriaMes: List<GastoCategoria>,
+    gastosCategoriaAnio: List<GastoCategoria>,
     pruebasPorVencer: List<ProximaRenovacion>,
     proyeccion: ProyeccionCobros?,
     onNavigateToSuscripciones: () -> Unit,
@@ -317,7 +320,7 @@ private fun DashboardContent(
         }
 
         val ordenCategorias = orden++
-        item { EntradaEscalonada(ordenCategorias, ventana.abierta) { GastosPorCategoriaCard(gastos = gastosPorCategoria) } }
+        item { EntradaEscalonada(ordenCategorias, ventana.abierta) { GastosPorCategoriaCard(gastosCategoriaMes, gastosCategoriaAnio) } }
 
         // Última tarjeta: acceso al resumen anual compartible (R-02).
         val ordenAnio = orden

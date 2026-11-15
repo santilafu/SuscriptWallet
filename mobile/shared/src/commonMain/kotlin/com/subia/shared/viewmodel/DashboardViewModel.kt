@@ -4,15 +4,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.subia.shared.cache.CacheRepository
 import com.subia.shared.model.DashboardSummary
+import com.subia.shared.model.GastoCategoria
 import com.subia.shared.model.Periodicidad
-import com.subia.shared.model.PeriodoCobro
 import com.subia.shared.model.ProximaRenovacion
 import com.subia.shared.model.ProyeccionCobros
 import com.subia.shared.model.Subscription
+import com.subia.shared.model.VistaCategorias
 import com.subia.shared.model.calcularProyeccionCobros
 import com.subia.shared.model.equivalenteMensualInterno
+import com.subia.shared.model.gastosPorCategoria
 import com.subia.shared.model.ordenDivisa
-import com.subia.shared.model.periodoCobro
 import com.subia.shared.model.totalAnualInterno
 import com.subia.shared.network.SessionExpiredException
 import com.subia.shared.repository.CategoryRepository
@@ -36,32 +37,6 @@ data class TopSuscripcion(
     val nombre: String,
     val gastoMensual: Double,
     val moneda: String
-)
-
-/** Gasto mensual normalizado de una categoría en una divisa, con su peso dentro de esa divisa. */
-data class GastoCategoria(
-    val categoriaId: Long?,
-    val nombre: String,
-    val moneda: String,
-    val gastoMensual: Double,
-    val numSuscripciones: Int,
-    /** Porcentaje (0..100) sobre el total mensual de la misma divisa. */
-    val porcentaje: Int,
-    /** Gastos de la categoría, de mayor a menor equivalente mensual (lo que se despliega al tocarla). */
-    val gastos: List<GastoDeCategoria> = emptyList()
-)
-
-/**
- * Un gasto dentro de una categoría del Inicio: lo que cuesta al mes ([equivalenteMensual], con la
- * regla de redondeo de [Periodicidad]) y lo que se paga en cada cobro ([precio] cada [periodo]).
- */
-data class GastoDeCategoria(
-    val suscripcionId: Long,
-    val nombre: String,
-    val moneda: String,
-    val precio: Double,
-    val periodo: PeriodoCobro,
-    val equivalenteMensual: Double
 )
 
 sealed interface DashboardUiState {
@@ -124,9 +99,16 @@ class DashboardViewModel(
      */
     val gastosPorCategoria: StateFlow<Map<String, Double>> = _gastosPorCategoria.asStateFlow()
 
-    private val _gastosPorCategoriaDetalle = MutableStateFlow<List<GastoCategoria>>(emptyList())
-    /** Mismo desglose que [gastosPorCategoria] pero tipado (nombre, divisa, nº subs, porcentaje), ordenado de mayor a menor. */
-    val gastosPorCategoriaDetalle: StateFlow<List<GastoCategoria>> = _gastosPorCategoriaDetalle.asStateFlow()
+    private val _gastosCategoriaMes = MutableStateFlow<List<GastoCategoria>>(emptyList())
+    /**
+     * Tarjeta "Gasto por categoría", vista "Este mes": lo que se cobra de verdad en el mes natural
+     * de hoy por categoría y divisa ([gastosPorCategoria] con [VistaCategorias.ESTE_MES]).
+     */
+    val gastosCategoriaMes: StateFlow<List<GastoCategoria>> = _gastosCategoriaMes.asStateFlow()
+
+    private val _gastosCategoriaAnio = MutableStateFlow<List<GastoCategoria>>(emptyList())
+    /** Tarjeta "Gasto por categoría", vista "Al año": total anual por categoría y divisa. */
+    val gastosCategoriaAnio: StateFlow<List<GastoCategoria>> = _gastosCategoriaAnio.asStateFlow()
 
     private val _totalesAnualesPorMoneda = MutableStateFlow<Map<String, Double>>(emptyMap())
     /**
@@ -252,10 +234,12 @@ class DashboardViewModel(
         _totalesPorMoneda.value = calcularTotalesPorMoneda(subs)
         _totalesAnualesPorMoneda.value = calcularTotalesAnualesPorMoneda(subs)
         _gastosPorCategoria.value = calcularGastosPorCategoria(subs, nombreCatMap)
-        _gastosPorCategoriaDetalle.value = calcularGastosPorCategoriaDetalle(subs, nombreCatMap)
         _pruebasPorVencer.value = calcularPruebasPorVencer(subs)
         _topSuscripciones.value = calcularTopSuscripciones(subs)
-        val proyeccion = calcularProyeccionCobros(subs, hoy())
+        val hoy = hoy()
+        _gastosCategoriaMes.value = gastosPorCategoria(subs, hoy, VistaCategorias.ESTE_MES, nombreCatMap)
+        _gastosCategoriaAnio.value = gastosPorCategoria(subs, hoy, VistaCategorias.AL_ANIO, nombreCatMap)
+        val proyeccion = calcularProyeccionCobros(subs, hoy)
         _proyeccion.value = proyeccion
         _totalesMesCompletoPorMoneda.value = proyeccion.totalMesCompleto
     }
@@ -326,50 +310,6 @@ class DashboardViewModel(
             return internos.entries
                 .sortedByDescending { it.value }
                 .associate { it.key to Periodicidad.aCifraVisible(it.value) }
-        }
-
-        /**
-         * Desglose tipado por categoría y divisa del gasto mensual normalizado, con el porcentaje
-         * sobre el total de su divisa. Las suscripciones sin categoría se agrupan bajo `categoriaId = null`
-         * con nombre vacío (la UI pone la etiqueta localizada). Orden: EUR primero y, dentro, de mayor a menor.
-         */
-        internal fun calcularGastosPorCategoriaDetalle(
-            subs: List<Subscription>,
-            nombreCategoria: Map<Long, String> = emptyMap()
-        ): List<GastoCategoria> {
-            val activas = subs.filter { it.activa }
-            val totalPorMoneda = activas.groupBy { it.moneda }
-                .mapValues { (_, lista) -> lista.sumOf { it.equivalenteMensualInterno() } }
-            return activas
-                .groupBy { it.categoriaId to it.moneda }
-                .map { (clave, lista) ->
-                    val (catId, moneda) = clave
-                    val gasto = lista.sumOf { it.equivalenteMensualInterno() }
-                    val total = totalPorMoneda[moneda] ?: 0L
-                    GastoCategoria(
-                        categoriaId = catId,
-                        nombre = catId?.let { nombreCategoria[it] ?: "Categoría $it" } ?: "",
-                        moneda = moneda,
-                        gastoMensual = Periodicidad.aCifraVisible(gasto),
-                        numSuscripciones = lista.size,
-                        porcentaje = if (total > 0) (gasto.toDouble() / total * 100.0 + 0.5).toInt().coerceIn(0, 100) else 0,
-                        gastos = lista
-                            .map { sub ->
-                                GastoDeCategoria(
-                                    suscripcionId = sub.id,
-                                    nombre = sub.nombre,
-                                    moneda = sub.moneda,
-                                    precio = sub.precio,
-                                    periodo = sub.periodoCobro(),
-                                    equivalenteMensual = Periodicidad.aCifraVisible(sub.equivalenteMensualInterno())
-                                )
-                            }
-                            .sortedWith(compareByDescending<GastoDeCategoria> { it.equivalenteMensual }.thenBy { it.nombre })
-                    )
-                }
-                .sortedWith(
-                    compareBy<GastoCategoria> { ordenDivisa(it.moneda) }.thenByDescending { it.gastoMensual }
-                )
         }
 
         /**
