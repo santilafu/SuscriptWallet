@@ -1,6 +1,7 @@
 package com.subia.android.util
 
 import com.subia.shared.model.Subscription
+import com.subia.shared.model.mesesPorCobro
 
 private val CSV_HEADER = listOf(
     "id",
@@ -14,7 +15,9 @@ private val CSV_HEADER = listOf(
     "activa",
     "notas",
     "es_prueba",
-    "fecha_fin_prueba"
+    "fecha_fin_prueba",
+    // Al final para no mover las columnas de quien ya lea el CSV por posición.
+    "intervalo_meses"
 )
 
 /**
@@ -39,7 +42,9 @@ fun List<Subscription>.toCsv(): String {
             sub.activa.toString(),
             sinFormula(sub.notas),
             sub.esPrueba.toString(),
-            sub.fechaFinPrueba.orEmpty()
+            sub.fechaFinPrueba.orEmpty(),
+            // Meses entre cobros (1, 2, 3, 6 o 12); vacío en semanales, que no van por meses.
+            sub.mesesPorCobro()?.toString().orEmpty()
         )
         sb.append(row.joinToString(",") { escapeCsvField(it) })
         sb.append('\n')

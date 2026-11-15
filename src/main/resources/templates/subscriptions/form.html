@@ -196,7 +196,7 @@
 
                     <div>
                         <label for="fieldPeriodicidad" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                            <span th:text="#{form.field.cycle}">Ciclo</span> <span class="text-red-400">*</span>
+                            <span th:text="#{form.field.cycle}">Periodicidad</span> <span class="text-red-400">*</span>
                         </label>
                         <!-- Un único valor por opción: WEEKLY o los meses entre cobros (1, 2, 3, 6, 12).
                              SubscriptionController lo traduce a billingCycle + intervaloMeses. -->
@@ -486,8 +486,10 @@ var i18n = {
                     var opt = document.createElement('option');
                     opt.value = JSON.stringify(item);
                     // "≈" delante del precio cuando es un importe orientativo (luz, gas, seguros…).
+                    // Precio con el separador decimal del idioma ("14,99 EUR" en es); toFixed() daba "14.99".
                     opt.textContent = item.name
-                        + '  ·  ' + (item.variablePrice ? '≈ ' : '') + item.price.toFixed(2) + ' ' + item.currency
+                        + '  ·  ' + (item.variablePrice ? '≈ ' : '') + item.price.toLocaleString(document.documentElement.lang || undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        + ' ' + item.currency
                         + ' / ' + cycleName(item.billingCycle);
                     svcSelect.appendChild(opt);
                 });

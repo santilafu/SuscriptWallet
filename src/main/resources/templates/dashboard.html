@@ -252,6 +252,12 @@
 <script th:inline="javascript">
 /*<![CDATA[*/
 var currencySym = /*[[${dashboard.currencySymbol}]]*/ '€';
+// Cifras con el separador decimal del idioma de la página ("9,99" en es/fr, "9.99" en en),
+// igual que los importes que pinta Thymeleaf; toFixed() siempre usaba punto.
+var pageLang = document.documentElement.lang || undefined;
+function cifra(v, decimales) {
+    return Number(v).toLocaleString(pageLang, { minimumFractionDigits: decimales, maximumFractionDigits: 2 });
+}
 var reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 var chartAnim = reduceMotion ? false : { duration: 700, easing: 'easeOutQuart' };
 
@@ -300,7 +306,7 @@ var chartAnim = reduceMotion ? false : { duration: 700, easing: 'easeOutQuart' }
                     cornerRadius: 8,
                     callbacks: {
                         label: function(ctx) {
-                            return '  ' + currencySym + ctx.parsed.toFixed(2);
+                            return '  ' + currencySym + cifra(ctx.parsed, 2);
                         }
                     }
                 }
@@ -357,7 +363,7 @@ var chartAnim = reduceMotion ? false : { duration: 700, easing: 'easeOutQuart' }
                     cornerRadius: 8,
                     callbacks: {
                         label: function(ctx) {
-                            return '  ' + currencySym + ctx.parsed.x.toFixed(2);
+                            return '  ' + currencySym + cifra(ctx.parsed.x, 2);
                         }
                     }
                 }
@@ -365,7 +371,7 @@ var chartAnim = reduceMotion ? false : { duration: 700, easing: 'easeOutQuart' }
             scales: {
                 x: {
                     grid: { color: 'rgba(255,255,255,0.04)' },
-                    ticks: { color: '#8291a8', font: { size: 11 }, callback: function(v) { return currencySym + v; } }
+                    ticks: { color: '#8291a8', font: { size: 11 }, callback: function(v) { return currencySym + cifra(v, 0); } }
                 },
                 y: {
                     grid: { display: false },
