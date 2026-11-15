@@ -93,6 +93,16 @@
     <string name="amount_label">Valor *</string>
     <string name="currency_label">Moeda</string>
     <string name="payment_frequency">Frequência de pagamento</string>
+    <!-- Chips de periodicidad del formulario y su equivalencia en vivo -->
+    <string name="frequency_week">Semana</string>
+    <string name="frequency_month">Mês</string>
+    <plurals name="frequency_n_months">
+        <item quantity="one">%d mês</item>
+        <item quantity="many">%d meses</item>
+        <item quantity="other">%d meses</item>
+    </plurals>
+    <string name="frequency_year">Ano</string>
+    <string name="frequency_equivalent">Equivale a %1$s por mês · %2$s por ano</string>
     <string name="renewal_date_label">Data de renovação *</string>
     <string name="select_date">Selecionar data</string>
     <string name="accept">Aceitar</string>

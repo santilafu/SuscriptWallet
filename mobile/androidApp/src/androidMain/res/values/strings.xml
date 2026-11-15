@@ -87,6 +87,15 @@
     <string name="amount_label">Importe *</string>
     <string name="currency_label">Moneda</string>
     <string name="payment_frequency">Frecuencia de pago</string>
+    <!-- Chips de periodicidad del formulario y su equivalencia en vivo -->
+    <string name="frequency_week">Semana</string>
+    <string name="frequency_month">Mes</string>
+    <plurals name="frequency_n_months">
+        <item quantity="one">%d mes</item>
+        <item quantity="other">%d meses</item>
+    </plurals>
+    <string name="frequency_year">Año</string>
+    <string name="frequency_equivalent">Equivale a %1$s al mes · %2$s al año</string>
     <string name="renewal_date_label">Fecha de renovación *</string>
     <string name="select_date">Seleccionar fecha</string>
     <string name="accept">Aceptar</string>

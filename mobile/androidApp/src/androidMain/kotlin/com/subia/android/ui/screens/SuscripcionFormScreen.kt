@@ -7,7 +7,21 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.offset
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import com.subia.android.ui.components.formatearImporteCorto
 import android.Manifest
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -146,6 +160,9 @@ fun SuscripcionFormScreen(
     val precio by formViewModel.precio.collectAsState()
     val moneda by formViewModel.moneda.collectAsState()
     val periodoFacturacion by formViewModel.periodoFacturacion.collectAsState()
+    val intervaloMeses by formViewModel.intervaloMeses.collectAsState()
+    val equivalenteMensual by formViewModel.equivalenteMensualEnVivo.collectAsState()
+    val totalAnual by formViewModel.totalAnualEnVivo.collectAsState()
     val fechaRenovacion by formViewModel.fechaRenovacion.collectAsState()
     val notas by formViewModel.notas.collectAsState()
     val categoriaId by formViewModel.categoriaId.collectAsState()
@@ -226,15 +243,10 @@ fun SuscripcionFormScreen(
     }
 
     var expandedMoneda by remember { mutableStateOf(false) }
-    var expandedPeriodo by remember { mutableStateOf(false) }
     var expandedCategoria by remember { mutableStateOf(false) }
     var menuNombreAbierto by remember { mutableStateOf(false) }
     val monedasOpciones = listOf("EUR", "USD", "GBP")
-    val periodosOpciones = listOf(
-        "MONTHLY" to stringResource(R.string.monthly),
-        "YEARLY" to stringResource(R.string.yearly),
-        "WEEKLY" to stringResource(R.string.weekly)
-    )
+    val frecuencia = frecuenciaActual(periodoFacturacion, intervaloMeses)
 
     Scaffold(
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets.conRecorteLateral(),
@@ -437,8 +449,16 @@ fun SuscripcionFormScreen(
                 // El error del campo tiene prioridad: mientras se ve, la ayuda se oculta.
                 val itemCatalogo = catalogoSeleccionado
                     ?.takeIf { it.nombre.equals(nombre.trim(), ignoreCase = true) }
-                val precioEsDelCatalogo = itemCatalogo != null &&
-                    itemCatalogo.precioPara(BillingCycle.fromWire(periodoFacturacion))
+                // El catálogo solo trae precio por mes y por año. Con Semana o cada 2, 3 o 6 meses
+                // su cifra ya no es "lo que pagas en cada cobro": se muestra la ayuda genérica
+                // para que el usuario ponga el importe real de cada cobro.
+                val cicloDelCatalogo = when (frecuencia) {
+                    Frecuencia.MES -> BillingCycle.MONTHLY
+                    Frecuencia.ANIO -> BillingCycle.YEARLY
+                    else -> null
+                }
+                val precioEsDelCatalogo = itemCatalogo != null && cicloDelCatalogo != null &&
+                    itemCatalogo.precioPara(cicloDelCatalogo)
                         ?.let { it == SuscripcionFormViewModel.parsearPrecio(precio) } == true
                 val ayudaImporte = when {
                     !precioEsDelCatalogo -> R.string.price_per_charge_hint
@@ -454,25 +474,27 @@ fun SuscripcionFormScreen(
                     )
                 }
 
-                ExposedDropdownMenuBox(expanded = expandedPeriodo, onExpandedChange = { expandedPeriodo = it }) {
-                    OutlinedTextField(
-                        value = periodosOpciones.find { it.first == periodoFacturacion }?.second ?: periodoFacturacion,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text(stringResource(R.string.payment_frequency)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandedPeriodo) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable, !camposBloqueados),
-                        enabled = !camposBloqueados
+                // Las cifras salen ya calculadas del ViewModel (regla única de Periodicidad); aquí
+                // solo se les da formato de moneda del idioma ("30 €", "3,33 €", "$30").
+                val mensual = equivalenteMensual
+                val anual = totalAnual
+                val equivalencia = if (mensual != null && anual != null) {
+                    stringResource(
+                        R.string.frequency_equivalent,
+                        formatearImporteCorto(mensual, moneda),
+                        formatearImporteCorto(anual, moneda)
                     )
-                    ExposedDropdownMenu(expanded = expandedPeriodo, onDismissRequest = { expandedPeriodo = false }) {
-                        periodosOpciones.forEach { (valor, etiqueta) ->
-                            DropdownMenuItem(
-                                text = { Text(etiqueta) },
-                                onClick = { formViewModel.periodoFacturacion.value = valor; expandedPeriodo = false }
-                            )
-                        }
-                    }
-                }
+                } else null
+                SelectorFrecuencia(
+                    seleccionada = frecuencia,
+                    onElegir = { opcion ->
+                        val meses = opcion.meses
+                        if (meses == null) formViewModel.seleccionarPeriodo("WEEKLY")
+                        else formViewModel.seleccionarIntervalo(meses)
+                    },
+                    equivalencia = equivalencia,
+                    enabled = !camposBloqueados
+                )
 
                 OutlinedTextField(
                     value = fechaIsoLegible(fechaRenovacion),
@@ -737,6 +759,106 @@ private fun SeccionFormulario(titulo: String, primera: Boolean = false) {
             modifier = Modifier.weight(1f),
             color = MaterialTheme.colorScheme.surfaceVariant
         )
+    }
+}
+
+/**
+ * Opciones del selector de periodicidad, en el orden en que se pintan los chips. [meses] es el
+ * intervalo que se envía al backend; `null` es "Semana", que no va por meses (ciclo WEEKLY).
+ */
+private enum class Frecuencia(val meses: Int?) {
+    SEMANA(null), MES(1), DOS_MESES(2), TRES_MESES(3), SEIS_MESES(6), ANIO(12)
+}
+
+/**
+ * Chip que corresponde a lo que se va a guardar. Usa el mismo intervalo coherente con el que
+ * el ViewModel envía y calcula ([SuscripcionFormViewModel.intervaloCoherente]), así el chip
+ * marcado y el texto "Equivale a…" nunca se contradicen. Los ciclos por días que la app ya no
+ * ofrece (BIWEEKLY, DAILY) no tienen chip: no se marca ninguno hasta que el usuario elija.
+ */
+private fun frecuenciaActual(periodo: String, intervalo: Int): Frecuencia? =
+    when (periodo.trim().uppercase()) {
+        "WEEKLY" -> Frecuencia.SEMANA
+        "BIWEEKLY", "DAILY" -> null
+        else -> {
+            val meses = SuscripcionFormViewModel.intervaloCoherente(periodo, intervalo)
+            Frecuencia.entries.firstOrNull { it.meses == meses }
+        }
+    }
+
+@Composable
+private fun etiquetaFrecuencia(opcion: Frecuencia): String = when (opcion) {
+    Frecuencia.SEMANA -> stringResource(R.string.frequency_week)
+    Frecuencia.MES -> stringResource(R.string.frequency_month)
+    Frecuencia.ANIO -> stringResource(R.string.frequency_year)
+    Frecuencia.DOS_MESES, Frecuencia.TRES_MESES, Frecuencia.SEIS_MESES -> {
+        val meses = requireNotNull(opcion.meses)
+        pluralStringResource(R.plurals.frequency_n_months, meses, meses)
+    }
+}
+
+/**
+ * "Frecuencia de pago": chips de selección única y, debajo, la equivalencia en vivo.
+ *
+ * - [FlowRow] y no una fila con scroll ni una lista perezosa: los chips bajan de línea en
+ *   pantallas estrechas o con fuente grande, y van dentro de la Column con scroll del formulario
+ *   (una lista perezosa sin altura fija ahí dentro ya tiró la app).
+ * - Accesibilidad: el grupo es `selectableGroup` y cada chip se anuncia como opción de radio con
+ *   su estado "seleccionado". El objetivo táctil de 48 dp lo pone el propio FilterChip de
+ *   Material 3 (32 dp visibles + margen invisible), por eso las filas no llevan más separación.
+ * - [equivalencia] `null` (importe vacío o inválido) oculta el texto. Con [AnimatedContent] el
+ *   hueco crece y se encoge animado en vez de saltar, y mientras se escribe solo cambia el texto
+ *   (la clave es "hay texto o no", no el texto entero, para no fundir en cada tecla).
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SelectorFrecuencia(
+    seleccionada: Frecuencia?,
+    onElegir: (Frecuencia) -> Unit,
+    equivalencia: String?,
+    enabled: Boolean
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.payment_frequency),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        FlowRow(
+            modifier = Modifier.fillMaxWidth().selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Frecuencia.entries.forEach { opcion ->
+                FilterChip(
+                    selected = opcion == seleccionada,
+                    onClick = { onElegir(opcion) },
+                    label = { Text(etiquetaFrecuencia(opcion)) },
+                    enabled = enabled,
+                    // Mismos colores que los chips del catálogo: relleno del color principal del tema.
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    // Selección única: "opción" en vez de la casilla que anuncia FilterChip por defecto.
+                    modifier = Modifier.semantics { role = Role.RadioButton }
+                )
+            }
+        }
+        AnimatedContent(
+            targetState = equivalencia,
+            contentKey = { it != null },
+            transitionSpec = { fadeIn() togetherWith fadeOut() },
+            label = "equivalencia"
+        ) { texto ->
+            if (texto != null) {
+                Text(
+                    text = texto,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
     }
 }
 
