@@ -11,7 +11,6 @@ import com.subia.repository.SubscriptionRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
-import java.math.RoundingMode
 import java.time.Clock
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -36,9 +35,8 @@ class DashboardService(
     private val clock: Clock
 ) {
 
-    // Factores de conversión para normalizar ciclos de facturación
+    // Factores de conversión de los gastos semanales (los mensuales/anuales usan Periodicidad)
     private val WEEKLY_FACTOR = BigDecimal("4.33")   // semanas promedio por mes
-    private val MONTHS_IN_YEAR = BigDecimal("12")
     private val WEEKS_IN_YEAR = BigDecimal("52")
 
     /**
@@ -65,22 +63,22 @@ class DashboardService(
         // Gasto mensual por divisa (para elegir la predeterminada y mantener compatibilidad)
         val monthlyByCurrency = paidActive
             .groupBy { it.currency }
-            .mapValues { (_, subs) -> subs.sumOf { toMonthly(it) }.setScale(2, RoundingMode.HALF_UP) }
+            .mapValues { (_, subs) -> subs.sumOf { toMonthly(it) }.let(Periodicidad::aCifraVisible) }
         val yearlyByCurrency = paidActive
             .groupBy { it.currency }
-            .mapValues { (_, subs) -> subs.sumOf { toYearly(it) }.setScale(2, RoundingMode.HALF_UP) }
+            .mapValues { (_, subs) -> subs.sumOf { toYearly(it) }.let(Periodicidad::aCifraVisible) }
 
         val chosen = selectedCurrency?.takeIf { it in present }
             ?: mainCurrency(monthlyByCurrency)
 
         val inCurrency = paidActive.filter { it.currency == chosen }
 
-        val totalMonthly = inCurrency.sumOf { toMonthly(it) }.setScale(2, RoundingMode.HALF_UP)
-        val totalYearly  = inCurrency.sumOf { toYearly(it) }.setScale(2, RoundingMode.HALF_UP)
+        val totalMonthly = inCurrency.sumOf { toMonthly(it) }.let(Periodicidad::aCifraVisible)
+        val totalYearly  = inCurrency.sumOf { toYearly(it) }.let(Periodicidad::aCifraVisible)
 
         val spendByCategory: Map<Category, BigDecimal> = inCurrency
             .groupBy { it.category }
-            .mapValues { (_, subs) -> subs.sumOf { toMonthly(it) }.setScale(2, RoundingMode.HALF_UP) }
+            .mapValues { (_, subs) -> subs.sumOf { toMonthly(it) }.let(Periodicidad::aCifraVisible) }
             .entries
             .sortedByDescending { it.value }
             .associate { it.key to it.value }
@@ -125,9 +123,9 @@ class DashboardService(
         val inCurrency = paidActive.filter { it.currency == main }
 
         val gastoMensual = inCurrency.sumOf { toMonthly(it) }
-            .setScale(2, RoundingMode.HALF_UP).toDouble()
+            .let(Periodicidad::aCifraVisible).toDouble()
         val gastoAnual = inCurrency.sumOf { toYearly(it) }
-            .setScale(2, RoundingMode.HALF_UP).toDouble()
+            .let(Periodicidad::aCifraVisible).toDouble()
 
         val renovaciones = renewingWithin(active, today, 30)
             .take(10)
@@ -166,20 +164,21 @@ class DashboardService(
         monthlyByCurrency.maxByOrNull { it.value }?.key ?: "EUR"
 
     /**
-     * Convierte el precio de una suscripción a su equivalente mensual.
+     * Convierte el precio de una suscripción a su equivalente mensual (escala interna, sin
+     * redondear a céntimos: eso se hace solo en las cifras finales, ver [Periodicidad]).
+     * MONTHLY/YEARLY: importe / meses por cobro (un anual con 12 da lo mismo que el antiguo /12).
      */
     private fun toMonthly(s: Subscription): BigDecimal = when (s.billingCycle) {
-        BillingCycle.MONTHLY -> s.price
-        BillingCycle.YEARLY  -> s.price.divide(MONTHS_IN_YEAR, 4, RoundingMode.HALF_UP)
-        BillingCycle.WEEKLY  -> s.price.multiply(WEEKLY_FACTOR)
+        BillingCycle.WEEKLY -> s.price.multiply(WEEKLY_FACTOR)
+        else -> Periodicidad.equivalenteMensual(s.price, Periodicidad.mesesPorCobro(s.billingCycle, s.intervaloMeses))
     }
 
     /**
      * Convierte el precio de una suscripción a su equivalente anual.
+     * MONTHLY/YEARLY: importe × 12 / meses por cobro (exacto, porque todos dividen a 12).
      */
     private fun toYearly(s: Subscription): BigDecimal = when (s.billingCycle) {
-        BillingCycle.MONTHLY -> s.price.multiply(MONTHS_IN_YEAR)
-        BillingCycle.YEARLY  -> s.price
-        BillingCycle.WEEKLY  -> s.price.multiply(WEEKS_IN_YEAR)
+        BillingCycle.WEEKLY -> s.price.multiply(WEEKS_IN_YEAR)
+        else -> Periodicidad.totalAnual(s.price, Periodicidad.mesesPorCobro(s.billingCycle, s.intervaloMeses))
     }
 }

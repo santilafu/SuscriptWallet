@@ -18,11 +18,9 @@ import java.util.UUID
  */
 object TestDatabase {
     private const val HOST = "localhost:5433"
-    private const val USER = "subia_user"
-    private const val PASSWORD = "subia_pass"
+    const val USER = "subia_user"
+    const val PASSWORD = "subia_pass"
     private const val ADMIN_URL = "jdbc:postgresql://$HOST/postgres"
-
-    private val dbName = "subia_it_" + UUID.randomUUID().toString().replace("-", "").take(12)
 
     /** true si el PostgreSQL de docker-compose responde. */
     @JvmStatic
@@ -30,7 +28,16 @@ object TestDatabase {
         DriverManager.getConnection(ADMIN_URL, USER, PASSWORD).use { it.isValid(2) }
     }.getOrDefault(false)
 
-    private val url: String by lazy {
+    /** BD temporal compartida por los tests que arrancan Spring (Flyway la migra entera). */
+    private val url: String by lazy { createTemporaryDatabase() }
+
+    /**
+     * Crea una BD `subia_it_<aleatorio>` VACÍA y devuelve su URL JDBC; se borra al terminar la
+     * JVM de tests. La usan también los tests que migran con Flyway paso a paso (p. ej. hasta
+     * una versión concreta), que no pueden compartir la BD ya migrada de Spring.
+     */
+    fun createTemporaryDatabase(): String {
+        val dbName = "subia_it_" + UUID.randomUUID().toString().replace("-", "").take(12)
         DriverManager.getConnection(ADMIN_URL, USER, PASSWORD).use { conn ->
             conn.createStatement().use { it.execute("CREATE DATABASE $dbName") }
         }
@@ -41,7 +48,7 @@ object TestDatabase {
                 }
             }
         })
-        "jdbc:postgresql://$HOST/$dbName"
+        return "jdbc:postgresql://$HOST/$dbName"
     }
 
     fun register(registry: DynamicPropertyRegistry) {

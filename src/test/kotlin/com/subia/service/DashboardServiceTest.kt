@@ -25,11 +25,12 @@ class DashboardServiceTest {
 
     private fun sub(
         id: Long, renewal: String, price: String = "10.00", currency: String = "EUR",
-        cycle: BillingCycle = BillingCycle.MONTHLY, trial: Boolean = false, trialEnds: String? = null
+        cycle: BillingCycle = BillingCycle.MONTHLY, trial: Boolean = false, trialEnds: String? = null,
+        intervalo: Int = 1
     ) = Subscription(
         id = id, name = "S$id", price = BigDecimal(price), currency = currency, billingCycle = cycle,
         renewalDate = LocalDate.parse(renewal), category = cat, isTrial = trial,
-        trialEndsAt = trialEnds?.let { LocalDate.parse(it) }, userId = 7
+        trialEndsAt = trialEnds?.let { LocalDate.parse(it) }, userId = 7, intervaloMeses = intervalo
     )
 
     @Test
@@ -81,5 +82,81 @@ class DashboardServiceTest {
         val dash = service.getDashboard(7)
 
         assertEquals(BigDecimal("8.00"), dash.totalMonthly)
+    }
+
+    // ── Periodicidad (intervaloMeses) ──────────────────────────────────────────────────
+
+    @Test
+    fun `totales con gastos trimestrales y semestrales`() {
+        every { repo.findByUserIdAndActiveTrue(7) } returns listOf(
+            sub(1, "2026-10-20", price = "90.00", intervalo = 3),   // 30/mes, 360/año
+            sub(2, "2026-10-20", price = "60.00", intervalo = 6),   // 10/mes, 120/año
+            sub(3, "2026-10-20", price = "10.00"),                  // 10/mes, 120/año
+            sub(4, "2026-10-20", price = "120.00", cycle = BillingCycle.YEARLY, intervalo = 12) // 10/mes
+        )
+
+        val dash = service.getDashboard(7)
+        val stats = service.getDashboardStats(7)
+
+        assertEquals(BigDecimal("60.00"), dash.totalMonthly)
+        assertEquals(BigDecimal("720.00"), dash.totalYearly)
+        assertEquals(BigDecimal("60.00"), dash.spendByCategory[cat])
+        assertEquals(60.0, stats.gastoMensual, 0.001)
+        assertEquals(720.0, stats.gastoAnual, 0.001)
+        // El trimestral es el que más pesa al mes
+        assertEquals(1L, dash.topSubscriptions.first().id)
+    }
+
+    @Test
+    fun `el redondeo a centimos se hace solo en el total`() {
+        every { repo.findByUserIdAndActiveTrue(7) } returns listOf(
+            sub(1, "2026-10-20", price = "10.00", intervalo = 3),   // 3,3333/mes
+            sub(2, "2026-10-20", price = "10.00", intervalo = 3),
+            sub(3, "2026-10-20", price = "10.00", intervalo = 3)
+        )
+
+        val dash = service.getDashboard(7)
+
+        // 3 × 3,3333 = 9,9999 → 10,00. Redondeando cada gasto antes (3 × 3,33) saldría 9,99.
+        assertEquals(BigDecimal("10.00"), dash.totalMonthly)
+        // Anual: 3 × (10 × 12 / 3) = 120 exacto
+        assertEquals(BigDecimal("120.00"), dash.totalYearly)
+    }
+
+    /** Cálculo de antes de la periodicidad, copiado tal cual, como referencia. */
+    private fun antiguoMensual(s: Subscription): BigDecimal = when (s.billingCycle) {
+        BillingCycle.MONTHLY -> s.price
+        BillingCycle.YEARLY -> s.price.divide(BigDecimal("12"), 4, java.math.RoundingMode.HALF_UP)
+        BillingCycle.WEEKLY -> s.price.multiply(BigDecimal("4.33"))
+    }
+
+    private fun antiguoAnual(s: Subscription): BigDecimal = when (s.billingCycle) {
+        BillingCycle.MONTHLY -> s.price.multiply(BigDecimal("12"))
+        BillingCycle.YEARLY -> s.price
+        BillingCycle.WEEKLY -> s.price.multiply(BigDecimal("52"))
+    }
+
+    @Test
+    fun `mensuales, anuales y semanales dan los mismos totales que antes`() {
+        val subs = listOf(
+            sub(1, "2026-10-20", price = "12.99"),
+            sub(2, "2026-10-20", price = "99.99", cycle = BillingCycle.YEARLY, intervalo = 12),
+            // Entidad anual con el intervalo por defecto (como la construye hoy un controlador)
+            sub(3, "2026-10-20", price = "35.50", cycle = BillingCycle.YEARLY),
+            sub(4, "2026-10-20", price = "5.00", cycle = BillingCycle.WEEKLY),
+            sub(5, "2026-10-20", price = "0.07", cycle = BillingCycle.YEARLY, intervalo = 12)
+        )
+        every { repo.findByUserIdAndActiveTrue(7) } returns subs
+
+        val dash = service.getDashboard(7)
+
+        val antesMensual = subs.sumOf { antiguoMensual(it) }.setScale(2, java.math.RoundingMode.HALF_UP)
+        val antesAnual = subs.sumOf { antiguoAnual(it) }.setScale(2, java.math.RoundingMode.HALF_UP)
+        assertEquals(antesMensual, dash.totalMonthly)
+        assertEquals(antesAnual, dash.totalYearly)
+        // Cifras a mano: 12,99 + 8,3325 + 2,9583 + 21,65 + 0,0058 = 45,9366 → 45,94
+        assertEquals(BigDecimal("45.94"), dash.totalMonthly)
+        // 155,88 + 99,99 + 35,50 + 260 + 0,07 = 551,44
+        assertEquals(BigDecimal("551.44"), dash.totalYearly)
     }
 }

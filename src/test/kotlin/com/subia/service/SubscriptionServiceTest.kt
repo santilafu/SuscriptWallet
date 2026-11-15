@@ -51,4 +51,53 @@ class SubscriptionServiceTest {
         assertThrows(NoSuchElementException::class.java) { service.delete(5, 2) }
         verify(exactly = 0) { repo.delete(any()) }
     }
+
+    // ── Periodicidad: invariante entre billingCycle e intervaloMeses ────────────────────
+
+    private fun periodica(cycle: BillingCycle, intervalo: Int) =
+        sub().copy(billingCycle = cycle, intervaloMeses = intervalo)
+
+    @Test
+    fun `semanal guarda intervalo 1 aunque llegue otro valido`() {
+        val v = SubscriptionService.validated(periodica(BillingCycle.WEEKLY, 3))
+        assertEquals(BillingCycle.WEEKLY, v.billingCycle)
+        assertEquals(1, v.intervaloMeses)
+    }
+
+    @Test
+    fun `intervalo 12 deriva a anual`() {
+        val v = SubscriptionService.validated(periodica(BillingCycle.MONTHLY, 12))
+        assertEquals(BillingCycle.YEARLY, v.billingCycle)
+        assertEquals(12, v.intervaloMeses)
+    }
+
+    @Test
+    fun `anual de un cliente antiguo (intervalo por defecto 1) pasa a 12`() {
+        val v = SubscriptionService.validated(sub().copy(billingCycle = BillingCycle.YEARLY))
+        assertEquals(BillingCycle.YEARLY, v.billingCycle)
+        assertEquals(12, v.intervaloMeses)
+    }
+
+    @Test
+    fun `intervalos 1, 2, 3 y 6 derivan a mensual`() {
+        listOf(1, 2, 3, 6).forEach { intervalo ->
+            val desdeMensual = SubscriptionService.validated(periodica(BillingCycle.MONTHLY, intervalo))
+            assertEquals(BillingCycle.MONTHLY, desdeMensual.billingCycle)
+            assertEquals(intervalo, desdeMensual.intervaloMeses)
+        }
+        // Un anual con intervalo trimestral: manda el intervalo
+        val v = SubscriptionService.validated(periodica(BillingCycle.YEARLY, 3))
+        assertEquals(BillingCycle.MONTHLY, v.billingCycle)
+        assertEquals(3, v.intervaloMeses)
+    }
+
+    @Test
+    fun `intervalos fuera de 1, 2, 3, 6 y 12 dan IllegalArgumentException y no llegan a la BD`() {
+        listOf(0, -1, 4, 13).forEach { malo ->
+            BillingCycle.entries.forEach { cycle ->
+                assertThrows(IllegalArgumentException::class.java) { service.save(periodica(cycle, malo), 1) }
+            }
+        }
+        verify(exactly = 0) { repo.save(any()) }
+    }
 }

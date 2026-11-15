@@ -5,7 +5,6 @@ import com.subia.repository.SubscriptionRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
-import java.math.RoundingMode
 
 /**
  * Servicio de negocio para la gestión de suscripciones.
@@ -65,7 +64,12 @@ class SubscriptionService(private val repo: SubscriptionRepository) {
         private val CURRENCY_REGEX = Regex("^[A-Z]{3}$")
 
         /**
-         * Valida y normaliza una suscripción contra los límites del esquema (V1/V4).
+         * Valida y normaliza una suscripción contra los límites del esquema (V1/V4/V15).
+         *
+         * También deja coherentes `billingCycle` e `intervaloMeses` ([Periodicidad.normalizar]):
+         * se hace aquí, y no en cada controlador, para que la regla se cumpla venga de donde
+         * venga la entidad (web, API, importación de Gmail…).
+         *
          * @throws IllegalArgumentException con un mensaje legible si algo no cuadra.
          */
         fun validated(s: Subscription): Subscription {
@@ -75,11 +79,15 @@ class SubscriptionService(private val repo: SubscriptionRepository) {
             require(s.description.length <= 500) { "La descripción no puede superar 500 caracteres" }
             require(s.notes.length <= 1000) { "Las notas no pueden superar 1000 caracteres" }
             require(s.price.signum() >= 0) { "El precio no puede ser negativo" }
-            val price = s.price.setScale(2, RoundingMode.HALF_UP)
+            val price = Periodicidad.aCifraVisible(s.price)
             require(price <= MAX_PRICE) { "El precio es demasiado alto" }
             val currency = s.currency.trim().uppercase()
             require(CURRENCY_REGEX.matches(currency)) { "Divisa no válida: ${s.currency.take(10)}" }
-            return s.copy(name = name, price = price, currency = currency)
+            val (cycle, intervalo) = Periodicidad.normalizar(s.billingCycle, s.intervaloMeses)
+            return s.copy(
+                name = name, price = price, currency = currency,
+                billingCycle = cycle, intervaloMeses = intervalo
+            )
         }
     }
 }

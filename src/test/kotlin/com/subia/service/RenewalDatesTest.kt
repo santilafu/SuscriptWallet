@@ -117,4 +117,62 @@ class RenewalDatesTest {
     fun `reenviar el ancla tal cual la deja igual`() {
         assertEquals(d("2026-01-31"), keep("2026-01-31", BillingCycle.MONTHLY, "2026-01-31", "2026-11-10"))
     }
+
+    // ── Periodicidad: ciclos de intervaloMeses meses ─────────────────────────────────────
+
+    private fun next(anchor: String, intervalo: Int, today: String, cycle: BillingCycle = BillingCycle.MONTHLY) =
+        RenewalDates.nextRenewal(d(anchor), cycle, d(today), intervalo)
+
+    @Test
+    fun `31 de enero mas un mes cae el 28 de febrero o el 29 si es bisiesto`() {
+        assertEquals(d("2027-02-28"), next("2027-01-31", 1, "2027-02-01"))
+        assertEquals(d("2028-02-29"), next("2028-01-31", 1, "2028-02-01"))
+    }
+
+    @Test
+    fun `la serie mensual del 31 vuelve al 31 de marzo tras febrero`() {
+        // Se calcula siempre desde el ancla: ancla + 2 meses, no 28-feb + 1 mes (que daría 28-mar)
+        assertEquals(d("2027-03-31"), next("2027-01-31", 1, "2027-03-01"))
+    }
+
+    @Test
+    fun `anual del 29 de febrero con intervalo 12 cae el 28 y vuelve al 29 en bisiesto`() {
+        assertEquals(d("2025-02-28"), next("2024-02-29", 12, "2024-03-01", BillingCycle.YEARLY))
+        assertEquals(d("2028-02-29"), next("2024-02-29", 12, "2027-03-01", BillingCycle.YEARLY))
+    }
+
+    @Test
+    fun `anual sin intervalo explicito sigue contando 12 meses`() {
+        // Llamadas antiguas (y entidades YEARLY con el valor por defecto 1) no cambian
+        assertEquals(d("2027-03-01"), next("2024-03-01", 1, "2026-10-10", BillingCycle.YEARLY))
+        assertEquals(d("2027-03-01"), RenewalDates.nextRenewal(d("2024-03-01"), BillingCycle.YEARLY, d("2026-10-10")))
+    }
+
+    @Test
+    fun `trimestral cambia de anio`() {
+        assertEquals(d("2027-02-15"), next("2026-11-15", 3, "2026-11-16"))
+    }
+
+    @Test
+    fun `bimestral cobra cada dos meses desde el ancla`() {
+        // Serie: 10-ene, 10-mar, 10-may, 10-jul, 10-sep, 10-nov
+        assertEquals(d("2026-11-10"), next("2026-01-10", 2, "2026-10-10"))
+        assertEquals(d("2026-09-10"), next("2026-01-10", 2, "2026-09-10"))
+    }
+
+    @Test
+    fun `semestral del 31 cae el 28 de febrero y vuelve al 31 de agosto`() {
+        assertEquals(d("2026-02-28"), next("2025-08-31", 6, "2026-01-01"))
+        assertEquals(d("2026-08-31"), next("2025-08-31", 6, "2026-03-01"))
+    }
+
+    @Test
+    fun `la suscripcion usa su propio intervalo`() {
+        val trimestral = Subscription(
+            name = "Seguro", price = BigDecimal("90.00"), billingCycle = BillingCycle.MONTHLY,
+            renewalDate = d("2026-01-20"), category = Category(id = 1, name = "Seguros"), intervaloMeses = 3
+        )
+        // Serie: 20-ene, 20-abr, 20-jul, 20-oct
+        assertEquals(d("2026-10-20"), RenewalDates.nextRenewal(trimestral, d("2026-10-10")))
+    }
 }

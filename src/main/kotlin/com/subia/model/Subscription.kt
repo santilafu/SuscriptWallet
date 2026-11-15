@@ -51,6 +51,7 @@ data class Subscription(
     /**
      * Periodicidad con que se cobra la suscripción.
      * Persiste como String en la columna para mayor legibilidad.
+     * Salvo WEEKLY, es derivado de [intervaloMeses] (12 → YEARLY; 1, 2, 3, 6 → MONTHLY).
      */
     @Enumerated(EnumType.STRING)
     val billingCycle: BillingCycle,
@@ -80,5 +81,12 @@ data class Subscription(
 
     /** ID del usuario propietario de esta suscripción (nullable por compatibilidad con datos existentes). */
     @Column(name = "user_id", nullable = true)
-    val userId: Long? = null
+    val userId: Long? = null,
+
+    /**
+     * Cada cuántos meses se cobra: 1, 2, 3, 6 o 12 (migración V15). [billingCycle] se deriva de
+     * este valor salvo en WEEKLY, que guarda 1 y lo ignora. Ver `service/Periodicidad`.
+     */
+    @Column(name = "intervalo_meses", nullable = false)
+    val intervaloMeses: Int = 1
 )
