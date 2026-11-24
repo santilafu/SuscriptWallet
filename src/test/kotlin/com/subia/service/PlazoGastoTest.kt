@@ -60,6 +60,24 @@ class PlazoGastoTest {
     }
 
     @Test
+    fun `renewalDate guardada en el futuro - se cuenta desde ella, no desde hoy`() {
+        // Hoy 10-oct, próxima renovación guardada 15-dic, fin 15-mar: dic, ene, feb, mar → 4 (como la app)
+        val s = sub("2026-12-15", fin = "2027-03-15")
+        assertEquals(4, RenewalDates.cuotasRestantes(s, hoy))
+        assertEquals(d("2026-12-15"), RenewalDates.proximoCobro(s, hoy))
+        assertFalse(RenewalDates.isTerminada(s, hoy))
+        assertEquals(BigDecimal("400.00"), RenewalDates.plazo(s, hoy)!!.pendiente)
+        assertEquals(4, RenewalDates.cuotasProximoAnio(s, hoy))
+        // Con inicio pasado: totales jul..mar = 9, restantes 4 → barra 5/9
+        val conInicio = RenewalDates.plazo(sub("2026-12-15", inicio = "2026-07-15", fin = "2027-03-15"), hoy)!!
+        assertEquals(4, conInicio.cuotasRestantes)
+        assertEquals(9, conInicio.cuotasTotales)
+        assertEquals(5, conInicio.cuotasPagadas)
+        // Fin antes de la renovación guardada: terminado
+        assertTrue(RenewalDates.isTerminada(sub("2026-12-15", fin = "2026-11-15"), hoy))
+    }
+
+    @Test
     fun `sin fecha de fin no hay plazo ni terminado`() {
         val s = sub("2026-01-15", inicio = "2026-01-15")
         assertNull(RenewalDates.cuotasRestantes(s, hoy))

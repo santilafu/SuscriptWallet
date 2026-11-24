@@ -140,9 +140,13 @@ object RenewalDates {
     private fun cobrosEntre(sub: Subscription, desde: LocalDate, hasta: LocalDate): Int =
         cobrosEntre(sub.renewalDate, sub.billingCycle, sub.intervaloMeses, desde, hasta)
 
-    /** Primer día en que puede haber un cobro: hoy, o el inicio del plazo si aún no ha llegado. */
+    /**
+     * Primer día en que puede haber un cobro pendiente: max(hoy, renewalDate guardada, inicio).
+     * Nunca antes de la renovación guardada: si el usuario la puso en diciembre, los cobros de la
+     * serie entre hoy y diciembre no existen (igual que `nextRenewal`, el calendario y la app).
+     */
     private fun desde(sub: Subscription, today: LocalDate): LocalDate =
-        sub.fechaInicio?.takeIf { it.isAfter(today) } ?: today
+        listOfNotNull(today, sub.renewalDate, sub.fechaInicio).max()
 
     /** Próximo cobro respetando el inicio del plazo (no hay cobros antes de `fechaInicio`). */
     fun proximoCobro(sub: Subscription, today: LocalDate): LocalDate = nextRenewal(sub, desde(sub, today))
@@ -156,7 +160,7 @@ object RenewalDates {
         return proximoCobro(sub, today).isAfter(fin)
     }
 
-    /** Cobros que quedan en [max(hoy, inicio), fin]; el de hoy cuenta. null sin fecha de fin. */
+    /** Cobros que quedan en [max(hoy, renewalDate, inicio), fin]; el de hoy cuenta. null sin fecha de fin. */
     fun cuotasRestantes(sub: Subscription, today: LocalDate): Int? =
         sub.fechaFin?.let { cobrosEntre(sub, desde(sub, today), it) }
 
