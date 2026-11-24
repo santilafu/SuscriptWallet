@@ -17,7 +17,9 @@ import java.math.BigDecimal
  * Claves de categoría disponibles (ver [CategoryMappingService.NAME_TO_KEY]):
  *   "ia", "streaming", "musica", "software", "cloud", "gaming", "seguridad",
  *   "noticias", "salud", "desarrollo", "finanzas", "educacion", "creatividad", "citas",
- *   "hogar", "telecos", "seguros", "transporte", "belleza" y "prueba" (derivada, ver [TRIALS]).
+ *   "hogar", "telecos", "seguros", "transporte", "belleza", "prestamos" y "prueba" (derivada, ver [TRIALS]).
+ *
+ * Préstamos y financiaciones: `price = null` porque la cuota depende del contrato de cada usuario.
  *
  * Recibos recurrentes (luz, gas, agua, telecos, seguros…): el precio es un importe
  * orientativo y el item lleva `variablePrice = true` para que la UI lo indique.
@@ -52,7 +54,7 @@ class CatalogService {
             CatalogItem("ChatGPT Pro 500", BigDecimal("547.41"), "EUR", BillingCycle.MONTHLY, "OpenAI ChatGPT Pro 500 — el máximo uso de los modelos Pro — Se cobra en USD; importe aproximado", "ia", domain = "chatgpt.com", cancelUrl = "https://chatgpt.com/settings", variablePrice = true),
             CatalogItem("Cursor Premium", BigDecimal("32.84"), "EUR", BillingCycle.MONTHLY, "Editor de código con IA — plan Premium (sustituye al antiguo Pro) — Se cobra en USD; importe aproximado", "ia", domain = "cursor.com", cancelUrl = "https://www.cursor.com/settings", priceAnnual = BigDecimal("328.45"), variablePrice = true),
             CatalogItem("GitHub Copilot Pro", BigDecimal("10.95"), "EUR", BillingCycle.MONTHLY, "Asistente de código IA para IDEs — plan Copilot Pro — Se cobra en USD; importe aproximado", "ia", domain = "github.com", cancelUrl = "https://github.com/settings/copilot", variablePrice = true),
-            CatalogItem("Google AI Pro", BigDecimal("21.99"), "EUR", BillingCycle.MONTHLY, "Google AI Pro (antes Gemini Advanced) — Gemini Pro, Veo y 5 TB de almacenamiento", "ia", domain = "gemini.google.com", cancelUrl = "https://one.google.com/about", priceAnnual = BigDecimal("219.99")),
+            CatalogItem("Google AI Pro", BigDecimal("21.99"), "EUR", BillingCycle.MONTHLY, "Google AI Pro (antes Gemini Advanced) — Gemini, Veo y 5 TB compartidos entre Drive, Gmail y Fotos; se comparte con hasta 5 personas", "ia", domain = "gemini.google.com", cancelUrl = "https://one.google.com/about", priceAnnual = BigDecimal("219.99")),
             CatalogItem("Perplexity Pro", BigDecimal("21.90"), "EUR", BillingCycle.MONTHLY, "Motor de búsqueda con IA — búsquedas ilimitadas y modelos avanzados — Se cobra en USD; importe aproximado", "ia", domain = "perplexity.ai", cancelUrl = "https://www.perplexity.ai/settings/account", priceAnnual = BigDecimal("218.96"), variablePrice = true),
             CatalogItem("Midjourney Standard", BigDecimal("32.84"), "EUR", BillingCycle.MONTHLY, "Generación de imágenes IA — 15 horas GPU/mes — Se cobra en USD; importe aproximado", "ia", domain = "midjourney.com", cancelUrl = "https://www.midjourney.com/account", priceAnnual = BigDecimal("315.31"), iconUrl = "https://www.google.com/s2/favicons?domain=midjourney.com&sz=128", variablePrice = true),
             CatalogItem("Midjourney Basic", BigDecimal("10.95"), "EUR", BillingCycle.MONTHLY, "Generación de imágenes IA — 3,3 horas GPU/mes — Se cobra en USD; importe aproximado", "ia", domain = "midjourney.com", cancelUrl = "https://www.midjourney.com/account", priceAnnual = BigDecimal("105.10"), iconUrl = "https://www.google.com/s2/favicons?domain=midjourney.com&sz=128", variablePrice = true),
@@ -187,7 +189,6 @@ class CatalogService {
         // ── Almacenamiento en la nube ────────────────────────────────────────────
         "cloud" to listOf(
             CatalogItem("Google AI Plus 2 TB", BigDecimal("9.99"), "EUR", BillingCycle.MONTHLY, "Google AI Plus (antes Google One 2 TB) — 2 TB compartidos entre Drive, Gmail y Fotos", "cloud", domain = "google.com", cancelUrl = "https://one.google.com/about", priceAnnual = BigDecimal("99.99")),
-            CatalogItem("Google AI Pro 5 TB", BigDecimal("21.99"), "EUR", BillingCycle.MONTHLY, "Google AI Pro — 5 TB compartidos entre Drive, Gmail y Fotos, con Gemini Pro", "cloud", domain = "google.com", cancelUrl = "https://one.google.com/about", priceAnnual = BigDecimal("219.99")),
             CatalogItem("iCloud+ 200 GB",          BigDecimal("2.99"),   "EUR", BillingCycle.MONTHLY, "iCloud+ — 200 GB para iPhone, iPad y Mac",                                      "cloud", domain = "icloud.com",    cancelUrl = "https://appleid.apple.com/account/manage"),
             CatalogItem("iCloud+ 2 TB",            BigDecimal("9.99"),   "EUR", BillingCycle.MONTHLY, "iCloud+ — 2 TB con Private Relay y dominio de correo personalizado",            "cloud", domain = "icloud.com",    cancelUrl = "https://appleid.apple.com/account/manage"),
             CatalogItem("iCloud+ 50 GB", BigDecimal("0.99"), "EUR", BillingCycle.MONTHLY, "iCloud+ — 50 GB para iPhone, iPad y Mac", "cloud", domain = "icloud.com", cancelUrl = "https://appleid.apple.com/account/manage"),
@@ -555,6 +556,52 @@ class CatalogService {
             CatalogItem("LOOKFANTASTIC Beauty Box", BigDecimal("20.00"), "EUR", BillingCycle.MONTHLY, "LOOKFANTASTIC Beauty Box — caja mensual de belleza, pago mensual sin permanencia", "belleza", domain = "lookfantastic.es", cancelUrl = "https://www.lookfantastic.es/"),
             CatalogItem("LOOKFANTASTIC Beauty Box 12 meses", BigDecimal("17.00"), "EUR", BillingCycle.MONTHLY, "LOOKFANTASTIC Beauty Box — caja mensual de belleza, pago mensual con compromiso de 12 meses", "belleza", domain = "lookfantastic.es", cancelUrl = "https://www.lookfantastic.es/"),
             CatalogItem("LOOKFANTASTIC Beauty Box Anual", BigDecimal("200.00"), "EUR", BillingCycle.YEARLY, "LOOKFANTASTIC Beauty Box — 12 cajas mensuales de belleza con un único pago anual", "belleza", domain = "lookfantastic.es", cancelUrl = "https://www.lookfantastic.es/")
+        ),
+
+        // ── Préstamos y financiaciones (V18) ─────────────────────────────────────
+        // Sin precio (`price = null`): cada usuario pone su cuota. Fuentes y logos en
+        // docs/catalogo/revision-2026-11/prestamos.md. Sin microcréditos, por decisión del usuario.
+        // iconUrl solo donde icon.horse da una inicial genérica o un logo peor (ver el informe).
+        "prestamos" to listOf(
+            // Bancos
+            CatalogItem("Banco Santander", null, "EUR", BillingCycle.MONTHLY, "Hipoteca, préstamo personal o de coche del Banco Santander — pon la cuota de tu contrato", "prestamos", domain = "bancosantander.es", cancelUrl = "https://www.bancosantander.es/", iconUrl = "https://www.google.com/s2/favicons?domain=bancosantander.es&sz=128"),
+            CatalogItem("BBVA", null, "EUR", BillingCycle.MONTHLY, "Hipoteca, préstamo personal o de coche de BBVA — pon la cuota de tu contrato", "prestamos", domain = "bbva.es", cancelUrl = "https://www.bbva.es/"),
+            CatalogItem("CaixaBank", null, "EUR", BillingCycle.MONTHLY, "Hipoteca, préstamo personal o de coche de CaixaBank — pon la cuota de tu contrato", "prestamos", domain = "caixabank.es", cancelUrl = "https://www.caixabank.es/"),
+            CatalogItem("Banco Sabadell", null, "EUR", BillingCycle.MONTHLY, "Hipoteca, préstamo personal o de coche del Banco Sabadell — pon la cuota de tu contrato", "prestamos", domain = "bancsabadell.com", cancelUrl = "https://www.bancsabadell.com/"),
+            CatalogItem("Bankinter", null, "EUR", BillingCycle.MONTHLY, "Hipoteca, préstamo personal o de coche de Bankinter (incluye los antiguos clientes de EVO Banco) — pon la cuota de tu contrato", "prestamos", domain = "bankinter.com", cancelUrl = "https://www.bankinter.com/"),
+            CatalogItem("Unicaja", null, "EUR", BillingCycle.MONTHLY, "Hipoteca, préstamo personal o de coche de Unicaja — pon la cuota de tu contrato", "prestamos", domain = "unicajabanco.es", cancelUrl = "https://www.unicajabanco.es/"),
+            CatalogItem("Abanca", null, "EUR", BillingCycle.MONTHLY, "Hipoteca, préstamo personal o de coche de Abanca — pon la cuota de tu contrato", "prestamos", domain = "abanca.com", cancelUrl = "https://www.abanca.com/"),
+            CatalogItem("Kutxabank", null, "EUR", BillingCycle.MONTHLY, "Hipoteca, préstamo personal o de coche de Kutxabank — pon la cuota de tu contrato", "prestamos", domain = "kutxabank.es", cancelUrl = "https://www.kutxabank.es/"),
+            CatalogItem("Ibercaja", null, "EUR", BillingCycle.MONTHLY, "Hipoteca, préstamo personal o de coche de Ibercaja — pon la cuota de tu contrato", "prestamos", domain = "ibercaja.es", cancelUrl = "https://www.ibercaja.es/"),
+            CatalogItem("ING", null, "EUR", BillingCycle.MONTHLY, "Hipoteca Naranja o préstamo de ING — pon la cuota de tu contrato", "prestamos", domain = "ing.es", cancelUrl = "https://www.ing.es/"),
+            CatalogItem("Openbank", null, "EUR", BillingCycle.MONTHLY, "Hipoteca o préstamo de Openbank — pon la cuota de tu contrato", "prestamos", domain = "openbank.es", cancelUrl = "https://www.openbank.es/"),
+            CatalogItem("Cajamar", null, "EUR", BillingCycle.MONTHLY, "Hipoteca, préstamo personal o de coche de Cajamar — pon la cuota de tu contrato", "prestamos", domain = "cajamar.es", cancelUrl = "https://www.cajamar.es/"),
+            CatalogItem("Caja Rural", null, "EUR", BillingCycle.MONTHLY, "Hipoteca, préstamo personal o de coche de tu Caja Rural (Ruralvía) — pon la cuota de tu contrato", "prestamos", domain = "ruralvia.com", cancelUrl = "https://www.grupocajarural.es/es"),
+            CatalogItem("Laboral Kutxa", null, "EUR", BillingCycle.MONTHLY, "Hipoteca, préstamo personal o de coche de Laboral Kutxa — pon la cuota de tu contrato", "prestamos", domain = "laboralkutxa.com", cancelUrl = "https://www.laboralkutxa.com/"),
+            // Financieras de consumo y pago a plazos
+            CatalogItem("Cetelem", null, "EUR", BillingCycle.MONTHLY, "Préstamo personal, financiación de compras o tarjeta de Cetelem — pon la cuota de tu contrato", "prestamos", domain = "cetelem.es", cancelUrl = "https://www.cetelem.es/", iconUrl = "https://www.google.com/s2/favicons?domain=cetelem.fr&sz=128"),
+            CatalogItem("Cofidis", null, "EUR", BillingCycle.MONTHLY, "Préstamo personal, crédito o financiación de compras de Cofidis — pon la cuota de tu contrato", "prestamos", domain = "cofidis.es", cancelUrl = "https://www.cofidis.es/"),
+            CatalogItem("Santander Consumer Finance", null, "EUR", BillingCycle.MONTHLY, "Financiación de coche o de compras con Santander Consumer Finance — pon la cuota de tu contrato", "prestamos", domain = "santanderconsumer.es", cancelUrl = "https://www.santanderconsumer.es/"),
+            CatalogItem("Sabadell Consumer Finance", null, "EUR", BillingCycle.MONTHLY, "Financiación de compras en tienda con Sabadell Consumer Finance — pon la cuota de tu contrato", "prestamos", domain = "sabadellconsumer.com", cancelUrl = "https://www.sabadellconsumer.com/"),
+            CatalogItem("Bankinter Consumer Finance", null, "EUR", BillingCycle.MONTHLY, "Préstamo, tarjeta o financiación de Bankinter Consumer Finance — pon la cuota de tu contrato", "prestamos", domain = "bankinterconsumerfinance.com", cancelUrl = "https://www.bankinterconsumerfinance.com/"),
+            CatalogItem("CaixaBank Payments & Consumer", null, "EUR", BillingCycle.MONTHLY, "Financiación de compras o tarjeta de CaixaBank Payments & Consumer — pon la cuota de tu contrato", "prestamos", domain = "caixabankpc.com", cancelUrl = "https://www.caixabankpc.com/"),
+            CatalogItem("Oney", null, "EUR", BillingCycle.MONTHLY, "Financiación de compras en tienda o pago en 3 y 4 veces con Oney — pon la cuota de tu contrato", "prestamos", domain = "oney.es", cancelUrl = "https://www.oney.es/", iconUrl = "https://www.google.com/s2/favicons?domain=oney.com&sz=128"),
+            CatalogItem("WiZink", null, "EUR", BillingCycle.MONTHLY, "Tarjeta de crédito o préstamo de WiZink — pon la cuota de tu contrato", "prestamos", domain = "wizink.es", cancelUrl = "https://www.wizink.es/"),
+            CatalogItem("Younited", null, "EUR", BillingCycle.MONTHLY, "Préstamo personal online de Younited — pon la cuota de tu contrato", "prestamos", domain = "younited.com", cancelUrl = "https://younited.com/es/"),
+            CatalogItem("Financiera El Corte Inglés", null, "EUR", BillingCycle.MONTHLY, "Financiación de compras o tarjeta de El Corte Inglés — pon la cuota de tu contrato", "prestamos", domain = "elcorteingles.es", cancelUrl = "https://www.elcorteingles.es/"),
+            CatalogItem("Volkswagen Financial Services", null, "EUR", BillingCycle.MONTHLY, "Financiación o renting de coche con Volkswagen Financial Services — pon la cuota de tu contrato", "prestamos", domain = "vwfs.es", cancelUrl = "https://www.vwfs.es/"),
+            CatalogItem("Klarna", null, "EUR", BillingCycle.MONTHLY, "Pago a plazos con Klarna — pon la cuota de tu contrato", "prestamos", domain = "klarna.com", cancelUrl = "https://www.klarna.com/es/", iconUrl = "https://www.google.com/s2/favicons?domain=klarna.com&sz=128"),
+            CatalogItem("PayPal Paga en 3 plazos", null, "EUR", BillingCycle.MONTHLY, "Compra pagada en 3 plazos con PayPal — pon la cuota de tu contrato", "prestamos", domain = "paypal.com", cancelUrl = "https://www.paypal.com/es/"),
+            CatalogItem("seQura", null, "EUR", BillingCycle.MONTHLY, "Pago a plazos con seQura — pon la cuota de tu contrato", "prestamos", domain = "sequra.com", cancelUrl = "https://www.sequra.com/"),
+            CatalogItem("Aplazame", null, "EUR", BillingCycle.MONTHLY, "Pago a plazos con Aplazame — pon la cuota de tu contrato", "prestamos", domain = "aplazame.com", cancelUrl = "https://aplazame.com/"),
+            // Clínicas
+            CatalogItem("Vitaldent (financiación)", null, "EUR", BillingCycle.MONTHLY, "Tratamiento dental financiado en Vitaldent — pon la cuota de tu contrato", "prestamos", domain = "vitaldent.com", cancelUrl = "https://www.vitaldent.com/"),
+            // Genéricos sin marca
+            CatalogItem("Hipoteca", null, "EUR", BillingCycle.MONTHLY, "Cuota mensual de la hipoteca — pon la cuota de tu contrato", "prestamos"),
+            CatalogItem("Préstamo personal", null, "EUR", BillingCycle.MONTHLY, "Cuota mensual de un préstamo personal — pon la cuota de tu contrato", "prestamos"),
+            CatalogItem("Préstamo de coche", null, "EUR", BillingCycle.MONTHLY, "Cuota mensual de la financiación del coche — pon la cuota de tu contrato", "prestamos"),
+            CatalogItem("Financiación de compra a plazos", null, "EUR", BillingCycle.MONTHLY, "Cuota de una compra financiada (móvil, electrodoméstico, muebles…) — pon la cuota de tu contrato", "prestamos"),
+            CatalogItem("Tarjeta revolving", null, "EUR", BillingCycle.MONTHLY, "Cuota mensual de una tarjeta de crédito revolving — pon la cuota de tu contrato", "prestamos")
         )
     )
 
@@ -690,7 +737,9 @@ class CatalogService {
             "Basecamp Business" to "Basecamp Pro Plus",
             "Notion Team" to "Notion Business",
             "Google One 2 TB" to "Google AI Plus 2 TB",
-            "Google One 5 TB" to "Google AI Pro 5 TB",
+            "Google One 5 TB" to "Google AI Pro",
+            // Era una segunda fila del mismo plan en "cloud" (D8): queda solo la de "ia".
+            "Google AI Pro 5 TB" to "Google AI Pro",
             "OneDrive 100 GB" to "Microsoft 365 Básico",
             "pCloud Premium 2 TB" to "pCloud Premium Plus 2 TB",
             "Sync.com Solo Basic" to "Sync.com Personal 1 TB",

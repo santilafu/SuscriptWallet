@@ -14,7 +14,8 @@
                 <span th:text="#{catalog.title}">Catálogo de servicios</span>
             </h1>
             <p class="text-sm text-slate-500 mt-0.5">
-                <span th:text="#{catalog.count(${allItems.size()})}"></span>
+                <!-- Sin las copias de "prueba": así cuenta servicios distintos, igual que la app -->
+                <span th:text="#{catalog.count(${serviceCount})}"></span>
             </p>
         </div>
         <a th:href="@{/subscriptions/new}"
@@ -100,6 +101,10 @@
                 <button type="button" class="filter-pill px-3 py-1 rounded-full text-xs font-medium border cursor-pointer" aria-pressed="false"
                         data-cat="belleza" onclick="setCatalogCat(this, 'belleza')"
                         th:text="'💄 ' + #{catalog.chip.belleza}">💄 Belleza</button>
+                <!-- V18: hipotecas, préstamos, financiaciones y pago a plazos (sin precio fijo) -->
+                <button type="button" class="filter-pill px-3 py-1 rounded-full text-xs font-medium border cursor-pointer" aria-pressed="false"
+                        data-cat="prestamos" onclick="setCatalogCat(this, 'prestamos')"
+                        th:text="'🏦 ' + #{catalog.chip.prestamos}">🏦 Préstamos</button>
                 <button type="button" class="filter-pill filter-pill-trial px-3 py-1 rounded-full text-xs font-medium border cursor-pointer" aria-pressed="false"
                         data-cat="prueba" onclick="setCatalogCat(this, 'prueba')"
                         th:text="'🆓 ' + #{catalog.chip.prueba}">🆓 Pruebas gratuitas</button>
@@ -149,8 +154,15 @@
                     </div>
                 </div>
 
+                <!-- Sin precio (préstamos y financiaciones): cada usuario pone su cuota -->
+                <div th:if="${item.price == null}" class="flex items-baseline gap-1 mb-4 flex-wrap">
+                    <span class="text-base font-semibold text-slate-300"
+                          th:text="#{catalog.price.none}"
+                          th:title="#{catalog.price.none.hint}">Importe variable</span>
+                </div>
+
                 <!-- Precio (con "≈" y etiqueta "orientativo" cuando el importe depende del consumo/póliza) -->
-                <div class="flex items-baseline gap-1 mb-4 flex-wrap">
+                <div th:unless="${item.price == null}" class="flex items-baseline gap-1 mb-4 flex-wrap">
                     <span th:if="${item.variablePrice}" class="text-sm text-slate-500" aria-hidden="true">≈</span>
                     <span class="text-xl font-bold text-slate-100"
                           th:text="'€' + ${#numbers.formatDecimal(item.price, 1, 2)}"></span>
@@ -181,8 +193,18 @@
                         <i aria-hidden="true" class="bi bi-x-circle"></i><span th:text="#{catalog.cancel}">Cancelar</span>
                     </a>
 
+                    <!-- Añadir sin precio: no se puede crear directamente (price es obligatorio), así
+                         que lleva al formulario con el nombre y la categoría puestos para que el
+                         usuario escriba su cuota. Es un GET: no necesita CSRF. -->
+                    <a th:if="${item.price == null}"
+                       th:href="@{/subscriptions/new(catalogo=${item.name})}"
+                       th:title="#{catalog.price.none.hint}"
+                       class="card-action flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-accent hover:bg-accent-hover text-white no-underline shadow-sm shadow-accent/20">
+                        <i aria-hidden="true" class="bi bi-plus-lg"></i><span th:text="#{catalog.add}">Añadir</span>
+                    </a>
+
                     <!-- Botón Añadir -->
-                    <th:block th:if="${categoryKeyToId[item.categoryKey] != null}">
+                    <th:block th:if="${item.price != null and categoryKeyToId[item.categoryKey] != null}">
                         <form th:action="@{/subscriptions/add-from-catalog}" method="post" class="inline">
                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                             <input type="hidden" name="name"         th:value="${item.name}">
@@ -203,7 +225,7 @@
                     </th:block>
 
                     <!-- Categoría no mapeada -->
-                    <th:block th:unless="${categoryKeyToId[item.categoryKey] != null}">
+                    <th:block th:if="${item.price != null and categoryKeyToId[item.categoryKey] == null}">
                         <button type="button" disabled
                                 th:title="#{catalog.create-cat-first}"
                                 class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-700/50 text-slate-500 border border-white/[0.06] cursor-not-allowed">
@@ -279,7 +301,8 @@
             const nameData = card.getAttribute('data-name') || '';
             const catData  = card.getAttribute('data-cat') || '';
             const matchesText = !text || nameData.includes(text);
-            const matchesCat  = !activeCat || catData === activeCat;
+            // En "Todos" no se repiten los servicios que también salen en "Pruebas gratuitas".
+            const matchesCat  = activeCat ? catData === activeCat : catData !== 'prueba';
             const show = matchesText && matchesCat;
             setCardVisible(card, show);
             if (show) visible++;
@@ -307,6 +330,11 @@
     };
 
     if (searchInput) searchInput.addEventListener('input', applyFilters);
+
+    // Estado inicial ("Todos"): las copias de "prueba" se ocultan sin animación.
+    getCards().forEach(function (card) {
+        if (card.getAttribute('data-cat') === 'prueba') card.style.display = 'none';
+    });
 }());
 </script>
 </th:block>

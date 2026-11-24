@@ -28,7 +28,7 @@ class CategoryMappingService(private val categoryService: CategoryService) {
 
     companion object {
         /**
-         * Nombre de la categoría tal y como está sembrado en Flyway (V2, V4, V5, V13, V16) → clave.
+         * Nombre de la categoría tal y como está sembrado en Flyway (V2, V4, V5, V13, V16, V18) → clave.
          * Si se añade una categoría nueva al seed, hay que añadirla también aquí.
          */
         val NAME_TO_KEY: Map<String, String> = linkedMapOf(
@@ -53,7 +53,9 @@ class CategoryMappingService(private val categoryService: CategoryService) {
             "Telecomunicaciones"  to "telecos",
             "Transporte"          to "transporte",
             // V16: cosmética, cajas de belleza y peluquería/depilación recurrentes.
-            "Belleza"             to "belleza"
+            "Belleza"             to "belleza",
+            // V18: hipotecas, préstamos, financiaciones y pago a plazos.
+            "Préstamos"           to "prestamos"
         )
 
         /** Clave → nombre sembrado (inverso de [NAME_TO_KEY]). */

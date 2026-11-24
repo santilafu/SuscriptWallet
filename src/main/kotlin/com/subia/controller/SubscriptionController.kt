@@ -3,6 +3,7 @@ package com.subia.controller
 import com.subia.model.BillingCycle
 import com.subia.model.Subscription
 import com.subia.repository.UserRepository
+import com.subia.service.CategoryMappingService
 import com.subia.service.CategoryService
 import com.subia.service.Periodicidad
 import com.subia.service.SubscriptionService
@@ -76,16 +77,34 @@ class SubscriptionController(
      * - "categories": lista de categorías para el selector.
      * - "periodicidadActual": valor preseleccionado del desplegable de periodicidad ("" = ninguno).
      * - "sub": mapa con valores vacíos (el template comparte lógica con el formulario de edición).
+     *
+     * Con `?catalogo={nombre}` (el "Añadir" de los items del catálogo sin precio, como los
+     * préstamos) prerrellena nombre, descripción, moneda, periodicidad y categoría, y deja el
+     * importe vacío para que el usuario escriba su cuota. Un nombre desconocido se ignora.
      */
     @GetMapping("/new")
-    fun newForm(model: Model): String {
-        model.addAttribute("categories", categoryService.findAll())
+    fun newForm(@RequestParam(required = false) catalogo: String?, model: Model): String {
+        val categories = categoryService.findAll()
+        val item = catalogo?.let { nombre ->
+            catalogService.getAllItems().firstOrNull { it.name == nombre && it.categoryKey != "prueba" }
+        }
+        model.addAttribute("categories", categories)
         model.addAttribute("currencies", com.subia.model.Currencies.SUPPORTED)
-        model.addAttribute("sub", emptyForm())
+        model.addAttribute("sub", if (item == null) emptyForm() else emptyForm() + mapOf(
+            "name" to item.name,
+            "description" to item.description,
+            "currency" to item.currency,
+            "category" to categories.firstOrNull { CategoryMappingService.keyFor(it.name) == item.categoryKey }
+        ))
         // La plantilla distinguía alta/edición con `instanceof T(...)`, prohibido en Thymeleaf 3.1.3
         model.addAttribute("isEntity", false)
-        // Sin opción preseleccionada: el usuario debe elegir la periodicidad.
-        model.addAttribute("periodicidadActual", "")
+        // Sin catálogo no hay opción preseleccionada: el usuario debe elegir la periodicidad.
+        model.addAttribute("periodicidadActual", when (item?.billingCycle) {
+            null -> ""
+            BillingCycle.WEEKLY -> BillingCycle.WEEKLY.name
+            BillingCycle.MONTHLY -> "1"
+            BillingCycle.YEARLY -> "12"
+        })
         return "subscriptions/form"
     }
 

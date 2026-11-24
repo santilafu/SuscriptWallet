@@ -46,8 +46,8 @@ data class DetectedSubscription(
     val emailCurrency: String? = null,
     val emailCycle: BillingCycle? = null
 ) : java.io.Serializable {
-    /** Precio a proponer: el detectado en el correo si existe, si no el del catálogo. */
-    val effectivePrice: BigDecimal get() = emailPrice ?: catalogItem.price
+    /** Precio a proponer: el detectado en el correo si existe, si no el del catálogo (0 si no tiene). */
+    val effectivePrice: BigDecimal get() = emailPrice ?: catalogItem.price ?: BigDecimal.ZERO
     /** Moneda a proponer: la detectada en el correo si existe, si no la del catálogo. */
     val effectiveCurrency: String get() = emailCurrency ?: catalogItem.currency
     /** Ciclo a proponer: el detectado en el correo si existe, si no el del catálogo. */
@@ -148,7 +148,8 @@ class GmailScanService(
         // Conservamos TODOS los planes (tiers) de cada dominio para luego elegir el que mejor
         // encaje con el precio detectado en el correo (ver chooseBestPlan).
         val byDomain: Map<String, List<CatalogItem>> = catalogService.getAllItems()
-            .filter { !it.domain.isNullOrBlank() }
+            // Préstamos fuera: los correos de un banco (avisos, extractos) casarían con todo.
+            .filter { !it.domain.isNullOrBlank() && it.categoryKey != PRESTAMOS_KEY }
             .groupBy { it.domain!!.lowercase() }
 
         val query = "newer_than:${window}m (subscription OR receipt OR invoice OR payment OR renewal OR " +
@@ -272,12 +273,12 @@ class GmailScanService(
         // Seguros y recibos anuales: si el importe encaja mejor con 1/12 de la prima que con la
         // prima completa, el usuario paga fraccionado mes a mes.
         if (plan.billingCycle == BillingCycle.YEARLY && plan.priceAnnual == null) {
-            val yearly = plan.price.takeIf { it > BigDecimal.ZERO } ?: return null
+            val yearly = plan.price?.takeIf { it > BigDecimal.ZERO } ?: return null
             val monthlyShare = yearly.divide(BigDecimal(12), 2, RoundingMode.HALF_UP)
             return if (relativeDiff(monthlyShare, amount) < relativeDiff(yearly, amount)) BillingCycle.MONTHLY else null
         }
         val annual = plan.priceAnnual?.takeIf { it > BigDecimal.ZERO } ?: return null
-        val monthly = plan.price.takeIf { it > BigDecimal.ZERO } ?: return BillingCycle.YEARLY
+        val monthly = plan.price?.takeIf { it > BigDecimal.ZERO } ?: return BillingCycle.YEARLY
         return if (relativeDiff(annual, amount) < relativeDiff(monthly, amount)) BillingCycle.YEARLY else null
     }
 
@@ -479,6 +480,8 @@ class GmailScanService(
         const val DEFAULT_MONTHS = 12
         /** Rango máximo permitido, en meses. */
         const val MAX_MONTHS = 24
+        /** Clave de catálogo de préstamos y financiaciones, que el escaneo no detecta. */
+        private const val PRESTAMOS_KEY = "prestamos"
         /** Resultados por página al listar mensajes. */
         private const val PAGE_SIZE = 100
         /** Tope de referencias de mensajes a recorrer (varias páginas). */

@@ -10,6 +10,8 @@ import java.math.BigDecimal
  *
  * @property name       Nombre comercial del servicio (p. ej. "Netflix Estándar").
  * @property price      Precio publicado por el proveedor en la fecha indicada en CatalogService.
+ *                       null cuando no hay cuota fija (préstamos y financiaciones): el usuario
+ *                       escribe la suya. Las apps aceptan `price` null desde la v2.0.0.
  * @property currency   Código ISO 4217 de la moneda (EUR, USD…).
  * @property billingCycle Periodicidad de cobro: MONTHLY, YEARLY o WEEKLY.
  * @property description Descripción breve del plan o tier.
@@ -25,7 +27,7 @@ import java.math.BigDecimal
  */
 data class CatalogItem(
     val name: String,
-    val price: BigDecimal,
+    val price: BigDecimal?,
     val currency: String,
     val billingCycle: BillingCycle,
     val description: String,

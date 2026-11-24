@@ -48,6 +48,7 @@ class CatalogServiceTest {
         assertTrue(grouped.getValue("seguros").size >= 20)
         assertTrue(grouped.getValue("transporte").size >= 6)
         assertTrue(grouped.getValue("belleza").size >= 4)
+        assertTrue(grouped.getValue("prestamos").size >= 30)
     }
 
     @Test
@@ -96,8 +97,15 @@ class CatalogServiceTest {
     @Test
     fun `todos los precios son positivos y estan en euros`() {
         // Los servicios que cobran en dólares se guardan ya convertidos a EUR (ver KDoc de CatalogService).
+        // Solo los préstamos van sin precio: cada usuario pone su cuota (D6).
         service.getAllItems().forEach { item ->
-            assertTrue(item.price > BigDecimal.ZERO, "precio no positivo: ${item.name}")
+            if (item.categoryKey == "prestamos") {
+                assertNull(item.price, "un préstamo no lleva precio: ${item.name}")
+                assertEquals(BillingCycle.MONTHLY, item.billingCycle, item.name)
+            } else {
+                val price = item.price
+                assertTrue(price != null && price > BigDecimal.ZERO, "precio no positivo: ${item.name}")
+            }
             assertEquals("EUR", item.currency, "moneda distinta de EUR: ${item.name}")
             item.priceAnnual?.let { assertTrue(it > BigDecimal.ZERO, "anual no positivo: ${item.name}") }
         }
@@ -108,7 +116,7 @@ class CatalogServiceTest {
         service.getAllItems()
             .filter { it.billingCycle == BillingCycle.MONTHLY && it.priceAnnual != null }
             .forEach { item ->
-                val twelve = item.price.multiply(BigDecimal(12))
+                val twelve = item.price!!.multiply(BigDecimal(12))
                 assertTrue(item.priceAnnual!! < twelve, "${item.name}: anual ${item.priceAnnual} ≥ 12 × ${item.price}")
             }
     }
@@ -122,6 +130,35 @@ class CatalogServiceTest {
             val trial = prueba.first { it.name == name }
             assertEquals(original.copy(categoryKey = "prueba", trialDays = days), trial, name)
         }
+    }
+
+    @Test
+    fun `fuera de prueba ningun nombre se repite y Google AI Pro sale una sola vez`() {
+        // La web, en "Todos", muestra cada servicio una vez; la app hace lo mismo (D8).
+        val nombres = service.getAllItems().filter { it.categoryKey != "prueba" }.map { it.name.lowercase() }
+        assertEquals(nombres.size, nombres.toSet().size, "nombres repetidos fuera de prueba")
+        assertEquals(1, service.getAllItems().count { it.name.startsWith("Google AI Pro") })
+        // Quien guardó el nombre de la fila de cloud conserva logo y enlace de baja.
+        assertEquals("gemini.google.com", service.getDomainMap()["Google AI Pro 5 TB"])
+    }
+
+    @Test
+    fun `prestamos trae bancos, pago a plazos y genericos sin microcreditos`() {
+        val nombres = grouped.getValue("prestamos").map { it.name }
+        listOf("BBVA", "Vitaldent (financiación)", "Klarna", "PayPal Paga en 3 plazos", "seQura", "Aplazame",
+            "Hipoteca", "Préstamo personal", "Préstamo de coche", "Financiación de compra a plazos", "Tarjeta revolving")
+            .forEach { assertTrue(it in nombres, "falta $it") }
+        listOf("vivus", "moneyman", "wandoo", "dineo").forEach { micro ->
+            assertFalse(nombres.any { micro in it.lowercase() }, "microcrédito en el catálogo: $micro")
+        }
+        assertNull(grouped.getValue("prestamos").first { it.name == "Hipoteca" }.domain)
+    }
+
+    @Test
+    fun `el JSON de la API manda price null en los prestamos`() {
+        val json = ObjectMapper().registerKotlinModule()
+            .writeValueAsString(service.getAllItems().first { it.name == "Hipoteca" })
+        assertTrue(json.contains("\"price\":null"), json)
     }
 
     @Test

@@ -25,7 +25,10 @@ class CatalogBrowserController(
 
     @GetMapping
     fun browse(model: Model): String {
-        model.addAttribute("allItems", catalogService.getAllItems())
+        val allItems = catalogService.getAllItems()
+        model.addAttribute("allItems", allItems)
+        // Las filas "prueba" son copias de otras: el contador solo cuenta servicios distintos.
+        model.addAttribute("serviceCount", allItems.count { it.categoryKey != "prueba" })
         // Fecha base para el fin de prueba (antes `T(LocalDate).now()` en la plantilla, prohibido en Thymeleaf 3.1.3)
         model.addAttribute("today", LocalDate.now(clock))
 
