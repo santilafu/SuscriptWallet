@@ -297,6 +297,26 @@
     <string name="form_error_renewal_date_required">A data de renovação é obrigatória</string>
     <string name="form_error_category_required">Selecione uma categoria</string>
     <string name="form_error_trial_end_required">Indique quando termina o teste gratuito</string>
+    <!-- Prazo opcional do formulário (empréstimos e financiamentos) -->
+    <string name="plazo_section">Prazo (opcional)</string>
+    <string name="plazo_hint">Para empréstimos e financiamentos. Fora destas datas não há cobranças.</string>
+    <string name="plazo_start_label">Data de início</string>
+    <string name="plazo_end_label">Data de fim</string>
+    <string name="plazo_select_start">Escolher data de início</string>
+    <string name="plazo_select_end">Escolher data de fim</string>
+    <string name="plazo_clear_start">Remover data de início</string>
+    <string name="plazo_clear_end">Remover data de fim</string>
+    <string name="form_error_plazo_invertido">A data de fim não pode ser anterior à data de início</string>
+    <plurals name="plazo_total_en_vivo">
+        <item quantity="one">%1$d prestação · %2$s no total</item>
+        <item quantity="many">%1$d prestações · %2$s no total</item>
+        <item quantity="other">%1$d prestações · %2$s no total</item>
+    </plurals>
+    <plurals name="plazo_quedan">
+        <item quantity="one">Falta %1$d prestação · %2$s</item>
+        <item quantity="many">Faltam %1$d prestações · %2$s</item>
+        <item quantity="other">Faltam %1$d prestações · %2$s</item>
+    </plurals>
     <string name="form_error_offline">Sem conexão. Não é possível guardar alterações sem conexão</string>
     <string name="form_error_save_failed">Não foi possível guardar a assinatura. Tente novamente</string>
     <!-- Identificação pelo Gmail -->

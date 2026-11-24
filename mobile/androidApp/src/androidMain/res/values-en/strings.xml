@@ -286,6 +286,24 @@
     <string name="form_error_renewal_date_required">The renewal date is required</string>
     <string name="form_error_category_required">Select a category</string>
     <string name="form_error_trial_end_required">Enter when the free trial ends</string>
+    <!-- Optional term in the form (loans and financing) -->
+    <string name="plazo_section">Term (optional)</string>
+    <string name="plazo_hint">For loans and financing. No charges outside these dates.</string>
+    <string name="plazo_start_label">Start date</string>
+    <string name="plazo_end_label">End date</string>
+    <string name="plazo_select_start">Choose start date</string>
+    <string name="plazo_select_end">Choose end date</string>
+    <string name="plazo_clear_start">Remove start date</string>
+    <string name="plazo_clear_end">Remove end date</string>
+    <string name="form_error_plazo_invertido">The end date cannot be before the start date</string>
+    <plurals name="plazo_total_en_vivo">
+        <item quantity="one">%1$d instalment · %2$s in total</item>
+        <item quantity="other">%1$d instalments · %2$s in total</item>
+    </plurals>
+    <plurals name="plazo_quedan">
+        <item quantity="one">%1$d instalment left · %2$s</item>
+        <item quantity="other">%1$d instalments left · %2$s</item>
+    </plurals>
     <string name="form_error_offline">No connection. Changes can\'t be saved while offline</string>
     <string name="form_error_save_failed">The subscription could not be saved. Please try again</string>
     <!-- Gmail detection screen -->

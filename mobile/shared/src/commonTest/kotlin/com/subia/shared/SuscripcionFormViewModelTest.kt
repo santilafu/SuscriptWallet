@@ -354,6 +354,80 @@ class SuscripcionFormViewModelTest {
         assertEquals(FormUiState.Error(FormError.GuardadoFallido), estado)
     }
 
+    // ── Plazo (préstamos y financiaciones) ───────────────────────────────────
+
+    @Test
+    fun validar_inicioPosteriorAlFin_devuelvePlazoInvertido() {
+        val errores = SuscripcionFormViewModel.validarCampos(
+            "Préstamo", "60", "2026-11-01", 3L, fechaInicio = "2026-12-01", fechaFin = "2026-11-01"
+        )
+        assertEquals(mapOf(Campo.FechaFin to FormError.PlazoInvertido), errores)
+    }
+
+    @Test
+    fun validar_plazoValido_soloUnaFecha_oFinPasado_noDaError() {
+        fun errores(inicio: String?, fin: String?) =
+            SuscripcionFormViewModel.validarCampos("P", "60", "2026-11-01", 3L, fechaInicio = inicio, fechaFin = fin)
+        assertTrue(errores("2026-01-01", "2026-01-01").isEmpty(), "inicio = fin es válido")
+        assertTrue(errores("2026-01-01", null).isEmpty())
+        assertTrue(errores(null, "2020-01-01").isEmpty(), "fin pasado: se acepta como historial")
+    }
+
+    @Test
+    fun plazoEnVivo_cuentaCuotasYTotal() = runTest {
+        val vm = crearViewModel()
+        vm.precio.value = "60"
+        vm.fechaRenovacion.value = "2026-11-01"
+        assertNull(vm.plazoEnVivo.value, "Sin fecha de fin no hay plazo")
+        vm.fechaInicio.value = "2026-11-01"
+        vm.fechaFin.value = "2027-10-01"
+        val plazo = vm.plazoEnVivo.value ?: error("Se esperaba plazo")
+        assertEquals(12, plazo.cuotasTotales)
+        assertEquals(720.0, plazo.total)
+        vm.fechaInicio.value = "2027-11-01"
+        assertNull(vm.plazoEnVivo.value, "Con el plazo invertido no se muestra el texto")
+        assertFalse(vm.puedeGuardar.value)
+    }
+
+    @Test
+    fun enviar_llevaLasFechasDelPlazo_yVaciasSiSeQuitan() = runTest {
+        val cuerpos = mutableListOf<String>()
+        val vm = crearViewModel(onRequestBody = { cuerpos += it })
+        vm.nombre.value = "Vitaldent"
+        vm.precio.value = "60"
+        vm.fechaRenovacion.value = "2026-11-01"
+        vm.categoriaId.value = 3L
+        vm.fechaInicio.value = "2026-11-01"
+        vm.fechaFin.value = "2027-10-01"
+        vm.enviar(esEdicion = false)
+        vm.uiState.first { it !is FormUiState.Loading && it != FormUiState.Idle }
+        assertTrue("\"fechaInicio\":\"2026-11-01\"" in cuerpos.last(), cuerpos.last())
+        assertTrue("\"fechaFin\":\"2027-10-01\"" in cuerpos.last(), cuerpos.last())
+
+        vm.resetState()
+        vm.fechaInicio.value = null
+        vm.fechaFin.value = null
+        vm.enviar(esEdicion = false)
+        vm.uiState.first { it !is FormUiState.Loading && it != FormUiState.Idle }
+        assertTrue("\"fechaInicio\":\"\"" in cuerpos.last(), cuerpos.last())
+        assertTrue("\"fechaFin\":\"\"" in cuerpos.last(), cuerpos.last())
+    }
+
+    @Test
+    fun cargarParaEditar_precargaElPlazo_yCambiarloMarcaCambios() = runTest {
+        val vm = crearViewModel(respuestas = mapOf(
+            "/subscriptions/8" to """{"data":{"id":8,"name":"Cetelem","price":60.0,"billingCycle":"MONTHLY","renewalDate":"2026-11-01","categoryId":2,"fechaInicio":"2026-01-01","fechaFin":"2027-12-01"}}"""
+        ))
+        vm.cargarParaEditar(8L)
+        vm.cargandoEdicion.first { !it }
+        assertEquals("2026-01-01", vm.fechaInicio.value)
+        assertEquals("2027-12-01", vm.fechaFin.value)
+        assertFalse(vm.hayCambios.value)
+        vm.fechaFin.value = null
+        // Tras la respuesta del motor mock el combine puede ir en otro hilo: se espera a que se propague.
+        assertTrue(vm.hayCambios.first { it })
+    }
+
     // ── Fixtures ─────────────────────────────────────────────────────────────
 
     /**

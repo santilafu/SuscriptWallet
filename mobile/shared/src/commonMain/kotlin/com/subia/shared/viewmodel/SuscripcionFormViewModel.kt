@@ -7,8 +7,10 @@ import com.subia.shared.model.CatalogItem
 import com.subia.shared.model.Category
 import com.subia.shared.model.NuevaSuscripcionRequest
 import com.subia.shared.model.Periodicidad
+import com.subia.shared.model.PlazoGasto
 import com.subia.shared.model.Subscription
 import com.subia.shared.model.mesesPorCobro
+import com.subia.shared.model.plazoGasto
 import com.subia.shared.network.NetworkException
 import com.subia.shared.repository.CatalogRepository
 import com.subia.shared.repository.CategoryRepository
@@ -47,6 +49,8 @@ sealed interface FormError {
     data object CategoriaNoSeleccionada : FormError
     /** "Periodo de prueba" activado sin fecha de fin (la web también la exige). */
     data object FechaFinPruebaVacia : FormError
+    /** La fecha de inicio del plazo es posterior a la de fin. */
+    data object PlazoInvertido : FormError
     /** Fallo de red al guardar. */
     data object SinConexion : FormError
     /** Cualquier otro fallo del servidor al guardar. */
@@ -54,7 +58,7 @@ sealed interface FormError {
 }
 
 /** Campos del formulario que pueden llevar un error asociado (validación en vivo). */
-enum class Campo { Nombre, Precio, FechaRenovacion, FechaFinPrueba, Categoria }
+enum class Campo { Nombre, Precio, FechaRenovacion, FechaFinPrueba, FechaFin, Categoria }
 
 sealed interface FormUiState {
     data object Idle : FormUiState
@@ -139,8 +143,9 @@ class SuscripcionFormViewModel(
     /** Errores por campo, recalculados con cada cambio. Vacío cuando todo es válido. */
     val errores: StateFlow<Map<Campo, FormError>> = combine(
         combine(nombre, precio, fechaRenovacion) { n, p, f -> Triple(n, p, f) },
-        combine(categoriaId, esPrueba, fechaFinPrueba) { c, e, fp -> Triple(c, e, fp) }
-    ) { (n, p, f), (c, e, fp) -> validarCampos(n, p, f, c, e, fp) }
+        combine(categoriaId, esPrueba, fechaFinPrueba) { c, e, fp -> Triple(c, e, fp) },
+        combine(fechaInicio, fechaFin) { i, f -> i to f }
+    ) { (n, p, f), (c, e, fp), (ini, fin) -> validarCampos(n, p, f, c, e, fp, ini, fin) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, validarCampos("", "", "", null))
 
     /** `true` cuando no hay errores de validación. El botón Guardar se habilita con esto. */
@@ -179,6 +184,24 @@ class SuscripcionFormViewModel(
         combine(precio, periodoFacturacion, intervaloMeses) { p, periodo, intervalo ->
             calcularEnVivo(p) { importe -> Periodicidad.totalAnualInterno(importe, periodo, intervaloCoherente(periodo, intervalo)) }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /**
+     * Plazo con lo tecleado ("12 cuotas · 720,00 € en total"), o `null` si no hay fecha de fin,
+     * el importe o la fecha de renovación no son válidos o el plazo está invertido. Misma lógica
+     * que el detalle ([plazoGasto]); la fecha de renovación hace de ancla de la serie.
+     */
+    val plazoEnVivo: StateFlow<PlazoGasto?> = combine(
+        combine(precio, periodoFacturacion, intervaloMeses) { p, periodo, intervalo -> Triple(p, periodo, intervalo) },
+        combine(fechaRenovacion, fechaInicio, fechaFin) { f, ini, fin -> Triple(f, ini, fin) }
+    ) { (p, periodo, intervalo), (f, ini, fin) ->
+        val importe = parsearPrecio(p)?.takeIf { it >= 0 && it <= Periodicidad.IMPORTE_MAXIMO }
+        if (importe == null || f.isBlank() || fin.isNullOrBlank() || plazoInvertido(ini, fin)) return@combine null
+        val borrador = Subscription(
+            nombre = "", precio = importe, periodoFacturacion = periodo, fechaRenovacion = f,
+            intervaloMeses = intervaloCoherente(periodo, intervalo), fechaInicio = ini, fechaFin = fin
+        )
+        plazoGasto(borrador, hoy())
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     // ── Cambios sin guardar ────────────────────────────────────────────────
 
@@ -385,7 +408,7 @@ class SuscripcionFormViewModel(
 
         validar(
             nombre.value, precio.value, fechaRenovacion.value, categoriaId.value,
-            esPrueba.value, fechaFinPrueba.value
+            esPrueba.value, fechaFinPrueba.value, fechaInicio.value, fechaFin.value
         )?.let { error ->
             _uiState.value = FormUiState.Error(error)
             return
@@ -501,7 +524,9 @@ class SuscripcionFormViewModel(
             fechaRenovacion: String,
             categoriaId: Long?,
             esPrueba: Boolean = false,
-            fechaFinPrueba: String? = null
+            fechaFinPrueba: String? = null,
+            fechaInicio: String? = null,
+            fechaFin: String? = null
         ): Map<Campo, FormError> {
             val errores = linkedMapOf<Campo, FormError>()
             if (nombre.isBlank()) errores[Campo.Nombre] = FormError.NombreVacio
@@ -513,8 +538,18 @@ class SuscripcionFormViewModel(
             // la prueba no avisa de cuándo empieza a cobrarse (el backend usa la fecha de
             // renovación como fin, pero el usuario no lo ve).
             if (esPrueba && fechaFinPrueba.isNullOrBlank()) errores[Campo.FechaFinPrueba] = FormError.FechaFinPruebaVacia
+            // Igual que el backend (400): el plazo no puede empezar después de terminar. Una fecha
+            // de fin pasada sí se acepta (sirve para registrar un préstamo ya pagado).
+            if (plazoInvertido(fechaInicio, fechaFin)) errores[Campo.FechaFin] = FormError.PlazoInvertido
             if (categoriaId == null || categoriaId == 0L) errores[Campo.Categoria] = FormError.CategoriaNoSeleccionada
             return errores
+        }
+
+        /** `true` si hay las dos fechas del plazo y el inicio es posterior al fin. */
+        private fun plazoInvertido(fechaInicio: String?, fechaFin: String?): Boolean {
+            val inicio = fechaInicio?.let { runCatching { LocalDate.parse(it.trim()) }.getOrNull() } ?: return false
+            val fin = fechaFin?.let { runCatching { LocalDate.parse(it.trim()) }.getOrNull() } ?: return false
+            return inicio > fin
         }
 
         /**
@@ -527,9 +562,12 @@ class SuscripcionFormViewModel(
             fechaRenovacion: String,
             categoriaId: Long?,
             esPrueba: Boolean = false,
-            fechaFinPrueba: String? = null
+            fechaFinPrueba: String? = null,
+            fechaInicio: String? = null,
+            fechaFin: String? = null
         ): FormError? =
-            validarCampos(nombre, precio, fechaRenovacion, categoriaId, esPrueba, fechaFinPrueba).values.firstOrNull()
+            validarCampos(nombre, precio, fechaRenovacion, categoriaId, esPrueba, fechaFinPrueba, fechaInicio, fechaFin)
+                .values.firstOrNull()
 
         /** Traduce la excepción del repositorio al error tipado que entiende la UI. */
         fun mapearErrorGuardado(error: Throwable): FormError = when (error) {

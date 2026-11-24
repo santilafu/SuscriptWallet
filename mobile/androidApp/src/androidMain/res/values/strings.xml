@@ -286,6 +286,24 @@
     <string name="form_error_renewal_date_required">La fecha de renovación es obligatoria</string>
     <string name="form_error_category_required">Selecciona una categoría</string>
     <string name="form_error_trial_end_required">Indica cuándo termina la prueba gratuita</string>
+    <!-- Plazo opcional del formulario (préstamos y financiaciones) -->
+    <string name="plazo_section">Plazo (opcional)</string>
+    <string name="plazo_hint">Para préstamos y financiaciones. Fuera de estas fechas no hay cobros.</string>
+    <string name="plazo_start_label">Fecha de inicio</string>
+    <string name="plazo_end_label">Fecha de fin</string>
+    <string name="plazo_select_start">Elegir fecha de inicio</string>
+    <string name="plazo_select_end">Elegir fecha de fin</string>
+    <string name="plazo_clear_start">Quitar fecha de inicio</string>
+    <string name="plazo_clear_end">Quitar fecha de fin</string>
+    <string name="form_error_plazo_invertido">La fecha de fin no puede ser anterior a la de inicio</string>
+    <plurals name="plazo_total_en_vivo">
+        <item quantity="one">%1$d cuota · %2$s en total</item>
+        <item quantity="other">%1$d cuotas · %2$s en total</item>
+    </plurals>
+    <plurals name="plazo_quedan">
+        <item quantity="one">Queda %1$d cuota · %2$s</item>
+        <item quantity="other">Quedan %1$d cuotas · %2$s</item>
+    </plurals>
     <string name="form_error_offline">Sin conexión. No es posible guardar cambios sin conexión</string>
     <string name="form_error_save_failed">No se ha podido guardar la suscripción. Inténtalo de nuevo</string>
     <!-- Pantalla de detección por Gmail -->

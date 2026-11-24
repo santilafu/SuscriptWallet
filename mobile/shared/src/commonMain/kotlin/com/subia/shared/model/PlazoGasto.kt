@@ -12,13 +12,15 @@ import kotlinx.datetime.LocalDate
  * @property pendiente cuotas restantes × importe (2 decimales, regla de [Periodicidad]).
  * @property cuotasTotales cobros de la serie en [inicio, fin] (la serie puede ir hacia atrás desde
  *   el ancla); `null` sin fecha de inicio, y entonces no hay barra de progreso.
+ * @property total cuotas totales × importe (2 decimales), `null` sin fecha de inicio.
  */
 data class PlazoGasto(
     val inicio: LocalDate?,
     val fin: LocalDate,
     val cuotasRestantes: Int,
     val pendiente: Double,
-    val cuotasTotales: Int?
+    val cuotasTotales: Int?,
+    val total: Double? = null
 ) {
     /** Cuotas ya pagadas (totales − restantes), o `null` sin fecha de inicio. */
     val cuotasPagadas: Int? get() = cuotasTotales?.let { (it - cuotasRestantes).coerceAtLeast(0) }
@@ -61,6 +63,13 @@ fun plazoGasto(sub: Subscription, hoy: LocalDate): PlazoGasto? {
     val inicio = sub.fechaInicioPlazo()
     val restantes = ocurrencias(sub, hoy, fin).size
     val totales = inicio?.let { serieDeCobros(sub, it, fin, kMinimo = Int.MIN_VALUE).size }
-    val pendiente = Periodicidad.aCifraVisible(Periodicidad.aDiezmilesimas(sub.precio) * restantes)
-    return PlazoGasto(inicio, fin, restantes, pendiente, totales)
+    val cuota = Periodicidad.aDiezmilesimas(sub.precio)
+    return PlazoGasto(
+        inicio = inicio,
+        fin = fin,
+        cuotasRestantes = restantes,
+        pendiente = Periodicidad.aCifraVisible(cuota * restantes),
+        cuotasTotales = totales,
+        total = totales?.let { Periodicidad.aCifraVisible(cuota * it) }
+    )
 }

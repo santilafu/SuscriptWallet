@@ -47,6 +47,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -168,6 +169,9 @@ fun SuscripcionFormScreen(
     val categoriaId by formViewModel.categoriaId.collectAsState()
     val esPrueba by formViewModel.esPrueba.collectAsState()
     val fechaFinPrueba by formViewModel.fechaFinPrueba.collectAsState()
+    val fechaInicio by formViewModel.fechaInicio.collectAsState()
+    val fechaFin by formViewModel.fechaFin.collectAsState()
+    val plazoEnVivo by formViewModel.plazoEnVivo.collectAsState()
     val categorias by formViewModel.categorias.collectAsState()
     val sugerencias by formViewModel.sugerencias.collectAsState()
     val catalogoSeleccionado by formViewModel.catalogoSeleccionado.collectAsState()
@@ -203,7 +207,7 @@ fun SuscripcionFormScreen(
     // editar una prueba antigua sin fecha) y, si no se avisara ya, Guardar quedaría desactivado
     // sin explicación.
     fun errorDe(campo: Campo): FormError? =
-        errores[campo]?.takeIf { campo in tocados || campo == Campo.FechaFinPrueba }
+        errores[campo]?.takeIf { campo in tocados || campo == Campo.FechaFinPrueba || campo == Campo.FechaFin }
     val errorGeneral = (uiState as? FormUiState.Error)?.error
         ?.takeIf { it == FormError.SinConexion || it == FormError.GuardadoFallido }
 
@@ -231,6 +235,8 @@ fun SuscripcionFormScreen(
     // ── Selectores de fecha (UTC en ambos sentidos: el DatePicker de M3 trabaja en UTC) ──
     var mostrarFechaRenovacion by remember { mutableStateOf(false) }
     var mostrarFechaFinPrueba by remember { mutableStateOf(false) }
+    var mostrarFechaInicio by remember { mutableStateOf(false) }
+    var mostrarFechaFin by remember { mutableStateOf(false) }
     val fuenteFechaRenovacion = remember { MutableInteractionSource() }
     val fuenteFechaFinPrueba = remember { MutableInteractionSource() }
     // Un campo readOnly consume el toque para enfocarse; escuchamos la pulsación para abrir el
@@ -597,6 +603,69 @@ fun SuscripcionFormScreen(
                     }
                 }
 
+                // ── Plazo (préstamos y financiaciones) ──────────────────────────────
+                SeccionFormulario(stringResource(R.string.plazo_section))
+                Text(
+                    text = stringResource(R.string.plazo_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                CampoFechaOpcional(
+                    fechaIso = fechaInicio,
+                    etiqueta = stringResource(R.string.plazo_start_label),
+                    descripcionElegir = stringResource(R.string.plazo_select_start),
+                    descripcionQuitar = stringResource(R.string.plazo_clear_start),
+                    error = null,
+                    enabled = !camposBloqueados,
+                    onAbrir = { mostrarFechaInicio = true },
+                    onQuitar = { formViewModel.fechaInicio.value = null }
+                )
+                CampoFechaOpcional(
+                    fechaIso = fechaFin,
+                    etiqueta = stringResource(R.string.plazo_end_label),
+                    descripcionElegir = stringResource(R.string.plazo_select_end),
+                    descripcionQuitar = stringResource(R.string.plazo_clear_end),
+                    error = errorDe(Campo.FechaFin),
+                    enabled = !camposBloqueados,
+                    onAbrir = { mostrarFechaFin = true },
+                    onQuitar = { formViewModel.fechaFin.value = null }
+                )
+                // "12 cuotas · 720,00 € en total" (con inicio) o "Quedan 12 cuotas · 720,00 €" (sin él).
+                val plazo = plazoEnVivo
+                AnimatedVisibility(visible = plazo != null) {
+                    if (plazo != null) {
+                        val totales = plazo.cuotasTotales
+                        val total = plazo.total
+                        Text(
+                            text = if (totales != null && total != null) {
+                                pluralStringResource(R.plurals.plazo_total_en_vivo, totales, totales, formatearImporte(total, moneda))
+                            } else {
+                                pluralStringResource(
+                                    R.plurals.plazo_quedan, plazo.cuotasRestantes,
+                                    plazo.cuotasRestantes, formatearImporte(plazo.pendiente, moneda)
+                                )
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                    }
+                }
+                if (mostrarFechaInicio) {
+                    SelectorDeFecha(
+                        fechaIso = fechaInicio ?: fechaRenovacion,
+                        onElegida = { formViewModel.fechaInicio.value = it },
+                        onCerrar = { mostrarFechaInicio = false }
+                    )
+                }
+                if (mostrarFechaFin) {
+                    SelectorDeFecha(
+                        fechaIso = fechaFin ?: fechaInicio ?: fechaRenovacion,
+                        onElegida = { formViewModel.fechaFin.value = it },
+                        onCerrar = { mostrarFechaFin = false }
+                    )
+                }
+
                 // ── Notas ───────────────────────────────────────────────────────────
                 SeccionFormulario(stringResource(R.string.notes_section))
 
@@ -686,6 +755,48 @@ private fun SelectorDeFecha(fechaIso: String, onElegida: (String) -> Unit, onCer
     ) {
         DatePicker(state = estado)
     }
+}
+
+/**
+ * Fecha opcional del plazo: se abre el selector tocando en cualquier parte del campo y, si ya
+ * tiene fecha, el icono final la quita (con su propia descripción para TalkBack).
+ */
+@Composable
+private fun CampoFechaOpcional(
+    fechaIso: String?,
+    etiqueta: String,
+    descripcionElegir: String,
+    descripcionQuitar: String,
+    error: FormError?,
+    enabled: Boolean,
+    onAbrir: () -> Unit,
+    onQuitar: () -> Unit
+) {
+    val fuente = remember { MutableInteractionSource() }
+    LaunchedEffect(fuente) {
+        fuente.interactions.collectLatest { if (it is PressInteraction.Release) onAbrir() }
+    }
+    OutlinedTextField(
+        value = fechaIsoLegible(fechaIso),
+        onValueChange = {},
+        readOnly = true,
+        label = { Text(etiqueta) },
+        trailingIcon = {
+            if (fechaIso != null) {
+                IconButton(onClick = onQuitar, enabled = enabled) {
+                    Icon(Icons.Default.Close, contentDescription = descripcionQuitar)
+                }
+            } else {
+                Icon(Icons.Default.CalendarToday, contentDescription = descripcionElegir)
+            }
+        },
+        isError = error != null,
+        supportingText = textoDeError(error),
+        interactionSource = fuente,
+        modifier = Modifier.fillMaxWidth(),
+        enabled = enabled,
+        singleLine = true
+    )
 }
 
 /** ISO → milisegundos de medianoche UTC (lo que espera el DatePicker de Material 3). */
@@ -869,6 +980,7 @@ private fun FormError.stringRes(): Int = when (this) {
     FormError.FechaRenovacionVacia -> R.string.form_error_renewal_date_required
     FormError.CategoriaNoSeleccionada -> R.string.form_error_category_required
     FormError.FechaFinPruebaVacia -> R.string.form_error_trial_end_required
+    FormError.PlazoInvertido -> R.string.form_error_plazo_invertido
     FormError.SinConexion -> R.string.form_error_offline
     FormError.GuardadoFallido -> R.string.form_error_save_failed
 }
