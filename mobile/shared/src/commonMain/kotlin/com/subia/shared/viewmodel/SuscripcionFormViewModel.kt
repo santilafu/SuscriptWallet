@@ -379,8 +379,8 @@ class SuscripcionFormViewModel(
      */
     fun prerellenarDesdeCatalogo(item: CatalogItem, cicloElegido: BillingCycle) {
         nombre.value = item.nombre
-        val precioElegido = item.precioPara(cicloElegido)
-        precioElegido?.let { precio.value = formatearPrecioParaCampo(it) }
+        // Sin precio (préstamos): se vacía, si no quedaba el importe del servicio elegido antes.
+        precio.value = item.precioPara(cicloElegido)?.let { formatearPrecioParaCampo(it) } ?: ""
         periodoFacturacion.value = cicloElegido.wire
         intervaloMeses.value = if (cicloElegido == BillingCycle.YEARLY) Periodicidad.MESES_EN_ANIO else 1
         moneda.value = item.moneda
@@ -605,7 +605,7 @@ class SuscripcionFormViewModel(
             "creatividad y foto" to "creatividad", "citas y social" to "citas",
             "hogar y suministros" to "hogar", "seguros" to "seguros",
             "telecomunicaciones" to "telecos", "transporte" to "transporte",
-            "belleza" to "belleza"
+            "belleza" to "belleza", "prestamos" to "prestamos"
         )
 
         /**

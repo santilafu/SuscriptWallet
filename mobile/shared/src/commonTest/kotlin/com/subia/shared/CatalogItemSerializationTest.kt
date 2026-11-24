@@ -1,5 +1,6 @@
 package com.subia.shared
 
+import com.subia.shared.model.BillingCycle
 import com.subia.shared.model.CatalogItem
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
@@ -105,6 +106,16 @@ class CatalogItemSerializationTest {
         assertFailsWith<Exception> {
             json.decodeFromString<CatalogItem>(broken)
         }
+    }
+
+    @Test
+    fun price_null_de_un_prestamo_se_lee_sin_precio() {
+        // Los préstamos del catálogo llegan con "price": null (cada usuario pone su cuota).
+        val item = json.decodeFromString<CatalogItem>(
+            """{"name": "Hipoteca", "price": null, "billingCycle": "MONTHLY", "categoryKey": "prestamos"}"""
+        )
+        assertNull(item.precioMensual)
+        assertNull(item.precioPara(BillingCycle.MONTHLY))
     }
 
     @Test

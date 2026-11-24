@@ -496,7 +496,8 @@ class SuscripcionFormViewModelTest {
         Category(id = 3, nombre = "Telecomunicaciones"),
         Category(id = 4, nombre = "Noticias y Lectura"),
         Category(id = 5, nombre = "Seguros"),
-        Category(id = 6, nombre = "Belleza")
+        Category(id = 6, nombre = "Belleza"),
+        Category(id = 7, nombre = "Préstamos")
     )
 
     @Test
@@ -512,6 +513,8 @@ class SuscripcionFormViewModelTest {
         assertEquals(1L, SuscripcionFormViewModel.buscarCategoriaDeClave("streaming", categoriasSembradas)?.id)
         // Sembrada en V16 del backend.
         assertEquals(6L, SuscripcionFormViewModel.buscarCategoriaDeClave("belleza", categoriasSembradas)?.id)
+        // Sembrada en V18 del backend (con tilde: la clave no la lleva).
+        assertEquals(7L, SuscripcionFormViewModel.buscarCategoriaDeClave("prestamos", categoriasSembradas)?.id)
     }
 
     @Test

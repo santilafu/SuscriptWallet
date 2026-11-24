@@ -199,6 +199,17 @@ class PeriodicidadFormularioTest {
         assertEquals("MONTHLY", vm.periodoFacturacion.value)
     }
 
+    @Test
+    fun catalogo_sinPrecio_vaciaElImporteDelServicioAnterior() = runTest {
+        val (vm, _) = vmCon()
+        vm.prerellenarDesdeCatalogo(CatalogItem(id = 1, nombre = "Netflix", precioMensual = 12.99, periodoFacturacion = "MONTHLY"), BillingCycle.MONTHLY)
+        assertTrue(vm.precio.value.isNotEmpty())
+        vm.prerellenarDesdeCatalogo(CatalogItem(id = 2, nombre = "Hipoteca", precioMensual = null, periodoFacturacion = "MONTHLY"), BillingCycle.MONTHLY)
+        assertEquals("Hipoteca", vm.nombre.value)
+        assertEquals("", vm.precio.value)
+        assertEquals("MONTHLY", vm.periodoFacturacion.value)
+    }
+
     // ── Importes en vivo ─────────────────────────────────────────────────────
 
     @Test
