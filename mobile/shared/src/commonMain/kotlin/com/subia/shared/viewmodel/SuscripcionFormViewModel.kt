@@ -188,7 +188,8 @@ class SuscripcionFormViewModel(
     /**
      * Plazo con lo tecleado ("12 cuotas · 720,00 € en total"), o `null` si no hay fecha de fin,
      * el importe o la fecha de renovación no son válidos o el plazo está invertido. Misma lógica
-     * que el detalle ([plazoGasto]); la fecha de renovación hace de ancla de la serie.
+     * que el detalle ([plazoGasto]): sin tocar fecha ni periodicidad el ancla es la guardada (como
+     * [fechaAEnviar]), no la fecha proyectada que se ve; si no, la fecha del formulario.
      */
     val plazoEnVivo: StateFlow<PlazoGasto?> = combine(
         combine(precio, periodoFacturacion, intervaloMeses) { p, periodo, intervalo -> Triple(p, periodo, intervalo) },
@@ -196,8 +197,11 @@ class SuscripcionFormViewModel(
     ) { (p, periodo, intervalo), (f, ini, fin) ->
         val importe = parsearPrecio(p)?.takeIf { it >= 0 && it <= Periodicidad.IMPORTE_MAXIMO }
         if (importe == null || f.isBlank() || fin.isNullOrBlank() || plazoInvertido(ini, fin)) return@combine null
+        val ancla = anclaCargada?.takeIf {
+            f == fechaCargada && periodo == periodoCargado && intervaloCoherente(periodo, intervalo) == intervaloCargado
+        } ?: f
         val borrador = Subscription(
-            nombre = "", precio = importe, periodoFacturacion = periodo, fechaRenovacion = f,
+            nombre = "", precio = importe, periodoFacturacion = periodo, fechaRenovacion = ancla,
             intervaloMeses = intervaloCoherente(periodo, intervalo), fechaInicio = ini, fechaFin = fin
         )
         plazoGasto(borrador, hoy())
@@ -358,10 +362,10 @@ class SuscripcionFormViewModel(
         intervaloCargado = intervaloEfectivo()
         // Próxima renovación calculada con el "hoy" del móvil desde el ancla (R3-02).
         val proxima = proximaRenovacion(suscripcion, hoy())?.toString() ?: suscripcion.fechaRenovacion
-        fechaRenovacion.value = proxima
         anclaCargada = suscripcion.fechaAncla?.trim()?.takeIf { it.isNotEmpty() }
         fechaCargada = proxima
         periodoCargado = suscripcion.periodoFacturacion
+        fechaRenovacion.value = proxima
         categoriaId.value = suscripcion.categoriaId
         notas.value = suscripcion.notas
         esPrueba.value = suscripcion.esPrueba

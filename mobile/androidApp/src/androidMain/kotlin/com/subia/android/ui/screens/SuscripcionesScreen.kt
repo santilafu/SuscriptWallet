@@ -54,8 +54,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -324,7 +327,7 @@ private fun ListaSuscripciones(
     // divisa. Se suma en diezmilésimas y solo el total se redondea a céntimos (regla de
     // Periodicidad): sumar Doubles ya redondeados podía desviarse un céntimo del Inicio.
     // Sin los terminados (fecha de fin pasada): ya no cuentan, como en el Inicio.
-    val hoy = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
+    val hoy = rememberHoy()
     val activas = suscripciones.filter { it.cuentaEnTotales(hoy) }
     // Los terminados van al final (orden estable: el resto conserva el suyo) y atenuados: siguen
     // en la lista como historial, pero no compiten con los gastos vivos.
@@ -487,6 +490,21 @@ private fun FilaDeslizable(
 /** Desde esta escala de fuente la cifra mensual de la tarjeta va bajo el nombre (ver [SuscripcionCard]). */
 private const val ESCALA_FUENTE_TARJETA_APILADA = 1.3f
 
+/**
+ * "Hoy" del móvil, recalculado cada vez que la pantalla vuelve a primer plano: con un `remember`
+ * sin clave se quedaba en el día en que se abrió si la app seguía abierta al pasar la medianoche.
+ * shortcut: no avanza a medianoche con la pantalla delante; si hiciera falta, un ticker diario.
+ */
+@Composable
+internal fun rememberHoy(): LocalDate {
+    var hoy by remember { mutableStateOf(Clock.System.todayIn(TimeZone.currentSystemDefault())) }
+    LifecycleResumeEffect(Unit) {
+        hoy = Clock.System.todayIn(TimeZone.currentSystemDefault())
+        onPauseOrDispose {}
+    }
+    return hoy
+}
+
 /** Opacidad de las tarjetas de gastos terminados (historial, no compiten con los vivos). */
 private const val ALFA_TERMINADO = 0.6f
 
@@ -521,8 +539,10 @@ private fun SuscripcionCard(
     )
     // Plazo (préstamos): terminado → la etiqueta "Terminado" en lugar de la renovación, que ya no
     // llega; con cuotas pendientes, "Quedan N cuotas" en una línea corta.
-    val terminado = sub.terminado(hoy)
-    val cuotasRestantes = if (terminado) null else plazoGasto(sub, hoy)?.cuotasRestantes
+    val (terminado, cuotasRestantes) = remember(sub, hoy) {
+        val fin = sub.terminado(hoy)
+        fin to (if (fin) null else plazoGasto(sub, hoy)?.cuotasRestantes)
+    }
     val renueva = if (terminado) stringResource(R.string.plazo_terminado)
     else stringResource(R.string.renews_on, fechaIsoCorta(proximaRenovacionIso(sub)))
     val detalleCobro = if (periodo.esMensual) renueva

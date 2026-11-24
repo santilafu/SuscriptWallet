@@ -428,6 +428,25 @@ class SuscripcionFormViewModelTest {
         assertTrue(vm.hayCambios.first { it })
     }
 
+    @Test
+    fun plazoEnVivo_sinTocarLaFecha_usaElAnclaGuardada_comoElDetalle() = runTest {
+        // Ancla 31-ene, hoy 10-feb: se muestra el 28-feb. Con fin 30-mar el siguiente sería el
+        // 31-mar (fuera): 1 cuota. Con el 28-feb como ancla salían 2 (28-feb y 28-mar).
+        val vm = crearViewModel(
+            respuestas = mapOf(
+                "/subscriptions/9" to """{"data":{"id":9,"name":"Cetelem","price":60.0,"billingCycle":"MONTHLY","renewalDate":"2026-02-28","renewalAnchor":"2026-01-31","categoryId":2,"fechaFin":"2026-03-30"}}"""
+            ),
+            hoy = LocalDate(2026, 2, 10)
+        )
+        vm.cargarParaEditar(9L)
+        vm.cargandoEdicion.first { !it }
+        assertEquals("2026-02-28", vm.fechaRenovacion.value)
+        assertEquals(1, vm.plazoEnVivo.first { it != null }!!.cuotasRestantes)
+        // Si el usuario cambia la fecha, la nueva fecha es el ancla.
+        vm.fechaRenovacion.value = "2026-02-27"
+        assertEquals(2, vm.plazoEnVivo.first { it?.cuotasRestantes != 1 }!!.cuotasRestantes)
+    }
+
     // ── Fixtures ─────────────────────────────────────────────────────────────
 
     /**
@@ -438,6 +457,7 @@ class SuscripcionFormViewModelTest {
         respuestas: Map<String, String> = emptyMap(),
         // Retiene la respuesta de /categories hasta completarse (para reproducir la carrera).
         esperaCategorias: CompletableDeferred<Unit>? = null,
+        hoy: LocalDate = LocalDate(2026, 10, 15),
         onRequest: (String) -> Unit = {},
         onRequestBody: (String) -> Unit = {}
     ): SuscripcionFormViewModel {
@@ -469,7 +489,7 @@ class SuscripcionFormViewModelTest {
             categoryRepository = CategoryRepository(api),
             // "Hoy" fijo: con el reloj real, la renovación del 3-nov-2026 de los fixtures pasó a
             // proyectarse al 3-dic en cuanto llegó esa fecha y el test empezó a fallar.
-            hoy = { LocalDate(2026, 10, 15) }
+            hoy = { hoy }
         )
     }
 

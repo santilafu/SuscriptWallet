@@ -78,6 +78,40 @@ class PlazoGastoTest {
     }
 
     @Test
+    fun renovacionGuardadaEnElFuturo_seCuentaDesdeElla_yPagadasSoloAntesDeHoy() {
+        // Hoy 10-oct, próxima renovación guardada 15-dic, fin 15-mar: dic, ene, feb, mar → 4.
+        val s = sub("2026-12-15", fin = "2027-03-15")
+        assertEquals(4, restantes(s))
+        assertEquals(d("2026-12-15"), proximaRenovacion(s, hoy))
+        assertFalse(s.terminado(hoy))
+        assertEquals(400.0, plazoGasto(s, hoy)!!.pendiente)
+        // Con inicio pasado: pagadas jul, ago, sep = 3 (oct y nov no llegan) → barra 3/7, no 5/9.
+        val conInicio = plazoGasto(sub("2026-12-15", inicio = "2026-07-15", fin = "2027-03-15"), hoy)!!
+        assertEquals(4, conInicio.cuotasRestantes)
+        assertEquals(7, conInicio.cuotasTotales)
+        assertEquals(3, conInicio.cuotasPagadas)
+        assertTrue(sub("2026-12-15", fin = "2026-11-15").terminado(hoy))
+    }
+
+    @Test
+    fun pagadasSonLosCobrosAnterioresAHoy_renovacionGuardadaElMesQueViene() {
+        // Hoy 24-nov, inicio 15-mar, renovación guardada 15-dic, fin 15-feb: mar..nov = 9 pagadas, 3 restantes.
+        val plazo = plazoGasto(sub("2026-12-15", inicio = "2026-03-15", fin = "2027-02-15"), d("2026-11-24"))!!
+        assertEquals(9, plazo.cuotasPagadas)
+        assertEquals(3, plazo.cuotasRestantes)
+        assertEquals(12, plazo.cuotasTotales)
+    }
+
+    @Test
+    fun terminadoConInicio_lasPagadasSeCortanEnElFin() {
+        val plazo = plazoGasto(sub("2025-01-15", inicio = "2025-01-15", fin = "2025-12-15"), hoy)!!
+        assertEquals(0, plazo.cuotasRestantes)
+        assertEquals(12, plazo.cuotasPagadas)
+        assertEquals(12, plazo.cuotasTotales)
+        assertEquals(1f, plazo.progreso)
+    }
+
+    @Test
     fun sinFechaDeFin_noHayPlazoNiTerminado() {
         val s = sub("2026-01-15", inicio = "2026-01-15")
         assertNull(plazoGasto(s, hoy))
@@ -153,6 +187,12 @@ class PlazoGastoTest {
         assertEquals(12, cobros(sub("2026-01-15", fin = "2030-12-15")).numCobros)
         assertEquals(4, cobros(sub("2026-01-15", fin = "2030-12-15", intervalo = 3)).numCobros)
         assertEquals(52, cobros(sub("2026-10-13", fin = "2030-12-15", periodo = "WEEKLY")).numCobros)
+        assertEquals(4, cobros(sub("2026-12-15", fin = "2027-03-15")).numCobros)
+        // Inicio dentro de 8 meses y fin dentro de 3 años: en los próximos 12 meses (hasta 9-oct-2027)
+        // solo caen jun, jul, ago y sep → 4 cuotas (400 €), no 12.
+        val futuro = cobros(sub("2026-10-15", inicio = "2027-06-15", fin = "2029-10-15"))
+        assertEquals(4, futuro.numCobros)
+        assertEquals(400.0, futuro.importe)
     }
 
     // ── Terminado fuera de totales, calendario y avisos ──────────────────────

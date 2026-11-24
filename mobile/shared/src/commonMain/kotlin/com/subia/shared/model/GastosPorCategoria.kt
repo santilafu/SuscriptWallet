@@ -1,6 +1,9 @@
 package com.subia.shared.model
 
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 
 /** Las dos vistas de la tarjeta "Gasto por categoría" del Inicio. */
 enum class VistaCategorias {
@@ -136,8 +139,8 @@ private fun gastosDelMes(subs: List<Subscription>, hoy: LocalDate): List<GastoIn
 
 /**
  * "Al año": importe × 12 / intervalo de cada suscripción activa (semanal × 52). Un gasto con fecha
- * de fin suma solo lo que le queda: mín(cuotas restantes, cobros al año) × importe (decisión del
- * usuario, igual en el backend). Los terminados no suman.
+ * de fin suma solo las cuotas que caen en los próximos 12 meses × importe (decisión del usuario,
+ * igual en el backend). Los terminados no suman.
  */
 private fun gastosDelAnio(subs: List<Subscription>, hoy: LocalDate): List<GastoInterno> =
     subs.filter { it.cuentaEnTotales(hoy) }.map { sub ->
@@ -162,15 +165,22 @@ private fun gastosDelAnio(subs: List<Subscription>, hoy: LocalDate): List<GastoI
     }
 
 /**
- * Lo que suma un gasto "Al año" (diezmilésimas): con fecha de fin, mín(cuotas restantes, cobros
- * al año) × importe; sin ella, la tasa anual. Es la misma cifra que "Gasto anual" en la web.
+ * Lo que suma un gasto "Al año" (diezmilésimas): con fecha de fin, las cuotas de los próximos 12
+ * meses × importe; sin ella, la tasa anual. Es la misma cifra que "Gasto anual" en la web.
  */
-internal fun Subscription.totalAlAnioInterno(hoy: LocalDate): Long =
+fun Subscription.totalAlAnioInterno(hoy: LocalDate): Long =
     restantesAlAnio(hoy)?.let { Periodicidad.aDiezmilesimas(precio) * it } ?: totalAnualInterno()
 
-/** Cuotas restantes si son menos que los cobros de un año; null si el gasto suma su tasa anual. */
-private fun Subscription.restantesAlAnio(hoy: LocalDate): Int? =
-    plazoGasto(this, hoy)?.cuotasRestantes?.takeIf { it < cobrosAlAnio(periodoCobro()) }
+/**
+ * Cuotas en [primer cobro pendiente, mín(fin, hoy + 12 meses − 1 día)] si son menos que los cobros
+ * de un año; null si el gasto suma su tasa anual (sin fecha de fin o con un año completo).
+ * Misma regla que `RenewalDates.cuotasProximoAnio` del backend.
+ */
+private fun Subscription.restantesAlAnio(hoy: LocalDate): Int? {
+    if (fechaFinPlazo() == null) return null
+    val finAnio = hoy.plus(1, DateTimeUnit.YEAR).minus(1, DateTimeUnit.DAY)
+    return ocurrencias(this, hoy, finAnio).size.takeIf { it < cobrosAlAnio(periodoCobro()) }
+}
 
 /** Cobros en un año según el periodo: 12 / meses, o 52, 26 y 365 en los ciclos por días. */
 private fun cobrosAlAnio(periodo: PeriodoCobro): Int = when (periodo) {

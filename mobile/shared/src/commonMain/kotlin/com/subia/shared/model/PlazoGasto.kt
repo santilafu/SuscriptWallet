@@ -1,6 +1,8 @@
 package com.subia.shared.model
 
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
 
 /**
  * Plazo de un gasto con fecha de fin (préstamo, financiación): cuántas cuotas quedan, cuánto
@@ -10,8 +12,10 @@ import kotlinx.datetime.LocalDate
  * @property cuotasRestantes cobros de la serie en [max(hoy, inicio), fin]; el de hoy cuenta como
  *   pendiente, igual que en [proximaRenovacion].
  * @property pendiente cuotas restantes × importe (2 decimales, regla de [Periodicidad]).
- * @property cuotasTotales cobros de la serie en [inicio, fin] (la serie puede ir hacia atrás desde
- *   el ancla); `null` sin fecha de inicio, y entonces no hay barra de progreso.
+ * @property cuotasTotales pagadas + restantes; pagadas son los cobros de la serie en
+ *   [inicio, mín(fin, ayer)] (la serie puede ir hacia atrás desde el ancla), así que con la
+ *   renovación guardada en el futuro los cobros entre hoy y ella no cuentan. `null` sin fecha de
+ *   inicio, y entonces no hay barra de progreso.
  * @property total cuotas totales × importe (2 decimales), `null` sin fecha de inicio.
  */
 data class PlazoGasto(
@@ -22,7 +26,7 @@ data class PlazoGasto(
     val cuotasTotales: Int?,
     val total: Double? = null
 ) {
-    /** Cuotas ya pagadas (totales − restantes), o `null` sin fecha de inicio. */
+    /** Cuotas ya pagadas (cobros anteriores a hoy), o `null` sin fecha de inicio. */
     val cuotasPagadas: Int? get() = cuotasTotales?.let { (it - cuotasRestantes).coerceAtLeast(0) }
 
     /** Progreso 0..1 (pagadas / totales) para la barra, o `null` sin fecha de inicio o sin cuotas. */
@@ -62,7 +66,9 @@ fun plazoGasto(sub: Subscription, hoy: LocalDate): PlazoGasto? {
     val fin = sub.fechaFinPlazo() ?: return null
     val inicio = sub.fechaInicioPlazo()
     val restantes = ocurrencias(sub, hoy, fin).size
-    val totales = inicio?.let { serieDeCobros(sub, it, fin, kMinimo = Int.MIN_VALUE).size }
+    val ayer = hoy.minus(1, DateTimeUnit.DAY)
+    val pagadas = inicio?.let { serieDeCobros(sub, it, minOf(fin, ayer), kMinimo = Int.MIN_VALUE).size }
+    val totales = pagadas?.let { it + restantes }
     val cuota = Periodicidad.aDiezmilesimas(sub.precio)
     return PlazoGasto(
         inicio = inicio,

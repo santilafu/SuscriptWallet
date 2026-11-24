@@ -14,7 +14,7 @@ import com.subia.shared.model.Periodicidad
 import com.subia.shared.model.PeriodoCobro
 import com.subia.shared.model.equivalenteMensualInterno
 import com.subia.shared.model.periodoCobro
-import com.subia.shared.model.totalAnualInterno
+import com.subia.shared.model.totalAlAnioInterno
 import com.subia.shared.model.plazoGasto
 import com.subia.shared.model.terminado
 import com.subia.android.ui.components.EaseOutFuerte
@@ -25,9 +25,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.semantics
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.todayIn
 import java.util.Locale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -200,7 +197,7 @@ fun SuscripcionDetalleScreen(
                     .padding(innerPadding)
                     .verticalScroll(rememberScrollState())
             ) {
-                val hoy = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
+                val hoy = rememberHoy()
                 val terminado = suscripcion.terminado(hoy)
                 val plazo = plazoGasto(suscripcion, hoy)
                 // Cabecera: logo + nombre, sin gradientes. El logo del servicio pone el color (T-06).
@@ -268,11 +265,15 @@ fun SuscripcionDetalleScreen(
                         formatearImporte(Periodicidad.aCifraVisible(suscripcion.equivalenteMensualInterno()), suscripcion.moneda)
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
-                    DetalleRow(
-                        stringResource(R.string.resumen_anual_total_label),
-                        formatearImporte(Periodicidad.aCifraVisible(suscripcion.totalAnualInterno()), suscripcion.moneda)
-                    )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
+                    // Misma cifra que "Al año" del Inicio: un préstamo suma solo las cuotas de los
+                    // próximos 12 meses. Un terminado no la muestra (como sus filas de plazo).
+                    if (!terminado) {
+                        DetalleRow(
+                            stringResource(R.string.resumen_anual_total_label),
+                            formatearImporte(Periodicidad.aCifraVisible(suscripcion.totalAlAnioInterno(hoy)), suscripcion.moneda)
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
+                    }
                     // Terminado: en vez de la próxima renovación (que ya no llega), cuándo terminó.
                     if (terminado && plazo != null) {
                         DetalleRow(stringResource(R.string.plazo_ended_label), fechaIsoLegible(plazo.fin.toString()))
