@@ -51,9 +51,10 @@ class SubscriptionController(
     @GetMapping
     fun list(@AuthenticationPrincipal userDetails: UserDetails, model: Model): String {
         val userId = resolveUserId(userDetails)
-        val stored = subscriptionService.findAll(userId)
-        val subs = stored.map { it.projected() }
         val today = LocalDate.now(clock)
+        // Los terminados al final (orden estable), como en la app: siguen visibles como historial.
+        val stored = subscriptionService.findAll(userId).sortedBy { com.subia.service.RenewalDates.isTerminada(it, today) }
+        val subs = stored.map { it.projected() }
         model.addAttribute("subscriptions", subs)
         // Plazo (cuotas restantes / terminado) por id, desde el ancla guardada y no la proyectada.
         model.addAttribute("plazos", plazos(stored, today))

@@ -210,6 +210,11 @@ class PlazoIntegrationTest {
         assertTrue(html.contains("Terminado"), "falta la etiqueta Terminado")
         assertTrue(html.contains("Terminó el"), "falta la fecha de fin del terminado")
         assertTrue(html.contains("Quedan 3 cuotas"), "falta Quedan 3 cuotas")
+        // Los terminados van al final, como en la app (Coche se guardó antes que Vitaldent).
+        assertTrue(
+            html.indexOf(">Vitaldent</h3>") in 0 until html.indexOf(">Coche</h3>"),
+            "el terminado debe ir después de los vigentes"
+        )
     }
 
     @Test
