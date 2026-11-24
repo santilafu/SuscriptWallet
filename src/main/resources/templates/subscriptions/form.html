@@ -295,15 +295,15 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label for="fieldFechaInicio" class="block text-xs font-medium text-slate-400 mb-1" th:text="#{form.field.start-date}">Desde</label>
-                            <input type="date" name="fechaInicio" id="fieldFechaInicio"
+                            <input type="date" name="fechaInicio" id="fieldFechaInicio" min="2000-01-01" max="2100-12-31"
                                    class="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
                                    th:value="${isEntity and sub.fechaInicio != null ? sub.fechaInicio : ''}">
                         </div>
                         <div>
                             <label for="fieldFechaFin" class="block text-xs font-medium text-slate-400 mb-1" th:text="#{form.field.end-date}">Hasta</label>
-                            <input type="date" name="fechaFin" id="fieldFechaFin"
+                            <input type="date" name="fechaFin" id="fieldFechaFin" max="2100-12-31"
                                    class="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
-                                   th:min="${isEntity and sub.fechaInicio != null ? sub.fechaInicio : ''}"
+                                   th:min="${isEntity and sub.fechaInicio != null ? sub.fechaInicio : '2000-01-01'}"
                                    th:value="${isEntity and sub.fechaFin != null ? sub.fechaFin : ''}">
                         </div>
                     </div>
@@ -460,7 +460,7 @@ var i18n = {
     var fechaInicio = document.getElementById('fieldFechaInicio');
     var fechaFin = document.getElementById('fieldFechaFin');
     if (fechaInicio && fechaFin) {
-        fechaInicio.addEventListener('change', function () { fechaFin.min = fechaInicio.value; });
+        fechaInicio.addEventListener('change', function () { fechaFin.min = fechaInicio.value || '2000-01-01'; });
     }
 
     // Submit: si hay un campo inválido en un paso oculto, se salta a ese paso y se muestra el aviso.

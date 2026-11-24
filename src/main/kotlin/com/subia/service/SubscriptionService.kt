@@ -62,6 +62,9 @@ class SubscriptionService(private val repo: SubscriptionRepository) {
         /** Máximo admitido por la columna `price DECIMAL(10,2)`. */
         val MAX_PRICE = BigDecimal("99999999.99")
         private val CURRENCY_REGEX = Regex("^[A-Z]{3}$")
+        /** Rango admitido para fechaInicio/fechaFin (también lo usan los `min`/`max` del formulario web). */
+        val FECHA_PLAZO_MIN: java.time.LocalDate = java.time.LocalDate.of(2000, 1, 1)
+        val FECHA_PLAZO_MAX: java.time.LocalDate = java.time.LocalDate.of(2100, 12, 31)
 
         /**
          * Valida y normaliza una suscripción contra los límites del esquema (V1/V4/V15/V17).
@@ -86,6 +89,13 @@ class SubscriptionService(private val repo: SubscriptionRepository) {
             val (cycle, intervalo) = Periodicidad.normalizar(s.billingCycle, s.intervaloMeses)
             val inicio = s.fechaInicio
             val fin = s.fechaFin
+            // Rango acotado: un 9999-12-31 semanal haría dar cientos de miles de vueltas al
+            // recuento de cuotas (RenewalDates.cobrosEntre) en cada dashboard.
+            listOfNotNull(inicio, fin).forEach {
+                require(!it.isBefore(FECHA_PLAZO_MIN) && !it.isAfter(FECHA_PLAZO_MAX)) {
+                    "Las fechas de inicio y fin deben estar entre $FECHA_PLAZO_MIN y $FECHA_PLAZO_MAX"
+                }
+            }
             if (inicio != null && fin != null)
                 require(!inicio.isAfter(fin)) { "La fecha de inicio no puede ser posterior a la fecha de fin" }
             return s.copy(

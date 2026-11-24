@@ -130,7 +130,8 @@ class PlazoIntegrationTest {
         val owner = newUser(); val cat = newCategory()
         listOf(
             mapOf("fechaInicio" to "2027-02-01", "fechaFin" to "2027-01-01"),
-            mapOf("fechaFin" to "01/01/2027")
+            mapOf("fechaFin" to "01/01/2027"),
+            mapOf("fechaFin" to "9999-12-31")
         ).forEach { malo ->
             mockMvc.post("/api/subscriptions") {
                 with(jwt().jwt { it.subject(owner.email) }); header("X-Forwarded-For", ip())
@@ -142,6 +143,16 @@ class PlazoIntegrationTest {
             }
         }
         assertEquals(0, subscriptionRepository.findByUserId(owner.id).size)
+
+        // El límite superior sí se acepta
+        mockMvc.post("/api/subscriptions") {
+            with(jwt().jwt { it.subject(owner.email) }); header("X-Forwarded-For", ip())
+            contentType = MediaType.APPLICATION_JSON
+            content = body(cat.id, mapOf("fechaFin" to "2100-12-31"))
+        }.andExpect {
+            status { isCreated() }
+            jsonPath("$.data.fechaFin") { value("2100-12-31") }
+        }
     }
 
     @Test

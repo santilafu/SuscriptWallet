@@ -140,4 +140,13 @@ class PlazoGastoTest {
         SubscriptionService.validated(sub("2024-01-15", inicio = "2024-01-15", fin = "2025-01-15"))
         SubscriptionService.validated(sub("2026-01-15", inicio = "2026-01-15", fin = "2026-01-15"))
     }
+
+    @Test
+    fun `validated acota las fechas del plazo entre 2000-01-01 y 2100-12-31`() {
+        listOf(sub("2026-01-15", fin = "9999-12-31"), sub("2026-01-15", inicio = "1999-12-31"),
+            sub("2026-01-15", inicio = "2026-01-15", fin = "2101-01-01")).forEach { mala ->
+            assertThrows(IllegalArgumentException::class.java) { SubscriptionService.validated(mala) }
+        }
+        SubscriptionService.validated(sub("2026-01-15", inicio = "2000-01-01", fin = "2100-12-31"))
+    }
 }
