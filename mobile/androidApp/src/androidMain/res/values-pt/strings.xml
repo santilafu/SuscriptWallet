@@ -307,6 +307,21 @@
     <string name="plazo_clear_start">Remover data de início</string>
     <string name="plazo_clear_end">Remover data de fim</string>
     <string name="form_error_plazo_invertido">A data de fim não pode ser anterior à data de início</string>
+    <!-- Prazo na lista e no detalhe -->
+    <string name="plazo_terminado">Terminado</string>
+    <string name="plazo_ended_label">Terminou em</string>
+    <string name="plazo_cuotas_restantes">Prestações em falta</string>
+    <string name="plazo_pendiente">Por pagar</string>
+    <plurals name="plazo_quedan_corto">
+        <item quantity="one">Falta %d prestação</item>
+        <item quantity="many">Faltam %d prestações</item>
+        <item quantity="other">Faltam %d prestações</item>
+    </plurals>
+    <plurals name="plazo_progreso">
+        <item quantity="one">%1$d de %2$d prestação paga</item>
+        <item quantity="many">%1$d de %2$d prestações pagas</item>
+        <item quantity="other">%1$d de %2$d prestações pagas</item>
+    </plurals>
     <plurals name="plazo_total_en_vivo">
         <item quantity="one">%1$d prestação · %2$s no total</item>
         <item quantity="many">%1$d prestações · %2$s no total</item>

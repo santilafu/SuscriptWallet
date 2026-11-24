@@ -152,7 +152,8 @@ internal fun serieDeCobros(
     while (fechaCobro(ancla, ciclo, k) < desde) k++
 
     val resultado = mutableListOf<LocalDate>()
-    // Guardia contra bucles: 10 000 cobros cubren de sobra una hipoteca a 40 años o un semanal a 50.
+    // shortcut: tope de iteraciones; si hiciera falta, cálculo en forma cerrada
+    // (10 000 cobros cubren un semanal en todo el rango que admite el backend, 2000-2100).
     var guardia = 0
     while (guardia++ < MAX_COBROS_SERIE) {
         val fecha = fechaCobro(ancla, ciclo, k)

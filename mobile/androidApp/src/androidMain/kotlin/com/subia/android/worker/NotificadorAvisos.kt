@@ -16,6 +16,7 @@ import com.subia.android.ui.components.formatearImporte
 import com.subia.android.ui.components.textoPeriodo
 import com.subia.android.ui.theme.Violet600
 import com.subia.android.util.NotificacionesPermiso
+import com.subia.shared.model.cuentaEnTotales
 import com.subia.shared.model.AvisoRenovacion
 import com.subia.shared.model.Subscription
 import com.subia.shared.model.TipoAviso
@@ -116,7 +117,7 @@ object NotificadorAvisos {
         if (!puedePublicar(context)) return false
         crearCanal(context)
         val hoy = Clock.System.todayIn(TimeZone.currentSystemDefault())
-        val sub = CacheAvisos.leerSuscripciones(context)?.firstOrNull { it.activa }
+        val sub = CacheAvisos.leerSuscripciones(context)?.firstOrNull { it.cuentaEnTotales(hoy) }
             ?: Subscription(
                 id = 0, nombre = "Netflix", precio = 12.99, moneda = "EUR",
                 periodoFacturacion = "MONTHLY", fechaRenovacion = hoy.plus(3, DateTimeUnit.DAY).toString()

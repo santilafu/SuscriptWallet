@@ -17,7 +17,10 @@ private val CSV_HEADER = listOf(
     "es_prueba",
     "fecha_fin_prueba",
     // Al final para no mover las columnas de quien ya lea el CSV por posición.
-    "intervalo_meses"
+    "intervalo_meses",
+    // Plazo (préstamos y financiaciones), también al final; vacías si el gasto no tiene.
+    "fecha_inicio",
+    "fecha_fin"
 )
 
 /**
@@ -44,7 +47,9 @@ fun List<Subscription>.toCsv(): String {
             sub.esPrueba.toString(),
             sub.fechaFinPrueba.orEmpty(),
             // Meses entre cobros (1, 2, 3, 6 o 12); vacío en semanales, que no van por meses.
-            sub.mesesPorCobro()?.toString().orEmpty()
+            sub.mesesPorCobro()?.toString().orEmpty(),
+            sub.fechaInicio.orEmpty(),
+            sub.fechaFin.orEmpty()
         )
         sb.append(row.joinToString(",") { escapeCsvField(it) })
         sb.append('\n')

@@ -742,7 +742,13 @@ fun SuscripcionFormScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SelectorDeFecha(fechaIso: String, onElegida: (String) -> Unit, onCerrar: () -> Unit) {
-    val estado = rememberDatePickerState(initialSelectedDateMillis = fechaIso.aMillisUtc() ?: hoyMillisUtc())
+    // El backend rechaza (400) fechas fuera de 2000-2100: el selector no deja elegirlas. Una fecha
+    // guardada fuera del rango abre en hoy (el DatePicker exige que la inicial esté dentro).
+    val inicial = fechaIso.takeIf { runCatching { LocalDate.parse(it).year in ANIOS_PERMITIDOS }.getOrDefault(false) }
+    val estado = rememberDatePickerState(
+        initialSelectedDateMillis = inicial?.aMillisUtc() ?: hoyMillisUtc(),
+        yearRange = ANIOS_PERMITIDOS
+    )
     DatePickerDialog(
         onDismissRequest = onCerrar,
         confirmButton = {
@@ -798,6 +804,9 @@ private fun CampoFechaOpcional(
         singleLine = true
     )
 }
+
+/** Años que acepta el backend en las fechas de un gasto. */
+private val ANIOS_PERMITIDOS = 2000..2100
 
 /** ISO → milisegundos de medianoche UTC (lo que espera el DatePicker de Material 3). */
 private fun String.aMillisUtc(): Long? = runCatching {

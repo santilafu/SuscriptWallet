@@ -296,6 +296,19 @@
     <string name="plazo_clear_start">Quitar fecha de inicio</string>
     <string name="plazo_clear_end">Quitar fecha de fin</string>
     <string name="form_error_plazo_invertido">La fecha de fin no puede ser anterior a la de inicio</string>
+    <!-- Plazo en la lista y el detalle -->
+    <string name="plazo_terminado">Terminado</string>
+    <string name="plazo_ended_label">Terminó el</string>
+    <string name="plazo_cuotas_restantes">Cuotas restantes</string>
+    <string name="plazo_pendiente">Pendiente de pagar</string>
+    <plurals name="plazo_quedan_corto">
+        <item quantity="one">Queda %d cuota</item>
+        <item quantity="other">Quedan %d cuotas</item>
+    </plurals>
+    <plurals name="plazo_progreso">
+        <item quantity="one">%1$d de %2$d cuota pagada</item>
+        <item quantity="other">%1$d de %2$d cuotas pagadas</item>
+    </plurals>
     <plurals name="plazo_total_en_vivo">
         <item quantity="one">%1$d cuota · %2$s en total</item>
         <item quantity="other">%1$d cuotas · %2$s en total</item>

@@ -58,6 +58,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
@@ -91,6 +92,9 @@ import com.subia.shared.model.Periodicidad
 import com.subia.shared.model.Subscription
 import com.subia.shared.model.equivalenteMensualInterno
 import com.subia.shared.model.periodoCobro
+import com.subia.shared.model.cuentaEnTotales
+import com.subia.shared.model.plazoGasto
+import com.subia.shared.model.terminado
 import com.subia.shared.viewmodel.SuscripcionesUiState
 import com.subia.shared.viewmodel.SuscripcionesViewModel
 import kotlinx.coroutines.launch
@@ -99,6 +103,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.daysUntil
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.todayIn
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Servicios propuestos en el estado vacío: los que casi todo el mundo paga. */
@@ -318,7 +323,12 @@ private fun ListaSuscripciones(
     // del Inicio: suma de equivalentes mensuales (importe / intervalo; semanal × 52 / 12) por
     // divisa. Se suma en diezmilésimas y solo el total se redondea a céntimos (regla de
     // Periodicidad): sumar Doubles ya redondeados podía desviarse un céntimo del Inicio.
-    val activas = suscripciones.filter { it.activa }
+    // Sin los terminados (fecha de fin pasada): ya no cuentan, como en el Inicio.
+    val hoy = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
+    val activas = suscripciones.filter { it.cuentaEnTotales(hoy) }
+    // Los terminados van al final (orden estable: el resto conserva el suyo) y atenuados: siguen
+    // en la lista como historial, pero no compiten con los gastos vivos.
+    val ordenadas = remember(suscripciones, hoy) { suscripciones.sortedBy { it.terminado(hoy) } }
     val totalesMensuales = activas
         .groupBy { it.moneda }
         .mapValues { (_, subs) -> Periodicidad.aCifraVisible(subs.sumOf { it.equivalenteMensualInterno() }) }
@@ -403,9 +413,9 @@ private fun ListaSuscripciones(
                 }
             }
         } else {
-            items(suscripciones, key = { it.id }) { sub ->
+            items(ordenadas, key = { it.id }) { sub ->
                 val fila: @Composable () -> Unit = {
-                    SuscripcionCard(sub, onNavigateToDetalle)
+                    SuscripcionCard(sub, hoy, onNavigateToDetalle)
                 }
                 if (onEliminar == null) {
                     Box(margenFilas.animateItem()) { fila() }
@@ -477,11 +487,19 @@ private fun FilaDeslizable(
 /** Desde esta escala de fuente la cifra mensual de la tarjeta va bajo el nombre (ver [SuscripcionCard]). */
 private const val ESCALA_FUENTE_TARJETA_APILADA = 1.3f
 
+/** Opacidad de las tarjetas de gastos terminados (historial, no compiten con los vivos). */
+private const val ALFA_TERMINADO = 0.6f
+
 /** Calle derecha de la lista en horizontal para que el botón "+" no tape filas. */
 private val CalleFab = 72.dp
 
 @Composable
-private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Unit, modifier: Modifier = Modifier) {
+private fun SuscripcionCard(
+    sub: Subscription,
+    hoy: LocalDate,
+    onNavigateToDetalle: (Long) -> Unit,
+    modifier: Modifier = Modifier
+) {
     // Días restantes de prueba, si procede. Una fecha nula o mal formada (p. ej. creada desde
     // la web) no debe tirar la lista.
     val fechaFinPrueba = sub.fechaFinPrueba
@@ -501,7 +519,12 @@ private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Un
         R.string.subs_monthly_total,
         formatearImporte(Periodicidad.aCifraVisible(sub.equivalenteMensualInterno()), sub.moneda)
     )
-    val renueva = stringResource(R.string.renews_on, fechaIsoCorta(proximaRenovacionIso(sub)))
+    // Plazo (préstamos): terminado → la etiqueta "Terminado" en lugar de la renovación, que ya no
+    // llega; con cuotas pendientes, "Quedan N cuotas" en una línea corta.
+    val terminado = sub.terminado(hoy)
+    val cuotasRestantes = if (terminado) null else plazoGasto(sub, hoy)?.cuotasRestantes
+    val renueva = if (terminado) stringResource(R.string.plazo_terminado)
+    else stringResource(R.string.renews_on, fechaIsoCorta(proximaRenovacionIso(sub)))
     val detalleCobro = if (periodo.esMensual) renueva
     else importeCadaPeriodo(sub.precio, sub.moneda, periodo) + " · " + renueva
 
@@ -516,6 +539,7 @@ private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Un
             .background(MaterialTheme.colorScheme.surface)
             .border(1.dp, MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(14.dp))
             .clickable { onNavigateToDetalle(sub.id) }
+            .alpha(if (terminado) ALFA_TERMINADO else 1f)
             .padding(horizontal = 14.dp, vertical = if (fuenteGrande) 10.dp else 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -533,6 +557,14 @@ private fun SuscripcionCard(sub: Subscription, onNavigateToDetalle: (Long) -> Un
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            if (cuotasRestantes != null) {
+                Text(
+                    text = pluralStringResource(R.plurals.plazo_quedan_corto, cuotasRestantes, cuotasRestantes),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             if (diasPrueba != null) {
                 // Texto en la columna, no un badge flotante sobre el precio (S-02).
                 Text(

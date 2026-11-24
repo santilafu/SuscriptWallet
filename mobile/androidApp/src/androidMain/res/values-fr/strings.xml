@@ -304,6 +304,21 @@
     <string name="plazo_clear_start">Supprimer la date de début</string>
     <string name="plazo_clear_end">Supprimer la date de fin</string>
     <string name="form_error_plazo_invertido">La date de fin ne peut pas être antérieure à la date de début</string>
+    <!-- Durée dans la liste et le détail -->
+    <string name="plazo_terminado">Terminé</string>
+    <string name="plazo_ended_label">Terminé le</string>
+    <string name="plazo_cuotas_restantes">Échéances restantes</string>
+    <string name="plazo_pendiente">Reste à payer</string>
+    <plurals name="plazo_quedan_corto">
+        <item quantity="one">%d échéance restante</item>
+        <item quantity="many">%d échéances restantes</item>
+        <item quantity="other">%d échéances restantes</item>
+    </plurals>
+    <plurals name="plazo_progreso">
+        <item quantity="one">%1$d échéance payée sur %2$d</item>
+        <item quantity="many">%1$d échéances payées sur %2$d</item>
+        <item quantity="other">%1$d échéances payées sur %2$d</item>
+    </plurals>
     <plurals name="plazo_total_en_vivo">
         <item quantity="one">%1$d échéance · %2$s au total</item>
         <item quantity="many">%1$d échéances · %2$s au total</item>

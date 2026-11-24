@@ -15,6 +15,19 @@ import com.subia.shared.model.PeriodoCobro
 import com.subia.shared.model.equivalenteMensualInterno
 import com.subia.shared.model.periodoCobro
 import com.subia.shared.model.totalAnualInterno
+import com.subia.shared.model.plazoGasto
+import com.subia.shared.model.terminado
+import com.subia.android.ui.components.EaseOutFuerte
+import com.subia.android.ui.components.animacionesActivas
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.semantics.semantics
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 import java.util.Locale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -187,6 +200,9 @@ fun SuscripcionDetalleScreen(
                     .padding(innerPadding)
                     .verticalScroll(rememberScrollState())
             ) {
+                val hoy = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
+                val terminado = suscripcion.terminado(hoy)
+                val plazo = plazoGasto(suscripcion, hoy)
                 // Cabecera: logo + nombre, sin gradientes. El logo del servicio pone el color (T-06).
                 Row(
                     modifier = Modifier
@@ -204,21 +220,29 @@ fun SuscripcionDetalleScreen(
                             color = MaterialTheme.colorScheme.onBackground
                         )
                         Spacer(Modifier.height(6.dp))
-                        // Chip de estado con color semántico (verde = activa)
+                        // Chip de estado con color semántico (verde = activa). Precedencia:
+                        // Inactiva (lo decide el usuario) > Terminado (pasó la fecha de fin) > Activa.
+                        val vigente = suscripcion.activa && !terminado
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(50))
                                 .background(
-                                    if (suscripcion.activa) MaterialTheme.colorScheme.success.copy(alpha = 0.15f)
+                                    if (vigente) MaterialTheme.colorScheme.success.copy(alpha = 0.15f)
                                     else MaterialTheme.colorScheme.surfaceVariant
                                 )
                                 .padding(horizontal = 12.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                text = if (suscripcion.activa) stringResource(R.string.active) else stringResource(R.string.inactive),
+                                text = stringResource(
+                                    when {
+                                        !suscripcion.activa -> R.string.inactive
+                                        terminado -> R.string.plazo_terminado
+                                        else -> R.string.active
+                                    }
+                                ),
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.SemiBold,
-                                color = if (suscripcion.activa) MaterialTheme.colorScheme.success else MaterialTheme.colorScheme.onSurfaceVariant
+                                color = if (vigente) MaterialTheme.colorScheme.success else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -249,7 +273,31 @@ fun SuscripcionDetalleScreen(
                         formatearImporte(Periodicidad.aCifraVisible(suscripcion.totalAnualInterno()), suscripcion.moneda)
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
-                    DetalleRow(stringResource(R.string.next_renewal), fechaIsoLegible(proximaRenovacionIso(suscripcion)))
+                    // Terminado: en vez de la próxima renovación (que ya no llega), cuándo terminó.
+                    if (terminado && plazo != null) {
+                        DetalleRow(stringResource(R.string.plazo_ended_label), fechaIsoLegible(plazo.fin.toString()))
+                    } else {
+                        DetalleRow(stringResource(R.string.next_renewal), fechaIsoLegible(proximaRenovacionIso(suscripcion)))
+                    }
+                    suscripcion.fechaInicio?.takeIf { it.isNotBlank() }?.let { inicio ->
+                        HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
+                        DetalleRow(stringResource(R.string.plazo_start_label), fechaIsoLegible(inicio))
+                    }
+                    if (plazo != null && !terminado) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
+                        DetalleRow(stringResource(R.string.plazo_end_label), fechaIsoLegible(plazo.fin.toString()))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
+                        DetalleRow(stringResource(R.string.plazo_cuotas_restantes), plazo.cuotasRestantes.toString())
+                        HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
+                        DetalleRow(stringResource(R.string.plazo_pendiente), formatearImporte(plazo.pendiente, suscripcion.moneda))
+                    }
+                    // Barra de progreso: solo con fecha de inicio (sin ella no se saben las cuotas totales).
+                    val totales = plazo?.cuotasTotales
+                    val progreso = plazo?.progreso
+                    if (plazo != null && totales != null && progreso != null) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
+                        ProgresoPlazo(pagadas = plazo.cuotasPagadas ?: 0, totales = totales, progreso = progreso)
+                    }
                     if (suscripcion.descripcion.isNotBlank()) {
                         HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
                         DetalleRow(stringResource(R.string.description), suscripcion.descripcion)
@@ -362,6 +410,43 @@ fun SuscripcionDetalleScreen(
         }
     }
 }
+
+/**
+ * "9 de 12 cuotas pagadas" con su barra. Texto y barra se leen juntos en TalkBack. La barra crece
+ * desde 0 al abrir el detalle, salvo con las animaciones del sistema desactivadas.
+ */
+@Composable
+private fun ProgresoPlazo(pagadas: Int, totales: Int, progreso: Float) {
+    val animar = animacionesActivas()
+    val valor = remember { Animatable(if (animar) 0f else progreso) }
+    LaunchedEffect(progreso) {
+        if (animar) valor.animateTo(progreso, tween(PROGRESO_PLAZO_MS, easing = EaseOutFuerte)) else valor.snapTo(progreso)
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 14.dp)
+            .semantics(mergeDescendants = true) {},
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = pluralStringResource(R.plurals.plazo_progreso, totales, pagadas, totales),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        LinearProgressIndicator(
+            progress = { valor.value },
+            modifier = Modifier.fillMaxWidth().height(8.dp),
+            color = Violet600,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+            strokeCap = StrokeCap.Round,
+            gapSize = 0.dp,
+            drawStopIndicator = {}
+        )
+    }
+}
+
+private const val PROGRESO_PLAZO_MS = 600
 
 @Composable
 private fun DetalleRow(etiqueta: String, valor: String) {

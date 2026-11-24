@@ -296,6 +296,19 @@
     <string name="plazo_clear_start">Remove start date</string>
     <string name="plazo_clear_end">Remove end date</string>
     <string name="form_error_plazo_invertido">The end date cannot be before the start date</string>
+    <!-- Term in the list and detail -->
+    <string name="plazo_terminado">Finished</string>
+    <string name="plazo_ended_label">Ended on</string>
+    <string name="plazo_cuotas_restantes">Instalments left</string>
+    <string name="plazo_pendiente">Still to pay</string>
+    <plurals name="plazo_quedan_corto">
+        <item quantity="one">%d instalment left</item>
+        <item quantity="other">%d instalments left</item>
+    </plurals>
+    <plurals name="plazo_progreso">
+        <item quantity="one">%1$d of %2$d instalment paid</item>
+        <item quantity="other">%1$d of %2$d instalments paid</item>
+    </plurals>
     <plurals name="plazo_total_en_vivo">
         <item quantity="one">%1$d instalment · %2$s in total</item>
         <item quantity="other">%1$d instalments · %2$s in total</item>
