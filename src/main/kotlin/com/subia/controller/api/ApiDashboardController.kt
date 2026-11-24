@@ -30,7 +30,8 @@ class ApiDashboardController(
     fun getStats(@AuthenticationPrincipal jwt: Jwt): ApiResponse<DashboardStatsDto> {
         val userId = resolveUserId(jwt)
         val dash = dashboardService.getDashboard(userId)
-        val activeCount = subscriptionService.findActive(userId).size
+        // Sin los préstamos ya terminados, igual que los totales.
+        val activeCount = dashboardService.vigentes(userId).size
 
         val spendByCategory = dash.spendByCategory.map { (cat, amount) ->
             CategorySpendDto(

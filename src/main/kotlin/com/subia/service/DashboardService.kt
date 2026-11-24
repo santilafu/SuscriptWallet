@@ -60,8 +60,8 @@ class DashboardService(
      * gasto mensual; y como último recurso, EUR.
      */
     fun getDashboard(userId: Long, selectedCurrency: String? = null): DashboardDto {
-        val active = repo.findByUserIdAndActiveTrue(userId)
         val today = LocalDate.now(clock)
+        val active = vigentes(userId, today)
 
         // Una prueba ya vencida cuenta como de pago (N-10)
         val paidActive = active.filter { !RenewalDates.isActiveTrial(it, today) }
@@ -78,7 +78,7 @@ class DashboardService(
             .mapValues { (_, subs) -> subs.sumOf { toMonthly(it) }.let(Periodicidad::aCifraVisible) }
         val yearlyByCurrency = paidActive
             .groupBy { it.currency }
-            .mapValues { (_, subs) -> subs.sumOf { toYearly(it) }.let(Periodicidad::aCifraVisible) }
+            .mapValues { (_, subs) -> subs.sumOf { toYearly(it, today) }.let(Periodicidad::aCifraVisible) }
 
         val chosen = selectedCurrency?.takeIf { it in present }
             ?: mainCurrency(monthlyByCurrency)
@@ -86,7 +86,7 @@ class DashboardService(
         val inCurrency = paidActive.filter { it.currency == chosen }
 
         val totalMonthly = inCurrency.sumOf { toMonthly(it) }.let(Periodicidad::aCifraVisible)
-        val totalYearly  = inCurrency.sumOf { toYearly(it) }.let(Periodicidad::aCifraVisible)
+        val totalYearly  = inCurrency.sumOf { toYearly(it, today) }.let(Periodicidad::aCifraVisible)
 
         val spendByCategory: Map<Category, BigDecimal> = inCurrency
             .groupBy { it.category }
@@ -128,8 +128,8 @@ class DashboardService(
      * (la de mayor gasto mensual); antes sumaba euros, dólares y yenes como si fueran lo mismo.
      */
     fun getDashboardStats(userId: Long): DashboardMobileStatsDto {
-        val active = repo.findByUserIdAndActiveTrue(userId)
         val today = LocalDate.now(clock)
+        val active = vigentes(userId, today)
 
         val paidActive = active.filter { !RenewalDates.isActiveTrial(it, today) }
         val monthlyByCurrency = paidActive
@@ -140,7 +140,7 @@ class DashboardService(
 
         val gastoMensual = inCurrency.sumOf { toMonthly(it) }
             .let(Periodicidad::aCifraVisible).toDouble()
-        val gastoAnual = inCurrency.sumOf { toYearly(it) }
+        val gastoAnual = inCurrency.sumOf { toYearly(it, today) }
             .let(Periodicidad::aCifraVisible).toDouble()
 
         val renovaciones = renewingWithin(active, today, 30)
@@ -170,10 +170,18 @@ class DashboardService(
     private fun renewingWithin(subs: List<Subscription>, today: LocalDate, days: Long): List<Subscription> {
         val limit = today.plusDays(days)
         return subs
-            .map { it.copy(renewalDate = RenewalDates.nextRenewal(it, today)) }
+            // Respeta el inicio del plazo: no hay cobros antes de `fechaInicio`.
+            .map { it.copy(renewalDate = RenewalDates.proximoCobro(it, today)) }
             .filter { !it.renewalDate.isAfter(limit) }
             .sortedBy { it.renewalDate }
     }
+
+    /**
+     * Activas que no han terminado su plazo (préstamos con fecha de fin ya cumplida). Un
+     * terminado sigue en la lista de gastos pero no cuenta en nada del dashboard.
+     */
+    fun vigentes(userId: Long, today: LocalDate = LocalDate.now(clock)): List<Subscription> =
+        repo.findByUserIdAndActiveTrue(userId).filter { !RenewalDates.isTerminada(it, today) }
 
     /** Divisa con mayor gasto mensual; EUR si no hay ninguna. */
     private fun mainCurrency(monthlyByCurrency: Map<String, BigDecimal>): String =
@@ -186,8 +194,17 @@ class DashboardService(
      * Convierte el precio de una suscripción a su equivalente anual.
      * MONTHLY/YEARLY: importe × 12 / meses por cobro (exacto, porque todos dividen a 12).
      * WEEKLY: importe × 52, coherente con el mensual (importe × 52 / 12) × 12.
+     * Con fecha de fin solo suma lo que queda: mín(cuotas restantes, cuotas por año) × importe
+     * (decisión P3 del usuario; ver [RenewalDates.cuotasProximoAnio]).
      */
-    private fun toYearly(s: Subscription): BigDecimal = when (s.billingCycle) {
+    private fun toYearly(s: Subscription, today: LocalDate): BigDecimal {
+        RenewalDates.cuotasProximoAnio(s, today)?.let { cuotas ->
+            return s.price.multiply(BigDecimal(cuotas)).setScale(Periodicidad.ESCALA_INTERNA, Periodicidad.REDONDEO)
+        }
+        return tasaAnual(s)
+    }
+
+    private fun tasaAnual(s: Subscription): BigDecimal = when (s.billingCycle) {
         BillingCycle.WEEKLY -> Periodicidad.totalAnualSemanal(s.price)
         else -> Periodicidad.totalAnual(s.price, Periodicidad.mesesPorCobro(s.billingCycle, s.intervaloMeses))
     }

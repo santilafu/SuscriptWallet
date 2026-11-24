@@ -26,11 +26,12 @@ class DashboardServiceTest {
     private fun sub(
         id: Long, renewal: String, price: String = "10.00", currency: String = "EUR",
         cycle: BillingCycle = BillingCycle.MONTHLY, trial: Boolean = false, trialEnds: String? = null,
-        intervalo: Int = 1
+        intervalo: Int = 1, inicio: String? = null, fin: String? = null
     ) = Subscription(
         id = id, name = "S$id", price = BigDecimal(price), currency = currency, billingCycle = cycle,
         renewalDate = LocalDate.parse(renewal), category = cat, isTrial = trial,
-        trialEndsAt = trialEnds?.let { LocalDate.parse(it) }, userId = 7, intervaloMeses = intervalo
+        trialEndsAt = trialEnds?.let { LocalDate.parse(it) }, userId = 7, intervaloMeses = intervalo,
+        fechaInicio = inicio?.let { LocalDate.parse(it) }, fechaFin = fin?.let { LocalDate.parse(it) }
     )
 
     @Test
@@ -178,5 +179,67 @@ class DashboardServiceTest {
         assertEquals(BigDecimal("980.20"), dash.totalYearly)
         assertEquals(BigDecimal("81.68"), dash.topMonthly.single())
         assertEquals(0, BigDecimal("81.6833").compareTo(DashboardService.equivalenteMensual(dash.topSubscriptions.single())))
+    }
+
+    // ── Préstamos: fecha de inicio y de fin ───────────────────────────────────────────────
+
+    @Test
+    fun `un gasto terminado no cuenta en totales, categorias, top, renovaciones ni recuento`() {
+        every { repo.findByUserIdAndActiveTrue(7) } returns listOf(
+            sub(1, "2026-10-15", price = "10.00"),
+            sub(2, "2026-10-15", price = "300.00", fin = "2026-10-01"),  // fin pasado
+            sub(3, "2026-10-15", price = "200.00", fin = "2026-10-12")   // fin antes del próximo cobro
+        )
+
+        val dash = service.getDashboard(7)
+        val stats = service.getDashboardStats(7)
+
+        assertEquals(BigDecimal("10.00"), dash.totalMonthly)
+        assertEquals(BigDecimal("120.00"), dash.totalYearly)
+        assertEquals(BigDecimal("10.00"), dash.spendByCategory[cat])
+        assertEquals(listOf(1L), dash.topSubscriptions.map { it.id })
+        assertEquals(listOf(1L), dash.upcomingRenewals.map { it.id })
+        assertEquals(10.0, stats.gastoMensual, 0.001)
+        assertEquals(1, stats.totalSuscripciones)
+        assertEquals(listOf(1L), stats.renovacionesProximas.map { it.id })
+    }
+
+    @Test
+    fun `vista anual - con 3 cuotas restantes suma solo esas 3 y el mensual no cambia`() {
+        every { repo.findByUserIdAndActiveTrue(7) } returns listOf(
+            sub(1, "2026-10-15", price = "100.00", fin = "2026-12-15"),  // 15-oct, 15-nov, 15-dic
+            sub(2, "2026-10-15", price = "10.00")                         // sin fin: 120/año como siempre
+        )
+
+        val dash = service.getDashboard(7)
+        val stats = service.getDashboardStats(7)
+
+        assertEquals(BigDecimal("110.00"), dash.totalMonthly)
+        assertEquals(BigDecimal("420.00"), dash.totalYearly)
+        assertEquals(BigDecimal("420.00"), dash.yearlyByCurrency["EUR"])
+        assertEquals(420.0, stats.gastoAnual, 0.001)
+    }
+
+    @Test
+    fun `vista anual - un plazo largo suma como mucho las cuotas de un anio`() {
+        every { repo.findByUserIdAndActiveTrue(7) } returns listOf(
+            sub(1, "2026-10-15", price = "90.00", intervalo = 3, fin = "2030-01-15"),  // 4 cuotas/año
+            sub(2, "2026-10-13", price = "5.00", cycle = BillingCycle.WEEKLY, fin = "2030-01-15")  // 52
+        )
+
+        assertEquals(BigDecimal("620.00"), service.getDashboard(7).totalYearly)
+    }
+
+    @Test
+    fun `inicio futuro cuenta en el gasto mensual medio pero no renueva antes de empezar`() {
+        every { repo.findByUserIdAndActiveTrue(7) } returns listOf(
+            sub(1, "2026-10-15", price = "50.00", inicio = "2027-01-15", fin = "2027-03-15")
+        )
+
+        val dash = service.getDashboard(7)
+
+        assertEquals(BigDecimal("50.00"), dash.totalMonthly)
+        assertEquals(BigDecimal("150.00"), dash.totalYearly)
+        assertTrue(dash.upcomingRenewals.isEmpty())
     }
 }

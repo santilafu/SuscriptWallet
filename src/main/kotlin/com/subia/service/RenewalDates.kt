@@ -115,6 +115,95 @@ object RenewalDates {
         return !ends.isBefore(today)
     }
 
+    // ── Plazo (préstamos y financiaciones, V17) ──────────────────────────────────────────
+    // Misma tabla de casos que `PlazoGasto` en shared: si cambias una regla, cambia las dos.
+
+    /**
+     * Número de cobros de la serie (ancla ± n ciclos, n también negativo) que caen en
+     * [desde, hasta], ambos incluidos. La serie es estrictamente creciente, así que basta con
+     * colocarse en el primer cobro ≥ [desde] y contar.
+     */
+    fun cobrosEntre(anchor: LocalDate, cycle: BillingCycle, intervaloMeses: Int, desde: LocalDate, hasta: LocalDate): Int {
+        if (hasta.isBefore(desde)) return 0
+        val meses = if (cycle == BillingCycle.WEEKLY) 0 else Periodicidad.mesesPorCobro(cycle, intervaloMeses)
+        var n = when (cycle) {
+            BillingCycle.WEEKLY -> ChronoUnit.WEEKS.between(anchor, desde)
+            else -> ChronoUnit.MONTHS.between(anchor, desde) / meses
+        }
+        while (!plusCycles(anchor, cycle, meses, n).isBefore(desde)) n--
+        while (plusCycles(anchor, cycle, meses, n).isBefore(desde)) n++
+        var count = 0
+        while (!plusCycles(anchor, cycle, meses, n).isAfter(hasta)) { count++; n++ }
+        return count
+    }
+
+    private fun cobrosEntre(sub: Subscription, desde: LocalDate, hasta: LocalDate): Int =
+        cobrosEntre(sub.renewalDate, sub.billingCycle, sub.intervaloMeses, desde, hasta)
+
+    /** Primer día en que puede haber un cobro: hoy, o el inicio del plazo si aún no ha llegado. */
+    private fun desde(sub: Subscription, today: LocalDate): LocalDate =
+        sub.fechaInicio?.takeIf { it.isAfter(today) } ?: today
+
+    /** Próximo cobro respetando el inicio del plazo (no hay cobros antes de `fechaInicio`). */
+    fun proximoCobro(sub: Subscription, today: LocalDate): LocalDate = nextRenewal(sub, desde(sub, today))
+
+    /**
+     * true si tiene fecha de fin y ya no le queda ningún cobro hasta ella (D1): cubre el fin
+     * pasado y el fin anterior al próximo cobro. Se deriva siempre, nunca se guarda.
+     */
+    fun isTerminada(sub: Subscription, today: LocalDate): Boolean {
+        val fin = sub.fechaFin ?: return false
+        return proximoCobro(sub, today).isAfter(fin)
+    }
+
+    /** Cobros que quedan en [max(hoy, inicio), fin]; el de hoy cuenta. null sin fecha de fin. */
+    fun cuotasRestantes(sub: Subscription, today: LocalDate): Int? =
+        sub.fechaFin?.let { cobrosEntre(sub, desde(sub, today), it) }
+
+    /** Cobros de todo el plazo [inicio, fin] (la serie va hacia atrás desde el ancla). null sin las dos fechas. */
+    fun cuotasTotales(sub: Subscription): Int? {
+        val inicio = sub.fechaInicio ?: return null
+        val fin = sub.fechaFin ?: return null
+        return cobrosEntre(sub, inicio, fin)
+    }
+
+    /**
+     * Cuotas que suma la vista anual de un gasto con fecha de fin: mín(restantes, cuotas por año)
+     * (decisión P3 del usuario). null sin fecha de fin (la vista anual sigue siendo la tasa).
+     */
+    fun cuotasProximoAnio(sub: Subscription, today: LocalDate): Int? {
+        val restantes = cuotasRestantes(sub, today) ?: return null
+        val porAnio = if (sub.billingCycle == BillingCycle.WEEKLY) Periodicidad.SEMANAS_EN_ANIO
+            else Periodicidad.MESES_EN_ANIO / Periodicidad.mesesPorCobro(sub.billingCycle, sub.intervaloMeses)
+        return minOf(restantes, porAnio)
+    }
+
+    /** Progreso de un gasto con fecha de fin, listo para mostrar. null sin fecha de fin. */
+    fun plazo(sub: Subscription, today: LocalDate): Plazo? {
+        val restantes = cuotasRestantes(sub, today) ?: return null
+        return Plazo(
+            cuotasRestantes = restantes,
+            cuotasTotales = cuotasTotales(sub),
+            pendiente = Periodicidad.aCifraVisible(sub.price.multiply(java.math.BigDecimal(restantes))),
+            terminado = isTerminada(sub, today)
+        )
+    }
+
+    /**
+     * Cuotas y pendiente de un gasto con fecha de fin. [cuotasTotales] (y con él la barra) solo
+     * existe si hay fecha de inicio.
+     */
+    data class Plazo(
+        val cuotasRestantes: Int,
+        val cuotasTotales: Int?,
+        val pendiente: java.math.BigDecimal,
+        val terminado: Boolean
+    ) {
+        val cuotasPagadas: Int? get() = cuotasTotales?.let { (it - cuotasRestantes).coerceAtLeast(0) }
+        /** 0-100, redondeado hacia abajo. */
+        val progresoPct: Int? get() = cuotasTotales?.takeIf { it > 0 }?.let { cuotasPagadas!! * 100 / it }
+    }
+
     /**
      * Fecha del cobro número [n] contando desde el ancla. Siempre `ancla + n × meses` en una
      * sola suma (nunca sobre la fecha ya recortada), para que 31-ene → 28/29-feb → 31-mar.

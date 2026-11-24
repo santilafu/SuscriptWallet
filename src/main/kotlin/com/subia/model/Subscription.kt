@@ -88,5 +88,16 @@ data class Subscription(
      * este valor salvo en WEEKLY, que guarda 1 y lo ignora. Ver `service/Periodicidad`.
      */
     @Column(name = "intervalo_meses", nullable = false)
-    val intervaloMeses: Int = 1
+    val intervaloMeses: Int = 1,
+
+    /** Primer día del plazo (préstamos y financiaciones, V17): no hay cobros antes. Opcional. */
+    @Column(name = "fecha_inicio", nullable = true)
+    val fechaInicio: LocalDate? = null,
+
+    /**
+     * Último día del plazo (V17). Sin cobros pendientes en [hoy, fin] el gasto está "Terminado"
+     * (derivado, ver `RenewalDates.isTerminada`): deja de contar en totales pero sigue en la lista.
+     */
+    @Column(name = "fecha_fin", nullable = true)
+    val fechaFin: LocalDate? = null
 )

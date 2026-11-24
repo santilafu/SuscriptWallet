@@ -64,7 +64,7 @@ class SubscriptionService(private val repo: SubscriptionRepository) {
         private val CURRENCY_REGEX = Regex("^[A-Z]{3}$")
 
         /**
-         * Valida y normaliza una suscripción contra los límites del esquema (V1/V4/V15).
+         * Valida y normaliza una suscripción contra los límites del esquema (V1/V4/V15/V17).
          *
          * También deja coherentes `billingCycle` e `intervaloMeses` ([Periodicidad.normalizar]):
          * se hace aquí, y no en cada controlador, para que la regla se cumpla venga de donde
@@ -84,6 +84,10 @@ class SubscriptionService(private val repo: SubscriptionRepository) {
             val currency = s.currency.trim().uppercase()
             require(CURRENCY_REGEX.matches(currency)) { "Divisa no válida: ${s.currency.take(10)}" }
             val (cycle, intervalo) = Periodicidad.normalizar(s.billingCycle, s.intervaloMeses)
+            val inicio = s.fechaInicio
+            val fin = s.fechaFin
+            if (inicio != null && fin != null)
+                require(!inicio.isAfter(fin)) { "La fecha de inicio no puede ser posterior a la fecha de fin" }
             return s.copy(
                 name = name, price = price, currency = currency,
                 billingCycle = cycle, intervaloMeses = intervalo
