@@ -164,22 +164,32 @@ object RenewalDates {
     fun cuotasRestantes(sub: Subscription, today: LocalDate): Int? =
         sub.fechaFin?.let { cobrosEntre(sub, desde(sub, today), it) }
 
-    /** Cobros de todo el plazo [inicio, fin] (la serie va hacia atrás desde el ancla). null sin las dos fechas. */
-    fun cuotasTotales(sub: Subscription): Int? {
+    /**
+     * Cuotas ya pagadas: cobros de la serie en [inicio, mín(fin, ayer)] (la serie va hacia atrás
+     * desde el ancla). Solo las anteriores a hoy: con la renovación guardada en el futuro, los
+     * cobros entre hoy y ella no se han pagado. null sin las dos fechas.
+     */
+    fun cuotasPagadas(sub: Subscription, today: LocalDate): Int? {
         val inicio = sub.fechaInicio ?: return null
         val fin = sub.fechaFin ?: return null
-        return cobrosEntre(sub, inicio, fin)
+        return cobrosEntre(sub, inicio, minOf(fin, today.minusDays(1)))
     }
 
+    /** Cuotas de todo el plazo: pagadas + restantes. null sin las dos fechas. */
+    fun cuotasTotales(sub: Subscription, today: LocalDate): Int? =
+        cuotasPagadas(sub, today)?.let { it + cuotasRestantes(sub, today)!! }
+
     /**
-     * Cuotas que suma la vista anual de un gasto con fecha de fin: mín(restantes, cuotas por año)
-     * (decisión P3 del usuario). null sin fecha de fin (la vista anual sigue siendo la tasa).
+     * Cuotas que suma la vista anual de un gasto con fecha de fin (decisión P3): las que caen de
+     * verdad en los próximos 12 meses, [primer cobro pendiente, mín(fin, hoy + 12 meses − 1 día)],
+     * con tope de cuotas por año. null sin fecha de fin (la vista anual sigue siendo la tasa).
      */
     fun cuotasProximoAnio(sub: Subscription, today: LocalDate): Int? {
-        val restantes = cuotasRestantes(sub, today) ?: return null
+        val fin = sub.fechaFin ?: return null
+        val enUnAnio = cobrosEntre(sub, desde(sub, today), minOf(fin, today.plusMonths(12).minusDays(1)))
         val porAnio = if (sub.billingCycle == BillingCycle.WEEKLY) Periodicidad.SEMANAS_EN_ANIO
             else Periodicidad.MESES_EN_ANIO / Periodicidad.mesesPorCobro(sub.billingCycle, sub.intervaloMeses)
-        return minOf(restantes, porAnio)
+        return minOf(enUnAnio, porAnio)
     }
 
     /** Progreso de un gasto con fecha de fin, listo para mostrar. null sin fecha de fin. */
@@ -187,7 +197,7 @@ object RenewalDates {
         val restantes = cuotasRestantes(sub, today) ?: return null
         return Plazo(
             cuotasRestantes = restantes,
-            cuotasTotales = cuotasTotales(sub),
+            cuotasTotales = cuotasTotales(sub, today),
             pendiente = Periodicidad.aCifraVisible(sub.price.multiply(java.math.BigDecimal(restantes))),
             terminado = isTerminada(sub, today)
         )
@@ -203,6 +213,7 @@ object RenewalDates {
         val pendiente: java.math.BigDecimal,
         val terminado: Boolean
     ) {
+        /** Totales = pagadas + restantes, así que esto son los cobros anteriores a hoy. */
         val cuotasPagadas: Int? get() = cuotasTotales?.let { (it - cuotasRestantes).coerceAtLeast(0) }
         /** 0-100, redondeado hacia abajo. */
         val progresoPct: Int? get() = cuotasTotales?.takeIf { it > 0 }?.let { cuotasPagadas!! * 100 / it }

@@ -74,4 +74,14 @@ class FechasPlazoMigrationTest {
             assertThrows(SQLException::class.java) { insertar(c, "2026-02-01", "2026-01-31") }
         }
     }
+
+    @Test
+    fun `V17 es idempotente - volver a ejecutarla no falla y el CHECK sigue`() {
+        migrarHasta("17")
+        val sql = javaClass.getResource("/db/migration/V17__fechas_plazo.sql")!!.readText()
+        conConexion { c ->
+            c.createStatement().use { it.execute(sql) }
+            assertThrows(SQLException::class.java) { insertar(c, "2026-02-01", "2026-01-31") }
+        }
+    }
 }

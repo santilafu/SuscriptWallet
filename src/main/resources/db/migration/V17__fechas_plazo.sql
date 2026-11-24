@@ -15,8 +15,15 @@
 -- y desplegar una versión del backend sin `fechaInicio`/`fechaFin` en la entidad.
 -- ============================================================
 
-ALTER TABLE subscriptions ADD COLUMN fecha_inicio DATE NULL;
-ALTER TABLE subscriptions ADD COLUMN fecha_fin DATE NULL;
+-- Idempotente: se puede volver a aplicar sobre una BD que ya tenga las columnas o el CHECK.
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS fecha_inicio DATE NULL;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS fecha_fin DATE NULL;
 
-ALTER TABLE subscriptions ADD CONSTRAINT chk_subscriptions_fechas
-    CHECK (fecha_inicio IS NULL OR fecha_fin IS NULL OR fecha_inicio <= fecha_fin);
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_subscriptions_fechas') THEN
+        ALTER TABLE subscriptions ADD CONSTRAINT chk_subscriptions_fechas
+            CHECK (fecha_inicio IS NULL OR fecha_fin IS NULL OR fecha_inicio <= fecha_fin);
+    END IF;
+END
+$$;

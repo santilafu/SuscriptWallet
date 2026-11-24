@@ -55,6 +55,10 @@ class CatalogoPrestamosWebTest {
         assertTrue(page.contains("href=\"/subscriptions/new?catalogo=Hipoteca\""), "falta el Añadir de Hipoteca")
         // Ningún préstamo genera el POST directo (price es obligatorio en add-from-catalog).
         assertFalse(page.contains("name=\"name\" value=\"Hipoteca\""), "Hipoteca no debe hacer POST directo")
+        // Los préstamos no tienen botón "Cancelar" (llevaba a la web del banco); el resto sí.
+        assertFalse(page.contains("href=\"https://www.ing.es/\""), "ING no debe tener botón Cancelar")
+        assertTrue(page.contains("card-action cancel"), "los servicios normales conservan Cancelar")
+        assertTrue(page.indexOf("data-name=\"ibercaja\"") < page.indexOf("data-name=\"ing\""), "orden sin mayúsculas")
         // El contador cuenta servicios distintos, sin las copias de "prueba".
         val distintos = catalogService.getAllItems().count { it.categoryKey != "prueba" }
         assertTrue(page.contains("$distintos servicios disponibles"), "contador distinto de $distintos")

@@ -54,7 +54,9 @@ class SubscriptionController(
         val today = LocalDate.now(clock)
         // Los terminados al final (orden estable), como en la app: siguen visibles como historial.
         val stored = subscriptionService.findAll(userId).sortedBy { com.subia.service.RenewalDates.isTerminada(it, today) }
-        val subs = stored.map { it.projected() }
+        // Fecha mostrada = primer cobro real, respetando `fechaInicio` (solo en la lista: el formulario
+        // y la API siguen con nextRenewal, de los que depende anchorForUpdate).
+        val subs = stored.map { it.copy(renewalDate = com.subia.service.RenewalDates.proximoCobro(it, today)) }
         model.addAttribute("subscriptions", subs)
         // Plazo (cuotas restantes / terminado) por id, desde el ancla guardada y no la proyectada.
         model.addAttribute("plazos", plazos(stored, today))

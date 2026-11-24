@@ -194,7 +194,7 @@ class DashboardService(
      * Convierte el precio de una suscripción a su equivalente anual.
      * MONTHLY/YEARLY: importe × 12 / meses por cobro (exacto, porque todos dividen a 12).
      * WEEKLY: importe × 52, coherente con el mensual (importe × 52 / 12) × 12.
-     * Con fecha de fin solo suma lo que queda: mín(cuotas restantes, cuotas por año) × importe
+     * Con fecha de fin solo suma las cuotas que caen en los próximos 12 meses × importe
      * (decisión P3 del usuario; ver [RenewalDates.cuotasProximoAnio]).
      */
     private fun toYearly(s: Subscription, today: LocalDate): BigDecimal {

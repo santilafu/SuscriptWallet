@@ -185,8 +185,8 @@
                 <!-- Footer: acciones -->
                 <div class="flex items-center justify-end gap-2 pt-3 border-t border-white/[0.05]">
 
-                    <!-- Enlace cancelación -->
-                    <a th:if="${item.cancelUrl != null}"
+                    <!-- Enlace cancelación (no en préstamos: llevaba a la web del banco) -->
+                    <a th:if="${item.cancelUrl != null and item.categoryKey != 'prestamos'}"
                        th:href="${item.cancelUrl}"
                        target="_blank" rel="noopener noreferrer"
                        class="card-action cancel flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-orange-400/80 border border-orange-500/20 no-underline">

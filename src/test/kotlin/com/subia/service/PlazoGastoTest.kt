@@ -68,13 +68,32 @@ class PlazoGastoTest {
         assertFalse(RenewalDates.isTerminada(s, hoy))
         assertEquals(BigDecimal("400.00"), RenewalDates.plazo(s, hoy)!!.pendiente)
         assertEquals(4, RenewalDates.cuotasProximoAnio(s, hoy))
-        // Con inicio pasado: totales jul..mar = 9, restantes 4 → barra 5/9
+        // Con inicio pasado: pagadas solo las anteriores a hoy (jul, ago, sep = 3); oct y nov no
+        // llegan (la renovación guardada es dic) → barra 3/7, no 5/9.
         val conInicio = RenewalDates.plazo(sub("2026-12-15", inicio = "2026-07-15", fin = "2027-03-15"), hoy)!!
         assertEquals(4, conInicio.cuotasRestantes)
-        assertEquals(9, conInicio.cuotasTotales)
-        assertEquals(5, conInicio.cuotasPagadas)
+        assertEquals(7, conInicio.cuotasTotales)
+        assertEquals(3, conInicio.cuotasPagadas)
         // Fin antes de la renovación guardada: terminado
         assertTrue(RenewalDates.isTerminada(sub("2026-12-15", fin = "2026-11-15"), hoy))
+    }
+
+    @Test
+    fun `pagadas son los cobros anteriores a hoy - renovacion guardada el mes que viene`() {
+        // Hoy 24-nov, inicio 15-mar, renovación guardada 15-dic, fin 15-feb: mar..nov = 9 pagadas, 3 restantes.
+        val plazo = RenewalDates.plazo(sub("2026-12-15", inicio = "2026-03-15", fin = "2027-02-15"), d("2026-11-24"))!!
+        assertEquals(9, plazo.cuotasPagadas)
+        assertEquals(3, plazo.cuotasRestantes)
+        assertEquals(12, plazo.cuotasTotales)
+    }
+
+    @Test
+    fun `terminado con inicio - las pagadas se cortan en el fin`() {
+        val plazo = RenewalDates.plazo(sub("2025-01-15", inicio = "2025-01-15", fin = "2025-12-15"), hoy)!!
+        assertEquals(0, plazo.cuotasRestantes)
+        assertEquals(12, plazo.cuotasPagadas)
+        assertEquals(12, plazo.cuotasTotales)
+        assertEquals(100, plazo.progresoPct)
     }
 
     @Test
@@ -102,7 +121,7 @@ class PlazoGastoTest {
     fun `inicio futuro - no hay cobros antes del inicio`() {
         val s = sub("2026-10-15", inicio = "2027-01-15", fin = "2027-03-15")
         assertEquals(3, RenewalDates.cuotasRestantes(s, hoy))
-        assertEquals(3, RenewalDates.cuotasTotales(s))
+        assertEquals(3, RenewalDates.cuotasTotales(s, hoy))
         assertFalse(RenewalDates.isTerminada(s, hoy))
         assertEquals(d("2027-01-15"), RenewalDates.proximoCobro(s, hoy))
     }
@@ -148,6 +167,9 @@ class PlazoGastoTest {
         assertEquals(12, RenewalDates.cuotasProximoAnio(sub("2026-01-15", fin = "2030-12-15"), hoy))
         assertEquals(4, RenewalDates.cuotasProximoAnio(sub("2026-01-15", fin = "2030-12-15", intervalo = 3), hoy))
         assertEquals(52, RenewalDates.cuotasProximoAnio(sub("2026-10-13", fin = "2030-12-15", cycle = BillingCycle.WEEKLY), hoy))
+        // Inicio dentro de 8 meses y fin dentro de 3 años: en los próximos 12 meses (hasta 9-oct-2027)
+        // solo caen jun, jul, ago y sep → 4, no 12.
+        assertEquals(4, RenewalDates.cuotasProximoAnio(sub("2026-10-15", inicio = "2027-06-15", fin = "2029-10-15"), hoy))
     }
 
     @Test

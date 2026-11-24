@@ -636,11 +636,11 @@ class CatalogService {
      */
     fun getItemsForCategory(categoryName: String): List<CatalogItem> {
         val key = CategoryMappingService.keyFor(categoryName)
-        return (if (key != null) catalog[key] else null) ?: catalog.values.flatten().sortedBy { it.name }
+        return (if (key != null) catalog[key] else null) ?: catalog.values.flatten().sortedWith(POR_NOMBRE)
     }
 
-    /** Devuelve todos los servicios del catálogo ordenados por nombre. */
-    fun getAllItems(): List<CatalogItem> = catalog.values.flatten().sortedBy { it.name }
+    /** Devuelve todos los servicios del catálogo ordenados por nombre (sin distinguir mayúsculas ni acentos). */
+    fun getAllItems(): List<CatalogItem> = catalog.values.flatten().sortedWith(POR_NOMBRE)
 
     /** Devuelve todos los items agrupados por clave de categoría. */
     fun getAllItemsGrouped(): Map<String, List<CatalogItem>> = catalog
@@ -682,6 +682,10 @@ class CatalogService {
         RENAMED_SERVICES.mapNotNull { (old, current) -> byName[current]?.let { old to it } }.toMap() + byName
 
     companion object {
+        /** Orden alfabético español sin distinguir mayúsculas ni acentos ("Ibercaja" antes que "ING"). */
+        private val POR_NOMBRE: Comparator<CatalogItem> =
+            compareBy(java.text.Collator.getInstance(java.util.Locale.forLanguageTag("es")).apply { strength = java.text.Collator.PRIMARY }) { it.name }
+
         /**
          * Servicios con prueba gratuita: (categoría de origen, nombre en esa categoría, días).
          * Si se renombra o elimina la fila original, hay que actualizar aquí (lo comprueba el test).

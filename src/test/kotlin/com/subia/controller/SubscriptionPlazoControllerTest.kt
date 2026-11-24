@@ -64,6 +64,20 @@ class SubscriptionPlazoControllerTest {
     )
 
     @Test
+    fun `lista web - la renovacion mostrada respeta la fecha de inicio`() {
+        // Ancla 20-nov pero el plazo empieza el 20-ene: el primer cobro es el 20-ene, no el 20-nov.
+        val futuro = stored.copy(fechaInicio = LocalDate.parse("2027-01-20"))
+        every { subscriptionService.findAll(1L) } returns listOf(futuro)
+        every { categoryService.findAll() } returns listOf(category)
+        val web = SubscriptionController(subscriptionService, categoryService, mockk(relaxed = true), userRepository, clock)
+        val model = org.springframework.ui.ExtendedModelMap()
+        web.list(org.springframework.security.core.userdetails.User("u@example.com", "x", emptyList()), model)
+        @Suppress("UNCHECKED_CAST")
+        val subs = model["subscriptions"] as List<Subscription>
+        assertEquals(LocalDate.parse("2027-01-20"), subs.single().renewalDate)
+    }
+
+    @Test
     fun `PUT sin los campos conserva las fechas guardadas`() {
         val dto = api.update(jwt, 7, request(null, null)).data!!
         assertEquals(LocalDate.parse("2026-01-20"), saved.captured.fechaInicio)

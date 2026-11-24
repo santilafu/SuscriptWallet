@@ -22,6 +22,15 @@ class CatalogServiceTest {
     private val grouped = service.getAllItemsGrouped()
 
     @Test
+    fun `el catalogo se ordena sin distinguir mayusculas ni acentos`() {
+        val nombres = service.getAllItems().map { it.name }
+        assertTrue(nombres.indexOf("Ibercaja") < nombres.indexOf("ING"), "ING sale antes que Ibercaja")
+        assertTrue(nombres.indexOf("seQura") < nombres.indexOf("Spotify Premium"), "seQura queda al final")
+        val esperado = nombres.sortedWith(compareBy(java.text.Collator.getInstance(java.util.Locale("es")).apply { strength = java.text.Collator.PRIMARY }) { it })
+        assertEquals(esperado, nombres)
+    }
+
+    @Test
     fun `todas las claves del catalogo estan en CategoryMappingService`() {
         val known = CategoryMappingService.KEY_TO_NAME.keys
         grouped.keys.forEach { key -> assertTrue(key in known, "clave sin categoría sembrada: $key") }
