@@ -70,7 +70,7 @@ class SubscriptionAnchorUpdateTest {
             details, 7, name = "Netflix", description = "", price = BigDecimal("12.99"), currency = "EUR",
             // Sin `periodicidad`: formulario antiguo, se usa billingCycle (ver SubscriptionPeriodicidadControllerTest)
             periodicidad = null, billingCycle = cycle, renewalDate = LocalDate.parse(received), categoryId = 3, active = true,
-            notes = "", isTrial = false, trialEndsAt = null
+            notes = "", isTrial = false, trialEndsAt = null, fechaInicio = null, fechaFin = null
         )
         return saved.captured.renewalDate
     }

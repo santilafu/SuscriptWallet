@@ -50,9 +50,12 @@ class SubscriptionController(
     @GetMapping
     fun list(@AuthenticationPrincipal userDetails: UserDetails, model: Model): String {
         val userId = resolveUserId(userDetails)
-        val subs = subscriptionService.findAll(userId).map { it.projected() }
+        val stored = subscriptionService.findAll(userId)
+        val subs = stored.map { it.projected() }
         val today = LocalDate.now(clock)
         model.addAttribute("subscriptions", subs)
+        // Plazo (cuotas restantes / terminado) por id, desde el ancla guardada y no la proyectada.
+        model.addAttribute("plazos", plazos(stored, today))
         // Días restantes de prueba calculados aquí: Thymeleaf 3.1.3 (Spring Boot 3.5) prohíbe
         // T(...) en las plantillas y la lista reventaba al calcularlo con T(ChronoUnit).
         model.addAttribute("trialDaysLeft", subs.filter { it.trialEndsAt != null }
@@ -107,7 +110,10 @@ class SubscriptionController(
         @RequestParam(defaultValue = "false") active: Boolean,
         @RequestParam(defaultValue = "") notes: String,
         @RequestParam(defaultValue = "false") isTrial: Boolean,
-        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) trialEndsAt: LocalDate?
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) trialEndsAt: LocalDate?,
+        // Plazo (opcional). El formulario siempre envía los dos campos: vacío = sin fecha (borra).
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) fechaInicio: LocalDate?,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) fechaFin: LocalDate?
     ): String {
         if (isTrial && trialEndsAt == null)
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "trialEndsAt is required when isTrial is true")
@@ -118,7 +124,8 @@ class SubscriptionController(
             Subscription(
                 name = name, description = description, price = price, currency = currency,
                 billingCycle = cycle, intervaloMeses = intervalo, renewalDate = renewalDate, category = category,
-                active = active, notes = notes, isTrial = isTrial, trialEndsAt = trialEndsAt
+                active = active, notes = notes, isTrial = isTrial, trialEndsAt = trialEndsAt,
+                fechaInicio = fechaInicio, fechaFin = fechaFin
             ),
             userId
         )
@@ -136,9 +143,11 @@ class SubscriptionController(
         model: Model
     ): String {
         val userId = resolveUserId(userDetails)
-        val sub = subscriptionService.findById(id, userId).projected()
+        val stored = subscriptionService.findById(id, userId)
+        val sub = stored.projected()
         model.addAttribute("sub", sub)
         model.addAttribute("isEntity", true)
+        model.addAttribute("plazo", com.subia.service.RenewalDates.plazo(stored, LocalDate.now(clock)))
         model.addAttribute("periodicidadActual", valorPeriodicidad(sub))
         model.addAttribute("categories", categoryService.findAll())
         model.addAttribute("currencies", com.subia.model.Currencies.SUPPORTED)
@@ -166,7 +175,10 @@ class SubscriptionController(
         @RequestParam(defaultValue = "false") active: Boolean,
         @RequestParam(defaultValue = "") notes: String,
         @RequestParam(defaultValue = "false") isTrial: Boolean,
-        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) trialEndsAt: LocalDate?
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) trialEndsAt: LocalDate?,
+        // Plazo (opcional). El formulario siempre envía los dos campos: vacío = sin fecha (borra).
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) fechaInicio: LocalDate?,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) fechaFin: LocalDate?
     ): String {
         if (isTrial && trialEndsAt == null)
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "trialEndsAt is required when isTrial is true")
@@ -186,6 +198,7 @@ class SubscriptionController(
                 id = id, name = name, description = description, price = price, currency = currency,
                 billingCycle = cycle, intervaloMeses = intervalo, renewalDate = renewal, category = category,
                 active = active, notes = notes, isTrial = isTrial, trialEndsAt = trialEndsAt,
+                fechaInicio = fechaInicio, fechaFin = fechaFin,
                 userId = userId
             )
         )
@@ -275,7 +288,8 @@ class SubscriptionController(
         response.setHeader("Content-Disposition", "attachment; filename=\"suscripciones.csv\"")
 
         val writer = response.writer
-        writer.println("Nombre,Descripcion,Precio,Moneda,Ciclo,Fecha renovacion,Categoria,Activa,Prueba gratuita,Fin prueba,Notas")
+        // Columnas nuevas siempre al FINAL para no mover las que ya usa quien importa el CSV.
+        writer.println("Nombre,Descripcion,Precio,Moneda,Ciclo,Fecha renovacion,Categoria,Activa,Prueba gratuita,Fin prueba,Notas,Fecha inicio,Fecha fin")
         for (s in subs) {
             val line = listOf(
                 csvEscape(s.name),
@@ -288,7 +302,9 @@ class SubscriptionController(
                 if (s.active) "Sí" else "No",
                 if (s.isTrial) "Sí" else "No",
                 s.trialEndsAt?.toString() ?: "",
-                csvEscape(s.notes)
+                csvEscape(s.notes),
+                s.fechaInicio?.toString() ?: "",
+                s.fechaFin?.toString() ?: ""
             ).joinToString(",")
             writer.println(line)
         }
@@ -299,6 +315,9 @@ class SubscriptionController(
      * Copia (no persistida) con la próxima renovación real en `renewalDate` (N-12): la fecha
      * guardada no se avanza nunca y la lista mostraba cobros de hace meses.
      */
+    private fun plazos(subs: List<Subscription>, today: LocalDate): Map<Long, com.subia.service.RenewalDates.Plazo> =
+        subs.mapNotNull { s -> com.subia.service.RenewalDates.plazo(s, today)?.let { s.id to it } }.toMap()
+
     private fun Subscription.projected(): Subscription =
         copy(renewalDate = com.subia.service.RenewalDates.nextRenewal(this, LocalDate.now(clock)))
 
@@ -354,6 +373,8 @@ class SubscriptionController(
         "active"      to true,
         "notes"       to "",
         "isTrial"     to false,
-        "trialEndsAt" to null
+        "trialEndsAt" to null,
+        "fechaInicio" to null,
+        "fechaFin"    to null
     )
 }

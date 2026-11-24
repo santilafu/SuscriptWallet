@@ -28,5 +28,9 @@ data class SubscriptionDto(
      */
     val intervaloMeses: Int = 1,
     /** Gasto mensual equivalente (2 decimales), igual que suma el dashboard: 90 € trimestral → 30.00. */
-    val equivalenteMensual: BigDecimal = BigDecimal.ZERO
+    val equivalenteMensual: BigDecimal = BigDecimal.ZERO,
+    /** Inicio del plazo (yyyy-MM-dd) o null. Campo nuevo, ignorado por las apps antiguas. */
+    val fechaInicio: String? = null,
+    /** Fin del plazo (yyyy-MM-dd) o null. Con él la app deriva "Terminado" y las cuotas. */
+    val fechaFin: String? = null
 )

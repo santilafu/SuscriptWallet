@@ -35,5 +35,13 @@ data class SubscriptionRequestDto(
      * publicadas (≤ 2.17.8) no lo envían; si falta se deduce del ciclo o se conserva el guardado
      * (ver `Periodicidad.resolver`). Si llega, manda él y `billingCycle` se deriva.
      */
-    val intervaloMeses: Int? = null
+    val intervaloMeses: Int? = null,
+    /**
+     * Plazo del gasto (préstamos y financiaciones), yyyy-MM-dd. OPCIONALES porque las apps
+     * ≤ 2.18.2 no los envían y el PUT reconstruye la entidad entera:
+     * ausente/null → se conserva lo guardado (en un alta, sin fecha); "" → se borra; fecha → se
+     * guarda. Formato inválido o inicio posterior al fin → 400 VALIDATION_ERROR.
+     */
+    val fechaInicio: String? = null,
+    val fechaFin: String? = null
 )

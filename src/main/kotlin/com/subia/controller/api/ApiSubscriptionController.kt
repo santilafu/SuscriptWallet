@@ -66,7 +66,9 @@ class ApiSubscriptionController(
             renewalDate = req.renewalDate, active = req.active, notes = req.notes,
             category = category,
             isTrial = req.isTrial,
-            trialEndsAt = trialEndFor(req)
+            trialEndsAt = trialEndFor(req),
+            fechaInicio = resolverFecha(req.fechaInicio, null, "fechaInicio"),
+            fechaFin = resolverFecha(req.fechaFin, null, "fechaFin")
         )
         return ApiResponse(data = subscriptionService.save(sub, userId).toDto())
     }
@@ -94,6 +96,9 @@ class ApiSubscriptionController(
             category = category,
             isTrial = req.isTrial,
             trialEndsAt = trialEndFor(req),
+            // Apps ≤ 2.18.2 no envían el plazo: sin el campo se conserva el guardado.
+            fechaInicio = resolverFecha(req.fechaInicio, stored.fechaInicio, "fechaInicio"),
+            fechaFin = resolverFecha(req.fechaFin, stored.fechaFin, "fechaFin"),
             userId = userId
         )
         return ApiResponse(data = subscriptionService.save(sub).toDto())
@@ -110,9 +115,14 @@ class ApiSubscriptionController(
     }
 
     /**
-     * Antes `LocalDate.parse` sin control: una fecha mal formada devolvía un 500. Ahora vacío =
-     * sin fecha y formato inválido = 400 (IllegalArgumentException → VALIDATION_ERROR).
+     * Fecha del plazo que hay que guardar (mismo patrón que `Periodicidad.resolver`):
+     * null (campo ausente) → [guardada]; vacío → sin fecha; si no, yyyy-MM-dd o 400.
      */
+    private fun resolverFecha(recibida: String?, guardada: LocalDate?, campo: String): LocalDate? {
+        if (recibida == null) return guardada
+        return parseFecha(recibida, campo)
+    }
+
     /**
      * La web exige fecha de fin en una prueba gratuita; la API la aceptaba sin ella y la prueba
      * quedaba "vigente" para siempre (fuera de totales y sin aviso). Para no romper la app con un
@@ -124,13 +134,19 @@ class ApiSubscriptionController(
         return if (req.isTrial && parsed == null) req.renewalDate else parsed
     }
 
-    private fun parseTrialEnd(raw: String?): LocalDate? {
+    private fun parseTrialEnd(raw: String?): LocalDate? = parseFecha(raw, "trialEndsAt")
+
+    /**
+     * Antes `LocalDate.parse` sin control: una fecha mal formada devolvía un 500. Ahora vacío =
+     * sin fecha y formato inválido = 400 (IllegalArgumentException → VALIDATION_ERROR).
+     */
+    private fun parseFecha(raw: String?, campo: String): LocalDate? {
         val value = raw?.trim().orEmpty()
         if (value.isEmpty()) return null
         return try {
             LocalDate.parse(value)
         } catch (ex: DateTimeParseException) {
-            throw IllegalArgumentException("trialEndsAt debe tener formato yyyy-MM-dd")
+            throw IllegalArgumentException("$campo debe tener formato yyyy-MM-dd")
         }
     }
 
@@ -157,7 +173,9 @@ class ApiSubscriptionController(
             isTrial = isTrial, trialEndsAt = trialEndsAt?.toString(),
             // Normalizado por si la entidad no pasó por la validación (YEARLY + 1 → 12).
             intervaloMeses = Periodicidad.normalizar(billingCycle, intervaloMeses).second,
-            equivalenteMensual = Periodicidad.aCifraVisible(DashboardService.equivalenteMensual(this))
+            equivalenteMensual = Periodicidad.aCifraVisible(DashboardService.equivalenteMensual(this)),
+            fechaInicio = fechaInicio?.toString(),
+            fechaFin = fechaFin?.toString()
         )
     }
 }

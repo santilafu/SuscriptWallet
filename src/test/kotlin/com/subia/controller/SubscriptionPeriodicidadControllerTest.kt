@@ -182,7 +182,7 @@ class SubscriptionPeriodicidadControllerTest {
             details, name = "Seguro hogar", description = "", price = BigDecimal("90.00"), currency = "EUR",
             periodicidad = periodicidad, billingCycle = billingCycle,
             renewalDate = LocalDate.parse("2026-12-01"), categoryId = 3, active = true,
-            notes = "", isTrial = false, trialEndsAt = null
+            notes = "", isTrial = false, trialEndsAt = null, fechaInicio = null, fechaFin = null
         )
     }
 
@@ -191,7 +191,7 @@ class SubscriptionPeriodicidadControllerTest {
             details, 7, name = "Seguro hogar", description = "", price = BigDecimal("90.00"), currency = "EUR",
             periodicidad = periodicidad, billingCycle = billingCycle,
             renewalDate = LocalDate.parse(renewal), categoryId = 3, active = true,
-            notes = "", isTrial = false, trialEndsAt = null
+            notes = "", isTrial = false, trialEndsAt = null, fechaInicio = null, fechaFin = null
         )
     }
 

@@ -288,6 +288,49 @@
                            th:value="${isEntity and sub.trialEndsAt != null ? sub.trialEndsAt : ''}">
                 </div>
 
+                <!-- Plazo (opcional): préstamos y financiaciones. Vacío = sin fecha. -->
+                <div class="mt-6">
+                    <p class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1" th:text="#{form.plazo.title}">Plazo (opcional)</p>
+                    <p class="text-xs mb-3" style="color:#8291a8;" th:text="#{form.plazo.hint}"></p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="fieldFechaInicio" class="block text-xs font-medium text-slate-400 mb-1" th:text="#{form.field.start-date}">Desde</label>
+                            <input type="date" name="fechaInicio" id="fieldFechaInicio"
+                                   class="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
+                                   th:value="${isEntity and sub.fechaInicio != null ? sub.fechaInicio : ''}">
+                        </div>
+                        <div>
+                            <label for="fieldFechaFin" class="block text-xs font-medium text-slate-400 mb-1" th:text="#{form.field.end-date}">Hasta</label>
+                            <input type="date" name="fechaFin" id="fieldFechaFin"
+                                   class="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
+                                   th:min="${isEntity and sub.fechaInicio != null ? sub.fechaInicio : ''}"
+                                   th:value="${isEntity and sub.fechaFin != null ? sub.fechaFin : ''}">
+                        </div>
+                    </div>
+
+                    <!-- Detalle del plazo (solo al editar un gasto con fecha de fin) -->
+                    <div th:if="${plazo != null}" id="plazoDetalle" class="mt-4 rounded-lg p-4"
+                         style="background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.18);">
+                        <p class="text-sm font-semibold" style="color:#dde4f0;"
+                           th:text="${plazo.terminado} ? #{sub.status.finished} : #{sub.plazo.remaining(${plazo.cuotasRestantes})}"></p>
+                        <p th:unless="${plazo.terminado}" class="text-xs mt-1 tabular-num" style="color:#8291a8;">
+                            <span th:text="#{form.plazo.pending}">Pendiente</span>:
+                            <span th:text="${sub.currency + ' ' + #numbers.formatDecimal(plazo.pendiente, 1, 2)}"></span>
+                        </p>
+                        <th:block th:if="${plazo.cuotasTotales != null and plazo.cuotasTotales > 0}">
+                            <div class="mt-3 h-1.5 rounded-full overflow-hidden" style="background:rgba(255,255,255,0.08);"
+                                 role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                                 th:aria-valuenow="${plazo.progresoPct}"
+                                 th:aria-label="#{form.plazo.paid(${plazo.cuotasPagadas},${plazo.cuotasTotales})}">
+                                <div class="h-full rounded-full" style="background:#7c3aed;"
+                                     th:style="'background:#7c3aed;width:' + ${plazo.progresoPct} + '%;'"></div>
+                            </div>
+                            <p class="text-xs mt-1.5 tabular-num" style="color:#8291a8;"
+                               th:text="#{form.plazo.paid(${plazo.cuotasPagadas},${plazo.cuotasTotales})}"></p>
+                        </th:block>
+                    </div>
+                </div>
+
                 <!-- En móvil (375 px) los tres botones no caben en una fila: flex-wrap baja
                      Cancelar/Guardar a la segunda línea, alineados a la derecha, en vez de
                      sacar Guardar de la tarjeta. -->
@@ -412,6 +455,13 @@ var i18n = {
         var trialField = document.getElementById('fieldTrialEndsAt');
         if (trialField) trialField.required = !!checked;
     };
+
+    // Plazo: el fin no puede ser anterior al inicio (el servidor responde 400; aquí se avisa antes).
+    var fechaInicio = document.getElementById('fieldFechaInicio');
+    var fechaFin = document.getElementById('fieldFechaFin');
+    if (fechaInicio && fechaFin) {
+        fechaInicio.addEventListener('change', function () { fechaFin.min = fechaInicio.value; });
+    }
 
     // Submit: si hay un campo inválido en un paso oculto, se salta a ese paso y se muestra el aviso.
     var subForm   = document.getElementById('subForm');
