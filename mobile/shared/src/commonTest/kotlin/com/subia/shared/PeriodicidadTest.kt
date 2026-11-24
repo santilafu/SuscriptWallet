@@ -25,6 +25,8 @@ import kotlin.test.assertTrue
  */
 class PeriodicidadTest {
 
+    private val HOY = LocalDate(2026, 11, 24)
+
     private fun sub(precio: Double, periodo: String = "MONTHLY", intervalo: Int = 1, moneda: String = "EUR", categoriaId: Long? = null) =
         Subscription(
             nombre = "X", precio = precio, moneda = moneda, periodoFacturacion = periodo,
@@ -223,6 +225,22 @@ class PeriodicidadTest {
     // ── Totales del Inicio (DashboardViewModel) ──────────────────────────────
 
     @Test
+    fun dashboard_anualConFechaDeFin_sumaSoloLoQueQueda_igualQueAlAnioYLaWeb() {
+        // Caso Vitaldent del QA: 60 €/mes, próximo cobro 15-dic, fin 15-feb → quedan 3 cuotas.
+        // La web (DashboardService) da 180 y la vista "Al año" también; "Tu año" daba 720.
+        val vitaldent = Subscription(
+            nombre = "Vitaldent", precio = 60.0, moneda = "EUR", periodoFacturacion = "MONTHLY",
+            fechaRenovacion = "2026-12-15", fechaInicio = "2026-03-15", fechaFin = "2027-02-15"
+        )
+        val subs = listOf(vitaldent, sub(10.0))
+        assertEquals(mapOf("EUR" to 300.0), DashboardViewModel.calcularTotalesAnualesPorMoneda(subs, HOY))
+        assertEquals(
+            300.0,
+            gastosPorCategoria(subs, HOY, VistaCategorias.AL_ANIO).sumOf { it.total }
+        )
+    }
+
+    @Test
     fun dashboard_totalesConTrimestralYSemestral() {
         val subs = listOf(
             sub(90.0, intervalo = 3),      // 30 / mes, 360 / año
@@ -231,7 +249,7 @@ class PeriodicidadTest {
             sub(120.0, "YEARLY")           // 10 / mes, 120 / año (sin campo → 12)
         )
         assertEquals(mapOf("EUR" to 60.0), DashboardViewModel.calcularTotalesPorMoneda(subs))
-        assertEquals(mapOf("EUR" to 720.0), DashboardViewModel.calcularTotalesAnualesPorMoneda(subs))
+        assertEquals(mapOf("EUR" to 720.0), DashboardViewModel.calcularTotalesAnualesPorMoneda(subs, HOY))
     }
 
     @Test
@@ -239,21 +257,21 @@ class PeriodicidadTest {
         val subs = List(3) { sub(10.0, intervalo = 3) }
         assertEquals(10.0, DashboardViewModel.calcularTotalesPorMoneda(subs)["EUR"])
         // Anual por gasto = 10 × 12 / 3 = 40 (no 3,33 × 12 = 39,96).
-        assertEquals(120.0, DashboardViewModel.calcularTotalesAnualesPorMoneda(subs)["EUR"])
+        assertEquals(120.0, DashboardViewModel.calcularTotalesAnualesPorMoneda(subs, HOY)["EUR"])
     }
 
     @Test
     fun dashboard_mensualYAnual_igualQueAntes() {
         val subs = listOf(sub(9.99), sub(119.88, "YEARLY"), sub(15.0, moneda = "USD"))
         assertEquals(mapOf("EUR" to 19.98, "USD" to 15.0), DashboardViewModel.calcularTotalesPorMoneda(subs))
-        assertEquals(mapOf("EUR" to 239.76, "USD" to 180.0), DashboardViewModel.calcularTotalesAnualesPorMoneda(subs))
+        assertEquals(mapOf("EUR" to 239.76, "USD" to 180.0), DashboardViewModel.calcularTotalesAnualesPorMoneda(subs, HOY))
     }
 
     @Test
     fun dashboard_semanal_igualQueAntes() {
         val subs = listOf(sub(5.0, "WEEKLY"))
         assertEquals(21.67, DashboardViewModel.calcularTotalesPorMoneda(subs)["EUR"])
-        assertEquals(260.0, DashboardViewModel.calcularTotalesAnualesPorMoneda(subs)["EUR"])
+        assertEquals(260.0, DashboardViewModel.calcularTotalesAnualesPorMoneda(subs, HOY)["EUR"])
     }
 
     @Test

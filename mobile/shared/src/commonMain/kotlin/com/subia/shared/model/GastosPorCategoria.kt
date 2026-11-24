@@ -143,8 +143,8 @@ private fun gastosDelAnio(subs: List<Subscription>, hoy: LocalDate): List<GastoI
     subs.filter { it.cuentaEnTotales(hoy) }.map { sub ->
         val periodo = sub.periodoCobro()
         val porAnio = cobrosAlAnio(periodo)
-        val restantes = plazoGasto(sub, hoy)?.cuotasRestantes?.takeIf { it < porAnio }
-        val interno = restantes?.let { Periodicidad.aDiezmilesimas(sub.precio) * it } ?: sub.totalAnualInterno()
+        val restantes = sub.restantesAlAnio(hoy)
+        val interno = sub.totalAlAnioInterno(hoy)
         GastoInterno(
             categoriaId = sub.categoriaId,
             moneda = sub.moneda,
@@ -160,6 +160,17 @@ private fun gastosDelAnio(subs: List<Subscription>, hoy: LocalDate): List<GastoI
             )
         )
     }
+
+/**
+ * Lo que suma un gasto "Al año" (diezmilésimas): con fecha de fin, mín(cuotas restantes, cobros
+ * al año) × importe; sin ella, la tasa anual. Es la misma cifra que "Gasto anual" en la web.
+ */
+internal fun Subscription.totalAlAnioInterno(hoy: LocalDate): Long =
+    restantesAlAnio(hoy)?.let { Periodicidad.aDiezmilesimas(precio) * it } ?: totalAnualInterno()
+
+/** Cuotas restantes si son menos que los cobros de un año; null si el gasto suma su tasa anual. */
+private fun Subscription.restantesAlAnio(hoy: LocalDate): Int? =
+    plazoGasto(this, hoy)?.cuotasRestantes?.takeIf { it < cobrosAlAnio(periodoCobro()) }
 
 /** Cobros en un año según el periodo: 12 / meses, o 52, 26 y 365 en los ciclos por días. */
 private fun cobrosAlAnio(periodo: PeriodoCobro): Int = when (periodo) {

@@ -15,7 +15,7 @@ import com.subia.shared.model.cuentaEnTotales
 import com.subia.shared.model.equivalenteMensualInterno
 import com.subia.shared.model.gastosPorCategoria
 import com.subia.shared.model.ordenDivisa
-import com.subia.shared.model.totalAnualInterno
+import com.subia.shared.model.totalAlAnioInterno
 import com.subia.shared.network.SessionExpiredException
 import com.subia.shared.repository.CategoryRepository
 import com.subia.shared.repository.DashboardRepository
@@ -113,8 +113,9 @@ class DashboardViewModel(
 
     private val _totalesAnualesPorMoneda = MutableStateFlow<Map<String, Double>>(emptyMap())
     /**
-     * Mapa de divisa → gasto anual total (importe × 12 / intervalo por gasto, 2 decimales).
-     * El orden de salida es: EUR primero, USD segundo, resto por orden alfabético.
+     * Mapa de divisa → gasto anual total (importe × 12 / intervalo por gasto, 2 decimales; con
+     * fecha de fin, solo lo que queda). El orden de salida es: EUR primero, USD segundo, resto por
+     * orden alfabético.
      */
     val totalesAnualesPorMoneda: StateFlow<Map<String, Double>> = _totalesAnualesPorMoneda.asStateFlow()
 
@@ -239,7 +240,7 @@ class DashboardViewModel(
         val activas = todas.filter { it.activa }
         val subs = activas.filter { it.cuentaEnTotales(hoy) }
         _totalesPorMoneda.value = calcularTotalesPorMoneda(subs)
-        _totalesAnualesPorMoneda.value = calcularTotalesAnualesPorMoneda(subs)
+        _totalesAnualesPorMoneda.value = calcularTotalesAnualesPorMoneda(subs, hoy)
         _gastosPorCategoria.value = calcularGastosPorCategoria(subs, nombreCatMap)
         _pruebasPorVencer.value = calcularPruebasPorVencer(subs)
         _topSuscripciones.value = calcularTopSuscripciones(subs)
@@ -290,10 +291,11 @@ class DashboardViewModel(
         /**
          * Gasto **anual** por divisa: suma de importe × 12 / intervalo de cada gasto (no
          * mensual × 12: con 10 € trimestral eso daría 39,96 en vez de 40,00), redondeada al final.
+         * Con fecha de fin suma solo lo que queda, igual que la vista "Al año" y la web.
          * El orden de salida es: EUR primero, USD segundo, resto por orden alfabético.
          */
-        internal fun calcularTotalesAnualesPorMoneda(subs: List<Subscription>): Map<String, Double> =
-            sumarPorMonedaVisible(subs) { it.totalAnualInterno() }
+        internal fun calcularTotalesAnualesPorMoneda(subs: List<Subscription>, hoy: LocalDate): Map<String, Double> =
+            sumarPorMonedaVisible(subs) { it.totalAlAnioInterno(hoy) }
 
         /**
          * Agrupa las suscripciones por nombre de categoría y divisa, sumando el gasto mensual normalizado.
