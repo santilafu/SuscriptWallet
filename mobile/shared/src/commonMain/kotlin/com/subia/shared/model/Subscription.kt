@@ -46,7 +46,14 @@ data class Subscription(
      * Equivalente mensual calculado por el backend (2 decimales). Solo informativo: la app
      * calcula con [equivalenteMensualInterno] para funcionar igual con la caché y sin red.
      */
-    @SerialName("equivalenteMensual") val equivalenteMensual: Double? = null
+    @SerialName("equivalenteMensual") val equivalenteMensual: Double? = null,
+    /**
+     * Plazo opcional del gasto (préstamos, financiaciones), ISO `yyyy-MM-dd`. No hay cobros antes
+     * de [fechaInicio] ni después de [fechaFin]; pasado el último cobro el gasto queda terminado
+     * ([terminado]) y deja de contar. Null en backends anteriores y en gastos sin plazo.
+     */
+    @SerialName("fechaInicio") val fechaInicio: String? = null,
+    @SerialName("fechaFin") val fechaFin: String? = null
 ) {
     /** Ancla para proyectar: [fechaAncla] si llega, si no [fechaRenovacion]. */
     val anclaRenovacion: String
@@ -78,7 +85,14 @@ data class NuevaSuscripcionRequest(
      * backend conservaría el intervalo guardado (no se podría volver de trimestral a mensual).
      * Además obliga a cada llamada a decidir el intervalo. En WEEKLY el backend lo ignora.
      */
-    @SerialName("intervaloMeses") val intervaloMeses: Int
+    @SerialName("intervaloMeses") val intervaloMeses: Int,
+    /**
+     * Plazo del gasto, ISO `yyyy-MM-dd`, o `""` si no tiene. SIN valor por defecto, por la misma
+     * razón que [intervaloMeses]: el backend entiende "campo ausente" como "conservar lo guardado"
+     * (apps antiguas) y `""` como "borrar", así que la app debe enviarlos siempre.
+     */
+    @SerialName("fechaInicio") val fechaInicio: String,
+    @SerialName("fechaFin") val fechaFin: String
 )
 
 /**

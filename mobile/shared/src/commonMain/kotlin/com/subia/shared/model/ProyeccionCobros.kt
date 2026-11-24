@@ -116,36 +116,68 @@ private fun fechaCobro(ancla: LocalDate, ciclo: Ciclo, k: Int): LocalDate =
     if (ciclo.meses > 0) ancla.plus(k * ciclo.meses, DateTimeUnit.MONTH)
     else ancla.plus(k * ciclo.dias, DateTimeUnit.DAY)
 
-/** Cobros de una suscripción en [hoy, fin], avanzando ciclos si la fecha de renovación es pasada. */
+/**
+ * Cobros de una suscripción en [hoy, fin], avanzando ciclos si la fecha de renovación es pasada.
+ * Es el embudo de toda la proyección (calendario, "Este mes pagas", avisos, widget): aquí se
+ * recorta la serie al plazo del gasto, sin cobros antes de `fechaInicio` ni después de `fechaFin`.
+ * Sin fechas de plazo el resultado es el de siempre.
+ */
 internal fun ocurrencias(sub: Subscription, hoy: LocalDate, fin: LocalDate): List<LocalDate> {
+    val inicioPlazo = sub.fechaInicioPlazo()
+    val finPlazo = sub.fechaFinPlazo()
+    val desde = if (inicioPlazo != null && inicioPlazo > hoy) inicioPlazo else hoy
+    val hasta = if (finPlazo != null && finPlazo < fin) finPlazo else fin
+    return serieDeCobros(sub, desde, hasta)
+}
+
+/**
+ * Fechas de la serie de cobros de [sub] en [desde, hasta], SIN recortar al plazo. La serie es
+ * `ancla + k ciclos` con k >= [kMinimo]: 0 para la proyección (no hay cobros antes del ancla) y
+ * [Int.MIN_VALUE] para contar las cuotas totales de un plazo, que pueden ser anteriores al ancla.
+ */
+internal fun serieDeCobros(
+    sub: Subscription,
+    desde: LocalDate,
+    hasta: LocalDate,
+    kMinimo: Int = 0
+): List<LocalDate> {
+    if (desde > hasta) return emptyList()
     val ancla = anclaDe(sub) ?: return emptyList()
     val ciclo = cicloDe(sub)
-    // Estimación (por defecto) del primer ciclo >= hoy, para no iterar desde anclas muy antiguas.
-    var k = if (ancla >= hoy) 0 else {
-        if (ciclo.meses > 0) ancla.monthsUntil(hoy) / ciclo.meses else ancla.daysUntil(hoy) / ciclo.dias
-    }.coerceAtLeast(0)
-    while (fechaCobro(ancla, ciclo, k) < hoy) k++
+    // Estimación del primer ciclo >= desde, para no iterar desde anclas muy antiguas; los dos
+    // bucles la corrigen (la división trunca hacia cero y los meses cortos recortan el día).
+    var k = (if (ciclo.meses > 0) ancla.monthsUntil(desde) / ciclo.meses else ancla.daysUntil(desde) / ciclo.dias)
+        .coerceAtLeast(kMinimo)
+    while (k > kMinimo && fechaCobro(ancla, ciclo, k - 1) >= desde) k--
+    while (fechaCobro(ancla, ciclo, k) < desde) k++
 
     val resultado = mutableListOf<LocalDate>()
+    // Guardia contra bucles: 10 000 cobros cubren de sobra una hipoteca a 40 años o un semanal a 50.
     var guardia = 0
-    while (guardia++ < 400) {
+    while (guardia++ < MAX_COBROS_SERIE) {
         val fecha = fechaCobro(ancla, ciclo, k)
-        if (fecha > fin) break
+        if (fecha > hasta) break
         resultado += fecha
         k++
     }
     return resultado
 }
 
+private const val MAX_COBROS_SERIE = 10_000
+
 /**
  * Próxima fecha de cobro (>= [hoy]) de [sub]. El backend guarda la fecha de renovación tal y como
  * se dio de alta y no siempre la avanza, así que la lista y el detalle mostraban fechas pasadas
  * ("Renueva: 3 may" en octubre). Devuelve null si la fecha no es una ISO válida.
+ * Respeta el inicio del plazo (no hay cobros antes de `fechaInicio`) pero NO la fecha de fin: si
+ * cae después de ella, el gasto está [terminado] (como `RenewalDates.proximoCobro` del backend).
  */
 fun proximaRenovacion(sub: Subscription, hoy: LocalDate): LocalDate? {
     val ancla = anclaDe(sub) ?: return null
-    if (ancla >= hoy) return ancla
-    return ocurrencias(sub, hoy, hoy.plus(2, DateTimeUnit.YEAR)).firstOrNull() ?: ancla
+    val inicio = sub.fechaInicioPlazo()
+    val desde = if (inicio != null && inicio > hoy) inicio else hoy
+    if (ancla >= desde) return ancla
+    return serieDeCobros(sub, desde, desde.plus(2, DateTimeUnit.YEAR)).firstOrNull() ?: ancla
 }
 
 /**
@@ -204,7 +236,7 @@ fun calcularProyeccionCobros(subs: List<Subscription>, hoy: LocalDate): Proyecci
  */
 private fun cobrosPrevistos(subs: List<Subscription>, desde: LocalDate, hasta: LocalDate): List<CobroPrevisto> =
     subs.asSequence()
-        .filter { it.activa }
+        .filter { it.activa } // un gasto terminado no tiene cobros fuera de su plazo: lo recorta ocurrencias
         .flatMap { sub ->
             ocurrencias(sub, desde, hasta).map { fecha ->
                 CobroPrevisto(

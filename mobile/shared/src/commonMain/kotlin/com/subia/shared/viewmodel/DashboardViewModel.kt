@@ -11,6 +11,7 @@ import com.subia.shared.model.ProyeccionCobros
 import com.subia.shared.model.Subscription
 import com.subia.shared.model.VistaCategorias
 import com.subia.shared.model.calcularProyeccionCobros
+import com.subia.shared.model.cuentaEnTotales
 import com.subia.shared.model.equivalenteMensualInterno
 import com.subia.shared.model.gastosPorCategoria
 import com.subia.shared.model.ordenDivisa
@@ -228,18 +229,23 @@ class DashboardViewModel(
      * **activas**, igual que el backend (`findByUserIdAndActiveTrue`) y la proyección de cobros:
      * antes una suscripción desactivada en la web seguía sumando al gasto mensual, al anual, al
      * top y a las categorías, y el Inicio no cuadraba con "Suscripciones activas".
+     * Los gastos **terminados** (fecha de fin pasada) tampoco suman en las cifras por tasa; la
+     * proyección y "Este mes" reciben las activas porque [ocurrencias] ya recorta cada serie a su
+     * plazo (así un último cobro de este mismo mes sigue saliendo en el calendario del mes).
+     * Un gasto con inicio futuro sí cuenta en el gasto mensual medio (decisión del usuario).
      */
     private fun publicarDerivados(todas: List<Subscription>, nombreCatMap: Map<Long, String>) {
-        val subs = todas.filter { it.activa }
+        val hoy = hoy()
+        val activas = todas.filter { it.activa }
+        val subs = activas.filter { it.cuentaEnTotales(hoy) }
         _totalesPorMoneda.value = calcularTotalesPorMoneda(subs)
         _totalesAnualesPorMoneda.value = calcularTotalesAnualesPorMoneda(subs)
         _gastosPorCategoria.value = calcularGastosPorCategoria(subs, nombreCatMap)
         _pruebasPorVencer.value = calcularPruebasPorVencer(subs)
         _topSuscripciones.value = calcularTopSuscripciones(subs)
-        val hoy = hoy()
-        _gastosCategoriaMes.value = gastosPorCategoria(subs, hoy, VistaCategorias.ESTE_MES, nombreCatMap)
-        _gastosCategoriaAnio.value = gastosPorCategoria(subs, hoy, VistaCategorias.AL_ANIO, nombreCatMap)
-        val proyeccion = calcularProyeccionCobros(subs, hoy)
+        _gastosCategoriaMes.value = gastosPorCategoria(activas, hoy, VistaCategorias.ESTE_MES, nombreCatMap)
+        _gastosCategoriaAnio.value = gastosPorCategoria(activas, hoy, VistaCategorias.AL_ANIO, nombreCatMap)
+        val proyeccion = calcularProyeccionCobros(activas, hoy)
         _proyeccion.value = proyeccion
         _totalesMesCompletoPorMoneda.value = proyeccion.totalMesCompleto
     }

@@ -11,7 +11,10 @@ enum class VistaCategorias {
      */
     ESTE_MES,
 
-    /** Total al año: importe × 12 / intervalo (semanal × 52), ver [Periodicidad.totalAnualInterno]. */
+    /**
+     * Total al año: importe × 12 / intervalo (semanal × 52), ver [Periodicidad.totalAnualInterno].
+     * Un gasto con fecha de fin suma como mucho las cuotas que le quedan.
+     */
     AL_ANIO
 }
 
@@ -70,7 +73,7 @@ fun gastosPorCategoria(
 ): List<GastoCategoria> {
     val gastos: List<GastoInterno> = when (vista) {
         VistaCategorias.ESTE_MES -> gastosDelMes(subs, hoy)
-        VistaCategorias.AL_ANIO -> gastosDelAnio(subs)
+        VistaCategorias.AL_ANIO -> gastosDelAnio(subs, hoy)
     }
     val totalPorMoneda = gastos.groupBy { it.moneda }.mapValues { (_, lista) -> lista.sumOf { it.interno } }
 
@@ -131,11 +134,17 @@ private fun gastosDelMes(subs: List<Subscription>, hoy: LocalDate): List<GastoIn
             )
         }
 
-/** "Al año": importe × 12 / intervalo de cada suscripción activa (semanal × 52). */
-private fun gastosDelAnio(subs: List<Subscription>): List<GastoInterno> =
-    subs.filter { it.activa }.map { sub ->
-        val interno = sub.totalAnualInterno()
+/**
+ * "Al año": importe × 12 / intervalo de cada suscripción activa (semanal × 52). Un gasto con fecha
+ * de fin suma solo lo que le queda: mín(cuotas restantes, cobros al año) × importe (decisión del
+ * usuario, igual en el backend). Los terminados no suman.
+ */
+private fun gastosDelAnio(subs: List<Subscription>, hoy: LocalDate): List<GastoInterno> =
+    subs.filter { it.cuentaEnTotales(hoy) }.map { sub ->
         val periodo = sub.periodoCobro()
+        val porAnio = cobrosAlAnio(periodo)
+        val restantes = plazoGasto(sub, hoy)?.cuotasRestantes?.takeIf { it < porAnio }
+        val interno = restantes?.let { Periodicidad.aDiezmilesimas(sub.precio) * it } ?: sub.totalAnualInterno()
         GastoInterno(
             categoriaId = sub.categoriaId,
             moneda = sub.moneda,
@@ -147,7 +156,7 @@ private fun gastosDelAnio(subs: List<Subscription>): List<GastoInterno> =
                 precio = sub.precio,
                 periodo = periodo,
                 importe = Periodicidad.aCifraVisible(interno),
-                numCobros = cobrosAlAnio(periodo)
+                numCobros = restantes ?: porAnio
             )
         )
     }

@@ -102,6 +102,9 @@ class SuscripcionFormViewModel(
     val notas = MutableStateFlow("")
     val esPrueba = MutableStateFlow(false)
     val fechaFinPrueba = MutableStateFlow<String?>(null)
+    /** Plazo opcional (préstamos, financiaciones): ISO `yyyy-MM-dd` o `null` si no tiene. */
+    val fechaInicio = MutableStateFlow<String?>(null)
+    val fechaFin = MutableStateFlow<String?>(null)
 
     /**
      * Estado activo/inactivo de la suscripción en edición. El formulario no lo muestra, pero hay
@@ -185,7 +188,7 @@ class SuscripcionFormViewModel(
     private val huellaActual: Flow<String> = combine(
         listOf(
             nombre, descripcion, precio, moneda, periodoFacturacion, intervaloMeses,
-            fechaRenovacion, categoriaId, notas, esPrueba, fechaFinPrueba
+            fechaRenovacion, categoriaId, notas, esPrueba, fechaFinPrueba, fechaInicio, fechaFin
         ) as List<Flow<Any?>>
     ) { valores -> valores.joinToString("\u0001") }
 
@@ -210,7 +213,8 @@ class SuscripcionFormViewModel(
 
     private fun huella(): String = listOf(
         nombre.value, descripcion.value, precio.value, moneda.value, periodoFacturacion.value, intervaloMeses.value,
-        fechaRenovacion.value, categoriaId.value, notas.value, esPrueba.value, fechaFinPrueba.value
+        fechaRenovacion.value, categoriaId.value, notas.value, esPrueba.value, fechaFinPrueba.value,
+        fechaInicio.value, fechaFin.value
     ).joinToString("\u0001")
 
     /**
@@ -339,6 +343,8 @@ class SuscripcionFormViewModel(
         notas.value = suscripcion.notas
         esPrueba.value = suscripcion.esPrueba
         fechaFinPrueba.value = suscripcion.fechaFinPrueba
+        fechaInicio.value = suscripcion.fechaInicio?.trim()?.takeIf { it.isNotEmpty() }
+        fechaFin.value = suscripcion.fechaFin?.trim()?.takeIf { it.isNotEmpty() }
         marcarComoSinCambios()
     }
 
@@ -397,7 +403,10 @@ class SuscripcionFormViewModel(
             notas = notas.value.trim(),
             esPrueba = esPrueba.value,
             fechaFinPrueba = if (esPrueba.value) fechaFinPrueba.value else null,
-            intervaloMeses = intervaloEfectivo()
+            intervaloMeses = intervaloEfectivo(),
+            // "" borra la fecha en el backend; siempre viajan (ver NuevaSuscripcionRequest).
+            fechaInicio = fechaInicio.value.orEmpty(),
+            fechaFin = fechaFin.value.orEmpty()
         )
 
         viewModelScope.launch {

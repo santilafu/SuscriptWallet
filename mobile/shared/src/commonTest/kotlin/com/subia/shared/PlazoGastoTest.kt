@@ -1,0 +1,257 @@
+package com.subia.shared
+
+import com.subia.shared.model.NuevaSuscripcionRequest
+import com.subia.shared.model.Subscription
+import com.subia.shared.model.VistaCategorias
+import com.subia.shared.model.avisosPendientes
+import com.subia.shared.model.calcularProyeccionCobros
+import com.subia.shared.model.cobrosDelMes
+import com.subia.shared.model.cuentaEnTotales
+import com.subia.shared.model.gastosPorCategoria
+import com.subia.shared.model.plazoGasto
+import com.subia.shared.model.proximaRenovacion
+import com.subia.shared.model.terminado
+import kotlinx.datetime.LocalDate
+import kotlinx.serialization.json.Json
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+/**
+ * Préstamos y financiaciones: plazo de un gasto con fecha de inicio y de fin ([plazoGasto],
+ * [terminado], recorte de la serie de cobros). Misma tabla de casos que `PlazoGastoTest` del
+ * backend (docs/specs/2026-11-24-prestamos-fase0.md). "Hoy" en todos los casos: 2026-10-10.
+ */
+class PlazoGastoTest {
+
+    private fun d(s: String) = LocalDate.parse(s)
+    private val hoy = d("2026-10-10")
+
+    private fun sub(
+        ancla: String,
+        inicio: String? = null,
+        fin: String? = null,
+        precio: Double = 100.0,
+        periodo: String = "MONTHLY",
+        intervalo: Int = 1,
+        id: Long = 1L,
+        activa: Boolean = true
+    ) = Subscription(
+        id = id, nombre = "Préstamo $id", precio = precio, periodoFacturacion = periodo,
+        fechaRenovacion = ancla, fechaAncla = ancla, intervaloMeses = intervalo, activa = activa,
+        categoriaId = 1L, fechaInicio = inicio, fechaFin = fin
+    )
+
+    private fun restantes(s: Subscription) = plazoGasto(s, hoy)?.cuotasRestantes
+
+    // ── Tabla compartida con el backend ──────────────────────────────────────
+
+    @Test
+    fun cuotasRestantes_conIntervalosDe1_2_3_6y12Meses() {
+        val casos = mapOf(1 to 15, 2 to 7, 3 to 5, 6 to 2, 12 to 1)
+        casos.forEach { (intervalo, esperado) ->
+            val periodo = if (intervalo == 12) "YEARLY" else "MONTHLY"
+            val s = sub("2026-01-15", fin = "2027-12-31", periodo = periodo, intervalo = intervalo)
+            assertEquals(esperado, restantes(s), "intervalo $intervalo")
+        }
+    }
+
+    @Test
+    fun semanal_cuentaCada7Dias() {
+        // 2026-10-13, 20, 27, 11-03, 10, 17, 24 → 7
+        assertEquals(7, restantes(sub("2026-10-13", fin = "2026-11-25", periodo = "WEEKLY")))
+    }
+
+    @Test
+    fun dia31_caeElUltimoDiaDeLosMesesCortos() {
+        // 31-oct, 30-nov, 31-dic, 31-ene, 28-feb
+        assertEquals(5, restantes(sub("2026-01-31", fin = "2027-03-01")))
+    }
+
+    @Test
+    fun elCobroDeHoy_cuentaComoPendiente() {
+        val s = sub("2026-10-10", fin = "2026-11-10")
+        assertEquals(2, restantes(s))
+        assertFalse(s.terminado(hoy))
+    }
+
+    @Test
+    fun sinFechaDeFin_noHayPlazoNiTerminado() {
+        val s = sub("2026-01-15", inicio = "2026-01-15")
+        assertNull(plazoGasto(s, hoy))
+        assertFalse(s.terminado(hoy))
+    }
+
+    @Test
+    fun finAntesDelProximoCobro_ceroCuotasYTerminado() {
+        val s = sub("2026-01-15", fin = "2026-10-12") // próximo cobro 15-oct > fin
+        assertEquals(0, restantes(s))
+        assertTrue(s.terminado(hoy))
+        assertEquals(0.0, plazoGasto(s, hoy)!!.pendiente)
+    }
+
+    @Test
+    fun finPasado_terminado() {
+        assertTrue(sub("2025-01-15", fin = "2025-12-15").terminado(hoy))
+    }
+
+    @Test
+    fun inicioFuturo_noHayCobrosAntesDelInicio() {
+        val s = sub("2026-10-15", inicio = "2027-01-15", fin = "2027-03-15")
+        val plazo = plazoGasto(s, hoy)!!
+        assertEquals(3, plazo.cuotasRestantes)
+        assertEquals(3, plazo.cuotasTotales)
+        assertFalse(s.terminado(hoy))
+        assertEquals(d("2027-01-15"), proximaRenovacion(s, hoy))
+        // Sí cuenta en el gasto mensual medio (decisión del usuario).
+        assertTrue(s.cuentaEnTotales(hoy))
+    }
+
+    @Test
+    fun inicioFuturoSinCobrosDentroDelPlazo_terminado() {
+        // Cobros los días 24; el plazo [1-dic, 15-dic] no contiene ninguno.
+        val s = sub("2026-10-24", inicio = "2026-12-01", fin = "2026-12-15")
+        assertEquals(0, restantes(s))
+        assertTrue(s.terminado(hoy))
+    }
+
+    @Test
+    fun totalesCuentanHaciaAtrasDesdeUnAnclaReciente_yLaBarraSaleDePagadasEntreTotales() {
+        val plazo = plazoGasto(sub("2026-10-15", inicio = "2026-01-15", fin = "2026-12-15", precio = 80.5), hoy)!!
+        assertEquals(3, plazo.cuotasRestantes)
+        assertEquals(12, plazo.cuotasTotales)
+        assertEquals(9, plazo.cuotasPagadas)
+        assertEquals(0.75f, plazo.progreso)
+        assertEquals(241.5, plazo.pendiente)
+    }
+
+    @Test
+    fun sinInicio_noHayTotalesNiBarra() {
+        val plazo = plazoGasto(sub("2026-01-15", fin = "2026-12-15"), hoy)!!
+        assertEquals(3, plazo.cuotasRestantes)
+        assertNull(plazo.cuotasTotales)
+        assertNull(plazo.cuotasPagadas)
+        assertNull(plazo.progreso)
+    }
+
+    @Test
+    fun pendienteConImporteDe4Decimales_seRedondeaAlFinal() {
+        // 3 × 33,3333 = 99,9999 → 100,00
+        assertEquals(100.0, plazoGasto(sub("2026-01-15", fin = "2026-12-15", precio = 33.3333), hoy)!!.pendiente)
+    }
+
+    @Test
+    fun alAnio_sumaMinimoEntreRestantesYCuotasPorAnio() {
+        fun cobros(s: Subscription) =
+            gastosPorCategoria(listOf(s), hoy, VistaCategorias.AL_ANIO).single().gastos.single()
+        // 3 cuotas restantes de 100 € → 300 €, no 1 200 €.
+        val corto = cobros(sub("2026-01-15", fin = "2026-12-15"))
+        assertEquals(3, corto.numCobros)
+        assertEquals(300.0, corto.importe)
+        assertEquals(12, cobros(sub("2026-01-15", fin = "2030-12-15")).numCobros)
+        assertEquals(4, cobros(sub("2026-01-15", fin = "2030-12-15", intervalo = 3)).numCobros)
+        assertEquals(52, cobros(sub("2026-10-13", fin = "2030-12-15", periodo = "WEEKLY")).numCobros)
+    }
+
+    // ── Terminado fuera de totales, calendario y avisos ──────────────────────
+
+    @Test
+    fun terminado_noCuentaEnTotalesNiEnAlAnio() {
+        val terminado = sub("2025-01-15", fin = "2025-12-15", id = 2)
+        val vigente = sub("2026-01-15", id = 3)
+        assertFalse(terminado.cuentaEnTotales(hoy))
+        assertTrue(vigente.cuentaEnTotales(hoy))
+        assertFalse(sub("2026-01-15", activa = false).cuentaEnTotales(hoy))
+        val anio = gastosPorCategoria(listOf(terminado, vigente), hoy, VistaCategorias.AL_ANIO)
+        assertEquals(listOf(3L), anio.single().gastos.map { it.suscripcionId })
+    }
+
+    @Test
+    fun terminado_noSaleEnElCalendarioNiEnLaProyeccion() {
+        val terminado = sub("2025-01-15", fin = "2025-12-15")
+        val proyeccion = calcularProyeccionCobros(listOf(terminado), hoy)
+        assertTrue(proyeccion.meses.all { it.cobros.isEmpty() })
+        assertTrue(proyeccion.diasMes.none { it.tieneCobros })
+        assertTrue(proyeccion.totalMesCompleto.isEmpty())
+    }
+
+    @Test
+    fun proyeccion_seCortaEnLaFechaDeFin() {
+        // 15-oct, 15-nov, 15-dic y nada más.
+        val proyeccion = calcularProyeccionCobros(listOf(sub("2026-01-15", fin = "2026-12-20")), hoy)
+        assertEquals(listOf(1, 1, 1, 0, 0), proyeccion.meses.take(5).map { it.cobros.size })
+    }
+
+    @Test
+    fun proyeccion_noTieneCobrosAntesDelInicio() {
+        val s = sub("2026-10-15", inicio = "2027-01-15")
+        val meses = calcularProyeccionCobros(listOf(s), hoy).meses
+        assertEquals(listOf(0, 0, 0, 1, 1), meses.take(5).map { it.cobros.size })
+    }
+
+    @Test
+    fun ultimoCobroDeEsteMes_siguеEnElCalendarioDelMes() {
+        // Terminó el 5-oct (último cobro). Hoy es 10-oct: ya está terminado, pero ese cobro se pagó este mes.
+        val s = sub("2026-01-05", fin = "2026-10-05")
+        assertTrue(s.terminado(hoy))
+        val cobros = cobrosDelMes(listOf(s), hoy).flatMap { it.cobros }
+        assertEquals(listOf(d("2026-10-05")), cobros.map { it.fecha })
+    }
+
+    @Test
+    fun terminado_noAvisa() {
+        val terminado = sub("2026-01-11", fin = "2026-10-09") // el próximo sería el 11-oct
+        assertTrue(avisosPendientes(listOf(terminado), hoy, umbralDias = 3, yaAvisados = emptySet()).isEmpty())
+        val vigente = sub("2026-01-11", fin = "2026-12-31")
+        assertEquals(1, avisosPendientes(listOf(vigente), hoy, umbralDias = 3, yaAvisados = emptySet()).size)
+    }
+
+    @Test
+    fun sinFechas_laSerieEsLaDeSiempre() {
+        val s = sub("2026-01-15")
+        assertEquals(12, calcularProyeccionCobros(listOf(s), hoy).meses.sumOf { it.cobros.size })
+        assertEquals(d("2026-10-15"), proximaRenovacion(s, hoy))
+    }
+
+    @Test
+    fun hipotecaLarga_noSeCortaPorLaGuardia() {
+        // 40 años mensuales = 480 cuotas (la guardia antigua cortaba en 400).
+        assertEquals(480, restantes(sub("2026-10-15", fin = "2066-09-15")))
+    }
+
+    // ── Serialización ────────────────────────────────────────────────────────
+
+    private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
+
+    @Test
+    fun request_siempreLlevaLasFechas_vaciasSiNoHay() {
+        fun cuerpo(inicio: String, fin: String) = json.encodeToString(
+            NuevaSuscripcionRequest.serializer(),
+            NuevaSuscripcionRequest(
+                nombre = "N", precio = 10.0, periodoFacturacion = "MONTHLY", fechaRenovacion = "2026-11-01",
+                intervaloMeses = 1, fechaInicio = inicio, fechaFin = fin
+            )
+        )
+        val vacio = cuerpo("", "")
+        assertTrue("\"fechaInicio\":\"\"" in vacio, vacio)
+        assertTrue("\"fechaFin\":\"\"" in vacio, vacio)
+        val conFechas = cuerpo("2026-01-15", "2026-12-15")
+        assertTrue("\"fechaInicio\":\"2026-01-15\"" in conFechas, conFechas)
+        assertTrue("\"fechaFin\":\"2026-12-15\"" in conFechas, conFechas)
+    }
+
+    @Test
+    fun jsonSinFechas_seLee_yConFechasTambien() {
+        val antiguo = """{"id":1,"name":"N","price":10.0,"billingCycle":"MONTHLY","renewalDate":"2026-11-01"}"""
+        val s = json.decodeFromString(Subscription.serializer(), antiguo)
+        assertNull(s.fechaInicio)
+        assertNull(s.fechaFin)
+        val nuevo = """{"id":1,"name":"N","price":10.0,"billingCycle":"MONTHLY","renewalDate":"2026-11-01",
+            |"fechaInicio":"2026-01-15","fechaFin":null}""".trimMargin()
+        val conFechas = json.decodeFromString(Subscription.serializer(), nuevo)
+        assertEquals("2026-01-15", conFechas.fechaInicio)
+        assertNull(conFechas.fechaFin)
+    }
+}

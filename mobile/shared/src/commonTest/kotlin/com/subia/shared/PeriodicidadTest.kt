@@ -212,7 +212,8 @@ class PeriodicidadTest {
             NuevaSuscripcionRequest.serializer(),
             NuevaSuscripcionRequest(
                 nombre = "N", precio = 10.0, periodoFacturacion = "MONTHLY",
-                fechaRenovacion = "2026-11-01", intervaloMeses = intervalo
+                fechaRenovacion = "2026-11-01", intervaloMeses = intervalo,
+                fechaInicio = "", fechaFin = ""
             )
         )
         assertTrue("\"intervaloMeses\":1" in cuerpo(1), cuerpo(1))

@@ -36,7 +36,7 @@ fun claveAviso(suscripcionId: Long, tipo: TipoAviso, fecha: LocalDate): String =
  * Decide qué avisos tocan hoy. Función pura: sin reloj, sin preferencias, sin Android.
  *
  * Reglas:
- * - Solo suscripciones **activas**.
+ * - Solo suscripciones **activas** y no terminadas ([cuentaEnTotales]).
  * - Prueba gratuita **vigente** (`esPrueba` con `fechaFinPrueba >= hoy`): solo se avisa del fin
  *   de la prueba, no de cobros (el aviso de fin de prueba ya dice cuánto se cobrará después).
  * - Prueba **vencida** o sin fecha de fin: se trata como de pago (si no, la suscripción se quedaba
@@ -63,7 +63,7 @@ fun avisosPendientes(
     val limite = hoy.plus(umbral, DateTimeUnit.DAY)
 
     return subs.asSequence()
-        .filter { it.activa }
+        .filter { it.cuentaEnTotales(hoy) }
         .mapNotNull { sub ->
             val finPrueba = sub.fechaFinPrueba?.let { runCatching { LocalDate.parse(it.trim()) }.getOrNull() }
             val pruebaVigente = sub.esPrueba && finPrueba != null && finPrueba >= hoy
