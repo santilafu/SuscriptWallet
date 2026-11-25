@@ -113,6 +113,7 @@ import com.subia.android.util.NotificacionesPermiso
 import com.subia.android.util.fechaIsoLegible
 import com.subia.shared.model.BillingCycle
 import com.subia.shared.model.CatalogItem
+import com.subia.shared.model.Periodicidad
 import com.subia.shared.viewmodel.Campo
 import com.subia.shared.viewmodel.FormError
 import com.subia.shared.viewmodel.FormUiState
@@ -172,6 +173,8 @@ fun SuscripcionFormScreen(
     val fechaInicio by formViewModel.fechaInicio.collectAsState()
     val fechaFin by formViewModel.fechaFin.collectAsState()
     val plazoEnVivo by formViewModel.plazoEnVivo.collectAsState()
+    val totalPrestamo by formViewModel.totalPrestamo.collectAsState()
+    val cuotaPrestamo by formViewModel.cuotaPrestamo.collectAsState()
     val categorias by formViewModel.categorias.collectAsState()
     val sugerencias by formViewModel.sugerencias.collectAsState()
     val catalogoSeleccionado by formViewModel.catalogoSeleccionado.collectAsState()
@@ -629,6 +632,35 @@ fun SuscripcionFormScreen(
                     enabled = !camposBloqueados,
                     onAbrir = { mostrarFechaFin = true },
                     onQuitar = { formViewModel.fechaFin.value = null }
+                )
+                // Calculadora: total del préstamo + fechas → importe por cuota (no se guarda).
+                val cuota = cuotaPrestamo
+                OutlinedTextField(
+                    value = totalPrestamo,
+                    onValueChange = { formViewModel.totalPrestamo.value = it },
+                    label = { Text(stringResource(R.string.plazo_total_prestamo_label)) },
+                    prefix = if (simboloDelante(moneda)) { { Text(simboloMoneda(moneda)) } } else null,
+                    suffix = if (!simboloDelante(moneda)) { { Text(simboloMoneda(moneda)) } } else null,
+                    visualTransformation = transformacionDecimal,
+                    supportingText = {
+                        Text(
+                            if (cuota == null) stringResource(R.string.plazo_total_prestamo_hint)
+                            else buildString {
+                                append(
+                                    pluralStringResource(
+                                        R.plurals.plazo_cuota_calculada, cuota.cuotas, cuota.cuotas,
+                                        formatearImporte(Periodicidad.aCifraVisible(cuota.cuota), moneda)
+                                    )
+                                )
+                                if (!cuota.exacta) append(". ").append(stringResource(R.string.plazo_cuota_centimos))
+                            }
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !camposBloqueados,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+                    singleLine = true
                 )
                 // "12 cuotas · 720,00 € en total" (con inicio) o "Quedan 12 cuotas · 720,00 €" (sin él).
                 val plazo = plazoEnVivo

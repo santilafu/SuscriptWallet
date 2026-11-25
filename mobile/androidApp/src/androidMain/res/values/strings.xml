@@ -318,6 +318,13 @@
         <item quantity="one">Queda %1$d cuota · %2$s</item>
         <item quantity="other">Quedan %1$d cuotas · %2$s</item>
     </plurals>
+    <string name="plazo_total_prestamo_label">Importe total del préstamo (opcional)</string>
+    <string name="plazo_total_prestamo_hint">Pon el total a pagar y las fechas de la primera y la última cuota: calculamos la cuota.</string>
+    <plurals name="plazo_cuota_calculada">
+        <item quantity="one">%1$d cuota de %2$s</item>
+        <item quantity="other">%1$d cuotas de %2$s</item>
+    </plurals>
+    <string name="plazo_cuota_centimos">La última cuota puede variar unos céntimos.</string>
     <string name="form_error_offline">Sin conexión. No es posible guardar cambios sin conexión</string>
     <string name="form_error_save_failed">No se ha podido guardar la suscripción. Inténtalo de nuevo</string>
     <!-- Pantalla de detección por Gmail -->

@@ -330,6 +330,14 @@
         <item quantity="many">%1$d échéances restantes · %2$s</item>
         <item quantity="other">%1$d échéances restantes · %2$s</item>
     </plurals>
+    <string name="plazo_total_prestamo_label">Montant total du prêt (facultatif)</string>
+    <string name="plazo_total_prestamo_hint">Indiquez le total à payer et les dates de la première et de la dernière échéance : nous calculons l\'échéance.</string>
+    <plurals name="plazo_cuota_calculada">
+        <item quantity="one">%1$d échéance de %2$s</item>
+        <item quantity="many">%1$d échéances de %2$s</item>
+        <item quantity="other">%1$d échéances de %2$s</item>
+    </plurals>
+    <string name="plazo_cuota_centimos">La dernière échéance peut varier de quelques centimes.</string>
     <string name="form_error_offline">Pas de connexion. Impossible d\'enregistrer les modifications hors ligne</string>
     <string name="form_error_save_failed">L\'abonnement n\'a pas pu être enregistré. Réessayez</string>
     <!-- Écran de détection Gmail -->

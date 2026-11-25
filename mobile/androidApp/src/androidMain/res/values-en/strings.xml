@@ -318,6 +318,13 @@
         <item quantity="one">%1$d instalment left · %2$s</item>
         <item quantity="other">%1$d instalments left · %2$s</item>
     </plurals>
+    <string name="plazo_total_prestamo_label">Total loan amount (optional)</string>
+    <string name="plazo_total_prestamo_hint">Enter the total to pay and the dates of the first and last instalment: we work out the instalment.</string>
+    <plurals name="plazo_cuota_calculada">
+        <item quantity="one">%1$d instalment of %2$s</item>
+        <item quantity="other">%1$d instalments of %2$s</item>
+    </plurals>
+    <string name="plazo_cuota_centimos">The last instalment may differ by a few cents.</string>
     <string name="form_error_offline">No connection. Changes can\'t be saved while offline</string>
     <string name="form_error_save_failed">The subscription could not be saved. Please try again</string>
     <!-- Gmail detection screen -->

@@ -390,6 +390,27 @@ class SuscripcionFormViewModelTest {
     }
 
     @Test
+    fun calculadoraPrestamo_rellenaElImporte_yRespetaLaEdicionManual() = runTest {
+        val vm = crearViewModel()
+        vm.precio.value = "5"
+        vm.totalPrestamo.value = "720"
+        assertNull(vm.cuotaPrestamo.value, "Sin fechas no se calcula")
+        assertEquals("5", vm.precio.value)
+        vm.fechaInicio.value = "2026-03-15"
+        vm.fechaFin.value = "2027-02-15"
+        assertEquals(12, vm.cuotaPrestamo.value?.cuotas)
+        assertEquals("60", vm.precio.value)
+        vm.precio.value = "61"
+        assertEquals("61", vm.precio.value, "La edición manual se respeta")
+        vm.totalPrestamo.value = "1000,00"
+        assertEquals("83.33", vm.precio.value)
+        assertFalse(vm.cuotaPrestamo.value!!.exacta)
+        vm.totalPrestamo.value = "0"
+        assertNull(vm.cuotaPrestamo.value)
+        assertEquals("83.33", vm.precio.value, "Sin cálculo válido no se toca el importe")
+    }
+
+    @Test
     fun enviar_llevaLasFechasDelPlazo_yVaciasSiSeQuitan() = runTest {
         val cuerpos = mutableListOf<String>()
         val vm = crearViewModel(onRequestBody = { cuerpos += it })

@@ -333,6 +333,14 @@
         <item quantity="many">Faltam %1$d prestações · %2$s</item>
         <item quantity="other">Faltam %1$d prestações · %2$s</item>
     </plurals>
+    <string name="plazo_total_prestamo_label">Montante total do empréstimo (opcional)</string>
+    <string name="plazo_total_prestamo_hint">Indique o total a pagar e as datas da primeira e da última prestação: calculamos a prestação.</string>
+    <plurals name="plazo_cuota_calculada">
+        <item quantity="one">%1$d prestação de %2$s</item>
+        <item quantity="many">%1$d prestações de %2$s</item>
+        <item quantity="other">%1$d prestações de %2$s</item>
+    </plurals>
+    <string name="plazo_cuota_centimos">A última prestação pode variar alguns cêntimos.</string>
     <string name="form_error_offline">Sem conexão. Não é possível guardar alterações sem conexão</string>
     <string name="form_error_save_failed">Não foi possível guardar a assinatura. Tente novamente</string>
     <!-- Identificação pelo Gmail -->

@@ -4,6 +4,8 @@ import com.subia.shared.model.NuevaSuscripcionRequest
 import com.subia.shared.model.Subscription
 import com.subia.shared.model.VistaCategorias
 import com.subia.shared.model.avisosPendientes
+import com.subia.shared.model.CuotaPrestamo
+import com.subia.shared.model.calcularCuotaPrestamo
 import com.subia.shared.model.calcularProyeccionCobros
 import com.subia.shared.model.cobrosDelMes
 import com.subia.shared.model.cuentaEnTotales
@@ -293,5 +295,32 @@ class PlazoGastoTest {
         val conFechas = json.decodeFromString(Subscription.serializer(), nuevo)
         assertEquals("2026-01-15", conFechas.fechaInicio)
         assertNull(conFechas.fechaFin)
+    }
+
+    // ── Calculadora de préstamo (total → cuota) ─────────────────────────────
+
+    private fun cuota(total: Double, inicio: String?, fin: String?, periodo: String = "MONTHLY", intervalo: Int = 1) =
+        calcularCuotaPrestamo(total, periodo, intervalo, inicio?.let(::d), fin?.let(::d))
+
+    @Test
+    fun calculadora_divideElTotalEntreLasCuotasDelPlazo() {
+        assertEquals(CuotaPrestamo(12, 600_000, exacta = true), cuota(720.0, "2026-03-15", "2027-02-15"))
+        // 1000 / 12 = 83,333… → 83,33; 83,33 × 12 = 999,96: la última cuota varía.
+        assertEquals(CuotaPrestamo(12, 833_300, exacta = false), cuota(1000.0, "2026-01-31", "2026-12-31"))
+        // Del 31 de enero: la segunda cuota cae el 28 de febrero (fin de mes).
+        assertEquals(CuotaPrestamo(2, 500_000, exacta = true), cuota(100.0, "2026-01-31", "2026-02-28"))
+        assertEquals(CuotaPrestamo(1, 5_000_000, exacta = true), cuota(500.0, "2026-05-10", "2026-05-10"))
+        assertEquals(CuotaPrestamo(4, 3_000_000, exacta = true), cuota(1200.0, "2026-01-10", "2026-12-10", intervalo = 3))
+        // Semanal: cada 7 días, 4 cobros del 1 al 22.
+        assertEquals(4, cuota(100.0, "2026-01-01", "2026-01-22", periodo = "WEEKLY")?.cuotas)
+    }
+
+    @Test
+    fun calculadora_sinDatosValidos_noCalcula() {
+        assertNull(cuota(720.0, "2027-02-15", "2026-03-15"), "fin < inicio")
+        assertNull(cuota(0.0, "2026-03-15", "2027-02-15"), "total 0")
+        assertNull(cuota(-5.0, "2026-03-15", "2027-02-15"), "total negativo")
+        assertNull(cuota(720.0, null, "2027-02-15"), "sin inicio")
+        assertNull(cuota(720.0, "2026-03-15", null), "sin fin")
     }
 }

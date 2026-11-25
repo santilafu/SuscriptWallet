@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.subia.shared.model.BillingCycle
 import com.subia.shared.model.CatalogItem
+import com.subia.shared.model.CuotaPrestamo
+import com.subia.shared.model.calcularCuotaPrestamo
 import com.subia.shared.model.Category
 import com.subia.shared.model.NuevaSuscripcionRequest
 import com.subia.shared.model.Periodicidad
@@ -207,6 +209,31 @@ class SuscripcionFormViewModel(
         plazoGasto(borrador, hoy())
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    // ── Calculadora de préstamo ────────────────────────────────────────────
+
+    /**
+     * Importe total del préstamo (intereses incluidos) tecleado en el formulario. No se guarda:
+     * solo sirve para calcular el importe por cuota, así que al editar empieza vacío.
+     */
+    val totalPrestamo = MutableStateFlow("")
+
+    /** Cuota con el total, las fechas del plazo y la periodicidad; se recalcula con cada cambio. */
+    private val calculoPrestamo: Flow<CuotaPrestamo?> = combine(
+        totalPrestamo, periodoFacturacion, intervaloMeses, fechaInicio, fechaFin
+    ) { total, periodo, intervalo, ini, fin ->
+        calcularCuotaPrestamo(
+            total = parsearPrecio(total) ?: 0.0,
+            periodoFacturacion = periodo,
+            intervaloMeses = intervaloCoherente(periodo, intervalo),
+            inicio = ini?.let { runCatching { LocalDate.parse(it.trim()) }.getOrNull() },
+            fin = fin?.let { runCatching { LocalDate.parse(it.trim()) }.getOrNull() }
+        )
+    }
+
+    /** Resultado para el texto "12 cuotas de 60,00 €", o `null` si no hay cálculo válido. */
+    val cuotaPrestamo: StateFlow<CuotaPrestamo?> =
+        calculoPrestamo.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
     // ── Cambios sin guardar ────────────────────────────────────────────────
 
     private val huellaInicial = MutableStateFlow(huella())
@@ -225,6 +252,13 @@ class SuscripcionFormViewModel(
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     init {
+        // Cada cambio de total, fechas o periodicidad con un cálculo válido sobrescribe el importe;
+        // si luego el usuario lo edita a mano, se respeta hasta el siguiente cambio.
+        viewModelScope.launch {
+            calculoPrestamo.collect { resultado ->
+                if (resultado != null) precio.value = formatearPrecioParaCampo(Periodicidad.aCifraVisible(resultado.cuota))
+            }
+        }
         viewModelScope.launch {
             categoryRepository.getAll().onSuccess { _categorias.value = it }
         }

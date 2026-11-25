@@ -79,3 +79,37 @@ fun plazoGasto(sub: Subscription, hoy: LocalDate): PlazoGasto? {
         total = totales?.let { Periodicidad.aCifraVisible(cuota * it) }
     )
 }
+
+/**
+ * Resultado de la calculadora de préstamo del formulario: [cuotas] cobros de [cuota]
+ * (diezmilésimas, redondeada a céntimos). [exacta] es `false` si cuota × cuotas no da el total,
+ * y entonces la última cuota puede variar unos céntimos.
+ */
+data class CuotaPrestamo(val cuotas: Int, val cuota: Long, val exacta: Boolean)
+
+/**
+ * Cuota de un préstamo a partir de su importe [total] (intereses incluidos) y las fechas de la
+ * primera ([inicio]) y la última ([fin]) cuota: total / nº de cobros en [inicio, fin], ambos
+ * incluidos, con la periodicidad del gasto. Cuenta con la misma serie que las cuotas totales de
+ * [plazoGasto], anclada en [inicio]. `null` si total <= 0, falta una fecha, fin < inicio o no
+ * cae ningún cobro. El total no se guarda: solo rellena el importe por cuota.
+ */
+fun calcularCuotaPrestamo(
+    total: Double,
+    periodoFacturacion: String,
+    intervaloMeses: Int,
+    inicio: LocalDate?,
+    fin: LocalDate?
+): CuotaPrestamo? {
+    if (inicio == null || fin == null || fin < inicio || !(total > 0) || total > Periodicidad.IMPORTE_MAXIMO) return null
+    val borrador = Subscription(
+        nombre = "", precio = 0.0, periodoFacturacion = periodoFacturacion,
+        fechaRenovacion = inicio.toString(), intervaloMeses = intervaloMeses
+    )
+    val n = serieDeCobros(borrador, inicio, fin).size
+    if (n == 0) return null
+    val totalD = Periodicidad.aDiezmilesimas(total)
+    // Céntimos HALF_UP (1 céntimo = 100 diezmilésimas) y de vuelta a diezmilésimas.
+    val cuota = Periodicidad.dividirHalfUp(totalD, n * 100L) * 100
+    return CuotaPrestamo(cuotas = n, cuota = cuota, exacta = cuota * n == totalD)
+}
