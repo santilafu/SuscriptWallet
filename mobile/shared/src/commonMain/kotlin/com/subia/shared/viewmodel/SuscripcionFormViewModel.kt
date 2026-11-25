@@ -6,6 +6,7 @@ import com.subia.shared.model.BillingCycle
 import com.subia.shared.model.CatalogItem
 import com.subia.shared.model.CuotaPrestamo
 import com.subia.shared.model.calcularCuotaPrestamo
+import com.subia.shared.model.proximaRenovacionPrestamo
 import com.subia.shared.model.Category
 import com.subia.shared.model.NuevaSuscripcionRequest
 import com.subia.shared.model.Periodicidad
@@ -217,22 +218,25 @@ class SuscripcionFormViewModel(
      */
     val totalPrestamo = MutableStateFlow("")
 
-    /** Cuota con el total, las fechas del plazo y la periodicidad; se recalcula con cada cambio. */
-    private val calculoPrestamo: Flow<CuotaPrestamo?> = combine(
+    /**
+     * Cuota con el total, las fechas del plazo y la periodicidad, y la próxima renovación que le
+     * corresponde ([proximaRenovacionPrestamo]); se recalcula con cada cambio.
+     */
+    private val calculoPrestamo: Flow<Pair<CuotaPrestamo, LocalDate>?> = combine(
         totalPrestamo, periodoFacturacion, intervaloMeses, fechaInicio, fechaFin
-    ) { total, periodo, intervalo, ini, fin ->
-        calcularCuotaPrestamo(
-            total = parsearPrecio(total) ?: 0.0,
-            periodoFacturacion = periodo,
-            intervaloMeses = intervaloCoherente(periodo, intervalo),
-            inicio = ini?.let { runCatching { LocalDate.parse(it.trim()) }.getOrNull() },
-            fin = fin?.let { runCatching { LocalDate.parse(it.trim()) }.getOrNull() }
-        )
+    ) { total, periodo, intervaloElegido, ini, fin ->
+        val intervalo = intervaloCoherente(periodo, intervaloElegido)
+        val inicio = ini?.let { runCatching { LocalDate.parse(it.trim()) }.getOrNull() }
+        val ultima = fin?.let { runCatching { LocalDate.parse(it.trim()) }.getOrNull() }
+        val cuota = calcularCuotaPrestamo(parsearPrecio(total) ?: 0.0, periodo, intervalo, inicio, ultima)
+            ?: return@combine null
+        // inicio y fin no son null: sin ellos no hay cuota.
+        cuota to proximaRenovacionPrestamo(periodo, intervalo, inicio!!, ultima!!, hoy())
     }
 
     /** Resultado para el texto "12 cuotas de 60,00 €", o `null` si no hay cálculo válido. */
     val cuotaPrestamo: StateFlow<CuotaPrestamo?> =
-        calculoPrestamo.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+        calculoPrestamo.map { it?.first }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     // ── Cambios sin guardar ────────────────────────────────────────────────
 
@@ -252,11 +256,14 @@ class SuscripcionFormViewModel(
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     init {
-        // Cada cambio de total, fechas o periodicidad con un cálculo válido sobrescribe el importe;
-        // si luego el usuario lo edita a mano, se respeta hasta el siguiente cambio.
+        // Cada cambio de total, fechas o periodicidad con un cálculo válido sobrescribe el importe y
+        // la próxima renovación (para que la barra "X de Y cuotas" cuente la misma serie); si luego
+        // el usuario los edita a mano, se respetan hasta el siguiente cambio.
         viewModelScope.launch {
             calculoPrestamo.collect { resultado ->
-                if (resultado != null) precio.value = formatearPrecioParaCampo(Periodicidad.aCifraVisible(resultado.cuota))
+                val (cuota, renovacion) = resultado ?: return@collect
+                precio.value = formatearPrecioParaCampo(Periodicidad.aCifraVisible(cuota.cuota))
+                fechaRenovacion.value = renovacion.toString()
             }
         }
         viewModelScope.launch {

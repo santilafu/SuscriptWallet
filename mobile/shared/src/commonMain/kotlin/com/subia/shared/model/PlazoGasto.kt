@@ -102,14 +102,31 @@ fun calcularCuotaPrestamo(
     fin: LocalDate?
 ): CuotaPrestamo? {
     if (inicio == null || fin == null || fin < inicio || !(total > 0) || total > Periodicidad.IMPORTE_MAXIMO) return null
-    val borrador = Subscription(
-        nombre = "", precio = 0.0, periodoFacturacion = periodoFacturacion,
-        fechaRenovacion = inicio.toString(), intervaloMeses = intervaloMeses
-    )
-    val n = serieDeCobros(borrador, inicio, fin).size
+    val n = serieDeCobros(serieDesde(inicio, periodoFacturacion, intervaloMeses), inicio, fin).size
     if (n == 0) return null
     val totalD = Periodicidad.aDiezmilesimas(total)
     // Céntimos HALF_UP (1 céntimo = 100 diezmilésimas) y de vuelta a diezmilésimas.
     val cuota = Periodicidad.dividirHalfUp(totalD, n * 100L) * 100
     return CuotaPrestamo(cuotas = n, cuota = cuota, exacta = cuota * n == totalD)
 }
+
+/**
+ * Próxima renovación para un préstamo de la calculadora: el primer cobro de la serie anclada en
+ * [inicio] que cae en [máx(hoy, inicio), fin]; si ya no queda ninguno (préstamo terminado), [fin].
+ * Con esta fecha como ancla, las cuotas totales de [plazoGasto] coinciden con las de
+ * [calcularCuotaPrestamo] (con renovación = hoy, la barra contaba otra serie: "9 de 11").
+ */
+fun proximaRenovacionPrestamo(
+    periodoFacturacion: String,
+    intervaloMeses: Int,
+    inicio: LocalDate,
+    fin: LocalDate,
+    hoy: LocalDate
+): LocalDate =
+    serieDeCobros(serieDesde(inicio, periodoFacturacion, intervaloMeses), maxOf(inicio, hoy), fin).firstOrNull() ?: fin
+
+/** Gasto mínimo cuya serie de cobros parte de [inicio], para contar con [serieDeCobros]. */
+private fun serieDesde(inicio: LocalDate, periodoFacturacion: String, intervaloMeses: Int) = Subscription(
+    nombre = "", precio = 0.0, periodoFacturacion = periodoFacturacion,
+    fechaRenovacion = inicio.toString(), intervaloMeses = intervaloMeses
+)

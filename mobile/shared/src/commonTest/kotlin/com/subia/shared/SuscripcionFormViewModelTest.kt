@@ -391,7 +391,7 @@ class SuscripcionFormViewModelTest {
 
     @Test
     fun calculadoraPrestamo_rellenaElImporte_yRespetaLaEdicionManual() = runTest {
-        val vm = crearViewModel()
+        val vm = crearViewModel(hoy = LocalDate(2026, 11, 25))
         vm.precio.value = "5"
         vm.totalPrestamo.value = "720"
         assertNull(vm.cuotaPrestamo.value, "Sin fechas no se calcula")
@@ -400,6 +400,10 @@ class SuscripcionFormViewModelTest {
         vm.fechaFin.value = "2027-02-15"
         assertEquals(12, vm.cuotaPrestamo.value?.cuotas)
         assertEquals("60", vm.precio.value)
+        // hoy = 2026-11-25: la renovación pasa al primer cobro pendiente y la barra da 9 de 12.
+        assertEquals("2026-12-15", vm.fechaRenovacion.value)
+        assertEquals(12, vm.plazoEnVivo.value?.cuotasTotales)
+        assertEquals(9, vm.plazoEnVivo.value?.cuotasPagadas)
         vm.precio.value = "61"
         assertEquals("61", vm.precio.value, "La edición manual se respeta")
         vm.totalPrestamo.value = "1000,00"

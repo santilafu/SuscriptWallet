@@ -12,6 +12,7 @@ import com.subia.shared.model.cuentaEnTotales
 import com.subia.shared.model.gastosPorCategoria
 import com.subia.shared.model.plazoGasto
 import com.subia.shared.model.proximaRenovacion
+import com.subia.shared.model.proximaRenovacionPrestamo
 import com.subia.shared.model.terminado
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.Json
@@ -322,5 +323,17 @@ class PlazoGastoTest {
         assertNull(cuota(-5.0, "2026-03-15", "2027-02-15"), "total negativo")
         assertNull(cuota(720.0, null, "2027-02-15"), "sin inicio")
         assertNull(cuota(720.0, "2026-03-15", null), "sin fin")
+    }
+
+    @Test
+    fun calculadora_renovacion_primerCobroDesdeHoy_yLaBarraCuadra() {
+        val hoy = d("2026-11-25")
+        val renovacion = proximaRenovacionPrestamo("MONTHLY", 1, d("2026-03-15"), d("2027-02-15"), hoy)
+        assertEquals(d("2026-12-15"), renovacion)
+        val plazo = plazoGasto(sub(renovacion.toString(), inicio = "2026-03-15", fin = "2027-02-15", precio = 60.0), hoy)!!
+        assertEquals(12, plazo.cuotasTotales)
+        assertEquals(9, plazo.cuotasPagadas)
+        // Préstamo ya terminado: todos los cobros antes de hoy → la fecha de fin.
+        assertEquals(d("2025-06-10"), proximaRenovacionPrestamo("MONTHLY", 1, d("2025-01-10"), d("2025-06-10"), hoy))
     }
 }
