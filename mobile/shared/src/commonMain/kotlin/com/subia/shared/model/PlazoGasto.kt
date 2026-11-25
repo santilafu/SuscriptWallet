@@ -9,13 +9,13 @@ import kotlinx.datetime.minus
  * queda por pagar y, si además tiene fecha de inicio, cuántas cuotas tiene en total.
  * Copia de la lógica del backend (`RenewalDates`): los mismos casos de prueba en los dos lados.
  *
- * @property cuotasRestantes cobros de la serie en [max(hoy, inicio), fin]; el de hoy cuenta como
- *   pendiente, igual que en [proximaRenovacion].
+ * @property cuotasRestantes cobros de la serie en [próximo cobro, fin]; con fecha de inicio la
+ *   serie va anclada en el inicio y el próximo cobro es el primero >= máx(hoy, inicio, renovación
+ *   guardada). El de hoy cuenta como pendiente, igual que en [proximaRenovacion].
  * @property pendiente cuotas restantes × importe (2 decimales, regla de [Periodicidad]).
  * @property cuotasTotales pagadas + restantes; pagadas son los cobros de la serie en
- *   [inicio, mín(fin, ayer)] (la serie puede ir hacia atrás desde el ancla), así que con la
- *   renovación guardada en el futuro los cobros entre hoy y ella no cuentan. `null` sin fecha de
- *   inicio, y entonces no hay barra de progreso.
+ *   [inicio, mín(fin, ayer)], así que con la renovación guardada en el futuro los cobros entre
+ *   hoy y ella no cuentan. `null` sin fecha de inicio, y entonces no hay barra de progreso.
  * @property total cuotas totales × importe (2 decimales), `null` sin fecha de inicio.
  */
 data class PlazoGasto(
@@ -67,7 +67,7 @@ fun plazoGasto(sub: Subscription, hoy: LocalDate): PlazoGasto? {
     val inicio = sub.fechaInicioPlazo()
     val restantes = ocurrencias(sub, hoy, fin).size
     val ayer = hoy.minus(1, DateTimeUnit.DAY)
-    val pagadas = inicio?.let { serieDeCobros(sub, it, minOf(fin, ayer), kMinimo = Int.MIN_VALUE).size }
+    val pagadas = inicio?.let { serieDeCobros(sub, it, minOf(fin, ayer)).size }
     val totales = pagadas?.let { it + restantes }
     val cuota = Periodicidad.aDiezmilesimas(sub.precio)
     return PlazoGasto(

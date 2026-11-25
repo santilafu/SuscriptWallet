@@ -147,11 +147,16 @@ class PlazoGastoTest {
     }
 
     @Test
-    fun inicioFuturoSinCobrosDentroDelPlazo_terminado() {
-        // Cobros los días 24; el plazo [1-dic, 15-dic] no contiene ninguno.
+    fun inicioFuturo_elInicioEsLaPrimeraCuota_yRenovacionTrasElFin_terminado() {
+        // La serie va anclada en el inicio: el plazo [1-dic, 15-dic] tiene el cobro del 1-dic
+        // aunque la renovación guardada sea un día 24 (antes de la regla: 0 cuotas y terminado).
         val s = sub("2026-10-24", inicio = "2026-12-01", fin = "2026-12-15")
-        assertEquals(0, restantes(s))
-        assertTrue(s.terminado(hoy))
+        assertEquals(1, restantes(s))
+        assertFalse(s.terminado(hoy))
+        // Sin cobros dentro solo si la renovación guardada (cota inferior) cae después del fin.
+        val tras = sub("2026-12-24", inicio = "2026-12-01", fin = "2026-12-15")
+        assertEquals(0, restantes(tras))
+        assertTrue(tras.terminado(hoy))
     }
 
     @Test
@@ -335,5 +340,34 @@ class PlazoGastoTest {
         assertEquals(9, plazo.cuotasPagadas)
         // Préstamo ya terminado: todos los cobros antes de hoy → la fecha de fin.
         assertEquals(d("2025-06-10"), proximaRenovacionPrestamo("MONTHLY", 1, d("2025-01-10"), d("2025-06-10"), hoy))
+    }
+
+    // ── Con fecha de inicio la serie va anclada en el inicio (casos del backend) ──
+
+    private fun comprobar(s: Subscription, hoy: String, proximo: String, restantes: Int, pagadas: Int) {
+        val p = plazoGasto(s, d(hoy))!!
+        assertEquals(d(proximo), proximaRenovacion(s, d(hoy)))
+        assertEquals(restantes, p.cuotasRestantes)
+        assertEquals(pagadas, p.cuotasPagadas)
+        assertEquals(12, p.cuotasTotales)
+    }
+
+    @Test
+    fun conInicio_elDia31SeRespeta_aunqueLaRenovacionGuardadaSeaEl30() {
+        val s = sub("2026-11-30", inicio = "2026-01-31", fin = "2026-12-31")
+        comprobar(s, hoy = "2026-11-25", proximo = "2026-11-30", restantes = 2, pagadas = 10) // A
+        comprobar(s, hoy = "2026-12-01", proximo = "2026-12-31", restantes = 1, pagadas = 11) // B
+        val diciembre = calcularProyeccionCobros(listOf(s), d("2026-12-01")).meses[0].cobros.map { it.fecha }
+        assertEquals(listOf(d("2026-12-31")), diciembre)
+    }
+
+    @Test
+    fun conInicio_laRenovacionGuardadaSoloEsCotaInferior() {
+        // C: renovación en la serie y en el futuro (Vitaldent).
+        comprobar(sub("2026-12-15", inicio = "2026-03-15", fin = "2027-02-15"),
+            hoy = "2026-11-24", proximo = "2026-12-15", restantes = 3, pagadas = 9)
+        // D: renovación fuera de la serie (por defecto hoy): manda el día del inicio.
+        comprobar(sub("2026-11-25", inicio = "2026-03-15", fin = "2027-02-15"),
+            hoy = "2026-11-25", proximo = "2026-12-15", restantes = 3, pagadas = 9)
     }
 }

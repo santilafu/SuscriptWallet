@@ -119,27 +119,33 @@ private fun fechaCobro(ancla: LocalDate, ciclo: Ciclo, k: Int): LocalDate =
 /**
  * Cobros de una suscripción en [hoy, fin], avanzando ciclos si la fecha de renovación es pasada.
  * Es el embudo de toda la proyección (calendario, "Este mes pagas", avisos, widget): aquí se
- * recorta la serie al plazo del gasto, sin cobros antes de `fechaInicio` ni después de `fechaFin`.
- * Sin fechas de plazo el resultado es el de siempre.
+ * recorta la serie al plazo del gasto, sin cobros antes de `fechaInicio` (ni de la renovación
+ * guardada, ver [cotaInferior]) ni después de `fechaFin`. Sin fechas de plazo, el de siempre.
  */
 internal fun ocurrencias(sub: Subscription, hoy: LocalDate, fin: LocalDate): List<LocalDate> {
-    val inicioPlazo = sub.fechaInicioPlazo()
     val finPlazo = sub.fechaFinPlazo()
-    val desde = if (inicioPlazo != null && inicioPlazo > hoy) inicioPlazo else hoy
     val hasta = if (finPlazo != null && finPlazo < fin) finPlazo else fin
-    return serieDeCobros(sub, desde, hasta)
+    return serieDeCobros(sub, cotaInferior(sub, hoy), hasta)
+}
+
+/**
+ * Primer día en que puede caer un cobro visto desde [hoy]. Sin fecha de inicio, [hoy]. Con ella,
+ * máx(hoy, inicio, renovación guardada): la serie va anclada en el inicio ([anclaDe]) y la
+ * renovación guardada solo hace de cota inferior (misma regla que `RenewalDates` del backend).
+ */
+private fun cotaInferior(sub: Subscription, hoy: LocalDate): LocalDate {
+    val inicio = sub.fechaInicioPlazo() ?: return hoy
+    return listOfNotNull(hoy, inicio, renovacionGuardada(sub)).max()
 }
 
 /**
  * Fechas de la serie de cobros de [sub] en [desde, hasta], SIN recortar al plazo. La serie es
- * `ancla + k ciclos` con k >= [kMinimo]: 0 para la proyección (no hay cobros antes del ancla) y
- * [Int.MIN_VALUE] para contar las cuotas totales de un plazo, que pueden ser anteriores al ancla.
+ * `ancla + k ciclos` con k >= 0 (no hay cobros antes del ancla, ver [anclaDe]).
  */
 internal fun serieDeCobros(
     sub: Subscription,
     desde: LocalDate,
-    hasta: LocalDate,
-    kMinimo: Int = 0
+    hasta: LocalDate
 ): List<LocalDate> {
     if (desde > hasta) return emptyList()
     val ancla = anclaDe(sub) ?: return emptyList()
@@ -147,8 +153,8 @@ internal fun serieDeCobros(
     // Estimación del primer ciclo >= desde, para no iterar desde anclas muy antiguas; los dos
     // bucles la corrigen (la división trunca hacia cero y los meses cortos recortan el día).
     var k = (if (ciclo.meses > 0) ancla.monthsUntil(desde) / ciclo.meses else ancla.daysUntil(desde) / ciclo.dias)
-        .coerceAtLeast(kMinimo)
-    while (k > kMinimo && fechaCobro(ancla, ciclo, k - 1) >= desde) k--
+        .coerceAtLeast(0)
+    while (k > 0 && fechaCobro(ancla, ciclo, k - 1) >= desde) k--
     while (fechaCobro(ancla, ciclo, k) < desde) k++
 
     val resultado = mutableListOf<LocalDate>()
@@ -175,18 +181,24 @@ private const val MAX_COBROS_SERIE = 10_000
  */
 fun proximaRenovacion(sub: Subscription, hoy: LocalDate): LocalDate? {
     val ancla = anclaDe(sub) ?: return null
-    val inicio = sub.fechaInicioPlazo()
-    val desde = if (inicio != null && inicio > hoy) inicio else hoy
+    val desde = cotaInferior(sub, hoy)
     if (ancla >= desde) return ancla
     return serieDeCobros(sub, desde, desde.plus(2, DateTimeUnit.YEAR)).firstOrNull() ?: ancla
 }
 
 /**
- * Ancla desde la que se proyecta: la guardada en el servidor (`renewalAnchor`) si llega, para
- * que el día 31 / 29-feb no se recorte y "hoy" sea el del MÓVIL, no el del servidor (R3-02);
- * si no, `renewalDate` (backends anteriores). Si el ancla no parsea se usa `renewalDate`.
+ * Ancla desde la que se proyecta. Con fecha de inicio, SIEMPRE el inicio: así un préstamo que
+ * empieza el 31 cobra el 31 (o el último día del mes) y no el 30 de una renovación guardada en
+ * noviembre. Sin ella, la renovación guardada ([renovacionGuardada]).
  */
-private fun anclaDe(sub: Subscription): LocalDate? =
+private fun anclaDe(sub: Subscription): LocalDate? = sub.fechaInicioPlazo() ?: renovacionGuardada(sub)
+
+/**
+ * Renovación guardada en el servidor (`renewalAnchor`) si llega, para que el día 31 / 29-feb no
+ * se recorte y "hoy" sea el del MÓVIL, no el del servidor (R3-02); si no, `renewalDate`
+ * (backends anteriores). Si el ancla no parsea se usa `renewalDate`.
+ */
+private fun renovacionGuardada(sub: Subscription): LocalDate? =
     runCatching { LocalDate.parse(sub.anclaRenovacion.trim()) }.getOrNull()
         ?: runCatching { LocalDate.parse(sub.fechaRenovacion.trim()) }.getOrNull()
 
