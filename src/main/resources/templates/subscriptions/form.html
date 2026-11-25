@@ -136,7 +136,7 @@
                         <label for="fieldCategoryId" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
                             <span th:text="#{form.field.category}">Categoría</span> <span class="text-red-400">*</span>
                         </label>
-                        <select name="categoryId" id="fieldCategoryId" required
+                        <select name="categoryId" id="fieldCategoryId" required th:data-prestamos="${prestamosCategoryId}"
                                 class="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none transition-all duration-200">
                             <option value="" th:text="#{form.field.select}">— Seleccionar —</option>
                             <option th:each="cat : ${categories}"
@@ -179,6 +179,7 @@
                                    class="w-full pl-7 pr-3 py-2.5 rounded-lg text-sm"
                                    th:placeholder="#{form.field.price.placeholder}"/>
                         </div>
+                        <p id="priceLoanHint" class="text-xs mt-1" style="color:#8291a8;" hidden th:text="#{form.loan.price-hint}"></p>
                     </div>
 
                     <div>
@@ -408,20 +409,34 @@ var i18n = {
     var currentStep = 1;
 
     // Primer campo inválido (required vacío, precio negativo...) dentro de un paso.
-    function firstInvalidIn(container) {
+    // Con permitirPrecioVacio, un préstamo puede pasar del paso 2 sin cuota: se calcula en el 3.
+    function firstInvalidIn(container, permitirPrecioVacio) {
         if (!container) return null;
         var fields = container.querySelectorAll('input, select, textarea');
         for (var i = 0; i < fields.length; i++) {
-            if (!fields[i].disabled && !fields[i].checkValidity()) return fields[i];
+            var f = fields[i];
+            if (permitirPrecioVacio && f.id === 'fieldPrice' && f.value === '' && !f.validity.badInput && esPrestamo()) continue;
+            if (!f.disabled && !f.checkValidity()) return f;
         }
         return null;
     }
+
+    var categoriaSel = document.getElementById('fieldCategoryId');
+    function esPrestamo() {
+        return !!categoriaSel && categoriaSel.value !== '' && categoriaSel.value === categoriaSel.getAttribute('data-prestamos');
+    }
+    function actualizarAyudaPrecio() {
+        var ayuda = document.getElementById('priceLoanHint');
+        if (ayuda) ayuda.hidden = !esPrestamo();
+    }
+    if (categoriaSel) categoriaSel.addEventListener('change', actualizarAyudaPrecio);
+    actualizarAyudaPrecio();
 
     window.wizardGoTo = function (step) {
         // Al avanzar no se deja pasar un paso con campos obligatorios vacíos: antes el submit
         // final fallaba en silencio porque el navegador no puede enfocar un campo oculto.
         if (step > currentStep) {
-            var bad = firstInvalidIn(document.getElementById('wizard-step-' + currentStep));
+            var bad = firstInvalidIn(document.getElementById('wizard-step-' + currentStep), true);
             if (bad) { bad.reportValidity(); return; }
         }
         var prev = document.getElementById('wizard-step-' + currentStep);
@@ -489,12 +504,15 @@ var i18n = {
         var ultimo = new Date(Date.UTC(y, m, 0)).getUTCDate();
         return y * 10000 + m * 100 + Math.min(a.d, ultimo);
     }
-    function cuotasEntre(inicio, fin, periodicidad) {
+    // n = cobros en [inicio, fin]; proximo = primer cobro >= hoy (null si ya pasaron todos).
+    function cuotasEntre(inicio, fin, periodicidad, hoy) {
         var a = ymd(inicio), f = ymd(fin), tope = f.y * 10000 + f.m * 100 + f.d;
-        var meses = periodicidad === 'WEEKLY' ? 0 : +periodicidad, n = 0;
-        while (cobroK(a, meses, n) <= tope) n++;
-        return n;
+        var meses = periodicidad === 'WEEKLY' ? 0 : +periodicidad, n = 0, proximo = null, c;
+        while ((c = cobroK(a, meses, n)) <= tope) { if (proximo === null && c >= hoy) proximo = c; n++; }
+        return { n: n, proximo: proximo };
     }
+    function iso(v) { var s = String(v); return s.slice(0, 4) + '-' + s.slice(4, 6) + '-' + s.slice(6, 8); }
+    var fieldRenewal = document.getElementById('fieldRenewalDate');
     var fieldTotal   = document.getElementById('fieldTotalPrestamo');
     var totalResult  = document.getElementById('totalPrestamoResult');
     var periodicidad = document.getElementById('fieldPeriodicidad');
@@ -504,8 +522,11 @@ var i18n = {
         var totalCts = Math.round(parseFloat(fieldTotal.value) * 100);
         var ini = fechaInicio.value, fin = fechaFin.value, per = periodicidad.value;
         if (!(totalCts > 0) || !ini || !fin || !per || fin < ini) return;
-        var n = cuotasEntre(ini, fin, per);
+        var d = new Date(), hoy = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+        var serie = cuotasEntre(ini, fin, per, hoy), n = serie.n;
         if (n === 0) return;
+        // El backend cuenta las cuotas desde la renovación: se alinea con la serie del inicio.
+        fieldRenewal.value = serie.proximo === null ? fin : iso(serie.proximo);
         var cuotaCts = Math.floor((2 * totalCts + n) / (2 * n)); // total / n en céntimos, half-up
         priceInput.value = (cuotaCts / 100).toFixed(2);
         var importe = new Intl.NumberFormat(document.documentElement.lang || undefined,
@@ -628,7 +649,7 @@ var i18n = {
             if (fieldCycle && periodicidadDeCiclo[item.billingCycle]) {
                 fieldCycle.value = periodicidadDeCiclo[item.billingCycle];
             }
-            if (fieldCategoryId) fieldCategoryId.value = catSelect.value;
+            if (fieldCategoryId) { fieldCategoryId.value = catSelect.value; actualizarAyudaPrecio(); }
 
             if (item.trialDays) {
                 var trialCheck = document.getElementById('isTrialCheck');

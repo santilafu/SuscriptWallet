@@ -253,6 +253,11 @@ class PlazoIntegrationTest {
             assertFalse(input.contains("value="), "el total debe empezar vacío: $input")
             assertTrue(html.contains("Importe total del préstamo (opcional)"))
             assertTrue(html.contains("{0} cuotas de {1}"), "faltan los textos del resultado para el JS")
+            // El paso 2 deja la cuota vacía con la categoría Préstamos (sembrada en V18).
+            val prestamos = Regex("data-prestamos=\"(\\d+)\"").find(html)?.groupValues?.get(1)
+            assertNotNull(prestamos, "falta el id de Préstamos en el selector de categoría")
+            assertTrue(Regex("<option[^>]*value=\"$prestamos\"[^>]*>[^<]*Préstamos").containsMatchIn(html))
+            assertTrue(html.contains("id=\"priceLoanHint\""))
         }
     }
 

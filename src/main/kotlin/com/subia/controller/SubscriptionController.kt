@@ -92,6 +92,7 @@ class SubscriptionController(
             catalogService.getAllItems().firstOrNull { it.name == nombre && it.categoryKey != "prueba" }
         }
         model.addAttribute("categories", categories)
+        model.addAttribute("prestamosCategoryId", prestamosId(categories))
         model.addAttribute("currencies", com.subia.model.Currencies.SUPPORTED)
         model.addAttribute("sub", if (item == null) emptyForm() else emptyForm() + mapOf(
             "name" to item.name,
@@ -171,10 +172,16 @@ class SubscriptionController(
         model.addAttribute("isEntity", true)
         model.addAttribute("plazo", com.subia.service.RenewalDates.plazo(stored, LocalDate.now(clock)))
         model.addAttribute("periodicidadActual", valorPeriodicidad(sub))
-        model.addAttribute("categories", categoryService.findAll())
+        val categories = categoryService.findAll()
+        model.addAttribute("categories", categories)
+        model.addAttribute("prestamosCategoryId", prestamosId(categories))
         model.addAttribute("currencies", com.subia.model.Currencies.SUPPORTED)
         return "subscriptions/form"
     }
+
+    /** Id de la categoría Préstamos: con ella el paso 2 del formulario deja la cuota vacía (se calcula en el 3). */
+    private fun prestamosId(categories: List<com.subia.model.Category>): Long? =
+        categories.firstOrNull { CategoryMappingService.keyFor(it.name) == "prestamos" }?.id
 
     /**
      * Procesa el formulario de edición de una suscripción existente.
