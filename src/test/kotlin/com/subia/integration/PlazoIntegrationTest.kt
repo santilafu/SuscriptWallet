@@ -220,8 +220,11 @@ class PlazoIntegrationTest {
     @Test
     fun `web formulario de edicion muestra las fechas, cuotas, pendiente y barra`() {
         val owner = newUser(); val cat = newCategory()
-        // Serie mensual de hoy+5: desde hace 9 meses hasta dentro de 2 → 12 totales, 3 restantes
-        val sub = stored(owner, cat, hoy.plusDays(5).minusMonths(9), hoy.plusDays(5).plusMonths(2))
+        // Serie mensual anclada en el inicio (día ≤ 28 para que restar 9 meses no lo recorte; antes,
+        // con hoy+5 = día 30, el inicio caía el 28-feb y la serie dejaba de ser la de la renovación):
+        // desde hace 9 meses hasta dentro de 2 → 12 totales, 3 restantes.
+        val base = generateSequence(hoy.plusDays(5)) { it.plusDays(1) }.first { it.dayOfMonth <= 28 }
+        val sub = stored(owner, cat, base.minusMonths(9), base.plusMonths(2))
         val html = mockMvc.get("/subscriptions/${sub.id}/edit") {
             with(user(owner.email)); cookie(es)
         }.andExpect { status { isOk() } }.andReturn().response.contentAsString

@@ -137,19 +137,29 @@ object RenewalDates {
         return count
     }
 
+    /**
+     * Ancla de la serie de cobros del plazo. Con fecha de inicio la serie va SIEMPRE anclada en
+     * ella (el día 31 cae el 30/28 y vuelve al 31): una renovación guardada ya recortada (30-nov)
+     * perdía el 31 y la serie pasaba a caer los días 30, dejando fuera el cobro del inicio. Sin
+     * inicio, la renovación guardada como siempre.
+     */
+    private fun ancla(sub: Subscription): LocalDate = sub.fechaInicio ?: sub.renewalDate
+
     private fun cobrosEntre(sub: Subscription, desde: LocalDate, hasta: LocalDate): Int =
-        cobrosEntre(sub.renewalDate, sub.billingCycle, sub.intervaloMeses, desde, hasta)
+        cobrosEntre(ancla(sub), sub.billingCycle, sub.intervaloMeses, desde, hasta)
 
     /**
      * Primer día en que puede haber un cobro pendiente: max(hoy, renewalDate guardada, inicio).
-     * Nunca antes de la renovación guardada: si el usuario la puso en diciembre, los cobros de la
-     * serie entre hoy y diciembre no existen (igual que `nextRenewal`, el calendario y la app).
+     * La renovación guardada es solo una cota inferior: si el usuario la puso en diciembre, los
+     * cobros de la serie entre hoy y diciembre no existen (igual que `nextRenewal`, el calendario
+     * y la app).
      */
     private fun desde(sub: Subscription, today: LocalDate): LocalDate =
         listOfNotNull(today, sub.renewalDate, sub.fechaInicio).max()
 
-    /** Próximo cobro respetando el inicio del plazo (no hay cobros antes de `fechaInicio`). */
-    fun proximoCobro(sub: Subscription, today: LocalDate): LocalDate = nextRenewal(sub, desde(sub, today))
+    /** Próximo cobro: primer cobro de la serie del plazo (ver [ancla]) en [desde] o después. */
+    fun proximoCobro(sub: Subscription, today: LocalDate): LocalDate =
+        nextRenewal(ancla(sub), sub.billingCycle, desde(sub, today), sub.intervaloMeses)
 
     /**
      * true si tiene fecha de fin y ya no le queda ningún cobro hasta ella (D1): cubre el fin
@@ -165,8 +175,7 @@ object RenewalDates {
         sub.fechaFin?.let { cobrosEntre(sub, desde(sub, today), it) }
 
     /**
-     * Cuotas ya pagadas: cobros de la serie en [inicio, mín(fin, ayer)] (la serie va hacia atrás
-     * desde el ancla). Solo las anteriores a hoy: con la renovación guardada en el futuro, los
+     * Cuotas ya pagadas: cobros de la serie del inicio en [inicio, mín(fin, ayer)]. Solo las anteriores a hoy: con la renovación guardada en el futuro, los
      * cobros entre hoy y ella no se han pagado. null sin las dos fechas.
      */
     fun cuotasPagadas(sub: Subscription, today: LocalDate): Int? {

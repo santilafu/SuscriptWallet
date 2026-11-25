@@ -117,6 +117,32 @@ class PlazoGastoTest {
         assertTrue(RenewalDates.isTerminada(sub("2025-01-15", fin = "2025-12-15"), hoy))
     }
 
+    // Con fecha de inicio la serie se ancla en ella; la renovación guardada solo es cota inferior.
+    private fun caso(renov: String, inicio: String, fin: String, hoy: String, proximo: String, restantes: Int, pagadas: Int) {
+        val s = sub(renov, inicio = inicio, fin = fin)
+        val h = d(hoy)
+        assertEquals(d(proximo), RenewalDates.proximoCobro(s, h), "próximo")
+        assertEquals(restantes, RenewalDates.cuotasRestantes(s, h), "restantes")
+        assertEquals(pagadas, RenewalDates.cuotasPagadas(s, h), "pagadas")
+        assertEquals(12, RenewalDates.cuotasTotales(s, h), "totales")
+    }
+
+    @Test
+    fun `A - dia 31 con renovacion guardada ya recortada al 30 sigue en la serie del inicio`() =
+        caso("2026-11-30", "2026-01-31", "2026-12-31", hoy = "2026-11-25", proximo = "2026-11-30", restantes = 2, pagadas = 10)
+
+    @Test
+    fun `B - pasado el 30-nov el siguiente cobro vuelve al 31`() =
+        caso("2026-11-30", "2026-01-31", "2026-12-31", hoy = "2026-12-01", proximo = "2026-12-31", restantes = 1, pagadas = 11)
+
+    @Test
+    fun `C - Vitaldent con renovacion en la serie no cambia`() =
+        caso("2026-12-15", "2026-03-15", "2027-02-15", hoy = "2026-11-24", proximo = "2026-12-15", restantes = 3, pagadas = 9)
+
+    @Test
+    fun `D - renovacion fuera de la serie solo acota por abajo`() =
+        caso("2026-11-25", "2026-03-15", "2027-02-15", hoy = "2026-11-25", proximo = "2026-12-15", restantes = 3, pagadas = 9)
+
     @Test
     fun `inicio futuro - no hay cobros antes del inicio`() {
         val s = sub("2026-10-15", inicio = "2027-01-15", fin = "2027-03-15")
@@ -127,9 +153,17 @@ class PlazoGastoTest {
     }
 
     @Test
-    fun `inicio futuro sin cobros dentro del plazo - terminado`() {
-        // Cobros los días 24; el plazo [1-dic, 15-dic] no contiene ninguno.
+    fun `F - inicio futuro con renovacion de otro dia - la serie es la del inicio`() {
+        // Antes la serie caía los días 24 (la renovación) y el plazo [1-dic, 15-dic] no tenía cobros.
         val s = sub("2026-10-24", inicio = "2026-12-01", fin = "2026-12-15")
+        assertEquals(d("2026-12-01"), RenewalDates.proximoCobro(s, hoy))
+        assertEquals(1, RenewalDates.cuotasRestantes(s, hoy))
+        assertFalse(RenewalDates.isTerminada(s, hoy))
+    }
+
+    @Test
+    fun `G - renovacion guardada despues del fin - terminado`() {
+        val s = sub("2026-12-24", inicio = "2026-12-01", fin = "2026-12-15")
         assertEquals(0, RenewalDates.cuotasRestantes(s, hoy))
         assertTrue(RenewalDates.isTerminada(s, hoy))
     }
