@@ -347,8 +347,9 @@ class SubscriptionController(
     private fun plazos(subs: List<Subscription>, today: LocalDate): Map<Long, com.subia.service.RenewalDates.Plazo> =
         subs.mapNotNull { s -> com.subia.service.RenewalDates.plazo(s, today)?.let { s.id to it } }.toMap()
 
+    // Igual que la lista: con fecha de inicio, la serie del inicio (sin ella da lo mismo que nextRenewal).
     private fun Subscription.projected(): Subscription =
-        copy(renewalDate = com.subia.service.RenewalDates.nextRenewal(this, LocalDate.now(clock)))
+        copy(renewalDate = com.subia.service.RenewalDates.proximoCobro(this, LocalDate.now(clock)))
 
     /**
      * Periodicidad que envía el formulario web, ya resuelta con [Periodicidad.resolver].
