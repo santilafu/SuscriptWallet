@@ -240,6 +240,23 @@ class PlazoIntegrationTest {
     }
 
     @Test
+    fun `web formulario lleva la calculadora del total sin name y vacia al editar`() {
+        val owner = newUser(); val cat = newCategory()
+        val sub = stored(owner, cat, LocalDate.parse("2026-03-15"), LocalDate.parse("2027-02-15"))
+        for (url in listOf("/subscriptions/new", "/subscriptions/${sub.id}/edit")) {
+            val html = mockMvc.get(url) { with(user(owner.email)); cookie(es) }
+                .andExpect { status { isOk() } }.andReturn().response.contentAsString
+            val input = Regex("<input[^>]*id=\"fieldTotalPrestamo\"[^>]*>").find(html)?.value
+            assertNotNull(input, "falta el campo del total en $url")
+            // Sin name: el navegador no lo envía, así que nunca llega al servidor ni se guarda.
+            assertFalse(input!!.contains("name="), "el total no debe enviarse: $input")
+            assertFalse(input.contains("value="), "el total debe empezar vacío: $input")
+            assertTrue(html.contains("Importe total del préstamo (opcional)"))
+            assertTrue(html.contains("{0} cuotas de {1}"), "faltan los textos del resultado para el JS")
+        }
+    }
+
+    @Test
     fun `web CSV lleva fecha de inicio y de fin al final`() {
         val owner = newUser(); val cat = newCategory()
         stored(owner, cat, LocalDate.parse("2026-01-20"), LocalDate.parse("2027-06-20"))

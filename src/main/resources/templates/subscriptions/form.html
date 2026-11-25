@@ -308,6 +308,19 @@
                         </div>
                     </div>
 
+                    <!-- Calculadora de préstamo: sin name, no se envía ni se guarda; solo rellena el precio. -->
+                    <div class="mt-4">
+                        <label for="fieldTotalPrestamo" class="block text-xs font-medium text-slate-400 mb-1" th:text="#{form.loan.total}">Importe total del préstamo (opcional)</label>
+                        <input type="number" id="fieldTotalPrestamo" step="any" inputmode="decimal" autocomplete="off"
+                               aria-describedby="totalPrestamoHint totalPrestamoResult totalPrestamoAviso"
+                               class="w-full rounded-lg px-3 py-2 text-sm focus:outline-none">
+                        <p id="totalPrestamoHint" class="text-xs mt-1" style="color:#8291a8;" th:text="#{form.loan.hint}"></p>
+                        <div aria-live="polite" class="mt-1">
+                            <p id="totalPrestamoResult" class="text-sm font-semibold" style="color:#dde4f0;"></p>
+                            <p id="totalPrestamoAviso" class="text-xs" style="color:#8291a8;"></p>
+                        </div>
+                    </div>
+
                     <!-- Detalle del plazo (solo al editar un gasto con fecha de fin) -->
                     <div th:if="${plazo != null}" id="plazoDetalle" class="mt-4 rounded-lg p-4"
                          style="background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.18);">
@@ -382,7 +395,10 @@ var i18n = {
     loading:     /*[[#{form.catalog.loading}]]*/      '— Cargando… —',
     chooseFirst: /*[[#{form.catalog.choose-first}]]*/  '— Primero elige una categoría —',
     chooseSvc:   /*[[#{form.catalog.choose-svc}]]*/    '— Elige un servicio —',
-    loadError:   /*[[#{form.catalog.error}]]*/         '— Error al cargar —'
+    loadError:   /*[[#{form.catalog.error}]]*/         '— Error al cargar —',
+    loanOne:     /*[[#{form.loan.result.one}]]*/       '1 cuota de {1}',
+    loanMany:    /*[[#{form.loan.result.many}]]*/      '{0} cuotas de {1}',
+    loanCents:   /*[[#{form.loan.cents}]]*/            'La última cuota puede variar unos céntimos.'
 };
 </script>
 <script>
@@ -461,6 +477,45 @@ var i18n = {
     var fechaFin = document.getElementById('fieldFechaFin');
     if (fechaInicio && fechaFin) {
         fechaInicio.addEventListener('change', function () { fechaFin.min = fechaInicio.value || '2000-01-01'; });
+    }
+
+    // ── Calculadora de préstamo: total / nº de cuotas en [inicio, fin] → precio ──────────
+    // Mismo conteo que RenewalDates.cobrosEntre con el ancla en el inicio: cobro k = inicio +
+    // k ciclos en una sola suma (día 31 → último día de los meses cortos y vuelve al 31).
+    function ymd(s) { var p = s.split('-'); return { y: +p[0], m: +p[1], d: +p[2] }; }
+    function cobroK(a, meses, k) {
+        if (!meses) { var w = new Date(Date.UTC(a.y, a.m - 1, a.d + 7 * k)); return w.getUTCFullYear() * 10000 + (w.getUTCMonth() + 1) * 100 + w.getUTCDate(); }
+        var t = a.m - 1 + k * meses, y = a.y + Math.floor(t / 12), m = t % 12 + 1;
+        var ultimo = new Date(Date.UTC(y, m, 0)).getUTCDate();
+        return y * 10000 + m * 100 + Math.min(a.d, ultimo);
+    }
+    function cuotasEntre(inicio, fin, periodicidad) {
+        var a = ymd(inicio), f = ymd(fin), tope = f.y * 10000 + f.m * 100 + f.d;
+        var meses = periodicidad === 'WEEKLY' ? 0 : +periodicidad, n = 0;
+        while (cobroK(a, meses, n) <= tope) n++;
+        return n;
+    }
+    var fieldTotal   = document.getElementById('fieldTotalPrestamo');
+    var totalResult  = document.getElementById('totalPrestamoResult');
+    var periodicidad = document.getElementById('fieldPeriodicidad');
+    var totalAviso   = document.getElementById('totalPrestamoAviso');
+    function calcularCuota() {
+        totalResult.textContent = totalAviso.textContent = '';
+        var totalCts = Math.round(parseFloat(fieldTotal.value) * 100);
+        var ini = fechaInicio.value, fin = fechaFin.value, per = periodicidad.value;
+        if (!(totalCts > 0) || !ini || !fin || !per || fin < ini) return;
+        var n = cuotasEntre(ini, fin, per);
+        if (n === 0) return;
+        var cuotaCts = Math.floor((2 * totalCts + n) / (2 * n)); // total / n en céntimos, half-up
+        priceInput.value = (cuotaCts / 100).toFixed(2);
+        var importe = new Intl.NumberFormat(document.documentElement.lang || undefined,
+            { style: 'currency', currency: currencySel.value }).format(cuotaCts / 100);
+        totalResult.textContent = (n === 1 ? i18n.loanOne : i18n.loanMany).replace('{0}', n).replace('{1}', importe);
+        if (cuotaCts * n !== totalCts) totalAviso.textContent = i18n.loanCents;
+    }
+    // priceInput y currencySel se declaran más abajo; solo se usan al disparar el evento.
+    if (fieldTotal) {
+        [fieldTotal, fechaInicio, fechaFin, periodicidad].forEach(function (el) { el.addEventListener('input', calcularCuota); });
     }
 
     // Submit: si hay un campo inválido en un paso oculto, se salta a ese paso y se muestra el aviso.

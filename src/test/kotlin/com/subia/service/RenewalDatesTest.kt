@@ -13,6 +13,20 @@ class RenewalDatesTest {
     private fun d(s: String): LocalDate = LocalDate.parse(s)
 
     @Test
+    fun `cuotas entre inicio y fin con ancla en el inicio - mismos casos que la calculadora web`() {
+        // La calculadora del total (subscriptions/form.html) replica este conteo en JS.
+        fun n(cycle: BillingCycle, meses: Int, ini: String, fin: String) =
+            RenewalDates.cobrosEntre(d(ini), cycle, meses, d(ini), d(fin))
+        assertEquals(12, n(BillingCycle.MONTHLY, 1, "2026-03-15", "2027-02-15"))
+        assertEquals(12, n(BillingCycle.MONTHLY, 1, "2026-01-31", "2026-12-31"))
+        assertEquals(2, n(BillingCycle.MONTHLY, 1, "2026-01-31", "2026-02-28"))
+        assertEquals(1, n(BillingCycle.MONTHLY, 1, "2026-05-10", "2026-05-10"))
+        assertEquals(4, n(BillingCycle.MONTHLY, 3, "2026-01-10", "2026-12-10"))
+        assertEquals(53, n(BillingCycle.WEEKLY, 1, "2026-01-01", "2026-12-31"))
+        assertEquals(0, n(BillingCycle.MONTHLY, 1, "2027-02-15", "2026-03-15"))
+    }
+
+    @Test
     fun `fecha futura o de hoy no se mueve`() {
         assertEquals(d("2026-10-10"), RenewalDates.nextRenewal(d("2026-10-10"), BillingCycle.MONTHLY, d("2026-10-10")))
         assertEquals(d("2026-12-01"), RenewalDates.nextRenewal(d("2026-12-01"), BillingCycle.WEEKLY, d("2026-10-10")))
